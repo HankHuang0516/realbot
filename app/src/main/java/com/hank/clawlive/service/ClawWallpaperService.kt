@@ -1,8 +1,6 @@
 package com.hank.clawlive.service
 
 import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import android.os.Handler
 import android.os.Looper
 import android.service.wallpaper.WallpaperService
@@ -11,9 +9,9 @@ import timber.log.Timber
 import com.hank.clawlive.engine.ClawRenderer
 import com.hank.clawlive.data.model.AgentStatus
 import com.hank.clawlive.data.model.CharacterState
+import com.hank.clawlive.data.model.EntityStatus
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.*
 
 class ClawWallpaperService : WallpaperService() {
 
@@ -35,7 +33,6 @@ class ClawWallpaperService : WallpaperService() {
         Timber.d("ClawWallpaperService Destroyed")
     }
 
-    // Inner class implementation
     inner class ClawEngine : WallpaperService.Engine() {
 
         private val handler = Handler(Looper.getMainLooper())
@@ -45,13 +42,23 @@ class ClawWallpaperService : WallpaperService() {
             com.hank.clawlive.data.remote.NetworkModule.api,
             this@ClawWallpaperService
         )
-        
-        // Coroutine Scope for this engine instance
-        private val engineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + kotlinx.coroutines.SupervisorJob())
 
+        private val engineScope = kotlinx.coroutines.CoroutineScope(
+            kotlinx.coroutines.Dispatchers.Main + kotlinx.coroutines.SupervisorJob()
+        )
+
+        // Multi-entity mode flag (true = use multi-entity API)
+        private val multiEntityMode = true
+
+        // Single entity status (backward compatible)
         private var currentStatus = AgentStatus(
             state = CharacterState.IDLE,
             message = "Connecting..."
+        )
+
+        // Multi-entity status list
+        private var currentEntities: List<EntityStatus> = listOf(
+            EntityStatus(entityId = 0, state = CharacterState.IDLE, message = "Connecting...")
         )
 
         private val drawRunnable = Runnable { draw() }
@@ -60,23 +67,28 @@ class ClawWallpaperService : WallpaperService() {
             super.onCreate(surfaceHolder)
             Timber.d("ClawEngine onCreate")
             setTouchEventsEnabled(true)
-            
-            // Start observing data
             observeStatus()
         }
-        
-
 
         private fun observeStatus() {
             engineScope.launch {
-                repository.getStatusFlow(intervalMs = 5000) // Fast 5s updates for testing
-                    .collect { newStatus ->
-                        Timber.d("New Status Received: $newStatus")
-                        currentStatus = newStatus
-                        if (visible) {
-                            draw()
+                if (multiEntityMode) {
+                    // Multi-entity mode: fetch all entities
+                    repository.getMultiEntityStatusFlow(intervalMs = 5000)
+                        .collect { response ->
+                            Timber.d("Multi-entity status: ${response.activeCount} entities")
+                            currentEntities = response.entities
+                            if (visible) draw()
                         }
-                    }
+                } else {
+                    // Single entity mode (backward compatible)
+                    repository.getStatusFlow(intervalMs = 5000)
+                        .collect { newStatus ->
+                            Timber.d("Single status: ${newStatus.state}")
+                            currentStatus = newStatus
+                            if (visible) draw()
+                        }
+                }
             }
         }
 
@@ -89,35 +101,46 @@ class ClawWallpaperService : WallpaperService() {
                 handler.removeCallbacks(drawRunnable)
             }
         }
-        
+
         override fun onTouchEvent(event: android.view.MotionEvent?) {
-             if (event?.action == android.view.MotionEvent.ACTION_UP) {
-                 // Trigger Wake Up logic
-                 currentStatus = currentStatus.copy(message = "Waking up...", state = CharacterState.EXCITED)
-                 if (visible) draw()
-                 
-                 engineScope.launch {
-                     try {
-                         repository.wakeUp()
-                         // After wake up, force a refresh or show success
-                         currentStatus = currentStatus.copy(message = "I'm Awake! (Webhook Sent)")
-                         if (visible) draw()
-                         // Revert to normal after 2s
-                         kotlinx.coroutines.delay(2000)
-                         // The flow will likely override this anyway, but good for feedback
-                     } catch (e: Exception) {
-                         Timber.e(e, "Wake up failed")
-                     }
-                 }
-             }
-             super.onTouchEvent(event)
+            if (event?.action == android.view.MotionEvent.ACTION_UP) {
+                // Wake up entity 0 on tap
+                if (multiEntityMode && currentEntities.isNotEmpty()) {
+                    currentEntities = currentEntities.mapIndexed { index, entity ->
+                        if (index == 0) entity.copy(message = "Waking up...", state = CharacterState.EXCITED)
+                        else entity
+                    }
+                } else {
+                    currentStatus = currentStatus.copy(message = "Waking up...", state = CharacterState.EXCITED)
+                }
+                if (visible) draw()
+
+                engineScope.launch {
+                    try {
+                        repository.wakeUp()
+                        if (multiEntityMode && currentEntities.isNotEmpty()) {
+                            currentEntities = currentEntities.mapIndexed { index, entity ->
+                                if (index == 0) entity.copy(message = "I'm Awake!")
+                                else entity
+                            }
+                        } else {
+                            currentStatus = currentStatus.copy(message = "I'm Awake!")
+                        }
+                        if (visible) draw()
+                        kotlinx.coroutines.delay(2000)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Wake up failed")
+                    }
+                }
+            }
+            super.onTouchEvent(event)
         }
 
         override fun onSurfaceDestroyed(holder: SurfaceHolder?) {
             super.onSurfaceDestroyed(holder)
             visible = false
             handler.removeCallbacks(drawRunnable)
-            engineScope.cancel() // Clean up coroutines
+            engineScope.cancel()
             Timber.d("onSurfaceDestroyed")
         }
 
@@ -128,7 +151,11 @@ class ClawWallpaperService : WallpaperService() {
             try {
                 canvas = holder.lockCanvas()
                 if (canvas != null) {
-                    renderer.draw(canvas, currentStatus)
+                    if (multiEntityMode) {
+                        renderer.drawMultiEntity(canvas, currentEntities)
+                    } else {
+                        renderer.draw(canvas, currentStatus)
+                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error during drawing")
@@ -142,7 +169,6 @@ class ClawWallpaperService : WallpaperService() {
                 }
             }
 
-            // Schedule next frame
             handler.removeCallbacks(drawRunnable)
             if (visible) {
                 handler.postDelayed(drawRunnable, 33)

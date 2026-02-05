@@ -4,14 +4,16 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.text.TextPaint
 import com.hank.clawlive.data.model.AgentStatus
 import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.CharacterType
+import com.hank.clawlive.data.model.EntityStatus
 import kotlin.math.sin
 
 class ClawRenderer(private val context: Context) {
 
-    private val textPaint = Paint().apply {
+    private val textPaint = TextPaint().apply {
         color = Color.WHITE
         textSize = 50f
         textAlign = Paint.Align.CENTER
@@ -25,7 +27,7 @@ class ClawRenderer(private val context: Context) {
 
     // Animation state
     private var startTime = System.currentTimeMillis()
-    
+
     // Ambient state
     private var isAmbient = false
 
@@ -33,133 +35,243 @@ class ClawRenderer(private val context: Context) {
         this.isAmbient = ambient
     }
 
-    fun draw(canvas: Canvas, status: AgentStatus) {
+    // ============================================
+    // MULTI-ENTITY RENDERING
+    // ============================================
+
+    /**
+     * Calculate positions for entities based on count.
+     * Layout:
+     * - 1: center
+     * - 2: left-center, right-center
+     * - 3: top-center, bottom-left, bottom-right
+     * - 4: 2x2 grid
+     */
+    private fun calculateEntityPositions(
+        width: Float,
+        height: Float,
+        count: Int
+    ): List<Pair<Float, Float>> {
+        return when (count) {
+            1 -> listOf(
+                Pair(width / 2f, height / 2f)
+            )
+            2 -> listOf(
+                Pair(width * 0.3f, height / 2f),
+                Pair(width * 0.7f, height / 2f)
+            )
+            3 -> listOf(
+                Pair(width / 2f, height * 0.35f),
+                Pair(width * 0.3f, height * 0.7f),
+                Pair(width * 0.7f, height * 0.7f)
+            )
+            else -> listOf( // 4 or more
+                Pair(width * 0.3f, height * 0.35f),
+                Pair(width * 0.7f, height * 0.35f),
+                Pair(width * 0.3f, height * 0.7f),
+                Pair(width * 0.7f, height * 0.7f)
+            )
+        }
+    }
+
+    /**
+     * Get scale factor based on entity count.
+     * Smaller scale for more entities.
+     */
+    private fun getScaleFactor(count: Int): Float = when (count) {
+        1 -> 1.0f
+        2 -> 0.65f
+        3 -> 0.55f
+        else -> 0.5f
+    }
+
+    /**
+     * Draw multiple entities on the canvas.
+     */
+    fun drawMultiEntity(canvas: Canvas, entities: List<EntityStatus>) {
         val width = canvas.width.toFloat()
         val height = canvas.height.toFloat()
-        val centerX = width / 2f
-        val centerY = height / 2f
 
-        // 1. Draw Background
-        // Use simpler/darker background in ambient mode
-        if (isAmbient) {
-            canvas.drawColor(Color.BLACK) 
-        } else {
-            // slightly lighter black for active mode or maybe just black is fine.
-            canvas.drawColor(Color.BLACK)
+        // Background
+        canvas.drawColor(Color.BLACK)
+
+        if (entities.isEmpty()) {
+            // Draw "No entities" message
+            textPaint.textSize = 40f
+            canvas.drawText("No entities active", width / 2f, height / 2f, textPaint)
+            return
         }
 
-        // 2. Calculate Animation (Bobbing)
+        val positions = calculateEntityPositions(width, height, entities.size)
+        val scale = getScaleFactor(entities.size)
+
+        entities.forEachIndexed { index, entity ->
+            if (index < positions.size) {
+                val (cx, cy) = positions[index]
+                drawSingleEntityAt(canvas, entity, cx, cy, scale, width)
+            }
+        }
+    }
+
+    /**
+     * Draw a single entity at the specified position with scale.
+     */
+    private fun drawSingleEntityAt(
+        canvas: Canvas,
+        entity: EntityStatus,
+        centerX: Float,
+        centerY: Float,
+        scale: Float,
+        screenWidth: Float
+    ) {
+        // Calculate Animation (Bobbing)
         val time = System.currentTimeMillis() - startTime
-        val bobOffset = if (status.state == CharacterState.SLEEPING) {
+        val bobOffset = if (entity.state == CharacterState.SLEEPING) {
             0f
         } else {
-            val speed = if (status.state == CharacterState.BUSY) 0.01f else 0.003f
-            (sin(time * speed) * 30).toFloat()
+            val speed = if (entity.state == CharacterState.BUSY) 0.01f else 0.003f
+            (sin(time * speed) * 30 * scale).toFloat()
         }
 
-        // 3. Draw Character (Distinct Forms)
         val charY = centerY + bobOffset
-        val radius = 150f
-        
+        val radius = 150f * scale
+
         // Dynamic color
-        characterPaint.color = when (status.character) {
-            CharacterType.LOBSTER -> if (status.state == CharacterState.SLEEPING) Color.parseColor("#8B0000") else Color.RED
-            CharacterType.PIG -> if (status.state == CharacterState.SLEEPING) Color.parseColor("#C71585") else Color.MAGENTA
+        characterPaint.color = when (entity.character) {
+            CharacterType.LOBSTER -> if (entity.state == CharacterState.SLEEPING)
+                Color.parseColor("#8B0000") else Color.RED
+            CharacterType.PIG -> if (entity.state == CharacterState.SLEEPING)
+                Color.parseColor("#C71585") else Color.MAGENTA
         }
 
         // Base Body Shape
         canvas.drawCircle(centerX, charY, radius, characterPaint)
-        
+
         // Form-specific details
-        when (status.character) {
+        when (entity.character) {
             CharacterType.LOBSTER -> {
-                drawLobsterSVG(canvas, centerX, charY)
+                drawLobsterAtPosition(canvas, centerX, charY, entity, scale)
             }
             CharacterType.PIG -> {
-                // ... (Keep existing Pig logic for contrast) ...
-                // Draw Snout (Darker Pink Oval)
-                // ...
-                val snoutPaint = Paint(characterPaint)
-                snoutPaint.color = Color.parseColor("#FFC0CB") // Light pink snout
-                canvas.drawOval(
-                    centerX - 50f, charY + 20f,
-                    centerX + 50f, charY + 80f,
-                    snoutPaint
-                )
-                // Nostrils
-                snoutPaint.color = Color.BLACK
-                canvas.drawCircle(centerX - 20f, charY + 50f, 10f, snoutPaint)
-                canvas.drawCircle(centerX + 20f, charY + 50f, 10f, snoutPaint)
-                
-                // Ears
-                characterPaint.color = Color.MAGENTA
-                canvas.drawCircle(centerX - 100f, charY - 100f, 50f, characterPaint)
-                canvas.drawCircle(centerX + 100f, charY - 100f, 50f, characterPaint)
+                drawPigAtPosition(canvas, centerX, charY, entity, scale)
             }
         }
-        
-        // 3.1 Draw Eyes (Only for Pig now, Lobster has embedded eyes in SVG)
-        if (!isAmbient && status.character == CharacterType.PIG) { 
-            // ... (Keep existing Eye logic for Pig) ...
-             val eyeRadius = 20f
-             val eyeOffsetX = 50f
-             val eyeOffsetY = -30f
-             characterPaint.color = Color.WHITE
-             canvas.drawCircle(centerX - eyeOffsetX, charY + eyeOffsetY, eyeRadius, characterPaint)
-             canvas.drawCircle(centerX + eyeOffsetX, charY + eyeOffsetY, eyeRadius, characterPaint)
-             characterPaint.color = Color.BLACK
-             val pupilRadius = 8f
-             // Dilate pupils if EXCITED
-             val currentPupilRadius = if (status.state == CharacterState.EXCITED) 12f else pupilRadius
-             canvas.drawCircle(centerX - eyeOffsetX, charY + eyeOffsetY, currentPupilRadius, characterPaint)
-             canvas.drawCircle(centerX + eyeOffsetX, charY + eyeOffsetY, currentPupilRadius, characterPaint)
-        }
 
-        // 4. Draw Status Text
-        val message = if (isAmbient) "${status.state}" else "${status.message}\n(${status.state})"
-        val lines = message.split("\n")
-        var textY = charY + radius + 80f
-        
-        textPaint.color = if (isAmbient) Color.GRAY else Color.WHITE
-        
-        for (line in lines) {
-            canvas.drawText(line, centerX, textY, textPaint)
-            textPaint.textSize.let { textY += it + 10f }
-        }
+        // Draw Status Text (smaller for multi-entity)
+        drawEntityMessage(canvas, entity, centerX, charY + radius + (40f * scale), scale, screenWidth)
 
-        // 5. Draw "Zzz" if sleeping (not in ambient)
-        if (status.state == CharacterState.SLEEPING && !isAmbient) {
-            textPaint.textSize = 80f
-            canvas.drawText("Zzz...", centerX + radius, charY - radius, textPaint)
-            textPaint.textSize = 50f // Reset
+        // Draw "Zzz" if sleeping
+        if (entity.state == CharacterState.SLEEPING && !isAmbient) {
+            textPaint.textSize = 60f * scale
+            canvas.drawText("Zzz...", centerX + radius * 0.7f, charY - radius * 0.5f, textPaint)
         }
     }
 
-    private fun drawLobsterSVG(canvas: Canvas, cx: Float, cy: Float) {
-        // Source SVG viewBox is 0 0 120 120.
-        // We want to scale it up to match our ~300px radius size.
-        // Let's scale by 4x -> 480px width.
-        val scale = 4f
-        
+    /**
+     * Draw entity message text below the character.
+     */
+    private fun drawEntityMessage(
+        canvas: Canvas,
+        entity: EntityStatus,
+        centerX: Float,
+        textY: Float,
+        scale: Float,
+        screenWidth: Float
+    ) {
+        val message = if (isAmbient) {
+            "${entity.state}"
+        } else {
+            "${entity.message}\n(${entity.state})"
+        }
+
+        textPaint.color = if (isAmbient) Color.GRAY else Color.WHITE
+        textPaint.textSize = (40f * scale).coerceAtLeast(24f)
+
+        // Text width based on scale
+        val textWidth = (screenWidth * 0.35f * scale).toInt().coerceAtLeast(150)
+
+        val layout = android.text.StaticLayout.Builder.obtain(
+            message, 0, message.length, textPaint, textWidth
+        ).setAlignment(android.text.Layout.Alignment.ALIGN_CENTER)
+            .setLineSpacing(0f, 1.0f)
+            .setIncludePad(false)
+            .build()
+
         canvas.save()
-        // Center the 120x120 SVG at (cx, cy)
-        // 120 * scale / 2 = 60 * 4 = 240 offset
-        canvas.translate(cx - (60 * scale), cy - (60 * scale))
-        canvas.scale(scale, scale)
+        canvas.translate(centerX - (textWidth / 2f), textY)
+        layout.draw(canvas)
+        canvas.restore()
+    }
+
+    /**
+     * Draw pig at specific position with scale.
+     */
+    private fun drawPigAtPosition(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        entity: EntityStatus,
+        scale: Float
+    ) {
+        // Snout
+        val snoutPaint = Paint(characterPaint)
+        snoutPaint.color = Color.parseColor("#FFC0CB")
+        canvas.drawOval(
+            cx - 50f * scale, cy + 20f * scale,
+            cx + 50f * scale, cy + 80f * scale,
+            snoutPaint
+        )
+
+        // Nostrils
+        snoutPaint.color = Color.BLACK
+        canvas.drawCircle(cx - 20f * scale, cy + 50f * scale, 10f * scale, snoutPaint)
+        canvas.drawCircle(cx + 20f * scale, cy + 50f * scale, 10f * scale, snoutPaint)
+
+        // Ears
+        characterPaint.color = Color.MAGENTA
+        canvas.drawCircle(cx - 100f * scale, cy - 100f * scale, 50f * scale, characterPaint)
+        canvas.drawCircle(cx + 100f * scale, cy - 100f * scale, 50f * scale, characterPaint)
+
+        // Eyes
+        if (!isAmbient) {
+            val eyeRadius = 20f * scale
+            val eyeOffsetX = 50f * scale
+            val eyeOffsetY = -30f * scale
+            characterPaint.color = Color.WHITE
+            canvas.drawCircle(cx - eyeOffsetX, cy + eyeOffsetY, eyeRadius, characterPaint)
+            canvas.drawCircle(cx + eyeOffsetX, cy + eyeOffsetY, eyeRadius, characterPaint)
+            characterPaint.color = Color.BLACK
+            val pupilRadius = if (entity.state == CharacterState.EXCITED) 12f * scale else 8f * scale
+            canvas.drawCircle(cx - eyeOffsetX, cy + eyeOffsetY, pupilRadius, characterPaint)
+            canvas.drawCircle(cx + eyeOffsetX, cy + eyeOffsetY, pupilRadius, characterPaint)
+        }
+    }
+
+    /**
+     * Draw lobster at specific position with scale.
+     */
+    private fun drawLobsterAtPosition(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        entity: EntityStatus,
+        scale: Float
+    ) {
+        // SVG scale (original is 4x, now multiply by entity scale)
+        val svgScale = 4f * scale
+
+        canvas.save()
+        canvas.translate(cx - (60 * svgScale), cy - (60 * svgScale))
+        canvas.scale(svgScale, svgScale)
 
         // Colors
         val coralBright = Color.parseColor("#FF7F50")
         val coralDark = Color.parseColor("#CD5B45")
-        val bgDeep = Color.parseColor("#1A1A2E") // Dark blueish
-        val cyanBright = Color.parseColor("#00FFFF")
 
-        // Gradient for Body (Simple solid fallback or simulated gradient)
-        // For simplicity in Canvas, we'll use solid coralBright first or a Shader if needed.
         val bodyPaint = Paint().apply {
             style = Paint.Style.FILL
             color = coralBright
             isAntiAlias = true
-            // If we want the gradient:
             shader = android.graphics.LinearGradient(
                 0f, 0f, 120f, 120f,
                 coralBright, coralDark,
@@ -175,10 +287,7 @@ class ClawRenderer(private val context: Context) {
             isAntiAlias = true
         }
 
-        val eyePaint = Paint().apply { style = Paint.Style.FILL; color = bgDeep; isAntiAlias = true }
-        val eyeGlowPaint = Paint().apply { style = Paint.Style.FILL; color = cyanBright; isAntiAlias = true }
-
-        // 1. Body
+        // Body
         val bodyPath = android.graphics.Path().apply {
             moveTo(60f, 10f)
             cubicTo(30f, 10f, 15f, 35f, 15f, 55f)
@@ -186,7 +295,7 @@ class ClawRenderer(private val context: Context) {
             lineTo(45f, 110f)
             lineTo(55f, 110f)
             lineTo(55f, 100f)
-            cubicTo(55f, 100f, 60f, 102f, 65f, 100f) 
+            cubicTo(55f, 100f, 60f, 102f, 65f, 100f)
             lineTo(65f, 110f)
             lineTo(75f, 110f)
             lineTo(75f, 100f)
@@ -196,7 +305,12 @@ class ClawRenderer(private val context: Context) {
         }
         canvas.drawPath(bodyPath, bodyPaint)
 
-        // 2. Left Claw
+        // Left Claw with rotation
+        canvas.save()
+        val leftRotation = entity.parts?.get("CLAW_LEFT") ?: 0f
+        if (leftRotation != 0f) {
+            canvas.rotate(leftRotation, 25f, 55f)
+        }
         val leftClawPath = android.graphics.Path().apply {
             moveTo(20f, 45f)
             cubicTo(5f, 40f, 0f, 50f, 5f, 60f)
@@ -205,8 +319,14 @@ class ClawRenderer(private val context: Context) {
             close()
         }
         canvas.drawPath(leftClawPath, bodyPaint)
+        canvas.restore()
 
-        // 3. Right Claw
+        // Right Claw with rotation
+        canvas.save()
+        val rightRotation = entity.parts?.get("CLAW_RIGHT") ?: 0f
+        if (rightRotation != 0f) {
+            canvas.rotate(rightRotation, 95f, 55f)
+        }
         val rightClawPath = android.graphics.Path().apply {
             moveTo(100f, 45f)
             cubicTo(115f, 40f, 120f, 50f, 115f, 60f)
@@ -215,8 +335,9 @@ class ClawRenderer(private val context: Context) {
             close()
         }
         canvas.drawPath(rightClawPath, bodyPaint)
+        canvas.restore()
 
-        // 4. Antenna (Stroke)
+        // Antenna
         val antennaL = android.graphics.Path().apply {
             moveTo(45f, 15f)
             quadTo(35f, 5f, 30f, 8f)
@@ -229,14 +350,73 @@ class ClawRenderer(private val context: Context) {
         }
         canvas.drawPath(antennaR, strokePaint)
 
-        // 5. Eyes
-        canvas.drawCircle(45f, 35f, 6f, eyePaint)
-        canvas.drawCircle(75f, 35f, 6f, eyePaint)
-
-        // 6. Eye Glow
-        canvas.drawCircle(46f, 34f, 2f, eyeGlowPaint)
-        canvas.drawCircle(76f, 34f, 2f, eyeGlowPaint)
+        // Eyes
+        drawLobsterEyesForEntity(canvas, entity)
 
         canvas.restore()
+    }
+
+    /**
+     * Draw lobster eyes (called within scaled canvas context).
+     */
+    private fun drawLobsterEyesForEntity(canvas: Canvas, entity: EntityStatus) {
+        val eyeRadius = 6f
+        val pupilRadius = 2f
+        val leftEyeX = 45f
+        val rightEyeX = 75f
+        val eyeY = 35f
+
+        val pupilPaint = Paint().apply { style = Paint.Style.FILL; color = Color.BLACK; isAntiAlias = true }
+        val lidPaint = Paint().apply { style = Paint.Style.FILL; color = Color.parseColor("#FF7F50"); isAntiAlias = true }
+
+        val defaultLid = if (entity.state == CharacterState.SLEEPING) 1.0f else 0f
+        val lidFactor = entity.parts?.get("EYE_LID") ?: defaultLid
+        val browAngle = entity.parts?.get("EYE_ANGLE") ?: 0f
+
+        drawSingleEye(canvas, leftEyeX, eyeY, eyeRadius, pupilRadius, lidFactor, browAngle, pupilPaint, lidPaint)
+        drawSingleEye(canvas, rightEyeX, eyeY, eyeRadius, pupilRadius, lidFactor, -browAngle, pupilPaint, lidPaint)
+    }
+
+    private fun drawSingleEye(
+        canvas: Canvas, cx: Float, cy: Float, radius: Float, pupilRadius: Float,
+        lidFactor: Float, browAngle: Float,
+        pupilPaint: Paint, lidPaint: Paint
+    ) {
+        canvas.save()
+
+        val eyePath = android.graphics.Path()
+        eyePath.addCircle(cx, cy, radius, android.graphics.Path.Direction.CW)
+        canvas.clipPath(eyePath)
+
+        canvas.drawColor(Color.WHITE)
+        canvas.drawCircle(cx, cy, pupilRadius * 1.5f, pupilPaint)
+
+        canvas.restore()
+
+        if (lidFactor > 0.05f || browAngle != 0f) {
+            canvas.save()
+            canvas.rotate(browAngle, cx, cy)
+            canvas.clipPath(eyePath)
+
+            val lidTop = cy - radius - 5f
+            val coverage = 2 * radius * lidFactor + 2f
+            val lidBottom = (cy - radius) + coverage
+
+            canvas.drawRect(cx - radius - 5f, lidTop, cx + radius + 5f, lidBottom, lidPaint)
+            canvas.restore()
+        }
+    }
+
+    // ============================================
+    // BACKWARD COMPATIBLE SINGLE ENTITY
+    // ============================================
+
+    /**
+     * Draw single entity (backward compatible).
+     */
+    fun draw(canvas: Canvas, status: AgentStatus) {
+        // Convert to EntityStatus and use multi-entity renderer
+        val entityStatus = EntityStatus.fromAgentStatus(status, 0)
+        drawMultiEntity(canvas, listOf(entityStatus))
     }
 }
