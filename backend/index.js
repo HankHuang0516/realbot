@@ -1,3 +1,4 @@
+// Claw Live Wallpaper Backend - Multi-Entity Support
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
