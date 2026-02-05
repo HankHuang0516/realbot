@@ -1,0 +1,9 @@
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+dependsOn = ["setup"]
+cmds = ["cd backend && npm ci || cd backend && npm install"]
+
+[start]
+cmd = "cd backend && node server.js"
