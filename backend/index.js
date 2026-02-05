@@ -90,6 +90,11 @@ app.get('/', (req, res) => {
     res.send(`Claw Backend Running! Bound Entities: ${boundCount}/${MAX_ENTITIES}`);
 });
 
+// Health check endpoint for Railway
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: Date.now() });
+});
+
 // ============================================
 // DEVICE REGISTRATION (Android App)
 // ============================================
