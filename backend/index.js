@@ -129,6 +129,50 @@ app.post('/api/transform', (req, res) => {
     res.json({ success: true, currentState: agentState });
 });
 
+/**
+ * PENDING MESSAGES QUEUE
+ * Stores messages sent from the Android Client for the Bot/Agent to consume.
+ */
+let userMessages = [];
+
+/**
+ * POST /api/client/speak
+ * Endpoint for Android Client to send a message to the bot.
+ */
+app.post('/api/client/speak', (req, res) => {
+    const { text, source } = req.body;
+    console.log(`[Client Message] Received from ${source || 'User'}: "${text}"`);
+
+    // Store in queue for MCP Agent to pick up
+    userMessages.push({
+        text: text,
+        timestamp: Date.now(),
+        read: false
+    });
+
+    // Immediate feedback to the wallpaper
+    agentState.message = `Sending: "${text}"...`;
+    agentState.lastUpdated = Date.now();
+
+    res.json({ success: true, message: "Message received by backend" });
+});
+
+/**
+ * GET /api/client/pending
+ * Endpoint for MCP Agent (OpenClaw) to check if there are new messages from user.
+ */
+app.get('/api/client/pending', (req, res) => {
+    const pending = userMessages.filter(m => !m.read);
+
+    // Mark as read after fetching (or require explicit ack in future)
+    pending.forEach(m => m.read = true);
+
+    res.json({
+        count: pending.length,
+        messages: pending
+    });
+});
+
 // Start Server
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
