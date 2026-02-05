@@ -29,6 +29,7 @@ for (let i = 0; i < MAX_ENTITIES; i++) {
         bindingCodeExpires: null,
         deviceId: null,
         deviceSecret: null,
+        botSecret: null, // Bot authentication token
         isBound: false,
         // Agent state
         character: i % 2 === 0 ? "LOBSTER" : "PIG", // Alternate default
@@ -45,6 +46,16 @@ for (let i = 0; i < MAX_ENTITIES; i++) {
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Helper: Generate secure bot secret (32 character hex string)
+function generateBotSecret() {
+    const chars = 'abcdef0123456789';
+    let secret = '';
+    for (let i = 0; i < 32; i++) {
+        secret += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return secret;
 }
 
 // Helper: Load MCP skill documentation
@@ -219,19 +230,24 @@ app.post('/api/bind', (req, res) => {
         });
     }
 
+    // Generate bot secret for this binding
+    const botSecret = generateBotSecret();
+
     // Mark as bound
     targetEntity.isBound = true;
     targetEntity.bindingCode = null; // Clear code after use
+    targetEntity.botSecret = botSecret; // Store bot secret
     targetEntity.state = "IDLE";
     targetEntity.message = "Connected!";
     targetEntity.lastUpdated = Date.now();
 
-    console.log(`[Bind] Entity ${targetEntity.entityId} bound successfully`);
+    console.log(`[Bind] Entity ${targetEntity.entityId} bound with botSecret`);
 
     res.json({
         success: true,
         message: `Entity ${targetEntity.entityId} bound successfully`,
         entityId: targetEntity.entityId,
+        botSecret: botSecret, // Return botSecret - Bot must save this!
         deviceInfo: {
             id: targetEntity.deviceId,
             entityId: targetEntity.entityId,
@@ -302,10 +318,11 @@ app.get('/api/status', (req, res) => {
 /**
  * POST /api/transform
  * Update entity status (Bot uses this).
- * Body: { entityId: 0-3, character, state, message, parts }
+ * Body: { entityId: 0-3, botSecret, character, state, message, parts }
+ * REQUIRES botSecret for authentication!
  */
 app.post('/api/transform', (req, res) => {
-    const { entityId, character, state, message, parts } = req.body;
+    const { entityId, botSecret, character, state, message, parts } = req.body;
 
     const eId = parseInt(entityId) || 0;
 
@@ -319,6 +336,14 @@ app.post('/api/transform', (req, res) => {
         return res.status(400).json({
             success: false,
             message: `Entity ${eId} is not bound yet`
+        });
+    }
+
+    // Verify botSecret
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid or missing botSecret. You must use the botSecret returned from /api/bind."
         });
     }
 
@@ -348,10 +373,12 @@ app.post('/api/transform', (req, res) => {
 /**
  * POST /api/wakeup
  * Wake up specific entity.
- * Body: { entityId: 0-3 }
+ * Body: { entityId: 0-3, botSecret }
+ * REQUIRES botSecret for authentication!
  */
 app.post('/api/wakeup', (req, res) => {
     const eId = parseInt(req.body.entityId) || parseInt(req.query.entityId) || 0;
+    const { botSecret } = req.body;
 
     if (eId < 0 || eId >= MAX_ENTITIES) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
@@ -361,6 +388,14 @@ app.post('/api/wakeup', (req, res) => {
 
     if (!entity.isBound) {
         return res.status(400).json({ success: false, message: `Entity ${eId} not bound` });
+    }
+
+    // Verify botSecret
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid or missing botSecret"
+        });
     }
 
     entity.state = "EXCITED";
@@ -403,6 +438,7 @@ app.delete('/api/entity/:entityId', (req, res) => {
         bindingCodeExpires: null,
         deviceId: null,
         deviceSecret: null,
+        botSecret: null,
         isBound: false,
         character: eId % 2 === 0 ? "LOBSTER" : "PIG",
         state: "IDLE",
@@ -424,11 +460,13 @@ app.delete('/api/entity/:entityId', (req, res) => {
 /**
  * POST /api/entity/:from/speak-to/:to
  * Send message from one entity to another.
+ * Body: { botSecret, text }
+ * REQUIRES botSecret of the 'from' entity for authentication!
  */
 app.post('/api/entity/:from/speak-to/:to', (req, res) => {
     const fromId = parseInt(req.params.from);
     const toId = parseInt(req.params.to);
-    const { text } = req.body;
+    const { botSecret, text } = req.body;
 
     if (isNaN(fromId) || isNaN(toId) || fromId < 0 || fromId >= MAX_ENTITIES || toId < 0 || toId >= MAX_ENTITIES) {
         return res.status(400).json({ success: false, message: "Invalid entity IDs" });
@@ -443,6 +481,14 @@ app.post('/api/entity/:from/speak-to/:to', (req, res) => {
 
     if (!fromEntity.isBound || !toEntity.isBound) {
         return res.status(400).json({ success: false, message: "Both entities must be bound" });
+    }
+
+    // Verify botSecret of the sender
+    if (!botSecret || botSecret !== fromEntity.botSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid or missing botSecret for sender entity"
+        });
     }
 
     // Add to recipient's queue
@@ -462,9 +508,11 @@ app.post('/api/entity/:from/speak-to/:to', (req, res) => {
 /**
  * POST /api/entity/broadcast
  * Broadcast message from one entity to all others.
+ * Body: { from, botSecret, text }
+ * REQUIRES botSecret of the 'from' entity for authentication!
  */
 app.post('/api/entity/broadcast', (req, res) => {
-    const { from, text } = req.body;
+    const { from, botSecret, text } = req.body;
 
     const fromId = parseInt(from);
     if (isNaN(fromId) || fromId < 0 || fromId >= MAX_ENTITIES) {
@@ -478,6 +526,14 @@ app.post('/api/entity/broadcast', (req, res) => {
     const fromEntity = entitySlots[fromId];
     if (!fromEntity.isBound) {
         return res.status(400).json({ success: false, message: `Entity ${fromId} not bound` });
+    }
+
+    // Verify botSecret of the sender
+    if (!botSecret || botSecret !== fromEntity.botSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid or missing botSecret"
+        });
     }
 
     let sentCount = 0;
@@ -588,6 +644,7 @@ app.post('/api/debug/reset', (req, res) => {
             bindingCodeExpires: null,
             deviceId: null,
             deviceSecret: null,
+            botSecret: null,
             isBound: false,
             character: i % 2 === 0 ? "LOBSTER" : "PIG",
             state: "IDLE",
