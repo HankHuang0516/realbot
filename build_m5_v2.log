@@ -1,0 +1,101 @@
+> Task :app:checkKotlinGradlePluginConfigurationErrors
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:9 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:18 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:19 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:25 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:27 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:30 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:31 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:40 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:42 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:47 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:48 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:53 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:58 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:63 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:248:64 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:9 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:13 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:14 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:22 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:27 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:29 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:9 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:12 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:13 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:19 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:20 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:26 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:29 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:43 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:44 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:53 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:56 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:57 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:66 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:68 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:261:5 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:262:1 Expecting a top level declaration
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:244:27 Unresolved reference: isAmbient
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:244:41 Unresolved reference: status
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:244:64 Unresolved reference: status
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:244:84 Unresolved reference: status
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:246:21 Unresolved reference: charY
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:246:29 Unresolved reference: radius
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:29 Conflicting overloads: public fun `<no name provided>`(): Unit defined in com.hank.clawlive.engine in file ClawRenderer.kt, public fun `<no name provided>`(): Unit defined in com.hank.clawlive.engine in file ClawRenderer.kt
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:250:29 Function declaration must have a name
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:251:13 Unresolved reference: canvas
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:251:29 Unresolved reference: line
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:251:35 Unresolved reference: centerX
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:251:51 Unresolved reference: textPaint
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:252:13 Unresolved reference: textPaint
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:252:44 Assignment operators ambiguity: 
+public open fun `<Error function>`(): [Error type: Return type for function cannot be resolved] defined in root package
+public open fun `<Error function>`(): [Error type: Return type for function cannot be resolved] defined in root package
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:68 Conflicting overloads: public fun `<no name provided>`(): Unit defined in com.hank.clawlive.engine in file ClawRenderer.kt, public fun `<no name provided>`(): Unit defined in com.hank.clawlive.engine in file ClawRenderer.kt
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:256:68 Function declaration must have a name
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:257:13 Unresolved reference: textPaint
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:257:23 Variable expected
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:258:13 Unresolved reference: canvas
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:258:39 Unresolved reference: centerX
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:258:49 Unresolved reference: radius
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:258:57 Unresolved reference: charY
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:258:65 Unresolved reference: radius
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:258:73 Unresolved reference: textPaint
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:259:13 Unresolved reference: textPaint
+e: file:///C:/Hank/Other/project/realbot/app/src/main/java/com/hank/clawlive/engine/ClawRenderer.kt:259:23 Variable expected
+
+> Task :app:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 7s
+15 actionable tasks: 2 executed, 13 up-to-date

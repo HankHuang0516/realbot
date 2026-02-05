@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.7\\com.hank.clawlive.app-debug-4:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.7\\com.hank.clawlive.app-main-6:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.7\\com.hank.clawlive.app-debug-4:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.7\\com.hank.clawlive.app-main-6:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "com.hank.clawlive.app-debug-4:/xml_wallpaper.xml.flat",
+        "source": "com.hank.clawlive.app-main-6:/xml/wallpaper.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.7\\com.hank.clawlive.app-debug-4:\\xml_wallpaper.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.7\\com.hank.clawlive.app-main-6:\\xml\\wallpaper.xml"
+    }
+]

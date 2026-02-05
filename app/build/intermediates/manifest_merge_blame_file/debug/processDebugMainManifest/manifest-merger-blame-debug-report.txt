@@ -1,0 +1,167 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.hank.clawlive"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="34"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:5:5-67
+11-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:5:22-64
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:6:5-79
+12-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:6:22-76
+13    <!-- Required for some devices to keep service alive properly if needed, usually BIND_WALLPAPER handles it -->
+14    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+14-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:8:5-77
+14-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:8:22-74
+15    <uses-permission android:name="android.permission.WAKE_LOCK" />
+15-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:9:5-68
+15-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:9:22-65
+16
+17    <permission
+17-->[androidx.core:core:1.12.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\bdb41bbfbd88dc193a0761231a629eb4\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+18        android:name="com.hank.clawlive.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+18-->[androidx.core:core:1.12.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\bdb41bbfbd88dc193a0761231a629eb4\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+19        android:protectionLevel="signature" />
+19-->[androidx.core:core:1.12.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\bdb41bbfbd88dc193a0761231a629eb4\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+20
+21    <uses-permission android:name="com.hank.clawlive.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+21-->[androidx.core:core:1.12.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\bdb41bbfbd88dc193a0761231a629eb4\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+21-->[androidx.core:core:1.12.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\bdb41bbfbd88dc193a0761231a629eb4\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+22
+23    <application
+23-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:11:5-42:19
+24        android:allowBackup="true"
+24-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:12:9-35
+25        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+25-->[androidx.core:core:1.12.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\bdb41bbfbd88dc193a0761231a629eb4\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+26        android:debuggable="true"
+27        android:extractNativeLibs="false"
+28        android:icon="@drawable/ic_launcher_foreground"
+28-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:13:9-56
+29        android:label="@string/app_name"
+29-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:14:9-41
+30        android:roundIcon="@drawable/ic_launcher_foreground"
+30-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:15:9-61
+31        android:supportsRtl="true"
+31-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:16:9-35
+32        android:testOnly="true"
+33        android:theme="@style/Theme.ClawLiveCompanion" >
+33-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:17:9-55
+34        <service
+34-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:19:9-31:19
+35            android:name="com.hank.clawlive.service.ClawWallpaperService"
+35-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:20:13-57
+36            android:enabled="true"
+36-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:21:13-35
+37            android:exported="true"
+37-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:22:13-36
+38            android:label="@string/app_name"
+38-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:23:13-45
+39            android:permission="android.permission.BIND_WALLPAPER" >
+39-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:24:13-67
+40            <intent-filter>
+40-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:25:13-27:29
+41                <action android:name="android.service.wallpaper.WallpaperService" />
+41-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:26:17-85
+41-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:26:25-82
+42            </intent-filter>
+43
+44            <meta-data
+44-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:28:13-30:53
+45                android:name="android.service.wallpaper"
+45-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:29:17-57
+46                android:resource="@xml/wallpaper" />
+46-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:30:17-50
+47        </service>
+48
+49        <activity
+49-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:33:9-40:20
+50            android:name="com.hank.clawlive.MainActivity"
+50-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:34:13-41
+51            android:exported="true" >
+51-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:35:13-36
+52            <intent-filter>
+52-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:36:13-39:29
+53                <action android:name="android.intent.action.MAIN" />
+53-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:37:17-69
+53-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:37:25-66
+54
+55                <category android:name="android.intent.category.LAUNCHER" />
+55-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:38:17-77
+55-->C:\Hank\Other\project\realbot\app\src\main\AndroidManifest.xml:38:27-74
+56            </intent-filter>
+57        </activity>
+58
+59        <provider
+59-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+60            android:name="androidx.startup.InitializationProvider"
+60-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:25:13-67
+61            android:authorities="com.hank.clawlive.androidx-startup"
+61-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:26:13-68
+62            android:exported="false" >
+62-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:27:13-37
+63            <meta-data
+63-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+64                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+64-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:30:17-75
+65                android:value="androidx.startup" />
+65-->[androidx.emoji2:emoji2:1.2.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\07ad8f9f520439b8191c931a01fbc345\transformed\emoji2-1.2.0\AndroidManifest.xml:31:17-49
+66            <meta-data
+66-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\8f8b9cbf3b4a58054ed98fb812d5568e\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+67                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+67-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\8f8b9cbf3b4a58054ed98fb812d5568e\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+68                android:value="androidx.startup" />
+68-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\8f8b9cbf3b4a58054ed98fb812d5568e\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+69            <meta-data
+69-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+70                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+70-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+71                android:value="androidx.startup" />
+71-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+72        </provider>
+73
+74        <receiver
+74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+75            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+75-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+76            android:directBootAware="false"
+76-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+77            android:enabled="true"
+77-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+78            android:exported="true"
+78-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+79            android:permission="android.permission.DUMP" >
+79-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+80            <intent-filter>
+80-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+81                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+81-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+81-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+82            </intent-filter>
+83            <intent-filter>
+83-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+84                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+84-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+84-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+85            </intent-filter>
+86            <intent-filter>
+86-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+87                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+88            </intent-filter>
+89            <intent-filter>
+89-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+90                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+90-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+90-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\z004rx2h\.gradle\caches\transforms-4\ee70ed04bc7365f6fac1892413b06633\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+91            </intent-filter>
+92        </receiver>
+93    </application>
+94
+95</manifest>
