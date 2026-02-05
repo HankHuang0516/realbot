@@ -3083,10 +3083,13 @@ id beginning
 id blocking
 id bottom
 id bounce
+id btnCopyCommand
 id btnGenerateCode
 id btnSetWallpaper
 id buttonPanel
 id cancel_button
+id cardBindingStatus
+id cardCommand
 id cardStatus
 id center
 id centerCrop
@@ -3432,7 +3435,13 @@ id transition_scene_layoutid_cache
 id transition_transform
 id triangle
 id tvBindingCode
+id tvBindingStatusDesc
+id tvBindingStatusIcon
+id tvBindingStatusTitle
 id tvCountdown
+id tvInstructions
+id tvInstructionsTitle
+id tvOpenClawCommand
 id tvStatusIcon
 id tvStatusMessage
 id tvStatusState

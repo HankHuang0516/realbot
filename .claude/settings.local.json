@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Android Claw Live Wallpaper app\n\n- Kotlin-based Android live wallpaper application\n- MVVM architecture with Jetpack components\n- Retrofit for API communication\n- Room database for local storage\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(findstr:*)",
+      "Bash(node -c:*)",
+      "WebFetch(domain:realbot-production.up.railway.app)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

@@ -4,7 +4,7 @@
   "description": "Realbot - Claw Live Wallpaper Backend",
   "main": "backend/server.js",
   "scripts": {
-    "start": "cd backend && node server.js",
+    "start": "cd backend && node server-simple.js",
     "build": "cd backend && npm install",
     "postinstall": "cd backend && npm install"
   },

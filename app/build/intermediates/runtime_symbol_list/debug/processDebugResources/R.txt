@@ -3082,10 +3082,13 @@ int id beginning 0x7f080054
 int id blocking 0x7f080055
 int id bottom 0x7f080056
 int id bounce 0x7f080057
+int id btnCopyCommand 0x7f0801ca
 int id btnGenerateCode 0x7f080058
 int id btnSetWallpaper 0x7f080059
 int id buttonPanel 0x7f08005a
 int id cancel_button 0x7f08005b
+int id cardBindingStatus 0x7f0801cb
+int id cardCommand 0x7f0801cc
 int id cardStatus 0x7f08005c
 int id center 0x7f08005d
 int id centerCrop 0x7f08005e
@@ -3431,7 +3434,13 @@ int id transition_scene_layoutid_cache 0x7f0801b1
 int id transition_transform 0x7f0801b2
 int id triangle 0x7f0801b3
 int id tvBindingCode 0x7f0801b4
+int id tvBindingStatusDesc 0x7f0801cd
+int id tvBindingStatusIcon 0x7f0801ce
+int id tvBindingStatusTitle 0x7f0801cf
 int id tvCountdown 0x7f0801b5
+int id tvInstructions 0x7f0801d0
+int id tvInstructionsTitle 0x7f0801d1
+int id tvOpenClawCommand 0x7f0801d2
 int id tvStatusIcon 0x7f0801b6
 int id tvStatusMessage 0x7f0801b7
 int id tvStatusState 0x7f0801b8

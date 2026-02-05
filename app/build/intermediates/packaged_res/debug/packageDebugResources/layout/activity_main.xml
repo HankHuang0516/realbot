@@ -93,8 +93,109 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Instructions -->
+        <!-- OpenClaw Command Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardCommand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:visibility="gone"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="#F5F5F5"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Copy this to OpenClaw:"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:id="@+id/tvOpenClawCommand"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="13sp"
+                    android:fontFamily="monospace"
+                    android:textColor="#333333"
+                    android:background="#EEEEEE"
+                    android:padding="12dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCopyCommand"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Copy Command"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    app:cornerRadius="8dp"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Binding Status -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardBindingStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E0E0E0">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvBindingStatusIcon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚪"
+                    android:textSize="24sp"
+                    android:layout_marginEnd="12dp"/>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvBindingStatusTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Not Connected"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+
+                    <TextView
+                        android:id="@+id/tvBindingStatusDesc"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Generate a code to connect OpenClaw"
+                        android:textSize="12sp"
+                        android:textColor="#888888"/>
+
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Instructions (collapsed when connected) -->
         <TextView
+            android:id="@+id/tvInstructionsTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="How to connect:"
@@ -103,9 +204,10 @@
             android:layout_marginBottom="8dp"/>
 
         <TextView
+            android:id="@+id/tvInstructions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="1. Tap 'Generate Code' above\n2. Copy the 6-digit code\n3. Tell OpenClaw: 'bind device [code]'\n4. Done! OpenClaw can now control your wallpaper"
+            android:text="1. Tap 'Generate Code' above\n2. Tap 'Copy Command' to copy\n3. Paste to OpenClaw\n4. Done!"
             android:textSize="14sp"
             android:textColor="#666666"
             android:lineSpacingExtra="4dp"
