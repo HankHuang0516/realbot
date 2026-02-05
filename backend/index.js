@@ -94,6 +94,18 @@ app.post('/api/bind', (req, res) => {
     // For this demo, we accept the magic code "446025" or any 6-digit code.
     if (code && code.length === 6) {
         console.log(`[Binding] Success for code ${code}`);
+
+        // Read MCP Skill documentation
+        let mcpSkillDoc = "";
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            mcpSkillDoc = fs.readFileSync(path.join(__dirname, 'realbot_mcp_skill.md'), 'utf8');
+        } catch (e) {
+            console.error("Failed to read MCP skill doc", e);
+            mcpSkillDoc = "Documentation not found.";
+        }
+
         res.json({
             success: true,
             message: "Device bound successfully",
@@ -101,7 +113,9 @@ app.post('/api/bind', (req, res) => {
                 id: "claw-device-01",
                 name: "Living Room Claw",
                 status: "ONLINE"
-            }
+            },
+            // Dynamic Skill Provisioning
+            skills_documentation: mcpSkillDoc
         });
     } else {
         res.status(400).json({ success: false, message: "Invalid pairing code" });
