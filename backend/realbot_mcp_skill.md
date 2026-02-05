@@ -32,6 +32,11 @@
             "type": "string",
             "enum": ["LOBSTER", "PIG"],
             "description": "The form of the avatar. Default is LOBSTER."
+          },
+          "parts": {
+            "type": "object",
+            "description": "Rotation angles for body parts. Keys: CLAW_LEFT, CLAW_RIGHT. Values: Degrees (e.g. {'CLAW_LEFT': 30, 'CLAW_RIGHT': -30})",
+            "additionalProperties": { "type": "number" }
           }
         },
         "required": ["message"]
@@ -83,10 +88,40 @@
 
 ---
 
-## 2. 進階動畫 (Advanced Animation - Planned)
+## 2. 進階動畫 (Advanced Animation)
 
-> ⚠️ 注意：稍早提到的 `animate_part` (個別控制左螯、右螯) 功能目前尚未在後端實作。目前僅支援透過 `state` (IDLE/EXCITED) 來觸發 Android 端預設的動畫。
+現在後端已支援 `parts` 參數，您可以控制龍蝦的肢體！
 
-如果您需要更細節的動畫控制，我們需要在未來更新：
-1.  **Backend**: 增加 `/api/animate` 端點來轉發詳細 JSON。
-2.  **Android**: `ClawRenderer` 實作 `canvas.rotate` 邏輯 (參考 `skill_animate_lobster.md`)。
+### 範例：揮手 (Wave)
+讓左螯舉起來 (旋轉 45 度)。
+
+```json
+{
+  "name": "update_claw_status",
+  "arguments": {
+    "message": "Hi there!",
+    "state": "EXCITED",
+    "parts": {
+      "CLAW_LEFT": 45,
+      "CLAW_RIGHT": 0
+    }
+  }
+}
+```
+
+### 範例：舉雙手歡呼 (Cheer)
+```json
+{
+  "name": "update_claw_status",
+  "arguments": {
+    "message": "Yay!",
+    "state": "EXCITED",
+    "parts": {
+      "CLAW_LEFT": 60,
+      "CLAW_RIGHT": -60
+    }
+  }
+}
+```
+
+> **注意**: 這些角度會持續保持，直到下一次 `update_claw_status` 更新。若要做連續動畫，需連續發送指令 (但請注意 API 頻率)。
