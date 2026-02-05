@@ -34,11 +34,13 @@ setInterval(() => {
             agentState.message = "Waiting for command...";
         }
 
+        /*
         // Randomly switch character form occasionally
         if (Math.random() > 0.8) {
-            agentState.character = agentState.character === "LOBSTER" ? "PIG" : "LOBSTER";
-            console.log(`[Auto] Scaled transformed into ${agentState.character}`);
+             agentState.character = agentState.character === "LOBSTER" ? "PIG" : "LOBSTER";
+             console.log(`[Auto] Scaled transformed into ${agentState.character}`);
         }
+        */
 
         agentState.lastUpdated = now;
     }
