@@ -106,8 +106,8 @@ app.get('/api/health', (req, res) => {
 app.post('/api/device/register', (req, res) => {
     const { entityId, deviceId, deviceSecret } = req.body;
 
-    // Validate entityId
-    const eId = parseInt(entityId);
+    // entityId is optional, defaults to 0 for backward compatibility
+    const eId = entityId !== undefined ? parseInt(entityId) : 0;
     if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES) {
         return res.status(400).json({
             success: false,
@@ -149,15 +149,16 @@ app.post('/api/device/register', (req, res) => {
 app.post('/api/device/status', (req, res) => {
     const { entityId, deviceId, deviceSecret } = req.body;
 
-    const eId = parseInt(entityId);
+    // entityId is optional, defaults to 0 for backward compatibility
+    const eId = entityId !== undefined ? parseInt(entityId) : 0;
     if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
     const entity = entitySlots[eId];
 
-    // Verify device owns this entity
-    if (entity.deviceId !== deviceId || entity.deviceSecret !== deviceSecret) {
+    // Verify device owns this entity (skip if no device registered yet)
+    if (entity.deviceId && (entity.deviceId !== deviceId || entity.deviceSecret !== deviceSecret)) {
         return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
