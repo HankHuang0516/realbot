@@ -149,6 +149,35 @@ app.post('/api/transform', (req, res) => {
 });
 
 /**
+ * PUT /api/status
+ * Alias for /api/transform to support external bots trying to update status via PUT.
+ */
+app.put('/api/status', (req, res) => {
+    // Reuse transform logic
+    const { character, state, message, parts } = req.body;
+    if (character) agentState.character = character;
+    if (state) agentState.state = state;
+    if (message) agentState.message = message;
+    if (parts) agentState.parts = { ...agentState.parts, ...parts };
+
+    agentState.lastUpdated = Date.now();
+    console.log(`[PUT Status] Updated: ${JSON.stringify(req.body)}`);
+    res.json({ success: true, currentState: agentState });
+});
+
+/**
+ * Error Handling Middleware
+ * Catch JSON parse errors to prevent server crashes.
+ */
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        console.error('[JSON Error] Bad JSON received:', err.message);
+        return res.status(400).json({ success: false, message: "Invalid JSON format" });
+    }
+    next();
+});
+
+/**
  * PENDING MESSAGES QUEUE
  * Stores messages sent from the Android Client for the Bot/Agent to consume.
  */
