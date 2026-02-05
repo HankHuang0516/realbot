@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 require('dotenv').config();
@@ -23,22 +22,6 @@ const pendingBindings = new Map();
 
 app.use(cors());
 app.use(express.json());
-
-// Rate limiting
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  message: { error: 'Too many requests, please try again later' }
-});
-
-const bindingLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10,
-  message: { error: 'Too many binding attempts, please try again later' }
-});
-
-app.use('/api/', generalLimiter);
-app.use('/api/bind', bindingLimiter);
 
 // JWT Authentication middleware
 const authenticateToken = (req, res, next) => {
