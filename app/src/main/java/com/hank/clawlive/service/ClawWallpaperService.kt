@@ -41,7 +41,10 @@ class ClawWallpaperService : WallpaperService() {
         private val handler = Handler(Looper.getMainLooper())
         private var visible = false
         private val renderer = ClawRenderer(this@ClawWallpaperService)
-        private val repository = com.hank.clawlive.data.repository.StateRepository(com.hank.clawlive.data.remote.NetworkModule.api)
+        private val repository = com.hank.clawlive.data.repository.StateRepository(
+            com.hank.clawlive.data.remote.NetworkModule.api,
+            this@ClawWallpaperService
+        )
         
         // Coroutine Scope for this engine instance
         private val engineScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main + kotlinx.coroutines.SupervisorJob())

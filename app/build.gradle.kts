@@ -34,12 +34,15 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.activity.ktx)
     implementation(libs.material)
-    
+
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
-    
+
     implementation(libs.timber)
 
     implementation(libs.retrofit)
