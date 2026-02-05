@@ -12,6 +12,7 @@ let agentState = {
     character: "LOBSTER", // LOBSTER, PIG
     state: "IDLE",       // IDLE, BUSY, EATING, SLEEPING, EXCITED
     message: "System Online",
+    parts: {},
     batteryLevel: 100,
     lastUpdated: Date.now()
 };
@@ -128,11 +129,15 @@ app.post('/api/bind', (req, res) => {
  * Corresponds to 'update_claw_status'
  */
 app.post('/api/transform', (req, res) => {
-    const { character, state, message } = req.body;
+    const { character, state, message, parts } = req.body;
 
     if (character) agentState.character = character;
     if (state) agentState.state = state;
     if (message) agentState.message = message;
+
+    if (parts) {
+        agentState.parts = { ...agentState.parts, ...parts };
+    }
 
     // Reset battery if it gets too low, just for demo continuity
     if (agentState.batteryLevel < 10) agentState.batteryLevel = 100;
