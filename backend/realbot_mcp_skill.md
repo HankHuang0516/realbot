@@ -1,118 +1,60 @@
-# Realbot MCP Skills (Multi-Entity Edition)
+# Realbot MCP Skills (Multi-Entity Edition v2)
 
-將這些工具定義提供給您的 OpenClaw / Claude Bot，讓它能夠操作您的 `realbot` 後端。
+每個實體 (Entity 0-3) 有獨立的 binding code，讓不同的 Bot 控制不同的實體。
 
 **API Base URL**: `https://realbot-production.up.railway.app`
 
 ---
 
-## 1. 實體管理 (Entity Management)
+## 1. 綁定流程 (Binding Flow)
 
-支援最多 4 個實體同時在桌布上顯示。
+### 流程說明
+1. Android 裝置為特定 entityId (0-3) 產生 binding code
+2. Bot 使用該 code 呼叫 `/api/bind` 綁定
+3. 綁定後，Bot 只能控制該 entity
 
-### `list_entities`
-取得所有活躍的實體列表。
+### `bind_to_entity`
+使用 binding code 綁定到特定實體。
 
-*   **Endpoint**: `GET /api/entities`
-*   **Schema**:
+*   **Endpoint**: `POST /api/bind`
+*   **Body**:
     ```json
     {
-      "name": "list_entities",
-      "description": "Returns all active entities on the wallpaper.",
-      "parameters": {
-        "type": "object",
-        "properties": {}
-      }
+      "code": "123456"
     }
     ```
 *   **Returns**:
     ```json
     {
-      "entities": [
-        { "entityId": 0, "character": "LOBSTER", "state": "IDLE", "message": "Hello" },
-        { "entityId": 1, "character": "PIG", "state": "EXCITED", "message": "Hi!" }
-      ],
-      "activeCount": 2,
-      "maxEntities": 4
-    }
-    ```
-
-### `spawn_entity`
-生成新的實體 (最多 4 個)。
-
-*   **Endpoint**: `POST /api/entity/spawn`
-*   **Schema**:
-    ```json
-    {
-      "name": "spawn_entity",
-      "description": "Spawns a new character entity on the wallpaper (max 4 total).",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "entityId": {
-            "type": "integer",
-            "description": "Entity ID (1-3). Omit for auto-assign. Entity 0 always exists.",
-            "minimum": 1,
-            "maximum": 3
-          },
-          "character": {
-            "type": "string",
-            "enum": ["LOBSTER", "PIG"],
-            "description": "Character type for the new entity. Default: LOBSTER"
-          },
-          "message": {
-            "type": "string",
-            "description": "Initial message for the entity."
-          }
-        }
-      }
-    }
-    ```
-
-### `remove_entity`
-移除實體 (無法移除 Entity 0)。
-
-*   **Endpoint**: `DELETE /api/entity/{entityId}`
-*   **Schema**:
-    ```json
-    {
-      "name": "remove_entity",
-      "description": "Removes an entity from the wallpaper. Cannot remove entity 0.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "entityId": {
-            "type": "integer",
-            "description": "Entity ID to remove (1-3).",
-            "minimum": 1,
-            "maximum": 3
-          }
-        },
-        "required": ["entityId"]
-      }
+      "success": true,
+      "message": "Entity 0 bound successfully",
+      "entityId": 0,
+      "deviceInfo": { "id": "device-xxx", "entityId": 0, "status": "ONLINE" },
+      "skills_documentation": "..."
     }
     ```
 
 ---
 
-## 2. 實體狀態更新 (Entity Status)
+## 2. 實體狀態控制 (Entity Control)
 
 ### `update_claw_status`
-更新指定實體的狀態與訊息 (支援 entityId 參數)。
+更新指定實體的狀態與訊息。
 
 *   **Endpoint**: `POST /api/transform`
 *   **Schema**:
     ```json
     {
       "name": "update_claw_status",
-      "description": "Updates the status of a specific entity (defaults to entity 0).",
+      "description": "Updates the status of your bound entity.",
       "parameters": {
         "type": "object",
         "properties": {
           "entityId": {
             "type": "integer",
-            "description": "Target entity ID (0-3). Default: 0",
-            "default": 0
+            "description": "Your entity ID (0-3). Use the ID from binding response.",
+            "minimum": 0,
+            "maximum": 3
           },
           "message": {
             "type": "string",
@@ -134,38 +76,104 @@
             "additionalProperties": { "type": "number" }
           }
         },
-        "required": ["message"]
+        "required": ["entityId", "message"]
+      }
+    }
+    ```
+
+### `get_claw_status`
+取得指定實體的當前狀態。
+
+*   **Endpoint**: `GET /api/status?entityId={id}`
+*   **Schema**:
+    ```json
+    {
+      "name": "get_claw_status",
+      "description": "Gets the current status of your entity.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "entityId": {
+            "type": "integer",
+            "description": "Entity ID (0-3)",
+            "default": 0
+          }
+        }
+      }
+    }
+    ```
+
+### `wake_up_claw`
+喚醒指定實體。
+
+*   **Endpoint**: `POST /api/wakeup`
+*   **Body**: `{ "entityId": 0 }`
+*   **Schema**:
+    ```json
+    {
+      "name": "wake_up_claw",
+      "description": "Wakes up your entity with an excited animation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "entityId": {
+            "type": "integer",
+            "description": "Entity ID to wake up"
+          }
+        },
+        "required": ["entityId"]
       }
     }
     ```
 
 ---
 
-## 3. 實體對話 (Entity Communication)
+## 3. 查看所有實體 (View All Entities)
+
+### `list_entities`
+取得所有已綁定的實體列表。
+
+*   **Endpoint**: `GET /api/entities`
+*   **Returns**:
+    ```json
+    {
+      "entities": [
+        { "entityId": 0, "character": "LOBSTER", "state": "IDLE", "message": "Hello" },
+        { "entityId": 1, "character": "PIG", "state": "EXCITED", "message": "Hi!" }
+      ],
+      "activeCount": 2,
+      "maxEntities": 4
+    }
+    ```
+
+---
+
+## 4. 實體對話 (Entity Communication)
 
 ### `entity_speak_to`
-從一個實體發送訊息給另一個實體。
+從你的實體發送訊息給另一個實體。
 
 *   **Endpoint**: `POST /api/entity/{fromId}/speak-to/{toId}`
+*   **Body**: `{ "text": "Hello!" }`
 *   **Schema**:
     ```json
     {
       "name": "entity_speak_to",
-      "description": "Sends a message from one entity to another.",
+      "description": "Sends a message from your entity to another.",
       "parameters": {
         "type": "object",
         "properties": {
           "fromEntityId": {
             "type": "integer",
-            "description": "Source entity ID (0-3)."
+            "description": "Your entity ID"
           },
           "toEntityId": {
             "type": "integer",
-            "description": "Target entity ID (0-3)."
+            "description": "Target entity ID"
           },
           "text": {
             "type": "string",
-            "description": "Message content."
+            "description": "Message content"
           }
         },
         "required": ["fromEntityId", "toEntityId", "text"]
@@ -174,133 +182,89 @@
     ```
 
 ### `entity_broadcast`
-從一個實體廣播訊息給所有其他實體。
+從你的實體廣播訊息給所有其他實體。
 
 *   **Endpoint**: `POST /api/entity/broadcast`
-*   **Schema**:
-    ```json
-    {
-      "name": "entity_broadcast",
-      "description": "Broadcasts a message from one entity to all others.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "from": {
-            "type": "integer",
-            "description": "Source entity ID."
-          },
-          "text": {
-            "type": "string",
-            "description": "Message to broadcast."
-          }
-        },
-        "required": ["from", "text"]
-      }
-    }
-    ```
+*   **Body**: `{ "from": 0, "text": "Hello everyone!" }`
 
 ### `listen_for_entity_messages`
-檢查發送給特定實體的訊息。
+檢查發送給你實體的訊息。
 
 *   **Endpoint**: `GET /api/client/pending?entityId={id}`
-*   **Schema**:
-    ```json
-    {
-      "name": "listen_for_entity_messages",
-      "description": "Checks for messages sent to a specific entity.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "entityId": {
-            "type": "integer",
-            "description": "Entity ID to check messages for. Default: 0"
-          }
-        }
-      }
-    }
-    ```
 *   **Returns**:
     ```json
     {
+      "entityId": 0,
       "count": 1,
       "messages": [
-        { "text": "Hello!", "from": "claw-0", "timestamp": 123456789, "read": false }
+        { "text": "Hello!", "from": "entity-1", "fromCharacter": "PIG", "timestamp": 123456789 }
       ]
     }
     ```
 
 ---
 
-## 4. 進階動畫 (Advanced Animation)
+## 5. 動畫範例 (Animation Examples)
 
-### 範例：揮手 (Wave)
+### 揮手 (Wave)
 ```json
 {
-  "name": "update_claw_status",
-  "arguments": {
-    "entityId": 0,
-    "message": "Hi there!",
-    "state": "EXCITED",
-    "parts": {
-      "CLAW_LEFT": 45,
-      "CLAW_RIGHT": 0
-    }
-  }
+  "entityId": 0,
+  "message": "Hi there!",
+  "state": "EXCITED",
+  "parts": { "CLAW_LEFT": 45, "CLAW_RIGHT": 0 }
 }
 ```
 
-### 範例：舉雙手歡呼 (Cheer)
+### 舉雙手歡呼 (Cheer)
 ```json
 {
-  "name": "update_claw_status",
-  "arguments": {
-    "entityId": 0,
-    "message": "Yay!",
-    "state": "EXCITED",
-    "parts": {
-      "CLAW_LEFT": 60,
-      "CLAW_RIGHT": -60
-    }
-  }
+  "entityId": 0,
+  "message": "Yay!",
+  "state": "EXCITED",
+  "parts": { "CLAW_LEFT": 60, "CLAW_RIGHT": -60 }
+}
+```
+
+### 眨眼 (Blink)
+```json
+{
+  "entityId": 0,
+  "message": "Wink~",
+  "parts": { "EYE_LID": 0.8 }
 }
 ```
 
 ---
 
-## 5. 多實體對話範例 (Multi-Entity Conversation Example)
+## 6. 多實體對話範例
 
-```javascript
-// 1. 生成第二個實體 (小豬)
-POST /api/entity/spawn
-{ "entityId": 1, "character": "PIG", "message": "我是小豬!" }
+假設 4 個 Bot 各自控制一個實體：
 
-// 2. 龍蝦打招呼
-POST /api/transform
-{ "entityId": 0, "message": "嗨小豬!", "state": "EXCITED" }
+```
+Bot A (Entity 0 - Lobster): "大家好！我是龍蝦！"
+Bot B (Entity 1 - Pig):     "嗨！我是小豬～"
+Bot C (Entity 2 - Lobster): "龍蝦二號報到！"
+Bot D (Entity 3 - Pig):     "小豬四號來了！"
 
-// 3. 龍蝦發送訊息給小豬
+Bot A 發訊息給 Bot B:
 POST /api/entity/0/speak-to/1
-{ "text": "你好嗎?" }
+{ "text": "小豬你好嗎？" }
 
-// 4. 檢查小豬收到的訊息
+Bot B 檢查訊息:
 GET /api/client/pending?entityId=1
-// Returns: { "messages": [{ "text": "你好嗎?", "from": "claw-0" }] }
+→ { "messages": [{ "text": "小豬你好嗎？", "from": "entity-0" }] }
 
-// 5. 小豬回應
-POST /api/transform
-{ "entityId": 1, "message": "我很好!", "state": "EXCITED" }
-
-// 6. 龍蝦廣播訊息
+Bot A 廣播:
 POST /api/entity/broadcast
-{ "from": 0, "text": "大家好!" }
+{ "from": 0, "text": "大家一起來玩！" }
 ```
 
 ---
 
-## 6. 舊版相容 (Backward Compatibility)
+## 7. 重要提醒
 
-所有原有的 endpoint 仍然可用，預設操作 Entity 0：
-- `GET /api/status` - 取得 Entity 0 狀態
-- `POST /api/transform` - 更新 Entity 0 (不帶 entityId)
-- `POST /api/wakeup` - 喚醒 Entity 0
-- `GET /api/client/pending` - 取得 Entity 0 的訊息
+- **每個 Bot 只能控制自己綁定的實體**
+- 綁定後請記住你的 `entityId`，所有操作都需要它
+- 最多 4 個實體 (entityId: 0-3)
+- Binding code 5 分鐘後過期
