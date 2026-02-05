@@ -4,7 +4,7 @@
             "outputFile": "com.hank.clawlive.app-mergeDebugResources-2:/values-small-v4/values-small-v4.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\df99dc65ca3e8fc554c3fbb8372058d6\\transformed\\material-1.11.0\\res\\values-small-v4\\values-small-v4.xml",
+                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\85b649aa160eb67aa91835488281c728\\transformed\\material-1.11.0\\res\\values-small-v4\\values-small-v4.xml",
                     "from": {
                         "startLines": "2,3,4,5",
                         "startColumns": "4,4,4,4",

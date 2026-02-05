@@ -1,30 +1,207 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:fillViewport="true">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Claw Live Companion"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="32dp"/>
-
-    <Button
-        android:id="@+id/btnSetWallpaper"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Set Live Wallpaper" />
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Click above to open system preview"
-        android:textColor="#888888"/>
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🦞 Claw Live"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
 
-</LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connect to OpenClaw"
+            android:textSize="16sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="32dp"/>
+
+        <!-- Binding Code Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="24dp"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Binding Code"
+                    android:textSize="14sp"
+                    android:textColor="#666666"
+                    android:layout_marginBottom="8dp"/>
+
+                <!-- Binding Code Display -->
+                <TextView
+                    android:id="@+id/tvBindingCode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="------"
+                    android:textSize="48sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    android:letterSpacing="0.3"
+                    android:layout_marginBottom="8dp"/>
+
+                <!-- Countdown Timer -->
+                <TextView
+                    android:id="@+id/tvCountdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tap to generate code"
+                    android:textSize="14sp"
+                    android:textColor="#888888"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- Generate Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGenerateCode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Generate Code"
+                    app:cornerRadius="24dp"
+                    android:paddingHorizontal="32dp"/>
+
+                <!-- Loading Indicator -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Instructions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="How to connect:"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1. Tap 'Generate Code' above\n2. Copy the 6-digit code\n3. Tell OpenClaw: 'bind device [code]'\n4. Done! OpenClaw can now control your wallpaper"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="24dp"/>
+
+        <!-- Status Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:visibility="gone"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:strokeColor="#E0E0E0"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Agent Status"
+                    android:textSize="12sp"
+                    android:textColor="#888888"
+                    android:layout_marginBottom="8dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <!-- Status Icon -->
+                    <TextView
+                        android:id="@+id/tvStatusIcon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🦞"
+                        android:textSize="32sp"
+                        android:layout_marginEnd="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvStatusState"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="IDLE"
+                            android:textSize="16sp"
+                            android:textStyle="bold"/>
+
+                        <TextView
+                            android:id="@+id/tvStatusMessage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Waiting..."
+                            android:textSize="14sp"
+                            android:textColor="#666666"/>
+
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Spacer -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <!-- Set Wallpaper Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSetWallpaper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Set Live Wallpaper"
+            style="@style/Widget.Material3.Button.TonalButton"
+            app:cornerRadius="12dp"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Opens system wallpaper settings"
+            android:textSize="12sp"
+            android:textColor="#888888"/>
+
+    </LinearLayout>
+</ScrollView>

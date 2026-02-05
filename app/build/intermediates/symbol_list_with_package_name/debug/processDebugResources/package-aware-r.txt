@@ -3083,9 +3083,11 @@ id beginning
 id blocking
 id bottom
 id bounce
+id btnGenerateCode
 id btnSetWallpaper
 id buttonPanel
 id cancel_button
+id cardStatus
 id center
 id centerCrop
 id centerInside
@@ -3314,6 +3316,7 @@ id pin
 id position
 id postLayout
 id pressed
+id progressBar
 id progress_circular
 id progress_horizontal
 id radio
@@ -3428,6 +3431,11 @@ id transition_position
 id transition_scene_layoutid_cache
 id transition_transform
 id triangle
+id tvBindingCode
+id tvCountdown
+id tvStatusIcon
+id tvStatusMessage
+id tvStatusState
 id unchecked
 id uniform
 id unlabeled

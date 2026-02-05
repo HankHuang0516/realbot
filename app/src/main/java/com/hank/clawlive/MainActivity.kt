@@ -26,11 +26,24 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
+    companion object {
+        private const val API_BASE_URL = "https://realbot-production.up.railway.app"
+    }
+
     // UI elements
     private lateinit var tvBindingCode: TextView
     private lateinit var tvCountdown: TextView
     private lateinit var btnGenerateCode: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var cardCommand: MaterialCardView
+    private lateinit var tvOpenClawCommand: TextView
+    private lateinit var btnCopyCommand: Button
+    private lateinit var cardBindingStatus: MaterialCardView
+    private lateinit var tvBindingStatusIcon: TextView
+    private lateinit var tvBindingStatusTitle: TextView
+    private lateinit var tvBindingStatusDesc: TextView
+    private lateinit var tvInstructionsTitle: TextView
+    private lateinit var tvInstructions: TextView
     private lateinit var cardStatus: MaterialCardView
     private lateinit var tvStatusIcon: TextView
     private lateinit var tvStatusState: TextView
@@ -51,6 +64,15 @@ class MainActivity : AppCompatActivity() {
         tvCountdown = findViewById(R.id.tvCountdown)
         btnGenerateCode = findViewById(R.id.btnGenerateCode)
         progressBar = findViewById(R.id.progressBar)
+        cardCommand = findViewById(R.id.cardCommand)
+        tvOpenClawCommand = findViewById(R.id.tvOpenClawCommand)
+        btnCopyCommand = findViewById(R.id.btnCopyCommand)
+        cardBindingStatus = findViewById(R.id.cardBindingStatus)
+        tvBindingStatusIcon = findViewById(R.id.tvBindingStatusIcon)
+        tvBindingStatusTitle = findViewById(R.id.tvBindingStatusTitle)
+        tvBindingStatusDesc = findViewById(R.id.tvBindingStatusDesc)
+        tvInstructionsTitle = findViewById(R.id.tvInstructionsTitle)
+        tvInstructions = findViewById(R.id.tvInstructions)
         cardStatus = findViewById(R.id.cardStatus)
         tvStatusIcon = findViewById(R.id.tvStatusIcon)
         tvStatusState = findViewById(R.id.tvStatusState)
@@ -63,28 +85,41 @@ class MainActivity : AppCompatActivity() {
             viewModel.generateBindingCode()
         }
 
-        // Long press to copy code
-        tvBindingCode.setOnLongClickListener {
-            val code = tvBindingCode.text.toString()
-            if (code != "------" && code.length == 6) {
-                copyToClipboard(code)
-                Toast.makeText(this, "Code copied!", Toast.LENGTH_SHORT).show()
-            }
-            true
+        // Tap code to copy full command
+        tvBindingCode.setOnClickListener {
+            copyFullCommand()
         }
 
-        // Tap code to copy
-        tvBindingCode.setOnClickListener {
-            val code = tvBindingCode.text.toString()
-            if (code != "------" && code.length == 6) {
-                copyToClipboard(code)
-                Toast.makeText(this, "Code copied to clipboard!", Toast.LENGTH_SHORT).show()
-            }
+        // Copy command button
+        btnCopyCommand.setOnClickListener {
+            copyFullCommand()
         }
 
         btnSetWallpaper.setOnClickListener {
             openWallpaperPicker()
         }
+    }
+
+    private fun copyFullCommand() {
+        val state = viewModel.uiState.value
+        if (state.bindingCode != null) {
+            val command = generateOpenClawCommand(state.bindingCode)
+            copyToClipboard(command)
+            Toast.makeText(this, "Command copied! Paste to OpenClaw", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun generateOpenClawCommand(code: String): String {
+        return """
+Connect my Claw Live wallpaper device:
+POST $API_BASE_URL/api/bind
+Body: {"code": "$code"}
+
+After binding, use these tools:
+- update_claw_status: Update wallpaper state
+- wake_up_claw: Wake up the character
+- get_claw_status: Check current status
+        """.trimIndent()
     }
 
     private fun observeUiState() {
@@ -107,19 +142,32 @@ class MainActivity : AppCompatActivity() {
             btnGenerateCode.visibility = View.VISIBLE
         }
 
-        // Binding code
+        // Binding code and command
         if (state.bindingCode != null) {
             tvBindingCode.text = formatBindingCode(state.bindingCode)
-            tvCountdown.text = "Expires in ${state.remainingSeconds}s • Tap to copy"
-            btnGenerateCode.text = "Regenerate Code"
+            tvCountdown.text = "Expires in ${state.remainingSeconds}s"
+            btnGenerateCode.text = "Regenerate"
+
+            // Show command card
+            cardCommand.visibility = View.VISIBLE
+            tvOpenClawCommand.text = generateOpenClawCommand(state.bindingCode)
         } else {
             tvBindingCode.text = "------"
             tvCountdown.text = "Tap to generate code"
             btnGenerateCode.text = "Generate Code"
+            cardCommand.visibility = View.GONE
         }
 
-        // Status card
-        if (state.agentStatus != null) {
+        // Binding status
+        if (state.isBound && state.agentStatus != null) {
+            // Connected
+            tvBindingStatusIcon.text = "🟢"
+            tvBindingStatusTitle.text = "Connected"
+            tvBindingStatusDesc.text = "OpenClaw is controlling your wallpaper"
+            tvInstructionsTitle.visibility = View.GONE
+            tvInstructions.visibility = View.GONE
+
+            // Show status card
             cardStatus.visibility = View.VISIBLE
             tvStatusIcon.text = when (state.agentStatus.character.name) {
                 "PIG" -> "🐷"
@@ -128,7 +176,6 @@ class MainActivity : AppCompatActivity() {
             tvStatusState.text = state.agentStatus.state.name
             tvStatusMessage.text = state.agentStatus.message
 
-            // Color based on state
             tvStatusState.setTextColor(
                 when (state.agentStatus.state.name) {
                     "EXCITED" -> getColor(android.R.color.holo_orange_dark)
@@ -138,7 +185,21 @@ class MainActivity : AppCompatActivity() {
                     else -> getColor(android.R.color.black)
                 }
             )
+        } else if (state.bindingCode != null) {
+            // Waiting for binding
+            tvBindingStatusIcon.text = "🟡"
+            tvBindingStatusTitle.text = "Waiting for OpenClaw"
+            tvBindingStatusDesc.text = "Copy the command below and paste to OpenClaw"
+            tvInstructionsTitle.visibility = View.VISIBLE
+            tvInstructions.visibility = View.VISIBLE
+            cardStatus.visibility = View.GONE
         } else {
+            // Not connected
+            tvBindingStatusIcon.text = "⚪"
+            tvBindingStatusTitle.text = "Not Connected"
+            tvBindingStatusDesc.text = "Generate a code to connect OpenClaw"
+            tvInstructionsTitle.visibility = View.VISIBLE
+            tvInstructions.visibility = View.VISIBLE
             cardStatus.visibility = View.GONE
         }
 
@@ -150,7 +211,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun formatBindingCode(code: String): String {
-        // Format as "123 456" for readability
         return if (code.length == 6) {
             "${code.substring(0, 3)} ${code.substring(3)}"
         } else {
@@ -160,7 +220,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun copyToClipboard(text: String) {
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Binding Code", text)
+        val clip = ClipData.newPlainText("OpenClaw Command", text)
         clipboard.setPrimaryClip(clip)
     }
 

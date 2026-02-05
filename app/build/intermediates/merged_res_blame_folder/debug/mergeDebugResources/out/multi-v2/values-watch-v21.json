@@ -4,7 +4,7 @@
             "outputFile": "com.hank.clawlive.app-mergeDebugResources-2:/values-watch-v21/values-watch-v21.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\fe6a2c26645c7892959d1767d4e5d88d\\transformed\\appcompat-1.6.1\\res\\values-watch-v21\\values-watch-v21.xml",
+                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\a91aedfe5d279c9bbeeaa4cceb81a70f\\transformed\\appcompat-1.6.1\\res\\values-watch-v21\\values-watch-v21.xml",
                     "from": {
                         "startLines": "2,6,10",
                         "startColumns": "4,4,4",
