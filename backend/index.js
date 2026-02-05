@@ -372,6 +372,45 @@ app.post('/api/wakeup', (req, res) => {
     res.json({ success: true, message: `Entity ${eId} woken up` });
 });
 
+/**
+ * DELETE /api/entity/:entityId
+ * Remove/unbind an entity.
+ * Resets the entity slot to unbound state.
+ */
+app.delete('/api/entity/:entityId', (req, res) => {
+    const eId = parseInt(req.params.entityId);
+
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    const entity = entitySlots[eId];
+
+    if (!entity.isBound) {
+        return res.status(400).json({ success: false, message: `Entity ${eId} is not bound` });
+    }
+
+    // Reset entity to unbound state
+    entitySlots[eId] = {
+        entityId: eId,
+        bindingCode: null,
+        bindingCodeExpires: null,
+        deviceId: null,
+        deviceSecret: null,
+        isBound: false,
+        character: eId % 2 === 0 ? "LOBSTER" : "PIG",
+        state: "IDLE",
+        message: `Entity #${eId} waiting...`,
+        parts: {},
+        batteryLevel: 100,
+        lastUpdated: Date.now(),
+        messageQueue: []
+    };
+
+    console.log(`[Remove] Entity ${eId} unbound`);
+    res.json({ success: true, message: `Entity ${eId} removed` });
+});
+
 // ============================================
 // ENTITY-TO-ENTITY MESSAGING
 // ============================================
