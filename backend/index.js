@@ -1,4 +1,5 @@
-// Claw Live Wallpaper Backend - Multi-Entity Support
+// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5)
+// Each device has its own 4 entity slots (matrix architecture)
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -11,43 +12,25 @@ app.use(cors());
 app.use(express.json());
 
 // ============================================
-// MULTI-ENTITY BINDING ARCHITECTURE
-// Each entity (0-3) has its own binding code
+// MATRIX ARCHITECTURE: devices[deviceId].entities[0-3]
+// Each device has independent entity slots
 // ============================================
 
-const MAX_ENTITIES = 4;
+const MAX_ENTITIES_PER_DEVICE = 4;
 
-// Entity slots - each has independent binding
-const entitySlots = {};
+// Device registry - each device has its own entities
+const devices = {};
 
-// Initialize all 4 slots
-for (let i = 0; i < MAX_ENTITIES; i++) {
-    entitySlots[i] = {
-        entityId: i,
-        // Binding info
-        bindingCode: null,
-        bindingCodeExpires: null,
-        deviceId: null,
-        deviceSecret: null,
-        botSecret: null, // Bot authentication token
-        isBound: false,
-        // Agent state
-        character: "LOBSTER", // Alternate default
-        state: "IDLE",
-        message: `Entity #${i} waiting...`,
-        parts: {},
-        batteryLevel: 100,
-        lastUpdated: Date.now(),
-        // Message queue for this entity
-        messageQueue: [],
-        // Webhook for push notifications (OpenClaw integration)
-        webhook: null  // { url, token, sessionKey }
-    };
-}
+// Pending binding codes (code -> { deviceId, entityId, expires })
+const pendingBindings = {};
 
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    let code;
+    do {
+        code = Math.floor(100000 + Math.random() * 900000).toString();
+    } while (pendingBindings[code]); // Ensure unique
+    return code;
 }
 
 // Helper: Generate secure bot secret (32 character hex string)
@@ -60,6 +43,48 @@ function generateBotSecret() {
     return secret;
 }
 
+// Helper: Create default entity
+function createDefaultEntity(entityId) {
+    return {
+        entityId: entityId,
+        botSecret: null,
+        isBound: false,
+        character: "LOBSTER",
+        state: "IDLE",
+        message: `Entity #${entityId} waiting...`,
+        parts: {},
+        batteryLevel: 100,
+        lastUpdated: Date.now(),
+        messageQueue: [],
+        webhook: null
+    };
+}
+
+// Helper: Get or create device
+function getOrCreateDevice(deviceId, deviceSecret = null) {
+    if (!devices[deviceId]) {
+        devices[deviceId] = {
+            deviceId: deviceId,
+            deviceSecret: deviceSecret,
+            createdAt: Date.now(),
+            entities: {}
+        };
+        // Initialize 4 entity slots
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            devices[deviceId].entities[i] = createDefaultEntity(i);
+        }
+        console.log(`[Device] New device registered: ${deviceId}`);
+    }
+    return devices[deviceId];
+}
+
+// Helper: Get entity by deviceId and entityId
+function getEntity(deviceId, entityId) {
+    const device = devices[deviceId];
+    if (!device) return null;
+    return device.entities[entityId] || null;
+}
+
 // Helper: Load MCP skill documentation
 function loadSkillDoc() {
     try {
@@ -70,26 +95,36 @@ function loadSkillDoc() {
     }
 }
 
-// Auto-decay loop for ALL entities
+// Auto-decay loop for ALL devices' entities
 setInterval(() => {
     const now = Date.now();
-    for (let i = 0; i < MAX_ENTITIES; i++) {
-        const entity = entitySlots[i];
-        if (!entity.isBound) continue; // Skip unbound entities
+    for (const deviceId in devices) {
+        const device = devices[deviceId];
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            const entity = device.entities[i];
+            if (!entity || !entity.isBound) continue;
 
-        // 1. Battery Decay
-        if (entity.batteryLevel > 0) entity.batteryLevel -= 1;
+            // 1. Battery Decay
+            if (entity.batteryLevel > 0) entity.batteryLevel -= 1;
 
-        // 2. Random State Change (Idle vs Sleep) if no updates for 20s
-        if (now - entity.lastUpdated > 20000) {
-            if (Math.random() > 0.7) {
-                entity.state = "SLEEPING";
-                entity.message = "Zzz...";
-            } else {
-                entity.state = "IDLE";
-                entity.message = "Waiting...";
+            // 2. Random State Change (Idle vs Sleep) if no updates for 20s
+            if (now - entity.lastUpdated > 20000) {
+                if (Math.random() > 0.7) {
+                    entity.state = "SLEEPING";
+                    entity.message = "Zzz...";
+                } else {
+                    entity.state = "IDLE";
+                    entity.message = "Waiting...";
+                }
+                entity.lastUpdated = now;
             }
-            entity.lastUpdated = now;
+        }
+    }
+
+    // Clean up expired binding codes
+    for (const code in pendingBindings) {
+        if (pendingBindings[code].expires < now) {
+            delete pendingBindings[code];
         }
     }
 }, 5000);
@@ -99,8 +134,14 @@ setInterval(() => {
 // ============================================
 
 app.get('/', (req, res) => {
-    const boundCount = Object.values(entitySlots).filter(e => e.isBound).length;
-    res.send(`Claw Backend Running! Bound Entities: ${boundCount}/${MAX_ENTITIES}`);
+    const deviceCount = Object.keys(devices).length;
+    let boundCount = 0;
+    for (const deviceId in devices) {
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            if (devices[deviceId].entities[i]?.isBound) boundCount++;
+        }
+    }
+    res.send(`Claw Backend Running! Devices: ${deviceCount}, Bound Entities: ${boundCount}`);
 });
 
 // Health check endpoint for Railway
@@ -116,16 +157,18 @@ app.get('/api/health', (req, res) => {
  * POST /api/device/register
  * Android app registers a specific entity slot and gets binding code.
  * Body: { entityId: 0-3, deviceId: "...", deviceSecret: "..." }
+ *
+ * NEW: Each device now has its own 4 entity slots!
  */
 app.post('/api/device/register', (req, res) => {
     const { entityId, deviceId, deviceSecret } = req.body;
 
     // Validate entityId
     const eId = parseInt(entityId);
-    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES) {
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({
             success: false,
-            message: `Invalid entityId. Must be 0-${MAX_ENTITIES - 1}`
+            message: `Invalid entityId. Must be 0-${MAX_ENTITIES_PER_DEVICE - 1}`
         });
     }
 
@@ -136,19 +179,33 @@ app.post('/api/device/register', (req, res) => {
         });
     }
 
-    const entity = entitySlots[eId];
+    // Get or create device
+    const device = getOrCreateDevice(deviceId, deviceSecret);
+
+    // Verify device secret if device already exists
+    if (device.deviceSecret && device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid deviceSecret for this device"
+        });
+    }
 
     // Generate new binding code
     const code = generateBindingCode();
-    entity.bindingCode = code;
-    entity.bindingCodeExpires = Date.now() + (5 * 60 * 1000); // 5 minutes
-    entity.deviceId = deviceId;
-    entity.deviceSecret = deviceSecret;
+    const expires = Date.now() + (5 * 60 * 1000); // 5 minutes
 
-    console.log(`[Register] Entity ${eId}: Code ${code} for device ${deviceId}`);
+    // Store pending binding
+    pendingBindings[code] = {
+        deviceId: deviceId,
+        entityId: eId,
+        expires: expires
+    };
+
+    console.log(`[Register] Device ${deviceId} Entity ${eId}: Code ${code}`);
 
     res.json({
         success: true,
+        deviceId: deviceId,
         entityId: eId,
         bindingCode: code,
         expiresIn: 300 // 5 minutes in seconds
@@ -164,18 +221,24 @@ app.post('/api/device/status', (req, res) => {
     const { entityId, deviceId, deviceSecret } = req.body;
 
     const eId = parseInt(entityId);
-    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES) {
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
 
-    // Verify device owns this entity
-    if (entity.deviceId !== deviceId || entity.deviceSecret !== deviceSecret) {
+    // Verify device secret
+    if (device.deviceSecret !== deviceSecret) {
         return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
+    const entity = device.entities[eId];
+
     res.json({
+        deviceId: deviceId,
         entityId: entity.entityId,
         character: entity.character,
         state: entity.state,
@@ -194,65 +257,58 @@ app.post('/api/device/status', (req, res) => {
 /**
  * POST /api/bind
  * Bot binds to a specific entity using binding code.
- * Body: { code: "123456", entityId: 0-3 (optional, will search if not provided) }
+ * Body: { code: "123456" }
+ *
+ * The binding code maps to a specific device + entity combination.
  */
 app.post('/api/bind', (req, res) => {
-    const { code, entityId } = req.body;
+    const { code } = req.body;
 
     if (!code) {
         return res.status(400).json({ success: false, message: "Binding code required" });
     }
 
-    let targetEntity = null;
-
-    // If entityId provided, check that specific slot
-    if (entityId !== undefined) {
-        const eId = parseInt(entityId);
-        if (!isNaN(eId) && eId >= 0 && eId < MAX_ENTITIES) {
-            const entity = entitySlots[eId];
-            if (entity.bindingCode === code && entity.bindingCodeExpires > Date.now()) {
-                targetEntity = entity;
-            }
-        }
-    } else {
-        // Search all slots for matching code
-        for (let i = 0; i < MAX_ENTITIES; i++) {
-            const entity = entitySlots[i];
-            if (entity.bindingCode === code && entity.bindingCodeExpires > Date.now()) {
-                targetEntity = entity;
-                break;
-            }
-        }
-    }
-
-    if (!targetEntity) {
+    const binding = pendingBindings[code];
+    if (!binding || binding.expires < Date.now()) {
+        delete pendingBindings[code];
         return res.status(400).json({
             success: false,
             message: "Invalid or expired binding code"
         });
     }
 
+    const { deviceId, entityId } = binding;
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(400).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[entityId];
+
     // Generate bot secret for this binding
     const botSecret = generateBotSecret();
 
     // Mark as bound
-    targetEntity.isBound = true;
-    targetEntity.bindingCode = null; // Clear code after use
-    targetEntity.botSecret = botSecret; // Store bot secret
-    targetEntity.state = "IDLE";
-    targetEntity.message = "Connected!";
-    targetEntity.lastUpdated = Date.now();
+    entity.isBound = true;
+    entity.botSecret = botSecret;
+    entity.state = "IDLE";
+    entity.message = "Connected!";
+    entity.lastUpdated = Date.now();
 
-    console.log(`[Bind] Entity ${targetEntity.entityId} bound with botSecret`);
+    // Clear used binding code
+    delete pendingBindings[code];
+
+    console.log(`[Bind] Device ${deviceId} Entity ${entityId} bound with botSecret`);
 
     res.json({
         success: true,
-        message: `Entity ${targetEntity.entityId} bound successfully`,
-        entityId: targetEntity.entityId,
-        botSecret: botSecret, // Return botSecret - Bot must save this!
+        message: `Device ${deviceId} Entity ${entityId} bound successfully`,
+        deviceId: deviceId,
+        entityId: entityId,
+        botSecret: botSecret, // Bot must save this!
         deviceInfo: {
-            id: targetEntity.deviceId,
-            entityId: targetEntity.entityId,
+            deviceId: deviceId,
+            entityId: entityId,
             status: "ONLINE"
         },
         skills_documentation: loadSkillDoc()
@@ -265,47 +321,68 @@ app.post('/api/bind', (req, res) => {
 
 /**
  * GET /api/entities
- * Get all bound entities.
+ * Get all bound entities across all devices.
+ * Query: ?deviceId=xxx (optional, filter by device)
  */
 app.get('/api/entities', (req, res) => {
+    const filterDeviceId = req.query.deviceId;
     const entities = [];
-    for (let i = 0; i < MAX_ENTITIES; i++) {
-        const entity = entitySlots[i];
-        if (entity.isBound) {
-            entities.push({
-                entityId: entity.entityId,
-                character: entity.character,
-                state: entity.state,
-                message: entity.message,
-                parts: entity.parts,
-                batteryLevel: entity.batteryLevel,
-                lastUpdated: entity.lastUpdated
-            });
+
+    for (const deviceId in devices) {
+        if (filterDeviceId && deviceId !== filterDeviceId) continue;
+
+        const device = devices[deviceId];
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            const entity = device.entities[i];
+            if (entity.isBound) {
+                entities.push({
+                    deviceId: deviceId,
+                    entityId: entity.entityId,
+                    character: entity.character,
+                    state: entity.state,
+                    message: entity.message,
+                    parts: entity.parts,
+                    batteryLevel: entity.batteryLevel,
+                    lastUpdated: entity.lastUpdated
+                });
+            }
         }
     }
 
     res.json({
         entities: entities,
         activeCount: entities.length,
-        maxEntities: MAX_ENTITIES
+        deviceCount: Object.keys(devices).length,
+        maxEntitiesPerDevice: MAX_ENTITIES_PER_DEVICE
     });
 });
 
 /**
  * GET /api/status
- * Get status for specific entity (default: 0).
- * Query: ?entityId=0
+ * Get status for specific device + entity.
+ * Query: ?deviceId=xxx&entityId=0
  */
 app.get('/api/status', (req, res) => {
+    const deviceId = req.query.deviceId;
     const eId = parseInt(req.query.entityId) || 0;
 
-    if (eId < 0 || eId >= MAX_ENTITIES) {
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
 
     res.json({
+        deviceId: deviceId,
         entityId: entity.entityId,
         character: entity.character,
         state: entity.state,
@@ -320,24 +397,32 @@ app.get('/api/status', (req, res) => {
 /**
  * POST /api/transform
  * Update entity status (Bot uses this).
- * Body: { entityId: 0-3, botSecret, character, state, message, parts }
+ * Body: { deviceId, entityId: 0-3, botSecret, character, state, message, parts }
  * REQUIRES botSecret for authentication!
  */
 app.post('/api/transform', (req, res) => {
-    const { entityId, botSecret, character, state, message, parts } = req.body;
+    const { deviceId, entityId, botSecret, character, state, message, parts } = req.body;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
 
     const eId = parseInt(entityId) || 0;
-
-    if (eId < 0 || eId >= MAX_ENTITIES) {
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
 
     if (!entity.isBound) {
         return res.status(400).json({
             success: false,
-            message: `Entity ${eId} is not bound yet`
+            message: `Device ${deviceId} Entity ${eId} is not bound yet`
         });
     }
 
@@ -345,7 +430,7 @@ app.post('/api/transform', (req, res) => {
     if (!botSecret || botSecret !== entity.botSecret) {
         return res.status(403).json({
             success: false,
-            message: "Invalid or missing botSecret. You must use the botSecret returned from /api/bind."
+            message: "Invalid or missing botSecret"
         });
     }
 
@@ -357,13 +442,13 @@ app.post('/api/transform', (req, res) => {
 
     entity.lastUpdated = Date.now();
 
-    console.log(`[Transform] Entity ${eId}: ${state || entity.state} - "${message || entity.message}"`);
+    console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${message || entity.message}"`);
 
     res.json({
         success: true,
+        deviceId: deviceId,
         entityId: eId,
         currentState: {
-            entityId: entity.entityId,
             character: entity.character,
             state: entity.state,
             message: entity.message,
@@ -375,18 +460,27 @@ app.post('/api/transform', (req, res) => {
 /**
  * POST /api/wakeup
  * Wake up specific entity.
- * Body: { entityId: 0-3, botSecret }
+ * Body: { deviceId, entityId: 0-3, botSecret }
  * REQUIRES botSecret for authentication!
  */
 app.post('/api/wakeup', (req, res) => {
-    const eId = parseInt(req.body.entityId) || parseInt(req.query.entityId) || 0;
-    const { botSecret } = req.body;
+    const { deviceId, entityId, botSecret } = req.body;
 
-    if (eId < 0 || eId >= MAX_ENTITIES) {
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    const eId = parseInt(entityId) || 0;
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
 
     if (!entity.isBound) {
         return res.status(400).json({ success: false, message: `Entity ${eId} not bound` });
@@ -394,10 +488,7 @@ app.post('/api/wakeup', (req, res) => {
 
     // Verify botSecret
     if (!botSecret || botSecret !== entity.botSecret) {
-        return res.status(403).json({
-            success: false,
-            message: "Invalid or missing botSecret"
-        });
+        return res.status(403).json({ success: false, message: "Invalid botSecret" });
     }
 
     entity.state = "EXCITED";
@@ -411,108 +502,101 @@ app.post('/api/wakeup', (req, res) => {
         }
     }, 5000);
 
-    console.log(`[Wakeup] Entity ${eId}`);
+    console.log(`[Wakeup] Device ${deviceId} Entity ${eId}`);
     res.json({ success: true, message: `Entity ${eId} woken up` });
 });
 
 /**
- * DELETE /api/entity/:entityId
+ * DELETE /api/entity
  * Remove/unbind an entity.
- * Resets the entity slot to unbound state.
+ * Body/Query: { deviceId, entityId, botSecret }
  */
-app.delete('/api/entity/:entityId', (req, res) => {
-    const eId = parseInt(req.params.entityId);
+app.delete('/api/entity', (req, res) => {
+    const deviceId = req.body.deviceId || req.query.deviceId;
+    const entityId = req.body.entityId ?? req.query.entityId;
+    const botSecret = req.body.botSecret || req.query.botSecret;
 
-    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES) {
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
 
     if (!entity.isBound) {
         return res.status(400).json({ success: false, message: `Entity ${eId} is not bound` });
     }
 
-    // Reset entity to unbound state
-    entitySlots[eId] = {
-        entityId: eId,
-        bindingCode: null,
-        bindingCodeExpires: null,
-        deviceId: null,
-        deviceSecret: null,
-        botSecret: null,
-        isBound: false,
-        character: "LOBSTER",
-        state: "IDLE",
-        message: `Entity #${eId} waiting...`,
-        parts: {},
-        batteryLevel: 100,
-        lastUpdated: Date.now(),
-        messageQueue: [],
-        webhook: null
-    };
+    // Verify botSecret
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({ success: false, message: "Invalid botSecret" });
+    }
 
-    console.log(`[Remove] Entity ${eId} unbound`);
+    // Reset entity to unbound state
+    device.entities[eId] = createDefaultEntity(eId);
+
+    console.log(`[Remove] Device ${deviceId} Entity ${eId} unbound`);
     res.json({ success: true, message: `Entity ${eId} removed` });
 });
 
 // ============================================
-// ENTITY-TO-ENTITY MESSAGING
+// CLIENT MESSAGING
 // ============================================
 
 /**
- * POST /api/entity/:from/speak-to/:to
- * Send message from one entity to another.
- * Body: { botSecret, text }
- * REQUIRES botSecret of the 'from' entity for authentication!
- * Pushes notification if recipient has webhook registered.
+ * POST /api/client/speak
+ * Client sends message to entity (stored in entity's queue).
+ * Body: { deviceId, entityId, text }
+ * If bot has registered webhook, push notification is sent.
  */
-app.post('/api/entity/:from/speak-to/:to', async (req, res) => {
-    const fromId = parseInt(req.params.from);
-    const toId = parseInt(req.params.to);
-    const { botSecret, text } = req.body;
+app.post('/api/client/speak', async (req, res) => {
+    const { deviceId, entityId, text } = req.body;
 
-    if (isNaN(fromId) || isNaN(toId) || fromId < 0 || fromId >= MAX_ENTITIES || toId < 0 || toId >= MAX_ENTITIES) {
-        return res.status(400).json({ success: false, message: "Invalid entity IDs" });
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
     }
 
-    if (!text) {
-        return res.status(400).json({ success: false, message: "Text required" });
+    const eId = parseInt(entityId) || 0;
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const fromEntity = entitySlots[fromId];
-    const toEntity = entitySlots[toId];
-
-    if (!fromEntity.isBound || !toEntity.isBound) {
-        return res.status(400).json({ success: false, message: "Both entities must be bound" });
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
     }
 
-    // Verify botSecret of the sender
-    if (!botSecret || botSecret !== fromEntity.botSecret) {
-        return res.status(403).json({
-            success: false,
-            message: "Invalid or missing botSecret for sender entity"
-        });
-    }
+    const entity = device.entities[eId];
 
-    // Add to recipient's queue
+    entity.message = `Received: "${text}"`;
+    entity.lastUpdated = Date.now();
+
     const messageObj = {
         text: text,
-        from: `entity-${fromId}`,
-        fromCharacter: fromEntity.character,
+        from: "client",
         timestamp: Date.now(),
         read: false
     };
-    toEntity.messageQueue.push(messageObj);
+    entity.messageQueue.push(messageObj);
 
-    console.log(`[Msg] Entity ${fromId} -> Entity ${toId}: "${text}"`);
+    console.log(`[Client] Device ${deviceId} -> Entity ${eId}: "${text}"`);
 
-    // Push to recipient's bot if webhook is registered
+    // Push to bot if webhook is registered
     let pushResult = { pushed: false, reason: "no_webhook" };
-    if (toEntity.webhook) {
-        pushResult = await pushToBot(toEntity, "entity_message", {
-            message: `[Entity ${toId} 收到新訊息]\n來源: Entity ${fromId} (${fromEntity.character})\n內容: ${text}`
+    if (entity.webhook) {
+        pushResult = await pushToBot(entity, deviceId, "new_message", {
+            message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: client\n內容: ${text}`
         });
+
         if (pushResult.pushed) {
             messageObj.delivered = true;
         }
@@ -520,108 +604,45 @@ app.post('/api/entity/:from/speak-to/:to', async (req, res) => {
 
     res.json({
         success: true,
-        message: "Message sent",
-        push: pushResult.pushed ? "sent" : "queued"
-    });
-});
-
-/**
- * POST /api/entity/broadcast
- * Broadcast message from one entity to all others.
- * Body: { from, botSecret, text }
- * REQUIRES botSecret of the 'from' entity for authentication!
- */
-app.post('/api/entity/broadcast', (req, res) => {
-    const { from, botSecret, text } = req.body;
-
-    const fromId = parseInt(from);
-    if (isNaN(fromId) || fromId < 0 || fromId >= MAX_ENTITIES) {
-        return res.status(400).json({ success: false, message: "Invalid from entity ID" });
-    }
-
-    if (!text) {
-        return res.status(400).json({ success: false, message: "Text required" });
-    }
-
-    const fromEntity = entitySlots[fromId];
-    if (!fromEntity.isBound) {
-        return res.status(400).json({ success: false, message: `Entity ${fromId} not bound` });
-    }
-
-    // Verify botSecret of the sender
-    if (!botSecret || botSecret !== fromEntity.botSecret) {
-        return res.status(403).json({
-            success: false,
-            message: "Invalid or missing botSecret"
-        });
-    }
-
-    let sentCount = 0;
-    const pushPromises = [];
-
-    for (let i = 0; i < MAX_ENTITIES; i++) {
-        if (i === fromId) continue;
-        const entity = entitySlots[i];
-        if (entity.isBound) {
-            const messageObj = {
-                text: text,
-                from: `entity-${fromId}`,
-                fromCharacter: fromEntity.character,
-                timestamp: Date.now(),
-                read: false
-            };
-            entity.messageQueue.push(messageObj);
-            sentCount++;
-
-            // Push if webhook registered
-            if (entity.webhook) {
-                pushPromises.push(
-                    pushToBot(entity, "broadcast", {
-                        message: `[Entity ${i} 收到廣播]\n來源: Entity ${fromId} (${fromEntity.character})\n內容: ${text}`
-                    }).then(result => {
-                        if (result.pushed) messageObj.delivered = true;
-                        return result;
-                    })
-                );
-            }
-        }
-    }
-
-    // Wait for all pushes (non-blocking for response)
-    Promise.all(pushPromises).catch(err => console.error("[Broadcast Push Error]", err));
-
-    console.log(`[Broadcast] Entity ${fromId} -> ${sentCount} entities: "${text}"`);
-
-    res.json({
-        success: true,
-        message: `Broadcast to ${sentCount} entities`,
-        pushAttempts: pushPromises.length
+        message: "Received",
+        push: pushResult.pushed ? "sent" : "queued",
+        mode: entity.webhook ? "push" : "polling"
     });
 });
 
 /**
  * GET /api/client/pending
  * Get pending messages for entity.
- * Query: ?entityId=0&botSecret=xxx
- * Header: X-Bot-Secret (alternative)
+ * Query: ?deviceId=xxx&entityId=0&botSecret=xxx
  *
  * Without botSecret: returns count only (peek mode)
  * With valid botSecret: returns and consumes messages
  */
 app.get('/api/client/pending', (req, res) => {
+    const deviceId = req.query.deviceId;
     const eId = parseInt(req.query.entityId) || 0;
     const botSecret = req.query.botSecret || req.headers['x-bot-secret'];
 
-    if (eId < 0 || eId >= MAX_ENTITIES) {
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
     const pending = entity.messageQueue.filter(m => !m.read);
 
     // Without botSecret: peek mode (count only, don't consume)
     if (!botSecret) {
         return res.json({
+            deviceId: deviceId,
             entityId: eId,
             count: pending.length,
             messages: [],
@@ -639,66 +660,17 @@ app.get('/api/client/pending', (req, res) => {
 
     // Log when messages are consumed (authenticated)
     if (pending.length > 0) {
-        console.log(`[Pending] Entity ${eId}: ${pending.length} messages consumed (authenticated)`);
-        pending.forEach(m => console.log(`  -> "${m.text}" from ${m.from}`));
+        console.log(`[Pending] Device ${deviceId} Entity ${eId}: ${pending.length} messages consumed`);
     }
 
     // Mark as read (consume)
     pending.forEach(m => m.read = true);
 
     res.json({
+        deviceId: deviceId,
         entityId: eId,
         count: pending.length,
         messages: pending
-    });
-});
-
-/**
- * POST /api/client/speak
- * Client sends message (stored in entity's queue).
- * If bot has registered webhook, push notification is sent.
- */
-app.post('/api/client/speak', async (req, res) => {
-    const eId = parseInt(req.body.entityId) || parseInt(req.query.entityId) || 0;
-    const { text } = req.body;
-
-    if (eId < 0 || eId >= MAX_ENTITIES) {
-        return res.status(400).json({ success: false, message: "Invalid entityId" });
-    }
-
-    const entity = entitySlots[eId];
-
-    entity.message = `Received: "${text}"`;
-    entity.lastUpdated = Date.now();
-
-    const messageObj = {
-        text: text,
-        from: "client",
-        timestamp: Date.now(),
-        read: false
-    };
-    entity.messageQueue.push(messageObj);
-
-    console.log(`[Client] -> Entity ${eId}: "${text}"`);
-
-    // Push to bot if webhook is registered
-    let pushResult = { pushed: false, reason: "no_webhook" };
-    if (entity.webhook) {
-        pushResult = await pushToBot(entity, "new_message", {
-            message: `[Entity ${eId} 收到新訊息]\n來源: client\n內容: ${text}`
-        });
-
-        // If push successful, mark message as delivered (but not read)
-        if (pushResult.pushed) {
-            messageObj.delivered = true;
-        }
-    }
-
-    res.json({
-        success: true,
-        message: "Received",
-        push: pushResult.pushed ? "sent" : "queued",
-        mode: entity.webhook ? "push" : "polling"
     });
 });
 
@@ -707,55 +679,54 @@ app.post('/api/client/speak', async (req, res) => {
 // ============================================
 
 /**
- * GET /api/debug/slots
- * Show all entity slots (for debugging).
+ * GET /api/debug/devices
+ * Show all devices and their entities (for debugging).
  */
-app.get('/api/debug/slots', (req, res) => {
-    const slots = [];
-    for (let i = 0; i < MAX_ENTITIES; i++) {
-        const e = entitySlots[i];
-        slots.push({
-            entityId: i,
-            isBound: e.isBound,
-            hasActiveCode: e.bindingCode !== null && e.bindingCodeExpires > Date.now(),
-            character: e.character,
-            state: e.state,
-            message: e.message,
-            messageQueueLength: e.messageQueue ? e.messageQueue.length : 0,
-            unreadMessages: e.messageQueue ? e.messageQueue.filter(m => !m.read).length : 0,
-            webhookRegistered: e.webhook !== null,
-            mode: e.webhook ? "push" : "polling"
+app.get('/api/debug/devices', (req, res) => {
+    const result = [];
+    for (const deviceId in devices) {
+        const device = devices[deviceId];
+        const entities = [];
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            const e = device.entities[i];
+            entities.push({
+                entityId: i,
+                isBound: e.isBound,
+                character: e.character,
+                state: e.state,
+                message: e.message,
+                messageQueueLength: e.messageQueue?.length || 0,
+                unreadMessages: e.messageQueue?.filter(m => !m.read).length || 0,
+                webhookRegistered: e.webhook !== null,
+                mode: e.webhook ? "push" : "polling"
+            });
+        }
+        result.push({
+            deviceId: deviceId,
+            createdAt: device.createdAt,
+            entities: entities
         });
     }
-    res.json({ slots });
+    res.json({
+        deviceCount: result.length,
+        pendingBindings: Object.keys(pendingBindings).length,
+        devices: result
+    });
 });
 
 /**
  * POST /api/debug/reset
- * Reset all entities (for testing).
+ * Reset all devices (for testing).
  */
 app.post('/api/debug/reset', (req, res) => {
-    for (let i = 0; i < MAX_ENTITIES; i++) {
-        entitySlots[i] = {
-            entityId: i,
-            bindingCode: null,
-            bindingCodeExpires: null,
-            deviceId: null,
-            deviceSecret: null,
-            botSecret: null,
-            isBound: false,
-            character: "LOBSTER",
-            state: "IDLE",
-            message: `Entity #${i} waiting...`,
-            parts: {},
-            batteryLevel: 100,
-            lastUpdated: Date.now(),
-            messageQueue: [],
-            webhook: null
-        };
+    for (const deviceId in devices) {
+        delete devices[deviceId];
     }
-    console.log("[Debug] All entities reset");
-    res.json({ success: true, message: "All entities reset" });
+    for (const code in pendingBindings) {
+        delete pendingBindings[code];
+    }
+    console.log("[Debug] All devices reset");
+    res.json({ success: true, message: "All devices reset" });
 });
 
 // ============================================
@@ -765,18 +736,26 @@ app.post('/api/debug/reset', (req, res) => {
 /**
  * POST /api/bot/register
  * Bot registers its webhook URL to receive push notifications.
- * This enables push mode instead of polling.
+ * Body: { deviceId, entityId, botSecret, webhook_url, token, session_key }
  */
 app.post('/api/bot/register', (req, res) => {
-    const { entityId, botSecret, webhook_url, token, session_key } = req.body;
+    const { deviceId, entityId, botSecret, webhook_url, token, session_key } = req.body;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
 
     const eId = parseInt(entityId) || 0;
-
-    if (eId < 0 || eId >= MAX_ENTITIES) {
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
 
     if (!entity.isBound) {
         return res.status(400).json({
@@ -787,10 +766,7 @@ app.post('/api/bot/register', (req, res) => {
 
     // Verify botSecret
     if (!botSecret || botSecret !== entity.botSecret) {
-        return res.status(403).json({
-            success: false,
-            message: "Invalid botSecret"
-        });
+        return res.status(403).json({ success: false, message: "Invalid botSecret" });
     }
 
     // Validate required fields
@@ -809,11 +785,12 @@ app.post('/api/bot/register', (req, res) => {
         registeredAt: Date.now()
     };
 
-    console.log(`[Bot Register] Entity ${eId} webhook registered: ${webhook_url}`);
+    console.log(`[Bot Register] Device ${deviceId} Entity ${eId} webhook registered: ${webhook_url}`);
 
     res.json({
         success: true,
         message: "Webhook registered. You will now receive push notifications.",
+        deviceId: deviceId,
         entityId: eId,
         mode: "push"
     });
@@ -824,27 +801,37 @@ app.post('/api/bot/register', (req, res) => {
  * Bot unregisters its webhook (switch back to polling mode).
  */
 app.delete('/api/bot/register', (req, res) => {
+    const deviceId = req.body.deviceId || req.query.deviceId;
     const entityId = req.body.entityId ?? req.query.entityId;
     const botSecret = req.body.botSecret || req.query.botSecret;
 
-    const eId = parseInt(entityId) || 0;
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
 
-    if (eId < 0 || eId >= MAX_ENTITIES) {
+    const eId = parseInt(entityId) || 0;
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const entity = entitySlots[eId];
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
 
     if (!botSecret || botSecret !== entity.botSecret) {
         return res.status(403).json({ success: false, message: "Invalid botSecret" });
     }
 
     entity.webhook = null;
-    console.log(`[Bot Register] Entity ${eId} webhook removed`);
+    console.log(`[Bot Register] Device ${deviceId} Entity ${eId} webhook removed`);
 
     res.json({
         success: true,
         message: "Webhook removed. Switching back to polling mode.",
+        deviceId: deviceId,
         entityId: eId,
         mode: "polling"
     });
@@ -852,10 +839,9 @@ app.delete('/api/bot/register', (req, res) => {
 
 /**
  * Helper: Push notification to bot webhook
- *
  * Supports OpenClaw format: POST to /tools/invoke with tool invocation payload
  */
-async function pushToBot(entity, eventType, payload) {
+async function pushToBot(entity, deviceId, eventType, payload) {
     if (!entity.webhook) {
         return { pushed: false, reason: "no_webhook" };
     }
@@ -880,15 +866,15 @@ async function pushToBot(entity, eventType, payload) {
         });
 
         if (response.ok) {
-            console.log(`[Push] Entity ${entity.entityId}: ${eventType} pushed successfully`);
+            console.log(`[Push] Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully`);
             return { pushed: true };
         } else {
             const errorText = await response.text().catch(() => '');
-            console.log(`[Push] Entity ${entity.entityId}: Push failed with status ${response.status} - ${errorText}`);
+            console.log(`[Push] Device ${deviceId} Entity ${entity.entityId}: Push failed with status ${response.status} - ${errorText}`);
             return { pushed: false, reason: `http_${response.status}` };
         }
     } catch (err) {
-        console.error(`[Push] Entity ${entity.entityId}: Push error:`, err.message);
+        console.error(`[Push] Device ${deviceId} Entity ${entity.entityId}: Push error:`, err.message);
         return { pushed: false, reason: err.message };
     }
 }
@@ -902,6 +888,6 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-    console.log(`Claw Backend running on port ${port}`);
-    console.log(`Entity slots: ${MAX_ENTITIES}`);
+    console.log(`Claw Backend v5 (Matrix Architecture) running on port ${port}`);
+    console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
 });
