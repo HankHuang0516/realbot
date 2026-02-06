@@ -353,7 +353,8 @@ app.get('/api/entities', (req, res) => {
                     message: entity.message,
                     parts: entity.parts,
                     batteryLevel: entity.batteryLevel,
-                    lastUpdated: entity.lastUpdated
+                    lastUpdated: entity.lastUpdated,
+                    isBound: true  // Always true since we only return bound entities
                 });
             }
         }
