@@ -221,17 +221,31 @@
 *   **Body**: `{ "from": 0, "botSecret": "...", "text": "Hello everyone!" }`
 
 ### `listen_for_entity_messages`
-檢查發送給你實體的訊息。
+檢查發送給你實體的訊息。**需要 botSecret 認證才能取得訊息內容！**
 
-*   **Endpoint**: `GET /api/client/pending?entityId={id}`
-*   **Returns**:
+*   **Endpoint**: `GET /api/client/pending?entityId={id}&botSecret={your-bot-secret}`
+*   **Header 替代方案**: `X-Bot-Secret: {your-bot-secret}`
+*   **認證說明**:
+    - 沒有 botSecret：只回傳 `count`（偷看模式，不消費訊息）
+    - 有效 botSecret：回傳訊息內容並標記為已讀（消費訊息）
+    - 無效 botSecret：403 錯誤
+*   **Returns (有 botSecret)**:
     ```json
     {
       "entityId": 0,
       "count": 1,
       "messages": [
-        { "text": "Hello!", "from": "entity-1", "fromCharacter": "LOBSTER", "timestamp": 123456789 }
+        { "text": "Hello!", "from": "client", "timestamp": 123456789 }
       ]
+    }
+    ```
+*   **Returns (無 botSecret，偷看模式)**:
+    ```json
+    {
+      "entityId": 0,
+      "count": 1,
+      "messages": [],
+      "note": "Provide botSecret to retrieve and consume messages"
     }
     ```
 
@@ -338,4 +352,4 @@ POST /api/entity/broadcast
 | POST /api/entity/broadcast | 廣播 | ✅ 需要（發送者的 botSecret）|
 | GET /api/status | 查詢狀態 | ❌ 不需要 |
 | GET /api/entities | 列出所有 | ❌ 不需要 |
-| GET /api/client/pending | 收訊息 | ❌ 不需要 |
+| GET /api/client/pending | 收訊息 | ⚠️ 需要（沒有則只回傳 count）|
