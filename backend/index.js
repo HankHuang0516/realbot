@@ -555,19 +555,20 @@ app.delete('/api/entity', (req, res) => {
 /**
  * POST /api/client/speak
  * Client sends message to entity (stored in entity's queue).
- * Body: { deviceId, entityId, text }
+ * Body: { deviceId, entityId, text, source }
+ *
+ * entityId can be:
+ *   - number: single entity (e.g., 0)
+ *   - array: broadcast to multiple entities (e.g., [0, 1, 2])
+ *   - "all": broadcast to ALL bound entities
+ *
  * If bot has registered webhook, push notification is sent.
  */
 app.post('/api/client/speak', async (req, res) => {
-    const { deviceId, entityId, text } = req.body;
+    const { deviceId, entityId, text, source = "client" } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
-    }
-
-    const eId = parseInt(entityId) || 0;
-    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
-        return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
     const device = devices[deviceId];
@@ -575,26 +576,145 @@ app.post('/api/client/speak', async (req, res) => {
         return res.status(404).json({ success: false, message: "Device not found" });
     }
 
-    const entity = device.entities[eId];
+    // Determine target entity IDs
+    let targetIds = [];
+    if (entityId === "all") {
+        // Broadcast to all bound entities
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            if (device.entities[i] && device.entities[i].isBound) {
+                targetIds.push(i);
+            }
+        }
+    } else if (Array.isArray(entityId)) {
+        // Array of entity IDs
+        targetIds = entityId.map(id => parseInt(id)).filter(id => id >= 0 && id < MAX_ENTITIES_PER_DEVICE);
+    } else {
+        // Single entity ID
+        const eId = parseInt(entityId) || 0;
+        if (eId >= 0 && eId < MAX_ENTITIES_PER_DEVICE) {
+            targetIds.push(eId);
+        }
+    }
 
-    entity.message = `Received: "${text}"`;
-    entity.lastUpdated = Date.now();
+    if (targetIds.length === 0) {
+        return res.status(400).json({ success: false, message: "No valid target entities" });
+    }
+
+    const results = [];
+
+    for (const eId of targetIds) {
+        const entity = device.entities[eId];
+        if (!entity) continue;
+
+        entity.message = `Received: "${text}"`;
+        entity.lastUpdated = Date.now();
+
+        const messageObj = {
+            text: text,
+            from: source,
+            timestamp: Date.now(),
+            read: false
+        };
+        entity.messageQueue.push(messageObj);
+
+        console.log(`[Client] Device ${deviceId} -> Entity ${eId}: "${text}" (source: ${source})`);
+
+        // Push to bot if webhook is registered
+        let pushResult = { pushed: false, reason: "no_webhook" };
+        if (entity.webhook) {
+            pushResult = await pushToBot(entity, deviceId, "new_message", {
+                message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`
+            });
+
+            if (pushResult.pushed) {
+                messageObj.delivered = true;
+            }
+        }
+
+        results.push({
+            entityId: eId,
+            pushed: pushResult.pushed,
+            mode: entity.webhook ? "push" : "polling"
+        });
+    }
+
+    res.json({
+        success: true,
+        message: `Sent to ${results.length} entity(s)`,
+        targets: results,
+        broadcast: targetIds.length > 1
+    });
+});
+
+/**
+ * POST /api/entity/speak-to
+ * Entity-to-entity messaging within the same device.
+ * Body: { deviceId, fromEntityId, toEntityId, botSecret, text }
+ *
+ * Requires botSecret of the SENDING entity for authentication.
+ * The receiving entity gets the message with source marked as the sending entity.
+ */
+app.post('/api/entity/speak-to', async (req, res) => {
+    const { deviceId, fromEntityId, toEntityId, botSecret, text } = req.body;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const fromId = parseInt(fromEntityId);
+    const toId = parseInt(toEntityId);
+
+    if (fromId < 0 || fromId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid fromEntityId" });
+    }
+    if (toId < 0 || toId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid toEntityId" });
+    }
+    if (fromId === toId) {
+        return res.status(400).json({ success: false, message: "Cannot send message to self" });
+    }
+
+    const fromEntity = device.entities[fromId];
+    const toEntity = device.entities[toId];
+
+    // Verify botSecret of sending entity
+    if (!fromEntity.isBound || fromEntity.botSecret !== botSecret) {
+        return res.status(403).json({ success: false, message: "Invalid botSecret for sending entity" });
+    }
+
+    // Target entity must be bound
+    if (!toEntity.isBound) {
+        return res.status(400).json({ success: false, message: `Entity ${toId} is not bound` });
+    }
+
+    // Create message source identifier
+    const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
+
+    toEntity.message = `From Entity ${fromId}: "${text}"`;
+    toEntity.lastUpdated = Date.now();
 
     const messageObj = {
         text: text,
-        from: "client",
+        from: sourceLabel,
+        fromEntityId: fromId,
+        fromCharacter: fromEntity.character,
         timestamp: Date.now(),
         read: false
     };
-    entity.messageQueue.push(messageObj);
+    toEntity.messageQueue.push(messageObj);
 
-    console.log(`[Client] Device ${deviceId} -> Entity ${eId}: "${text}"`);
+    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
 
-    // Push to bot if webhook is registered
+    // Push to target bot if webhook is registered
     let pushResult = { pushed: false, reason: "no_webhook" };
-    if (entity.webhook) {
-        pushResult = await pushToBot(entity, deviceId, "new_message", {
-            message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: client\n內容: ${text}`
+    if (toEntity.webhook) {
+        pushResult = await pushToBot(toEntity, deviceId, "entity_message", {
+            message: `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`
         });
 
         if (pushResult.pushed) {
@@ -604,9 +724,11 @@ app.post('/api/client/speak', async (req, res) => {
 
     res.json({
         success: true,
-        message: "Received",
-        push: pushResult.pushed ? "sent" : "queued",
-        mode: entity.webhook ? "push" : "polling"
+        message: `Message sent from Entity ${fromId} to Entity ${toId}`,
+        from: { entityId: fromId, character: fromEntity.character },
+        to: { entityId: toId, character: toEntity.character },
+        pushed: pushResult.pushed,
+        mode: toEntity.webhook ? "push" : "polling"
     });
 });
 

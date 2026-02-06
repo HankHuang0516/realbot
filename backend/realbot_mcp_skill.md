@@ -180,7 +180,7 @@ Device B (手機2) ← Bot B
 ## 4. 訊息收發 (Messaging)
 
 ### `send_message_to_entity` (Client → Bot)
-手機端發送訊息給 Bot。
+手機端發送訊息給 Bot。支援單一實體或廣播模式。
 
 *   **Endpoint**: `POST /api/client/speak`
 *   **Body**:
@@ -188,9 +188,83 @@ Device B (手機2) ← Bot B
     {
       "deviceId": "device-xxx",
       "entityId": 0,
-      "text": "Hello Bot!"
+      "text": "Hello Bot!",
+      "source": "android_widget"
     }
     ```
+
+#### 廣播模式 (Broadcast)
+`entityId` 可以是：
+- **數字**: 單一實體 (e.g., `0`)
+- **陣列**: 多個實體 (e.g., `[0, 1, 2]`)
+- **"all"**: 所有已綁定的實體
+
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": [0, 1, 2],
+  "text": "Hello everyone!",
+  "source": "broadcast"
+}
+```
+
+**回應**:
+```json
+{
+  "success": true,
+  "message": "Sent to 3 entity(s)",
+  "targets": [
+    { "entityId": 0, "pushed": true, "mode": "push" },
+    { "entityId": 1, "pushed": false, "mode": "polling" },
+    { "entityId": 2, "pushed": true, "mode": "push" }
+  ],
+  "broadcast": true
+}
+```
+
+### `entity_speak_to` (Entity → Entity)
+實體間訊息傳送。需要發送方的 botSecret 認證。
+
+*   **Endpoint**: `POST /api/entity/speak-to`
+*   **Body**:
+    ```json
+    {
+      "deviceId": "device-xxx",
+      "fromEntityId": 0,
+      "toEntityId": 1,
+      "botSecret": "sending-entity-bot-secret",
+      "text": "Hey Entity 1!"
+    }
+    ```
+*   **Returns**:
+    ```json
+    {
+      "success": true,
+      "message": "Message sent from Entity 0 to Entity 1",
+      "from": { "entityId": 0, "character": "LOBSTER" },
+      "to": { "entityId": 1, "character": "LOBSTER" },
+      "pushed": true,
+      "mode": "push"
+    }
+    ```
+
+**接收方收到的訊息格式**:
+```json
+{
+  "text": "Hey Entity 1!",
+  "from": "entity:0:LOBSTER",
+  "fromEntityId": 0,
+  "fromCharacter": "LOBSTER",
+  "timestamp": 1704067200000
+}
+```
+
+**Push 通知格式**:
+```
+[Device device-xxx Entity 1 收到新訊息]
+來源: entity:0:LOBSTER
+內容: Hey Entity 1!
+```
 
 ### `listen_for_messages` (Bot 接收訊息)
 Bot 檢查待處理訊息。
@@ -252,7 +326,8 @@ Bot 檢查待處理訊息。
 | GET /api/status | 查詢狀態 | ✅ | ❌ |
 | GET /api/entities | 列出所有 | ❌ (可選) | ❌ |
 | GET /api/client/pending | 收訊息 | ✅ | ⚠️ (無則只回傳 count) |
-| POST /api/client/speak | 發訊息 | ✅ | ❌ |
+| POST /api/client/speak | 發訊息(支援廣播) | ✅ | ❌ |
+| POST /api/entity/speak-to | 實體間對話 | ✅ | ✅ (發送方) |
 
 ---
 
