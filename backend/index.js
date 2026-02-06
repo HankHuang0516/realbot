@@ -560,10 +560,15 @@ app.post('/api/entity/broadcast', (req, res) => {
 /**
  * GET /api/client/pending
  * Get pending messages for entity.
- * Query: ?entityId=0
+ * Query: ?entityId=0&botSecret=xxx
+ * Header: X-Bot-Secret (alternative)
+ *
+ * Without botSecret: returns count only (peek mode)
+ * With valid botSecret: returns and consumes messages
  */
 app.get('/api/client/pending', (req, res) => {
     const eId = parseInt(req.query.entityId) || 0;
+    const botSecret = req.query.botSecret || req.headers['x-bot-secret'];
 
     if (eId < 0 || eId >= MAX_ENTITIES) {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
@@ -572,12 +577,31 @@ app.get('/api/client/pending', (req, res) => {
     const entity = entitySlots[eId];
     const pending = entity.messageQueue.filter(m => !m.read);
 
-    // Log when messages are consumed
+    // Without botSecret: peek mode (count only, don't consume)
+    if (!botSecret) {
+        return res.json({
+            entityId: eId,
+            count: pending.length,
+            messages: [],
+            note: "Provide botSecret to retrieve and consume messages"
+        });
+    }
+
+    // Verify botSecret matches
+    if (entity.botSecret !== botSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid botSecret for this entity"
+        });
+    }
+
+    // Log when messages are consumed (authenticated)
     if (pending.length > 0) {
-        console.log(`[Pending] Entity ${eId}: ${pending.length} messages consumed`);
+        console.log(`[Pending] Entity ${eId}: ${pending.length} messages consumed (authenticated)`);
         pending.forEach(m => console.log(`  -> "${m.text}" from ${m.from}`));
     }
 
+    // Mark as read (consume)
     pending.forEach(m => m.read = true);
 
     res.json({
