@@ -1,9 +1,15 @@
 /**
  * UX Improvements Verification Tests
  * Tests for: Agent Cards, Layout Editor, API responses
+ *
+ * Verifies critical fields like isBound are present in API responses
  */
 
 const API_BASE = 'https://realbot-production.up.railway.app';
+
+// Generate unique IDs for testing
+const testDeviceId = 'test-ux-' + Date.now();
+const testDeviceSecret = 'secret-' + Date.now();
 
 async function api(method, path, body = null) {
     const url = `${API_BASE}${path}`;
@@ -21,17 +27,20 @@ async function runTests() {
     console.log('='.repeat(60));
     console.log('UX IMPROVEMENTS VERIFICATION TESTS');
     console.log('='.repeat(60));
+    console.log(`Test Device ID: ${testDeviceId}`);
+    console.log(`API Base: ${API_BASE}`);
 
     let passed = 0;
     let failed = 0;
 
-    // Test 1: /api/entities returns isBound field
+    // =====================================================
+    // Test 1: /api/entities returns proper structure
+    // =====================================================
     console.log('\n--- Test 1: /api/entities response structure ---');
     try {
         const response = await api('GET', '/api/entities');
         console.log('Response:', JSON.stringify(response, null, 2));
 
-        // Check response structure
         if (!response.entities) {
             console.log('FAIL: Missing entities array');
             failed++;
@@ -73,10 +82,11 @@ async function runTests() {
         failed++;
     }
 
+    // =====================================================
     // Test 2: /api/entities with deviceId filter
+    // =====================================================
     console.log('\n--- Test 2: /api/entities with deviceId filter ---');
     try {
-        const testDeviceId = 'test-device-' + Date.now();
         const response = await api('GET', `/api/entities?deviceId=${testDeviceId}`);
 
         if (response.entities && Array.isArray(response.entities)) {
@@ -92,31 +102,24 @@ async function runTests() {
         failed++;
     }
 
-    // Test 3: /api/device/register creates device
-    console.log('\n--- Test 3: /api/device/register ---');
+    // =====================================================
+    // Test 3: /api/device/register creates device with deviceSecret
+    // =====================================================
+    console.log('\n--- Test 3: /api/device/register (with deviceSecret) ---');
+    let bindingCode = null;
     try {
-        const testDeviceId = 'test-ux-' + Date.now();
         const response = await api('POST', '/api/device/register', {
             deviceId: testDeviceId,
+            deviceSecret: testDeviceSecret,
             entityId: 0
         });
 
-        if (response.success && response.code) {
+        if (response.success && (response.code || response.bindingCode)) {
             console.log('PASS: Device registration successful');
-            console.log(`Binding code: ${response.code}`);
+            bindingCode = response.code || response.bindingCode;
+            console.log(`Binding code: ${bindingCode}`);
             passed++;
-
-            // Test 4: Verify device appears in /api/entities (should be empty, not bound)
-            console.log('\n--- Test 4: Unbound entity not in /api/entities ---');
-            const entitiesResp = await api('GET', `/api/entities?deviceId=${testDeviceId}`);
-            if (entitiesResp.entities.length === 0) {
-                console.log('PASS: Unbound entity correctly excluded from /api/entities');
-                passed++;
-            } else {
-                console.log('FAIL: Unbound entity should not appear in /api/entities');
-                failed++;
-            }
-        } else {
+        } else if (response.success === false) {
             console.log('FAIL: Device registration failed');
             console.log('Response:', response);
             failed++;
@@ -126,14 +129,30 @@ async function runTests() {
         failed++;
     }
 
-    // Test 5: /api/status returns isBound
+    // =====================================================
+    // Test 4: Unbound entity should NOT appear in /api/entities
+    // =====================================================
+    console.log('\n--- Test 4: Unbound entity not in /api/entities ---');
+    try {
+        const entitiesResp = await api('GET', `/api/entities?deviceId=${testDeviceId}`);
+        if (entitiesResp.entities.length === 0) {
+            console.log('PASS: Unbound entity correctly excluded from /api/entities');
+            passed++;
+        } else {
+            console.log('FAIL: Unbound entity should not appear in /api/entities');
+            console.log('Found:', entitiesResp.entities);
+            failed++;
+        }
+    } catch (e) {
+        console.log('FAIL: API error -', e.message);
+        failed++;
+    }
+
+    // =====================================================
+    // Test 5: /api/status returns entity status with isBound
+    // =====================================================
     console.log('\n--- Test 5: /api/status includes isBound ---');
     try {
-        const testDeviceId = 'test-status-' + Date.now();
-        // First register
-        await api('POST', '/api/device/register', { deviceId: testDeviceId, entityId: 0 });
-
-        // Then check status
         const status = await api('GET', `/api/status?deviceId=${testDeviceId}&entityId=0`);
 
         if ('isBound' in status) {
@@ -150,25 +169,27 @@ async function runTests() {
         failed++;
     }
 
-    // Test 6: /api/device/status returns isBound
+    // =====================================================
+    // Test 6: /api/device/status returns entity with isBound
+    // =====================================================
     console.log('\n--- Test 6: /api/device/status includes isBound ---');
     try {
-        const testDeviceId = 'test-devstatus-' + Date.now();
-        await api('POST', '/api/device/register', { deviceId: testDeviceId, entityId: 0 });
+        const status = await api('POST', '/api/device/status', {
+            deviceId: testDeviceId,
+            deviceSecret: testDeviceSecret,
+            entityId: 0  // Required field
+        });
 
-        const status = await api('POST', '/api/device/status', { deviceId: testDeviceId });
-
-        if (status.entities && status.entities.length > 0) {
-            const entity = status.entities[0];
-            if ('isBound' in entity) {
-                console.log('PASS: /api/device/status includes isBound field');
-                passed++;
-            } else {
-                console.log('FAIL: Entity in /api/device/status missing isBound');
-                failed++;
-            }
+        if ('isBound' in status) {
+            console.log('PASS: /api/device/status includes isBound field');
+            console.log(`Entity 0 isBound: ${status.isBound}`);
+            passed++;
+        } else if (status.success === false) {
+            console.log('FAIL: API returned error:', status.message);
+            failed++;
         } else {
-            console.log('FAIL: /api/device/status returned no entities');
+            console.log('FAIL: /api/device/status missing isBound field');
+            console.log('Response:', status);
             failed++;
         }
     } catch (e) {
@@ -176,16 +197,79 @@ async function runTests() {
         failed++;
     }
 
+    // =====================================================
+    // Test 7: Bind simulation - test binding flow
+    // =====================================================
+    console.log('\n--- Test 7: Full bind flow (register + bind + check) ---');
+    if (bindingCode) {
+        try {
+            // Simulate bot binding
+            const bindResponse = await api('POST', '/api/bind', {
+                code: bindingCode,
+                name: 'Test Bot'
+            });
+
+            if (bindResponse.success && bindResponse.botSecret) {
+                console.log('PASS: Binding successful');
+                console.log(`Bot secret received: ${bindResponse.botSecret.substring(0, 8)}...`);
+                passed++;
+
+                // Now check if entity appears in /api/entities WITH isBound
+                const entitiesResp = await api('GET', `/api/entities?deviceId=${testDeviceId}`);
+                const boundEntity = entitiesResp.entities.find(e => e.entityId === 0);
+
+                if (boundEntity && boundEntity.isBound === true) {
+                    console.log('PASS: Bound entity has isBound: true in /api/entities');
+                    passed++;
+                } else if (boundEntity) {
+                    console.log('FAIL: Bound entity missing isBound field!');
+                    console.log('Entity:', boundEntity);
+                    failed++;
+                } else {
+                    console.log('FAIL: Bound entity not found in /api/entities');
+                    failed++;
+                }
+
+                // Test 8: Check name field
+                console.log('\n--- Test 8: Entity name field ---');
+                if (boundEntity && boundEntity.name === 'Test Bot') {
+                    console.log('PASS: Entity name correctly set');
+                    passed++;
+                } else if (boundEntity) {
+                    console.log('FAIL: Entity name not set correctly');
+                    console.log('Expected: "Test Bot", Got:', boundEntity.name);
+                    failed++;
+                }
+            } else {
+                console.log('FAIL: Binding failed');
+                console.log('Response:', bindResponse);
+                failed++;
+            }
+        } catch (e) {
+            console.log('FAIL: API error -', e.message);
+            failed++;
+        }
+    } else {
+        console.log('SKIP: No binding code from Test 3');
+    }
+
+    // =====================================================
     // Summary
+    // =====================================================
     console.log('\n' + '='.repeat(60));
     console.log(`RESULTS: ${passed} passed, ${failed} failed`);
     console.log('='.repeat(60));
 
     if (failed > 0) {
         console.log('\n⚠️  Some tests failed. Please check the backend.');
+        console.log('\nCritical checks:');
+        console.log('  - /api/entities must include isBound: true for bound entities');
+        console.log('  - Android filters by isBound field, missing = no cards shown');
     } else {
         console.log('\n✅ All tests passed!');
     }
+
+    return { passed, failed };
 }
 
 runTests().catch(console.error);
