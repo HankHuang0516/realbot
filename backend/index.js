@@ -571,6 +571,13 @@ app.get('/api/client/pending', (req, res) => {
 
     const entity = entitySlots[eId];
     const pending = entity.messageQueue.filter(m => !m.read);
+
+    // Log when messages are consumed
+    if (pending.length > 0) {
+        console.log(`[Pending] Entity ${eId}: ${pending.length} messages consumed`);
+        pending.forEach(m => console.log(`  -> "${m.text}" from ${m.from}`));
+    }
+
     pending.forEach(m => m.read = true);
 
     res.json({
@@ -626,7 +633,9 @@ app.get('/api/debug/slots', (req, res) => {
             hasActiveCode: e.bindingCode !== null && e.bindingCodeExpires > Date.now(),
             character: e.character,
             state: e.state,
-            message: e.message
+            message: e.message,
+            messageQueueLength: e.messageQueue ? e.messageQueue.length : 0,
+            unreadMessages: e.messageQueue ? e.messageQueue.filter(m => !m.read).length : 0
         });
     }
     res.json({ slots });
