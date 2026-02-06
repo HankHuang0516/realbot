@@ -1,15 +1,22 @@
 package com.hank.clawlive.data.model
 
 data class AgentStatus(
-    val character: CharacterType = CharacterType.LOBSTER,
+    val name: String? = null, // Optional name set by bot (max 20 chars)
+    val character: String = "LOBSTER",
     val state: CharacterState = CharacterState.IDLE,
     val message: String = "Loading...",
+    val parts: Map<String, Float>? = null,
     val batteryLevel: Int = 100,
-    val lastUpdated: Long = System.currentTimeMillis()
-)
+    val lastUpdated: Long = System.currentTimeMillis(),
+    val isBound: Boolean = false // Server returns this field
+) {
+    // All characters are now LOBSTER type (PIG removed)
+    val baseShape: CharacterType
+        get() = CharacterType.LOBSTER
+}
 
 enum class CharacterType {
-    LOBSTER, PIG
+    LOBSTER
 }
 
 enum class CharacterState {

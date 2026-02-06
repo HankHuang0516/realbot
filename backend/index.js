@@ -49,6 +49,7 @@ function createDefaultEntity(entityId) {
         entityId: entityId,
         botSecret: null,
         isBound: false,
+        name: null, // Optional name set by bot (max 20 chars)
         character: "LOBSTER",
         state: "IDLE",
         message: `Entity #${entityId} waiting...`,
@@ -240,6 +241,7 @@ app.post('/api/device/status', (req, res) => {
     res.json({
         deviceId: deviceId,
         entityId: entity.entityId,
+        name: entity.name,
         character: entity.character,
         state: entity.state,
         message: entity.message,
@@ -257,15 +259,20 @@ app.post('/api/device/status', (req, res) => {
 /**
  * POST /api/bind
  * Bot binds to a specific entity using binding code.
- * Body: { code: "123456" }
+ * Body: { code: "123456", name: "optional name (max 20 chars)" }
  *
  * The binding code maps to a specific device + entity combination.
  */
 app.post('/api/bind', (req, res) => {
-    const { code } = req.body;
+    const { code, name } = req.body;
 
     if (!code) {
         return res.status(400).json({ success: false, message: "Binding code required" });
+    }
+
+    // Validate name length if provided
+    if (name && name.length > 20) {
+        return res.status(400).json({ success: false, message: "Name must be 20 characters or less" });
     }
 
     const binding = pendingBindings[code];
@@ -291,6 +298,7 @@ app.post('/api/bind', (req, res) => {
     // Mark as bound
     entity.isBound = true;
     entity.botSecret = botSecret;
+    entity.name = name || null; // Set name if provided
     entity.state = "IDLE";
     entity.message = "Connected!";
     entity.lastUpdated = Date.now();
@@ -298,7 +306,7 @@ app.post('/api/bind', (req, res) => {
     // Clear used binding code
     delete pendingBindings[code];
 
-    console.log(`[Bind] Device ${deviceId} Entity ${entityId} bound with botSecret`);
+    console.log(`[Bind] Device ${deviceId} Entity ${entityId} bound with botSecret${name ? ` (name: ${name})` : ''}`);
 
     res.json({
         success: true,
@@ -306,6 +314,7 @@ app.post('/api/bind', (req, res) => {
         deviceId: deviceId,
         entityId: entityId,
         botSecret: botSecret, // Bot must save this!
+        name: entity.name,
         deviceInfo: {
             deviceId: deviceId,
             entityId: entityId,
@@ -338,6 +347,7 @@ app.get('/api/entities', (req, res) => {
                 entities.push({
                     deviceId: deviceId,
                     entityId: entity.entityId,
+                    name: entity.name,
                     character: entity.character,
                     state: entity.state,
                     message: entity.message,
@@ -384,6 +394,7 @@ app.get('/api/status', (req, res) => {
     res.json({
         deviceId: deviceId,
         entityId: entity.entityId,
+        name: entity.name,
         character: entity.character,
         state: entity.state,
         message: entity.message,
@@ -397,11 +408,11 @@ app.get('/api/status', (req, res) => {
 /**
  * POST /api/transform
  * Update entity status (Bot uses this).
- * Body: { deviceId, entityId: 0-3, botSecret, character, state, message, parts }
+ * Body: { deviceId, entityId: 0-3, botSecret, name, character, state, message, parts }
  * REQUIRES botSecret for authentication!
  */
 app.post('/api/transform', (req, res) => {
-    const { deviceId, entityId, botSecret, character, state, message, parts } = req.body;
+    const { deviceId, entityId, botSecret, name, character, state, message, parts } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -434,6 +445,14 @@ app.post('/api/transform', (req, res) => {
         });
     }
 
+    // Validate and update name if provided
+    if (name !== undefined) {
+        if (name && name.length > 20) {
+            return res.status(400).json({ success: false, message: "Name must be 20 characters or less" });
+        }
+        entity.name = name || null;
+    }
+
     if (character) entity.character = character;
     if (state) entity.state = state;
     if (message !== undefined) entity.message = message;
@@ -449,6 +468,7 @@ app.post('/api/transform', (req, res) => {
         deviceId: deviceId,
         entityId: eId,
         currentState: {
+            name: entity.name,
             character: entity.character,
             state: entity.state,
             message: entity.message,
@@ -814,6 +834,7 @@ app.get('/api/debug/devices', (req, res) => {
             entities.push({
                 entityId: i,
                 isBound: e.isBound,
+                name: e.name,
                 character: e.character,
                 state: e.state,
                 message: e.message,

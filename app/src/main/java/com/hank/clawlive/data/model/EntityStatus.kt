@@ -6,17 +6,23 @@ package com.hank.clawlive.data.model
  */
 data class EntityStatus(
     val entityId: Int = 0,
-    val character: CharacterType = CharacterType.LOBSTER,
+    val name: String? = null, // Optional name set by bot (max 20 chars)
+    val character: String = "LOBSTER",
     val state: CharacterState = CharacterState.IDLE,
     val message: String = "Loading...",
     val parts: Map<String, Float>? = null,
     val batteryLevel: Int = 100,
     val lastUpdated: Long = System.currentTimeMillis()
 ) {
+    // All characters are now LOBSTER type (PIG removed)
+    val baseShape: CharacterType
+        get() = CharacterType.LOBSTER
+
     /**
      * Convert to legacy AgentStatus for backward compatibility
      */
     fun toAgentStatus(): AgentStatus = AgentStatus(
+        name = name,
         character = character,
         state = state,
         message = message,
@@ -31,6 +37,7 @@ data class EntityStatus(
          */
         fun fromAgentStatus(agentStatus: AgentStatus, entityId: Int = 0): EntityStatus = EntityStatus(
             entityId = entityId,
+            name = agentStatus.name,
             character = agentStatus.character,
             state = agentStatus.state,
             message = agentStatus.message,

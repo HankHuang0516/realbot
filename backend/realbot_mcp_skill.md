@@ -100,9 +100,11 @@ Device B (手機2) ← Bot B
 *   **Body**:
     ```json
     {
-      "code": "123456"
+      "code": "123456",
+      "name": "小龍蝦阿財"
     }
     ```
+    - `name` (選填): 實體名稱，最多 20 字元，會顯示在桌布上
 *   **Returns**:
     ```json
     {
@@ -132,6 +134,7 @@ Device B (手機2) ← Bot B
       "deviceId": "device-xxx",
       "entityId": 0,
       "botSecret": "your-bot-secret",
+      "name": "阿財",
       "message": "Hello!",
       "state": "EXCITED",
       "character": "LOBSTER",
@@ -141,6 +144,7 @@ Device B (手機2) ← Bot B
       }
     }
     ```
+    - `name` (選填): 實體名稱，最多 20 字元，會顯示在桌布上。設為空字串可清除名稱。
 
 ### `get_claw_status`
 取得指定實體的當前狀態。

@@ -4,14 +4,18 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.text.TextPaint
+import com.hank.clawlive.data.local.EntityLayout
+import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.model.AgentStatus
 import com.hank.clawlive.data.model.CharacterState
-import com.hank.clawlive.data.model.CharacterType
 import com.hank.clawlive.data.model.EntityStatus
 import kotlin.math.sin
 
 class ClawRenderer(private val context: Context) {
+
+    private val layoutPrefs = LayoutPreferences.getInstance(context)
 
     private val textPaint = TextPaint().apply {
         color = Color.WHITE
@@ -22,6 +26,40 @@ class ClawRenderer(private val context: Context) {
 
     private val characterPaint = Paint().apply {
         style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    // Bubble paint for message background
+    private val bubblePaint = Paint().apply {
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    // Bubble paint for message border
+    private val bubbleStrokePaint = Paint().apply {
+        style = Paint.Style.STROKE
+        color = Color.WHITE
+        isAntiAlias = true
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
+
+    // Badge paint for entity ID
+    private val badgePaint = Paint().apply {
+        style = Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    private val badgeTextPaint = TextPaint().apply {
+        color = Color.WHITE
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+        isFakeBoldText = true
+    }
+
+    // State icon paint
+    private val stateTextPaint = TextPaint().apply {
+        textAlign = Paint.Align.CENTER
         isAntiAlias = true
     }
 
@@ -40,36 +78,109 @@ class ClawRenderer(private val context: Context) {
     // ============================================
 
     /**
-     * Calculate positions for entities based on count.
-     * Layout:
-     * - 1: center
-     * - 2: left-center, right-center
-     * - 3: top-center, bottom-left, bottom-right
-     * - 4: 2x2 grid
+     * Calculate positions for entities based on count and layout preference.
      */
     private fun calculateEntityPositions(
         width: Float,
         height: Float,
         count: Int
     ): List<Pair<Float, Float>> {
+        val layout = layoutPrefs.entityLayout
+        val verticalPos = layoutPrefs.verticalPosition
+
+        return when (layout) {
+            EntityLayout.GRID_2X2 -> calculateGrid2x2(width, height, count, verticalPos)
+            EntityLayout.HORIZONTAL -> calculateHorizontal(width, height, count, verticalPos)
+            EntityLayout.VERTICAL -> calculateVertical(width, height, count)
+            EntityLayout.DIAMOND -> calculateDiamond(width, height, count, verticalPos)
+            EntityLayout.CORNERS -> calculateCorners(width, height, count)
+        }
+    }
+
+    private fun calculateGrid2x2(width: Float, height: Float, count: Int, verticalPos: Float): List<Pair<Float, Float>> {
+        val centerY = height * verticalPos
         return when (count) {
-            1 -> listOf(
-                Pair(width / 2f, height / 2f)
-            )
+            1 -> listOf(Pair(width / 2f, centerY))
             2 -> listOf(
-                Pair(width * 0.3f, height / 2f),
-                Pair(width * 0.7f, height / 2f)
+                Pair(width * 0.3f, centerY),
+                Pair(width * 0.7f, centerY)
             )
             3 -> listOf(
-                Pair(width / 2f, height * 0.35f),
-                Pair(width * 0.3f, height * 0.7f),
-                Pair(width * 0.7f, height * 0.7f)
+                Pair(width / 2f, centerY - height * 0.15f),
+                Pair(width * 0.3f, centerY + height * 0.15f),
+                Pair(width * 0.7f, centerY + height * 0.15f)
             )
-            else -> listOf( // 4 or more
-                Pair(width * 0.3f, height * 0.35f),
-                Pair(width * 0.7f, height * 0.35f),
-                Pair(width * 0.3f, height * 0.7f),
-                Pair(width * 0.7f, height * 0.7f)
+            else -> listOf(
+                Pair(width * 0.3f, centerY - height * 0.15f),
+                Pair(width * 0.7f, centerY - height * 0.15f),
+                Pair(width * 0.3f, centerY + height * 0.15f),
+                Pair(width * 0.7f, centerY + height * 0.15f)
+            )
+        }
+    }
+
+    private fun calculateHorizontal(width: Float, height: Float, count: Int, verticalPos: Float): List<Pair<Float, Float>> {
+        val centerY = height * verticalPos
+        val spacing = width / (count + 1)
+        return (1..count).map { i ->
+            Pair(spacing * i, centerY)
+        }
+    }
+
+    private fun calculateVertical(width: Float, height: Float, count: Int): List<Pair<Float, Float>> {
+        val centerX = width / 2f
+        val spacing = height / (count + 1)
+        return (1..count).map { i ->
+            Pair(centerX, spacing * i)
+        }
+    }
+
+    private fun calculateDiamond(width: Float, height: Float, count: Int, verticalPos: Float): List<Pair<Float, Float>> {
+        val centerX = width / 2f
+        val centerY = height * verticalPos
+        val offsetX = width * 0.25f
+        val offsetY = height * 0.15f
+
+        return when (count) {
+            1 -> listOf(Pair(centerX, centerY))
+            2 -> listOf(
+                Pair(centerX - offsetX, centerY),
+                Pair(centerX + offsetX, centerY)
+            )
+            3 -> listOf(
+                Pair(centerX, centerY - offsetY),
+                Pair(centerX - offsetX, centerY + offsetY),
+                Pair(centerX + offsetX, centerY + offsetY)
+            )
+            else -> listOf(
+                Pair(centerX, centerY - offsetY),        // Top
+                Pair(centerX - offsetX, centerY),       // Left
+                Pair(centerX + offsetX, centerY),       // Right
+                Pair(centerX, centerY + offsetY)        // Bottom
+            )
+        }
+    }
+
+    private fun calculateCorners(width: Float, height: Float, count: Int): List<Pair<Float, Float>> {
+        val marginX = width * 0.2f
+        val marginY = height * 0.25f
+
+        return when (count) {
+            1 -> listOf(Pair(width / 2f, height / 2f))
+            2 -> listOf(
+                Pair(marginX, marginY),
+                Pair(width - marginX, height - marginY)
+            )
+            3 -> listOf(
+                Pair(marginX, marginY),
+                Pair(width - marginX, marginY),
+                Pair(width / 2f, height - marginY)
+            )
+            else -> listOf(
+                Pair(marginX, marginY),
+                Pair(width - marginX, marginY),
+                Pair(marginX, height - marginY),
+                Pair(width - marginX, height - marginY)
             )
         }
     }
@@ -77,12 +188,13 @@ class ClawRenderer(private val context: Context) {
     /**
      * Get scale factor based on entity count.
      * Smaller scale for more entities.
+     * Base scale is 1.5x larger than original.
      */
     private fun getScaleFactor(count: Int): Float = when (count) {
-        1 -> 1.0f
-        2 -> 0.65f
-        3 -> 0.55f
-        else -> 0.5f
+        1 -> 1.5f      // 1.0 * 1.5
+        2 -> 0.975f    // 0.65 * 1.5
+        3 -> 0.825f    // 0.55 * 1.5
+        else -> 0.75f  // 0.5 * 1.5
     }
 
     /**
@@ -96,9 +208,15 @@ class ClawRenderer(private val context: Context) {
         canvas.drawColor(Color.BLACK)
 
         if (entities.isEmpty()) {
-            // Draw "No entities" message
-            textPaint.textSize = 40f
-            canvas.drawText("No entities active", width / 2f, height / 2f, textPaint)
+            // Draw "No entities" message with instructions
+            textPaint.textSize = 36f
+            textPaint.color = Color.WHITE
+            canvas.drawText("No entities connected", width / 2f, height / 2f - 40f, textPaint)
+            textPaint.textSize = 24f
+            textPaint.color = Color.GRAY
+            canvas.drawText("Open Claw Live app to bind", width / 2f, height / 2f + 20f, textPaint)
+            textPaint.textSize = 20f
+            canvas.drawText("entities with OpenClaw bot", width / 2f, height / 2f + 60f, textPaint)
             return
         }
 
@@ -136,115 +254,274 @@ class ClawRenderer(private val context: Context) {
         val charY = centerY + bobOffset
         val radius = 150f * scale
 
-        // Dynamic color
-        characterPaint.color = when (entity.character) {
-            CharacterType.LOBSTER -> if (entity.state == CharacterState.SLEEPING)
-                Color.parseColor("#8B0000") else Color.RED
-            CharacterType.PIG -> if (entity.state == CharacterState.SLEEPING)
-                Color.parseColor("#C71585") else Color.MAGENTA
+        // Draw entity based on type (LOBSTER only now)
+        // The lobster SVG drawing creates its own body shape, no need for base circle
+        drawLobsterAtPosition(canvas, centerX, charY, entity, scale)
+
+        // Draw message bubble (ABOVE the entity)
+        // Anchor point is top of the character + margin
+        drawMessageBubble(canvas, entity, centerX, charY - radius - (20f * scale), scale, screenWidth)
+
+        // Draw Name and Status Group BELOW the entity
+        if (!isAmbient) {
+            val stateEmoji = getStateEmoji(entity.state)
+            val statusText = "$stateEmoji ${entity.state}"
+
+            // Configure paints
+            stateTextPaint.textSize = (28f * scale).coerceAtLeast(18f)
+            stateTextPaint.color = Color.WHITE
+
+            // Base Y position (below entity)
+            val baseY = charY + radius + (40f * scale)
+            val lineHeight = stateTextPaint.textSize * 1.3f
+
+            // Draw name if exists (at baseY)
+            entity.name?.let { name ->
+                stateTextPaint.textAlign = Paint.Align.CENTER
+                canvas.drawText(name, centerX, baseY, stateTextPaint)
+            }
+
+            // Status bar Y: shifted down if name exists
+            val statusY = if (entity.name != null) baseY + lineHeight else baseY
+
+            // Measure dimensions for status bar
+            val textWidth = stateTextPaint.measureText(statusText)
+            val badgeRadius = 12f * scale // Smaller badge for this location
+            val badgeDiameter = badgeRadius * 2
+            val spacing = 16f * scale
+
+            // Calculate total width of the group (Badge + Spacing + Text)
+            val totalWidth = badgeDiameter + spacing + textWidth
+
+            // Calculate starting X to center the whole group
+            val groupStartX = centerX - (totalWidth / 2)
+            val badgeCenterY = statusY - (stateTextPaint.textSize / 3) // Align roughly with text middle
+
+            // Draw Badge
+            drawEntityBadge(canvas, entity.entityId, groupStartX + badgeRadius, badgeCenterY, scale * 0.5f) // Pass smaller scale because function uses it for radius too
+
+            // Draw Text (Left aligned from after the badge)
+            stateTextPaint.textAlign = Paint.Align.LEFT
+            canvas.drawText(statusText, groupStartX + badgeDiameter + spacing, statusY, stateTextPaint)
+            stateTextPaint.textAlign = Paint.Align.CENTER // Restore default
         }
 
-        // Base Body Shape
-        canvas.drawCircle(centerX, charY, radius, characterPaint)
-
-        // Form-specific details
-        when (entity.character) {
-            CharacterType.LOBSTER -> {
-                drawLobsterAtPosition(canvas, centerX, charY, entity, scale)
-            }
-            CharacterType.PIG -> {
-                drawPigAtPosition(canvas, centerX, charY, entity, scale)
-            }
-        }
-
-        // Draw Status Text (smaller for multi-entity)
-        drawEntityMessage(canvas, entity, centerX, charY + radius + (40f * scale), scale, screenWidth)
-
-        // Draw "Zzz" if sleeping
+        // Draw "Zzz" if sleeping (Overlay on body/head, maybe slightly adjusted)
         if (entity.state == CharacterState.SLEEPING && !isAmbient) {
             textPaint.textSize = 60f * scale
-            canvas.drawText("Zzz...", centerX + radius * 0.7f, charY - radius * 0.5f, textPaint)
+            // Moving Zzz slightly up so it doesn't overlap too much with the center face features
+            canvas.drawText("Zzz...", centerX + radius * 0.7f, charY - radius * 0.8f, textPaint)
         }
     }
 
     /**
-     * Draw entity message text below the character.
+     * Draw entity ID badge (small circle with number).
      */
-    private fun drawEntityMessage(
+    private fun drawEntityBadge(
+        canvas: Canvas,
+        entityId: Int,
+        x: Float,
+        y: Float,
+        scale: Float
+    ) {
+        if (isAmbient) return
+
+        val badgeRadius = 24f * scale
+
+        // Badge background color based on entity ID
+        badgePaint.color = when (entityId) {
+            0 -> Color.parseColor("#4CAF50") // Green
+            1 -> Color.parseColor("#2196F3") // Blue
+            2 -> Color.parseColor("#FF9800") // Orange
+            3 -> Color.parseColor("#9C27B0") // Purple
+            else -> Color.GRAY
+        }
+
+        // Draw badge circle
+        canvas.drawCircle(x, y, badgeRadius, badgePaint)
+
+        // Draw entity number
+        badgeTextPaint.textSize = 28f * scale
+        canvas.drawText("#$entityId", x, y + (10f * scale), badgeTextPaint)
+    }
+
+    /**
+     * Draw message bubble with semi-transparent background.
+     */
+    /**
+     * Draw message bubble with semi-transparent background.
+     * Positioned ABOVE the anchor point (bottom of bubble -> anchor).
+     */
+    /**
+     * Draw message bubble with semi-transparent background.
+     * Positioned ABOVE the anchor point (bottom of bubble -> anchor).
+     */
+    /**
+     * Draw message bubble with semi-transparent background.
+     * Positioned ABOVE the anchor point (bottom of bubble -> anchor).
+     */
+    private fun drawMessageBubble(
         canvas: Canvas,
         entity: EntityStatus,
         centerX: Float,
-        textY: Float,
+        anchorBottomY: Float,
         scale: Float,
         screenWidth: Float
     ) {
-        val message = if (isAmbient) {
-            "${entity.state}"
+        val message = entity.message ?: ""
+        if (message.isEmpty() && isAmbient) return
+
+        // 1. Setup Text Paint
+        textPaint.textSize = (32f * scale).coerceAtLeast(16f)
+        textPaint.color = Color.WHITE
+        // FORCE LEFT ALIGNMENT for bubble text to prevent overflow
+        val originalAlign = textPaint.textAlign
+        textPaint.textAlign = Paint.Align.LEFT
+
+        val displayText = if (isAmbient) {
+            getStateEmoji(entity.state)
         } else {
-            "${entity.message}\n(${entity.state})"
+            message
         }
 
-        textPaint.color = if (isAmbient) Color.GRAY else Color.WHITE
-        textPaint.textSize = (40f * scale).coerceAtLeast(24f)
+        // 2. Define Layout Constraints
+        val padH = 16f * scale
+        val padV = 16f * scale
+        val screenHeight = canvas.height.toFloat()
+        val screenMargin = 40f * scale // Safety margin from top/bottom
+        
+        // Calculate max available height for text
+        // (Screen Height - Margins - Padding)
+        val maxAvailableHeight = screenHeight - (screenMargin * 2) - (padV * 2)
+        
+        val maxWidth = (screenWidth * 0.8f).coerceIn(200f, 800f)
+        val maxTextWidth = (maxWidth - padH * 2).toInt().coerceAtLeast(1)
+        
+        // Calculate Max Lines to fit in screen
+        val lineHeight = textPaint.fontSpacing
+        val maxLines = (maxAvailableHeight / lineHeight).toInt().coerceAtLeast(1)
 
-        // Text width based on scale
-        val textWidth = (screenWidth * 0.35f * scale).toInt().coerceAtLeast(150)
+        // 3. Create StaticLayout
+        val layoutBuilder = android.text.StaticLayout.Builder.obtain(
+            displayText, 0, displayText.length, textPaint, maxTextWidth
+        )
+            .setAlignment(android.text.Layout.Alignment.ALIGN_NORMAL) 
+            .setLineSpacing(4f, 1.0f)
+            .setIncludePad(true)
+            .setMaxLines(maxLines)
+            .setEllipsize(android.text.TextUtils.TruncateAt.END)
+        
+        val layout = layoutBuilder.build()
 
-        val layout = android.text.StaticLayout.Builder.obtain(
-            message, 0, message.length, textPaint, textWidth
-        ).setAlignment(android.text.Layout.Alignment.ALIGN_CENTER)
-            .setLineSpacing(0f, 1.0f)
-            .setIncludePad(false)
-            .build()
+        // 4. Calculate Dimensions
+        var widestLineWidth = 0f
+        for (i in 0 until layout.lineCount) {
+             val lineWidth = layout.getLineWidth(i)
+             if (lineWidth > widestLineWidth) {
+                 widestLineWidth = lineWidth
+             }
+        }
+        
+        val contentWidth = widestLineWidth
+        // Ensure minimum width for the tail connection
+        val minContentWidth = 40f * scale 
+        val finalContentWidth = contentWidth.coerceAtLeast(minContentWidth)
+        
+        val bubbleWidth = finalContentWidth + padH * 2
+        val bubbleHeight = layout.height.toFloat() + padV * 2
 
+        // 5. Calculate Positioning (Smart Constraints)
+        val idealTop = anchorBottomY - bubbleHeight
+        
+        // If idealTop is above the screen margin, shift it down to the margin.
+        // This might cause it to overlap the character, but text legibility is priority.
+        val bubbleTop = if (idealTop < screenMargin) {
+            screenMargin
+        } else {
+            idealTop
+        }
+        
+        val bubbleBottom = bubbleTop + bubbleHeight
+        val bubbleLeft = centerX - bubbleWidth / 2
+        val bubbleRight = centerX + bubbleWidth / 2
+        
+        // Check if shifted significantly (tail would be disconnected/weird)
+        // If the bubble bottom is significantly below the anchor point, we should hide the tail?
+        // Actually, if bubbleTop != idealTop, it means we shifted.
+        val isShifted = bubbleTop > idealTop + 1f // allowance for float error
+
+        // 6. Draw Bubble Shape (Unified Path)
+        val cornerRadius = 24f * scale
+        
+        // Tail geometry
+        val tailWidth = 20f * scale
+        val tailHeight = 20f * scale
+        val tailTipX = centerX
+        val tailTipY = bubbleBottom + tailHeight
+        val tailBaseLeft = centerX - (tailWidth / 2) + (5f * scale)
+        val tailBaseRight = centerX + (tailWidth / 2)
+        
+        val path = android.graphics.Path()
+        
+        if (!isAmbient && !isShifted) {
+             // WITH TAIL
+            path.moveTo(tailBaseRight, bubbleBottom)
+            path.lineTo(bubbleRight - cornerRadius, bubbleBottom)
+            path.arcTo(RectF(bubbleRight - cornerRadius * 2, bubbleBottom - cornerRadius * 2, bubbleRight, bubbleBottom), 90f, -90f)
+            path.lineTo(bubbleRight, bubbleTop + cornerRadius)
+            path.arcTo(RectF(bubbleRight - cornerRadius * 2, bubbleTop, bubbleRight, bubbleTop + cornerRadius * 2), 0f, -90f)
+            path.lineTo(bubbleLeft + cornerRadius, bubbleTop)
+            path.arcTo(RectF(bubbleLeft, bubbleTop, bubbleLeft + cornerRadius * 2, bubbleTop + cornerRadius * 2), 270f, -90f)
+            path.lineTo(bubbleLeft, bubbleBottom - cornerRadius)
+            path.arcTo(RectF(bubbleLeft, bubbleBottom - cornerRadius * 2, bubbleLeft + cornerRadius * 2, bubbleBottom), 180f, -90f)
+            path.lineTo(tailBaseLeft, bubbleBottom)
+            path.quadTo(centerX - (tailWidth * 0.2f), bubbleBottom + (tailHeight * 0.6f), tailTipX, tailTipY)
+            path.quadTo(centerX + (tailWidth * 0.4f), bubbleBottom + (tailHeight * 0.3f), tailBaseRight, bubbleBottom)
+        } else {
+            // NO TAIL (Rounded Rect only) - used when shifted or ambient
+            path.addRoundRect(RectF(bubbleLeft, bubbleTop, bubbleRight, bubbleBottom), cornerRadius, cornerRadius, android.graphics.Path.Direction.CW)
+        }
+        
+        path.close()
+
+        // Set Paint Colors
+        val bubblesColor = when (entity.state) {
+            CharacterState.SLEEPING -> Color.argb(230, 50, 50, 80)
+            CharacterState.EXCITED -> Color.argb(230, 255, 100, 50)
+            CharacterState.BUSY -> Color.argb(230, 50, 100, 150)
+            CharacterState.EATING -> Color.argb(230, 80, 150, 50)
+            else -> Color.argb(230, 40, 40, 40)
+        }
+        bubblePaint.color = bubblesColor
+        
+        bubbleStrokePaint.strokeWidth = 4f * scale
+        bubbleStrokePaint.color = Color.WHITE
+
+        // Draw Fill
+        canvas.drawPath(path, bubblePaint)
+        
+        // Draw Border
+        canvas.drawPath(path, bubbleStrokePaint)
+
+        // 7. Draw Text
         canvas.save()
-        canvas.translate(centerX - (textWidth / 2f), textY)
+        canvas.translate(bubbleLeft + padH, bubbleTop + padV)
         layout.draw(canvas)
         canvas.restore()
+        
+        // Restore original alignment (CENTER)
+        textPaint.textAlign = originalAlign
     }
 
     /**
-     * Draw pig at specific position with scale.
+     * Get emoji for state.
      */
-    private fun drawPigAtPosition(
-        canvas: Canvas,
-        cx: Float,
-        cy: Float,
-        entity: EntityStatus,
-        scale: Float
-    ) {
-        // Snout
-        val snoutPaint = Paint(characterPaint)
-        snoutPaint.color = Color.parseColor("#FFC0CB")
-        canvas.drawOval(
-            cx - 50f * scale, cy + 20f * scale,
-            cx + 50f * scale, cy + 80f * scale,
-            snoutPaint
-        )
-
-        // Nostrils
-        snoutPaint.color = Color.BLACK
-        canvas.drawCircle(cx - 20f * scale, cy + 50f * scale, 10f * scale, snoutPaint)
-        canvas.drawCircle(cx + 20f * scale, cy + 50f * scale, 10f * scale, snoutPaint)
-
-        // Ears
-        characterPaint.color = Color.MAGENTA
-        canvas.drawCircle(cx - 100f * scale, cy - 100f * scale, 50f * scale, characterPaint)
-        canvas.drawCircle(cx + 100f * scale, cy - 100f * scale, 50f * scale, characterPaint)
-
-        // Eyes
-        if (!isAmbient) {
-            val eyeRadius = 20f * scale
-            val eyeOffsetX = 50f * scale
-            val eyeOffsetY = -30f * scale
-            characterPaint.color = Color.WHITE
-            canvas.drawCircle(cx - eyeOffsetX, cy + eyeOffsetY, eyeRadius, characterPaint)
-            canvas.drawCircle(cx + eyeOffsetX, cy + eyeOffsetY, eyeRadius, characterPaint)
-            characterPaint.color = Color.BLACK
-            val pupilRadius = if (entity.state == CharacterState.EXCITED) 12f * scale else 8f * scale
-            canvas.drawCircle(cx - eyeOffsetX, cy + eyeOffsetY, pupilRadius, characterPaint)
-            canvas.drawCircle(cx + eyeOffsetX, cy + eyeOffsetY, pupilRadius, characterPaint)
-        }
+    private fun getStateEmoji(state: CharacterState): String = when (state) {
+        CharacterState.IDLE -> "😐"
+        CharacterState.SLEEPING -> "😴"
+        CharacterState.EXCITED -> "🎉"
+        CharacterState.BUSY -> "💼"
+        CharacterState.EATING -> "🍽️"
     }
 
     /**
@@ -265,18 +542,59 @@ class ClawRenderer(private val context: Context) {
         canvas.scale(svgScale, svgScale)
 
         // Colors
-        val coralBright = Color.parseColor("#FF7F50")
-        val coralDark = Color.parseColor("#CD5B45")
+        // Dynamic color
+        val charString = entity.character.toUpperCase(java.util.Locale.ROOT)
+        // Check for overrides in parts
+        val customColor = entity.parts?.get("COLOR")?.toInt()
+        val metallic = entity.parts?.get("METALLIC") ?: 0f
+        val gloss = entity.parts?.get("GLOSS") ?: 0f
+
+        val (coralBright, coralDark) = if (customColor != null) {
+            // Ensure alpha channel is set (in case only RGB was provided without alpha)
+            // If alpha is 0 (transparent), force it to 0xFF (fully opaque)
+            val base = if (android.graphics.Color.alpha(customColor) == 0) {
+                customColor or 0xFF000000.toInt()
+            } else {
+                customColor
+            }
+            // If metallic, dark color is darker (higher contrast)
+            // If gloss, bright color is lighter
+            val darkFactor = if (metallic > 0.5f) 0.4f else 0.8f // 0.4 = 60% darker
+            val r = android.graphics.Color.red(base)
+            val g = android.graphics.Color.green(base)
+            val b = android.graphics.Color.blue(base)
+            
+            val dark = android.graphics.Color.rgb(
+                (r * darkFactor).toInt(),
+                (g * darkFactor).toInt(),
+                (b * darkFactor).toInt()
+            )
+            Pair(base, dark)
+        } else {
+            // Fallback to name-based logic
+            val isGolden = charString.contains("GOLDEN")
+            val isDiamond = charString.contains("DIAMOND")
+            
+            val bright = when {
+                isGolden -> Color.parseColor("#FFD700")
+                isDiamond -> Color.CYAN
+                else -> Color.parseColor("#FF7F50")
+            }
+            
+            val dark = when {
+                isGolden -> Color.parseColor("#DAA520")
+                isDiamond -> Color.parseColor("#008B8B")
+                else -> Color.parseColor("#CD5B45")
+            }
+            Pair(bright, dark)
+        }
 
         val bodyPaint = Paint().apply {
             style = Paint.Style.FILL
             color = coralBright
             isAntiAlias = true
-            shader = android.graphics.LinearGradient(
-                0f, 0f, 120f, 120f,
-                coralBright, coralDark,
-                android.graphics.Shader.TileMode.CLAMP
-            )
+            // Note: LinearGradient with canvas transforms needs setLocalMatrix
+            // For now, using solid color for reliability
         }
 
         val strokePaint = Paint().apply {
@@ -305,11 +623,11 @@ class ClawRenderer(private val context: Context) {
         }
         canvas.drawPath(bodyPath, bodyPaint)
 
-        // Left Claw with rotation
+        // Left Claw
         canvas.save()
         val leftRotation = entity.parts?.get("CLAW_LEFT") ?: 0f
         if (leftRotation != 0f) {
-            canvas.rotate(leftRotation, 25f, 55f)
+            canvas.rotate(leftRotation, 20f, 55f)
         }
         val leftClawPath = android.graphics.Path().apply {
             moveTo(20f, 45f)
@@ -321,11 +639,11 @@ class ClawRenderer(private val context: Context) {
         canvas.drawPath(leftClawPath, bodyPaint)
         canvas.restore()
 
-        // Right Claw with rotation
+        // Right Claw
         canvas.save()
         val rightRotation = entity.parts?.get("CLAW_RIGHT") ?: 0f
         if (rightRotation != 0f) {
-            canvas.rotate(rightRotation, 95f, 55f)
+            canvas.rotate(rightRotation, 100f, 55f) // Adjusted pivot
         }
         val rightClawPath = android.graphics.Path().apply {
             moveTo(100f, 45f)
@@ -351,7 +669,24 @@ class ClawRenderer(private val context: Context) {
         canvas.drawPath(antennaR, strokePaint)
 
         // Eyes
-        drawLobsterEyesForEntity(canvas, entity)
+        val eyePaint = Paint().apply {
+            color = Color.parseColor("#1a1a2e") // var(--bg-deep)
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+        val eyeGlowPaint = Paint().apply {
+            color = Color.CYAN // var(--cyan-bright)
+            style = Paint.Style.FILL
+            isAntiAlias = true
+        }
+
+        // Left Eye
+        canvas.drawCircle(45f, 35f, 6f, eyePaint)
+        canvas.drawCircle(46f, 34f, 2f, eyeGlowPaint)
+
+        // Right Eye
+        canvas.drawCircle(75f, 35f, 6f, eyePaint)
+        canvas.drawCircle(76f, 34f, 2f, eyeGlowPaint)
 
         canvas.restore()
     }
