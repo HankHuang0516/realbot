@@ -32,7 +32,7 @@ for (let i = 0; i < MAX_ENTITIES; i++) {
         botSecret: null, // Bot authentication token
         isBound: false,
         // Agent state
-        character: i % 2 === 0 ? "LOBSTER" : "PIG", // Alternate default
+        character: "LOBSTER", // Alternate default
         state: "IDLE",
         message: `Entity #${i} waiting...`,
         parts: {},
@@ -440,7 +440,7 @@ app.delete('/api/entity/:entityId', (req, res) => {
         deviceSecret: null,
         botSecret: null,
         isBound: false,
-        character: eId % 2 === 0 ? "LOBSTER" : "PIG",
+        character: "LOBSTER",
         state: "IDLE",
         message: `Entity #${eId} waiting...`,
         parts: {},
@@ -646,7 +646,7 @@ app.post('/api/debug/reset', (req, res) => {
             deviceSecret: null,
             botSecret: null,
             isBound: false,
-            character: i % 2 === 0 ? "LOBSTER" : "PIG",
+            character: "LOBSTER",
             state: "IDLE",
             message: `Entity #${i} waiting...`,
             parts: {},

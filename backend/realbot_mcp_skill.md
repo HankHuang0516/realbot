@@ -84,13 +84,21 @@
           },
           "character": {
             "type": "string",
-            "enum": ["LOBSTER", "PIG"],
-            "description": "The form of the avatar."
+            "enum": ["LOBSTER"],
+            "description": "The form of the avatar. Currently only LOBSTER is supported."
           },
           "parts": {
             "type": "object",
-            "description": "Rotation angles for body parts. Keys: CLAW_LEFT, CLAW_RIGHT, EYE_LID, EYE_ANGLE",
-            "additionalProperties": { "type": "number" }
+            "description": "Body part controls and visual effects",
+            "properties": {
+              "CLAW_LEFT": { "type": "number", "description": "Left claw rotation angle (-90 to 90)" },
+              "CLAW_RIGHT": { "type": "number", "description": "Right claw rotation angle (-90 to 90)" },
+              "EYE_LID": { "type": "number", "description": "Eyelid closure (0=open, 1=closed)" },
+              "EYE_ANGLE": { "type": "number", "description": "Eyebrow angle for expression" },
+              "COLOR": { "type": "integer", "description": "Custom color as ARGB integer. ⚠️ Must include alpha! Use 0xFFRRGGBB format (e.g., 0xFFFF7F50 for coral)" },
+              "METALLIC": { "type": "number", "description": "Metallic effect (0-1). Higher = more contrast" },
+              "GLOSS": { "type": "number", "description": "Glossy effect (0-1)" }
+            }
           }
         },
         "required": ["entityId", "botSecret", "message"]
@@ -160,7 +168,7 @@
     {
       "entities": [
         { "entityId": 0, "character": "LOBSTER", "state": "IDLE", "message": "Hello" },
-        { "entityId": 1, "character": "PIG", "state": "EXCITED", "message": "Hi!" }
+        { "entityId": 1, "character": "LOBSTER", "state": "EXCITED", "message": "Hi!" }
       ],
       "activeCount": 2,
       "maxEntities": 4
@@ -222,7 +230,7 @@
       "entityId": 0,
       "count": 1,
       "messages": [
-        { "text": "Hello!", "from": "entity-1", "fromCharacter": "PIG", "timestamp": 123456789 }
+        { "text": "Hello!", "from": "entity-1", "fromCharacter": "LOBSTER", "timestamp": 123456789 }
       ]
     }
     ```
@@ -265,25 +273,41 @@
 }
 ```
 
+### 金色龍蝦 (Golden Lobster)
+```json
+{
+  "entityId": 0,
+  "botSecret": "your-bot-secret-here",
+  "message": "I'm golden!",
+  "parts": {
+    "COLOR": -2883840,
+    "METALLIC": 1,
+    "GLOSS": 0.8
+  }
+}
+```
+> ⚠️ **COLOR 必須是 ARGB 整數！** -2883840 = 0xFFFFD700 (金色)
+> 常用顏色: 珊瑚色 -8421168 (0xFFFF7F50), 青色 -16711681 (0xFF00FFFF)
+
 ---
 
 ## 6. 多實體對話範例
 
-假設 4 個 Bot 各自控制一個實體：
+假設 4 個 Bot 各自控制一個實體（都是龍蝦，但可以有不同顏色）：
 
 ```
-Bot A (Entity 0 - Lobster): "大家好！我是龍蝦！" [botSecret: abc123...]
-Bot B (Entity 1 - Pig):     "嗨！我是小豬～"     [botSecret: def456...]
-Bot C (Entity 2 - Lobster): "龍蝦二號報到！"    [botSecret: ghi789...]
-Bot D (Entity 3 - Pig):     "小豬四號來了！"    [botSecret: jkl012...]
+Bot A (Entity 0 - 紅色龍蝦):   "大家好！我是紅龍蝦！" [botSecret: abc123...]
+Bot B (Entity 1 - 金色龍蝦):   "嗨！我是金龍蝦～"     [botSecret: def456...]
+Bot C (Entity 2 - 青色龍蝦):   "龍蝦三號報到！"      [botSecret: ghi789...]
+Bot D (Entity 3 - 紫色龍蝦):   "龍蝦四號來了！"      [botSecret: jkl012...]
 
 Bot A 發訊息給 Bot B (需要 Bot A 的 botSecret):
 POST /api/entity/0/speak-to/1
-{ "botSecret": "abc123...", "text": "小豬你好嗎？" }
+{ "botSecret": "abc123...", "text": "金龍蝦你好嗎？" }
 
 Bot B 檢查訊息 (不需要 botSecret):
 GET /api/client/pending?entityId=1
-→ { "messages": [{ "text": "小豬你好嗎？", "from": "entity-0" }] }
+→ { "messages": [{ "text": "金龍蝦你好嗎？", "from": "entity-0" }] }
 
 Bot A 廣播 (需要 Bot A 的 botSecret):
 POST /api/entity/broadcast
@@ -300,6 +324,8 @@ POST /api/entity/broadcast
 - 最多 4 個實體 (entityId: 0-3)
 - Binding code 5 分鐘後過期
 - `botSecret` 只在綁定時回傳一次，重新綁定會產生新的 secret
+- **COLOR 必須包含 alpha channel！** 使用帶符號的 32-bit 整數 (如 -2883840 = 0xFFFFD700)
+- 目前只支援 LOBSTER 角色（PIG 已移除）
 
 ## 8. 需要 botSecret 的端點
 
