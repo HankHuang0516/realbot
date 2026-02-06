@@ -47,22 +47,37 @@
     }
     ```
 
-### Webhook 推播格式
+### Webhook 推播格式 (OpenClaw 格式)
 當手機端發送訊息時，Server 會 POST 到你的 webhook：
 
-*   **URL**: `{webhook_url}/api/v1/sessions/{session_key}/send`
+*   **URL**: `{webhook_url}` (直接 POST 到註冊的 URL)
 *   **Method**: `POST`
 *   **Headers**:
     ```
     Authorization: Bearer {token}
     Content-Type: application/json
     ```
-*   **Body**:
+*   **Body** (OpenClaw `/tools/invoke` 格式):
     ```json
     {
-      "message": "[Entity 0 收到新訊息]\n來源: client\n內容: Hello!"
+      "tool": "sessions_send",
+      "args": {
+        "sessionKey": "{session_key}",
+        "message": "[Entity 0 收到新訊息]\n來源: client\n內容: Hello!"
+      }
     }
     ```
+
+### OpenClaw 註冊範例
+```json
+{
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "webhook_url": "https://wishlistai.zeabur.app/tools/invoke",
+  "token": "your-gateway-token",
+  "session_key": "agent:main:main"
+}
+```
 
 ### `unregister_webhook`
 取消 webhook，切回 Polling 模式。

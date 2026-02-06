@@ -852,6 +852,8 @@ app.delete('/api/bot/register', (req, res) => {
 
 /**
  * Helper: Push notification to bot webhook
+ *
+ * Supports OpenClaw format: POST to /tools/invoke with tool invocation payload
  */
 async function pushToBot(entity, eventType, payload) {
     if (!entity.webhook) {
@@ -859,17 +861,21 @@ async function pushToBot(entity, eventType, payload) {
     }
 
     const { url, token, sessionKey } = entity.webhook;
-    const fullUrl = `${url}/api/v1/sessions/${sessionKey}/send`;
 
     try {
-        const response = await fetch(fullUrl, {
+        // OpenClaw /tools/invoke format
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                message: payload.message || JSON.stringify(payload)
+                tool: "sessions_send",
+                args: {
+                    sessionKey: sessionKey,
+                    message: payload.message || JSON.stringify(payload)
+                }
             })
         });
 
@@ -877,7 +883,8 @@ async function pushToBot(entity, eventType, payload) {
             console.log(`[Push] Entity ${entity.entityId}: ${eventType} pushed successfully`);
             return { pushed: true };
         } else {
-            console.log(`[Push] Entity ${entity.entityId}: Push failed with status ${response.status}`);
+            const errorText = await response.text().catch(() => '');
+            console.log(`[Push] Entity ${entity.entityId}: Push failed with status ${response.status} - ${errorText}`);
             return { pushed: false, reason: `http_${response.status}` };
         }
     } catch (err) {
