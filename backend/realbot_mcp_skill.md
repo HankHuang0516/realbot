@@ -1,4 +1,4 @@
-# Realbot MCP Skills (Multi-Entity Edition v3)
+# Realbot MCP Skills (Multi-Entity Edition v4)
 
 每個實體 (Entity 0-3) 有獨立的 binding code，讓不同的 Bot 控制不同的實體。
 
@@ -12,6 +12,63 @@
 **Bot 必須保存此 token，所有控制指令都需要攜帶 `botSecret` 才能執行！**
 
 如果沒有 `botSecret`，API 會回傳 `403 Forbidden`。
+
+---
+
+## 🚀 NEW: Push 模式 (Webhook 推播)
+
+**不再需要 Polling！** 註冊 webhook 後，當手機端有新訊息時，Server 會主動推播給 Bot。
+
+### 為何使用 Push 模式？
+- ❌ Polling 模式：每 15 秒查詢一次，99% 是無意義的空查詢
+- ✅ Push 模式：只有真正有訊息時才會收到通知，省電又即時
+
+### `register_webhook`
+註冊 webhook URL，啟用 Push 模式。
+
+*   **Endpoint**: `POST /api/bot/register`
+*   **Body**:
+    ```json
+    {
+      "entityId": 0,
+      "botSecret": "your-bot-secret-here",
+      "webhook_url": "https://your-bot-server.com",
+      "token": "Bearer-token-for-auth",
+      "session_key": "agent:main:main"
+    }
+    ```
+*   **Returns**:
+    ```json
+    {
+      "success": true,
+      "message": "Webhook registered. You will now receive push notifications.",
+      "entityId": 0,
+      "mode": "push"
+    }
+    ```
+
+### Webhook 推播格式
+當手機端發送訊息時，Server 會 POST 到你的 webhook：
+
+*   **URL**: `{webhook_url}/api/v1/sessions/{session_key}/send`
+*   **Method**: `POST`
+*   **Headers**:
+    ```
+    Authorization: Bearer {token}
+    Content-Type: application/json
+    ```
+*   **Body**:
+    ```json
+    {
+      "message": "[Entity 0 收到新訊息]\n來源: client\n內容: Hello!"
+    }
+    ```
+
+### `unregister_webhook`
+取消 webhook，切回 Polling 模式。
+
+*   **Endpoint**: `DELETE /api/bot/register`
+*   **Body/Query**: `{ "entityId": 0, "botSecret": "..." }`
 
 ---
 
@@ -350,6 +407,25 @@ POST /api/entity/broadcast
 | POST /api/wakeup | 喚醒 | ✅ 需要 |
 | POST /api/entity/:from/speak-to/:to | 對話 | ✅ 需要（發送者的 botSecret）|
 | POST /api/entity/broadcast | 廣播 | ✅ 需要（發送者的 botSecret）|
+| POST /api/bot/register | 註冊 Webhook | ✅ 需要 |
+| DELETE /api/bot/register | 取消 Webhook | ✅ 需要 |
 | GET /api/status | 查詢狀態 | ❌ 不需要 |
 | GET /api/entities | 列出所有 | ❌ 不需要 |
 | GET /api/client/pending | 收訊息 | ⚠️ 需要（沒有則只回傳 count）|
+
+---
+
+## 9. Push vs Polling 模式比較
+
+| 特性 | Polling 模式 | Push 模式 |
+|------|-------------|-----------|
+| 即時性 | 延遲 15 秒 | 即時 |
+| 資源消耗 | 高（持續查詢） | 低（按需推送） |
+| 設定難度 | 簡單 | 需要 webhook URL |
+| 適用場景 | 測試、無法接收 webhook | 生產環境 |
+
+### 推薦流程
+1. Bot 綁定成功後取得 `botSecret`
+2. 呼叫 `POST /api/bot/register` 註冊 webhook
+3. 關閉 polling loop，等待 push 通知
+4. 收到推播後，處理訊息並更新桌布

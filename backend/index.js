@@ -39,7 +39,9 @@ for (let i = 0; i < MAX_ENTITIES; i++) {
         batteryLevel: 100,
         lastUpdated: Date.now(),
         // Message queue for this entity
-        messageQueue: []
+        messageQueue: [],
+        // Webhook for push notifications (OpenClaw integration)
+        webhook: null  // { url, token, sessionKey }
     };
 }
 
@@ -446,7 +448,8 @@ app.delete('/api/entity/:entityId', (req, res) => {
         parts: {},
         batteryLevel: 100,
         lastUpdated: Date.now(),
-        messageQueue: []
+        messageQueue: [],
+        webhook: null
     };
 
     console.log(`[Remove] Entity ${eId} unbound`);
@@ -462,8 +465,9 @@ app.delete('/api/entity/:entityId', (req, res) => {
  * Send message from one entity to another.
  * Body: { botSecret, text }
  * REQUIRES botSecret of the 'from' entity for authentication!
+ * Pushes notification if recipient has webhook registered.
  */
-app.post('/api/entity/:from/speak-to/:to', (req, res) => {
+app.post('/api/entity/:from/speak-to/:to', async (req, res) => {
     const fromId = parseInt(req.params.from);
     const toId = parseInt(req.params.to);
     const { botSecret, text } = req.body;
@@ -492,17 +496,33 @@ app.post('/api/entity/:from/speak-to/:to', (req, res) => {
     }
 
     // Add to recipient's queue
-    toEntity.messageQueue.push({
+    const messageObj = {
         text: text,
         from: `entity-${fromId}`,
         fromCharacter: fromEntity.character,
         timestamp: Date.now(),
         read: false
-    });
+    };
+    toEntity.messageQueue.push(messageObj);
 
     console.log(`[Msg] Entity ${fromId} -> Entity ${toId}: "${text}"`);
 
-    res.json({ success: true, message: "Message sent" });
+    // Push to recipient's bot if webhook is registered
+    let pushResult = { pushed: false, reason: "no_webhook" };
+    if (toEntity.webhook) {
+        pushResult = await pushToBot(toEntity, "entity_message", {
+            message: `[Entity ${toId} 收到新訊息]\n來源: Entity ${fromId} (${fromEntity.character})\n內容: ${text}`
+        });
+        if (pushResult.pushed) {
+            messageObj.delivered = true;
+        }
+    }
+
+    res.json({
+        success: true,
+        message: "Message sent",
+        push: pushResult.pushed ? "sent" : "queued"
+    });
 });
 
 /**
@@ -537,24 +557,46 @@ app.post('/api/entity/broadcast', (req, res) => {
     }
 
     let sentCount = 0;
+    const pushPromises = [];
+
     for (let i = 0; i < MAX_ENTITIES; i++) {
         if (i === fromId) continue;
         const entity = entitySlots[i];
         if (entity.isBound) {
-            entity.messageQueue.push({
+            const messageObj = {
                 text: text,
                 from: `entity-${fromId}`,
                 fromCharacter: fromEntity.character,
                 timestamp: Date.now(),
                 read: false
-            });
+            };
+            entity.messageQueue.push(messageObj);
             sentCount++;
+
+            // Push if webhook registered
+            if (entity.webhook) {
+                pushPromises.push(
+                    pushToBot(entity, "broadcast", {
+                        message: `[Entity ${i} 收到廣播]\n來源: Entity ${fromId} (${fromEntity.character})\n內容: ${text}`
+                    }).then(result => {
+                        if (result.pushed) messageObj.delivered = true;
+                        return result;
+                    })
+                );
+            }
         }
     }
 
+    // Wait for all pushes (non-blocking for response)
+    Promise.all(pushPromises).catch(err => console.error("[Broadcast Push Error]", err));
+
     console.log(`[Broadcast] Entity ${fromId} -> ${sentCount} entities: "${text}"`);
 
-    res.json({ success: true, message: `Broadcast to ${sentCount} entities` });
+    res.json({
+        success: true,
+        message: `Broadcast to ${sentCount} entities`,
+        pushAttempts: pushPromises.length
+    });
 });
 
 /**
@@ -614,8 +656,9 @@ app.get('/api/client/pending', (req, res) => {
 /**
  * POST /api/client/speak
  * Client sends message (stored in entity's queue).
+ * If bot has registered webhook, push notification is sent.
  */
-app.post('/api/client/speak', (req, res) => {
+app.post('/api/client/speak', async (req, res) => {
     const eId = parseInt(req.body.entityId) || parseInt(req.query.entityId) || 0;
     const { text } = req.body;
 
@@ -628,15 +671,35 @@ app.post('/api/client/speak', (req, res) => {
     entity.message = `Received: "${text}"`;
     entity.lastUpdated = Date.now();
 
-    entity.messageQueue.push({
+    const messageObj = {
         text: text,
         from: "client",
         timestamp: Date.now(),
         read: false
-    });
+    };
+    entity.messageQueue.push(messageObj);
 
     console.log(`[Client] -> Entity ${eId}: "${text}"`);
-    res.json({ success: true, message: "Received" });
+
+    // Push to bot if webhook is registered
+    let pushResult = { pushed: false, reason: "no_webhook" };
+    if (entity.webhook) {
+        pushResult = await pushToBot(entity, "new_message", {
+            message: `[Entity ${eId} 收到新訊息]\n來源: client\n內容: ${text}`
+        });
+
+        // If push successful, mark message as delivered (but not read)
+        if (pushResult.pushed) {
+            messageObj.delivered = true;
+        }
+    }
+
+    res.json({
+        success: true,
+        message: "Received",
+        push: pushResult.pushed ? "sent" : "queued",
+        mode: entity.webhook ? "push" : "polling"
+    });
 });
 
 // ============================================
@@ -659,7 +722,9 @@ app.get('/api/debug/slots', (req, res) => {
             state: e.state,
             message: e.message,
             messageQueueLength: e.messageQueue ? e.messageQueue.length : 0,
-            unreadMessages: e.messageQueue ? e.messageQueue.filter(m => !m.read).length : 0
+            unreadMessages: e.messageQueue ? e.messageQueue.filter(m => !m.read).length : 0,
+            webhookRegistered: e.webhook !== null,
+            mode: e.webhook ? "push" : "polling"
         });
     }
     res.json({ slots });
@@ -685,12 +750,141 @@ app.post('/api/debug/reset', (req, res) => {
             parts: {},
             batteryLevel: 100,
             lastUpdated: Date.now(),
-            messageQueue: []
+            messageQueue: [],
+            webhook: null
         };
     }
     console.log("[Debug] All entities reset");
     res.json({ success: true, message: "All entities reset" });
 });
+
+// ============================================
+// BOT WEBHOOK REGISTRATION (Push Mode)
+// ============================================
+
+/**
+ * POST /api/bot/register
+ * Bot registers its webhook URL to receive push notifications.
+ * This enables push mode instead of polling.
+ */
+app.post('/api/bot/register', (req, res) => {
+    const { entityId, botSecret, webhook_url, token, session_key } = req.body;
+
+    const eId = parseInt(entityId) || 0;
+
+    if (eId < 0 || eId >= MAX_ENTITIES) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    const entity = entitySlots[eId];
+
+    if (!entity.isBound) {
+        return res.status(400).json({
+            success: false,
+            message: `Entity ${eId} is not bound yet. Bind first using /api/bind`
+        });
+    }
+
+    // Verify botSecret
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({
+            success: false,
+            message: "Invalid botSecret"
+        });
+    }
+
+    // Validate required fields
+    if (!webhook_url || !token || !session_key) {
+        return res.status(400).json({
+            success: false,
+            message: "Missing required fields: webhook_url, token, session_key"
+        });
+    }
+
+    // Store webhook info
+    entity.webhook = {
+        url: webhook_url,
+        token: token,
+        sessionKey: session_key,
+        registeredAt: Date.now()
+    };
+
+    console.log(`[Bot Register] Entity ${eId} webhook registered: ${webhook_url}`);
+
+    res.json({
+        success: true,
+        message: "Webhook registered. You will now receive push notifications.",
+        entityId: eId,
+        mode: "push"
+    });
+});
+
+/**
+ * DELETE /api/bot/register
+ * Bot unregisters its webhook (switch back to polling mode).
+ */
+app.delete('/api/bot/register', (req, res) => {
+    const entityId = req.body.entityId ?? req.query.entityId;
+    const botSecret = req.body.botSecret || req.query.botSecret;
+
+    const eId = parseInt(entityId) || 0;
+
+    if (eId < 0 || eId >= MAX_ENTITIES) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    const entity = entitySlots[eId];
+
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({ success: false, message: "Invalid botSecret" });
+    }
+
+    entity.webhook = null;
+    console.log(`[Bot Register] Entity ${eId} webhook removed`);
+
+    res.json({
+        success: true,
+        message: "Webhook removed. Switching back to polling mode.",
+        entityId: eId,
+        mode: "polling"
+    });
+});
+
+/**
+ * Helper: Push notification to bot webhook
+ */
+async function pushToBot(entity, eventType, payload) {
+    if (!entity.webhook) {
+        return { pushed: false, reason: "no_webhook" };
+    }
+
+    const { url, token, sessionKey } = entity.webhook;
+    const fullUrl = `${url}/api/v1/sessions/${sessionKey}/send`;
+
+    try {
+        const response = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: payload.message || JSON.stringify(payload)
+            })
+        });
+
+        if (response.ok) {
+            console.log(`[Push] Entity ${entity.entityId}: ${eventType} pushed successfully`);
+            return { pushed: true };
+        } else {
+            console.log(`[Push] Entity ${entity.entityId}: Push failed with status ${response.status}`);
+            return { pushed: false, reason: `http_${response.status}` };
+        }
+    } catch (err) {
+        console.error(`[Push] Entity ${entity.entityId}: Push error:`, err.message);
+        return { pushed: false, reason: err.message };
+    }
+}
 
 // Error Handling
 app.use((err, req, res, next) => {
