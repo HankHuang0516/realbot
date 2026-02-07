@@ -8,6 +8,10 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -47,9 +51,14 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnEntityManager: MaterialButton
     private lateinit var btnDebugRender: MaterialButton
     private lateinit var btnBack: ImageButton
+    private lateinit var topBar: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Enable edge-to-edge display
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContentView(R.layout.activity_settings)
 
         billingManager = BillingManager.getInstance(this)
@@ -57,10 +66,32 @@ class SettingsActivity : AppCompatActivity() {
         layoutPrefs = LayoutPreferences.getInstance(this)
 
         initViews()
+        setupEdgeToEdgeInsets()
         setupClickListeners()
         loadCurrentLayout()
         loadCurrentLanguage()
         observeSubscriptionState()
+    }
+
+    private fun setupEdgeToEdgeInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, windowInsets ->
+            val insets = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+
+            // Apply top inset to top bar (status bar + cutout)
+            topBar.updatePadding(
+                left = insets.left + dpToPx(8),
+                top = insets.top + dpToPx(8),
+                right = insets.right + dpToPx(8)
+            )
+
+            WindowInsetsCompat.CONSUMED
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
     }
 
     override fun onResume() {
@@ -87,6 +118,7 @@ class SettingsActivity : AppCompatActivity() {
         btnEntityManager = findViewById(R.id.btnEntityManager)
         btnDebugRender = findViewById(R.id.btnDebugRender)
         btnBack = findViewById(R.id.btnBack)
+        topBar = findViewById(R.id.topBar)
     }
 
     private fun setupClickListeners() {

@@ -12,7 +12,8 @@ data class EntityStatus(
     val message: String = "Loading...",
     val parts: Map<String, Float>? = null,
     val batteryLevel: Int = 100,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val lastUpdated: Long = System.currentTimeMillis(),
+    val isBound: Boolean = false // Server returns this field
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType
@@ -43,7 +44,8 @@ data class EntityStatus(
             message = agentStatus.message,
             parts = agentStatus.parts,
             batteryLevel = agentStatus.batteryLevel,
-            lastUpdated = agentStatus.lastUpdated
+            lastUpdated = agentStatus.lastUpdated,
+            isBound = agentStatus.isBound
         )
     }
 }

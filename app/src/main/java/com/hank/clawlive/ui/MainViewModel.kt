@@ -4,10 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hank.clawlive.data.local.DeviceManager
+import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.model.AgentStatus
 import com.hank.clawlive.data.model.DeviceStatusRequest
 import com.hank.clawlive.data.model.RegisterRequest
 import com.hank.clawlive.data.remote.NetworkModule
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +19,7 @@ import timber.log.Timber
 
 data class BindingUiState(
     val isLoading: Boolean = false,
+    val selectedEntityId: Int = 0, // 0-3
     val bindingCode: String? = null,
     val remainingSeconds: Int = 0,
     val isBound: Boolean = false,
@@ -27,10 +30,13 @@ data class BindingUiState(
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val deviceManager = DeviceManager.getInstance(application)
+    private val layoutPrefs = LayoutPreferences.getInstance(application)
     private val api = NetworkModule.api
 
     private val _uiState = MutableStateFlow(BindingUiState())
     val uiState: StateFlow<BindingUiState> = _uiState.asStateFlow()
+
+    private var countdownJob: Job? = null
 
     init {
         // Check if already has a valid binding code
@@ -52,19 +58,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Generate a new binding code
+     * Select which entity to register (0-3)
+     */
+    fun selectEntity(entityId: Int) {
+        if (entityId in 0..3) {
+            _uiState.value = _uiState.value.copy(
+                selectedEntityId = entityId,
+                bindingCode = null // Clear previous code when switching entity
+            )
+        }
+    }
+
+    /**
+     * Generate a new binding code for the selected entity
      */
     fun generateBindingCode() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
+                val entityId = _uiState.value.selectedEntityId
                 val request = RegisterRequest(
+                    entityId = entityId,
                     deviceId = deviceManager.deviceId,
-                    deviceSecret = deviceManager.deviceSecret
+                    deviceSecret = deviceManager.deviceSecret,
+                    appVersion = deviceManager.appVersion
                 )
 
-                Timber.d("Registering device: ${deviceManager.deviceId}")
+                Timber.d("Registering entity $entityId for device: ${deviceManager.deviceId}")
 
                 val response = api.registerDevice(request)
 
@@ -72,6 +93,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val expiryTime = System.currentTimeMillis() + (response.expiresIn * 1000L)
                     deviceManager.currentBindingCode = response.bindingCode
                     deviceManager.bindingCodeExpiry = expiryTime
+
+                    // Track this entity as registered by this device
+                    layoutPrefs.addRegisteredEntity(entityId)
+                    Timber.d("Entity $entityId added to registered entities")
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -101,7 +126,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * Start countdown timer for binding code expiry
      */
     private fun startCountdown() {
-        viewModelScope.launch {
+        // Cancel any existing countdown to prevent multiple timers
+        countdownJob?.cancel()
+
+        countdownJob = viewModelScope.launch {
             while (_uiState.value.remainingSeconds > 0) {
                 delay(1000)
                 val newRemaining = _uiState.value.remainingSeconds - 1
@@ -122,20 +150,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             while (true) {
                 try {
+                    val entityId = _uiState.value.selectedEntityId
                     val request = DeviceStatusRequest(
+                        entityId = entityId,
                         deviceId = deviceManager.deviceId,
-                        deviceSecret = deviceManager.deviceSecret
+                        deviceSecret = deviceManager.deviceSecret,
+                        appVersion = deviceManager.appVersion
                     )
 
                     val status = api.getDeviceStatus(request)
                     _uiState.value = _uiState.value.copy(
                         agentStatus = status,
-                        isBound = true
+                        isBound = status.isBound // Use server's isBound value
                     )
 
-                    Timber.d("Status updated: ${status.state} - ${status.message}")
+                    Timber.d("Status updated for entity $entityId: ${status.state} - ${status.message}")
                 } catch (e: Exception) {
                     // Device might not be registered yet, or network error
+                    // Don't set isBound = false here, keep previous state
                     Timber.d("Status polling: ${e.message}")
                 }
 

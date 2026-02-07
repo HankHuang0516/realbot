@@ -1,21 +1,36 @@
 package com.hank.clawlive.engine
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
+import android.net.Uri
 import android.text.TextPaint
 import com.hank.clawlive.data.local.EntityLayout
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.model.AgentStatus
 import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
+import timber.log.Timber
 import kotlin.math.sin
 
 class ClawRenderer(private val context: Context) {
 
     private val layoutPrefs = LayoutPreferences.getInstance(context)
+
+    // Background image cache
+    private var cachedBackgroundBitmap: Bitmap? = null
+    private var cachedBackgroundUri: String? = null
+    private var lastCanvasWidth: Int = 0
+    private var lastCanvasHeight: Int = 0
+
+    private val backgroundPaint = Paint().apply {
+        isFilterBitmap = true
+        isAntiAlias = true
+    }
 
     private val textPaint = TextPaint().apply {
         color = Color.WHITE
@@ -73,18 +88,189 @@ class ClawRenderer(private val context: Context) {
         this.isAmbient = ambient
     }
 
+    /**
+     * Get background bitmap, loading and caching as needed.
+     * Uses center-crop scaling to fill the canvas.
+     */
+    private fun getBackgroundBitmap(width: Int, height: Int): Bitmap? {
+        if (!layoutPrefs.useBackgroundImage) {
+            return null
+        }
+
+        val uriString = layoutPrefs.backgroundImageUri ?: return null
+
+        // Check if we can reuse cached bitmap
+        if (cachedBackgroundBitmap != null &&
+            cachedBackgroundUri == uriString &&
+            lastCanvasWidth == width &&
+            lastCanvasHeight == height
+        ) {
+            return cachedBackgroundBitmap
+        }
+
+        // Need to load/reload bitmap
+        try {
+            val uri = Uri.parse(uriString)
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+
+            // First, decode bounds only
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeStream(inputStream, null, options)
+            inputStream.close()
+
+            val imageWidth = options.outWidth
+            val imageHeight = options.outHeight
+
+            if (imageWidth <= 0 || imageHeight <= 0) {
+                Timber.w("Invalid image dimensions: ${imageWidth}x${imageHeight}")
+                return null
+            }
+
+            // Calculate sample size for memory efficiency
+            val sampleSize = calculateSampleSize(imageWidth, imageHeight, width, height)
+
+            // Decode with sample size
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.RGB_565 // Memory efficient
+            }
+
+            val inputStream2 = context.contentResolver.openInputStream(uri) ?: return null
+            val sourceBitmap = BitmapFactory.decodeStream(inputStream2, null, decodeOptions)
+            inputStream2.close()
+
+            if (sourceBitmap == null) {
+                Timber.w("Failed to decode bitmap from URI: $uriString")
+                return null
+            }
+
+            // Center-crop scale to target dimensions
+            val scaledBitmap = centerCropScale(sourceBitmap, width, height)
+
+            // Recycle source if different from result
+            if (scaledBitmap != sourceBitmap) {
+                sourceBitmap.recycle()
+            }
+
+            // Update cache
+            cachedBackgroundBitmap?.recycle()
+            cachedBackgroundBitmap = scaledBitmap
+            cachedBackgroundUri = uriString
+            lastCanvasWidth = width
+            lastCanvasHeight = height
+
+            Timber.d("Background loaded: ${width}x${height}")
+            return scaledBitmap
+
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load background image")
+            return null
+        }
+    }
+
+    /**
+     * Calculate sample size for efficient memory usage.
+     */
+    private fun calculateSampleSize(
+        imageWidth: Int,
+        imageHeight: Int,
+        targetWidth: Int,
+        targetHeight: Int
+    ): Int {
+        var sampleSize = 1
+        if (imageWidth > targetWidth || imageHeight > targetHeight) {
+            val halfWidth = imageWidth / 2
+            val halfHeight = imageHeight / 2
+            while ((halfWidth / sampleSize) >= targetWidth &&
+                   (halfHeight / sampleSize) >= targetHeight
+            ) {
+                sampleSize *= 2
+            }
+        }
+        return sampleSize
+    }
+
+    /**
+     * Center-crop scale bitmap to fill target dimensions.
+     */
+    private fun centerCropScale(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
+        val sourceWidth = source.width
+        val sourceHeight = source.height
+
+        val scaleX = targetWidth.toFloat() / sourceWidth
+        val scaleY = targetHeight.toFloat() / sourceHeight
+        val scale = maxOf(scaleX, scaleY) // Center-crop uses max scale
+
+        val scaledWidth = (sourceWidth * scale).toInt()
+        val scaledHeight = (sourceHeight * scale).toInt()
+
+        // Create scaled bitmap
+        val scaledBitmap = Bitmap.createScaledBitmap(source, scaledWidth, scaledHeight, true)
+
+        // Crop to target size (center)
+        val x = (scaledWidth - targetWidth) / 2
+        val y = (scaledHeight - targetHeight) / 2
+
+        return if (x != 0 || y != 0 || scaledWidth != targetWidth || scaledHeight != targetHeight) {
+            val cropped = Bitmap.createBitmap(
+                scaledBitmap,
+                x.coerceAtLeast(0),
+                y.coerceAtLeast(0),
+                targetWidth.coerceAtMost(scaledWidth - x),
+                targetHeight.coerceAtMost(scaledHeight - y)
+            )
+            if (cropped != scaledBitmap) {
+                scaledBitmap.recycle()
+            }
+            cropped
+        } else {
+            scaledBitmap
+        }
+    }
+
+    /**
+     * Release cached resources. Call when service is destroyed.
+     */
+    fun release() {
+        cachedBackgroundBitmap?.recycle()
+        cachedBackgroundBitmap = null
+        cachedBackgroundUri = null
+        lastCanvasWidth = 0
+        lastCanvasHeight = 0
+        Timber.d("ClawRenderer resources released")
+    }
+
     // ============================================
     // MULTI-ENTITY RENDERING
     // ============================================
 
     /**
      * Calculate positions for entities based on count and layout preference.
+     * If useCustomLayout is enabled, reads per-entity custom positions from SharedPreferences.
      */
     private fun calculateEntityPositions(
         width: Float,
         height: Float,
-        count: Int
+        count: Int,
+        entities: List<EntityStatus>? = null
     ): List<Pair<Float, Float>> {
+        // Check if custom layout mode is enabled and we have entity info
+        if (layoutPrefs.useCustomLayout && entities != null) {
+            return entities.map { entity ->
+                val customPos = layoutPrefs.getCustomPosition(entity.entityId)
+                if (customPos != null) {
+                    // Convert percentage to actual coordinates
+                    Pair(customPos.first * width, customPos.second * height)
+                } else {
+                    // Fallback to center if no custom position set
+                    Pair(width / 2f, height / 2f)
+                }
+            }
+        }
+
+        // Original preset layout logic
         val layout = layoutPrefs.entityLayout
         val verticalPos = layoutPrefs.verticalPosition
 
@@ -204,8 +390,13 @@ class ClawRenderer(private val context: Context) {
         val width = canvas.width.toFloat()
         val height = canvas.height.toFloat()
 
-        // Background
-        canvas.drawColor(Color.BLACK)
+        // Background: draw custom image or solid black
+        val backgroundBitmap = getBackgroundBitmap(width.toInt(), height.toInt())
+        if (backgroundBitmap != null) {
+            canvas.drawBitmap(backgroundBitmap, 0f, 0f, backgroundPaint)
+        } else {
+            canvas.drawColor(Color.BLACK)
+        }
 
         if (entities.isEmpty()) {
             // Draw "No entities" message with instructions
@@ -220,13 +411,16 @@ class ClawRenderer(private val context: Context) {
             return
         }
 
-        val positions = calculateEntityPositions(width, height, entities.size)
-        val scale = getScaleFactor(entities.size)
+        val positions = calculateEntityPositions(width, height, entities.size, entities)
+        val baseScale = getScaleFactor(entities.size)
 
         entities.forEachIndexed { index, entity ->
             if (index < positions.size) {
                 val (cx, cy) = positions[index]
-                drawSingleEntityAt(canvas, entity, cx, cy, scale, width)
+                // Apply per-entity scale multiplier on top of base scale
+                val entityScale = layoutPrefs.getEntityScale(entity.entityId)
+                val finalScale = baseScale * entityScale
+                drawSingleEntityAt(canvas, entity, cx, cy, finalScale, width)
             }
         }
     }

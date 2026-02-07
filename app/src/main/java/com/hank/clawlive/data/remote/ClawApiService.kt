@@ -6,20 +6,27 @@ import com.hank.clawlive.data.model.DeviceStatusRequest
 import com.hank.clawlive.data.model.MultiEntityResponse
 import com.hank.clawlive.data.model.RegisterRequest
 import com.hank.clawlive.data.model.RegisterResponse
+import com.hank.clawlive.data.model.SpawnEntityRequest
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface ClawApiService {
 
     // ============================================
-    // SINGLE ENTITY (Backward Compatible)
+    // v5 MATRIX ARCHITECTURE
+    // All APIs now require deviceId for proper isolation
     // ============================================
 
-    // Get status for entity 0 (default)
+    // Get status for specific device + entity
     @GET("api/status")
-    suspend fun getAgentStatus(): AgentStatus
+    suspend fun getAgentStatus(
+        @Query("deviceId") deviceId: String,
+        @Query("entityId") entityId: Int = 0,
+        @Query("appVersion") appVersion: String? = null
+    ): AgentStatus
 
     // Device registration - get binding code
     @POST("api/device/register")
@@ -29,25 +36,37 @@ interface ClawApiService {
     @POST("api/device/status")
     suspend fun getDeviceStatus(@Body request: DeviceStatusRequest): AgentStatus
 
-    // Webhook to wake up agent
+    // Webhook to wake up agent (now requires deviceId in body)
     @POST("api/wakeup")
-    suspend fun wakeUpAgent(): ApiResponse
+    suspend fun wakeUpAgent(@Body body: Map<String, String>): ApiResponse
 
-    // Send message to bot
+    // Send message to bot (requires deviceId)
+    // entityId can be: Int, List<Int>, or "all" for broadcast
     @POST("api/client/speak")
-    suspend fun sendClientMessage(@Body body: Map<String, String>): ApiResponse
+    suspend fun sendClientMessage(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
     // ============================================
     // MULTI-ENTITY ENDPOINTS
     // ============================================
 
-    // Get all active entities
+    // Get all active entities (optionally filter by deviceId)
     @GET("api/entities")
-    suspend fun getAllEntities(): MultiEntityResponse
+    suspend fun getAllEntities(@Query("deviceId") deviceId: String? = null): MultiEntityResponse
 
-    // Get status with all=true query param (alternative to /api/entities)
-    @GET("api/status")
-    suspend fun getAllEntitiesStatus(@Query("all") all: Boolean = true): MultiEntityResponse
+    // Remove entity by bot (requires botSecret)
+    // Use @HTTP instead of @DELETE to allow request body
+    @HTTP(method = "DELETE", path = "api/entity", hasBody = true)
+    suspend fun removeEntity(@Body body: Map<String, String>): ApiResponse
+
+    // Remove entity by device owner (requires deviceSecret)
+    @HTTP(method = "DELETE", path = "api/device/entity", hasBody = true)
+    suspend fun removeEntityByDevice(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
+    // ============================================
+    // BATTERY REPORTING
+    // ============================================
+
+    // Report real device battery level to backend
+    @POST("api/device/battery")
+    suspend fun updateBatteryLevel(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 }
-
-

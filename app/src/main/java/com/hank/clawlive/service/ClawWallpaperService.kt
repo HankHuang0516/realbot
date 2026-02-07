@@ -56,10 +56,8 @@ class ClawWallpaperService : WallpaperService() {
             message = "Connecting..."
         )
 
-        // Multi-entity status list
-        private var currentEntities: List<EntityStatus> = listOf(
-            EntityStatus(entityId = 0, state = CharacterState.IDLE, message = "Connecting...")
-        )
+        // Multi-entity status list (start empty - only show bound entities)
+        private var currentEntities: List<EntityStatus> = emptyList()
 
         private val drawRunnable = Runnable { draw() }
 
@@ -77,6 +75,10 @@ class ClawWallpaperService : WallpaperService() {
                     repository.getMultiEntityStatusFlow(intervalMs = 5000)
                         .collect { response ->
                             Timber.d("Multi-entity status: ${response.activeCount} entities")
+                            // Debug: log first entity's name
+                            response.entities.firstOrNull()?.let { e ->
+                                Timber.d("First entity: id=${e.entityId}, name=${e.name}, state=${e.state}")
+                            }
                             currentEntities = response.entities
                             if (visible) draw()
                         }
@@ -104,8 +106,14 @@ class ClawWallpaperService : WallpaperService() {
 
         override fun onTouchEvent(event: android.view.MotionEvent?) {
             if (event?.action == android.view.MotionEvent.ACTION_UP) {
-                // Wake up entity 0 on tap
-                if (multiEntityMode && currentEntities.isNotEmpty()) {
+                // Only wake up if there are bound entities
+                if (multiEntityMode) {
+                    if (currentEntities.isEmpty()) {
+                        // No entities connected, do nothing
+                        super.onTouchEvent(event)
+                        return
+                    }
+                    // Wake up entity 0 on tap
                     currentEntities = currentEntities.mapIndexed { index, entity ->
                         if (index == 0) entity.copy(message = "Waking up...", state = CharacterState.EXCITED)
                         else entity
@@ -141,6 +149,7 @@ class ClawWallpaperService : WallpaperService() {
             visible = false
             handler.removeCallbacks(drawRunnable)
             engineScope.cancel()
+            renderer.release()
             Timber.d("onSurfaceDestroyed")
         }
 

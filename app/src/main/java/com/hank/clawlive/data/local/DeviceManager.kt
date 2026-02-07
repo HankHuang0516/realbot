@@ -2,6 +2,7 @@ package com.hank.clawlive.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.util.UUID
@@ -10,6 +11,8 @@ import java.util.UUID
  * Manages device credentials securely using EncryptedSharedPreferences
  */
 class DeviceManager private constructor(context: Context) {
+
+    private val appContext = context.applicationContext
 
     private val masterKey = MasterKey.Builder(context)
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -47,6 +50,17 @@ class DeviceManager private constructor(context: Context) {
                 prefs.edit().putString(KEY_DEVICE_SECRET, secret).apply()
             }
             return secret
+        }
+
+    /**
+     * Get app version name (e.g., "1.0.3")
+     * Sent to backend so bot can detect outdated app versions
+     */
+    val appVersion: String
+        get() = try {
+            appContext.packageManager.getPackageInfo(appContext.packageName, 0).versionName ?: "unknown"
+        } catch (e: PackageManager.NameNotFoundException) {
+            "unknown"
         }
 
     /**
