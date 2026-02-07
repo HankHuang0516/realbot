@@ -631,11 +631,10 @@ app.post('/api/client/speak', async (req, res) => {
         return res.status(400).json({ success: false, message: "No valid target entities" });
     }
 
-    const results = [];
-
-    for (const eId of targetIds) {
+    // Parallel processing for broadcast - all entities receive message simultaneously
+    const pushPromises = targetIds.map(async (eId) => {
         const entity = device.entities[eId];
-        if (!entity) continue;
+        if (!entity) return null;
 
         entity.message = `Received: "${text}"`;
         entity.lastUpdated = Date.now();
@@ -662,12 +661,15 @@ app.post('/api/client/speak', async (req, res) => {
             }
         }
 
-        results.push({
+        return {
             entityId: eId,
             pushed: pushResult.pushed,
             mode: entity.webhook ? "push" : "polling"
-        });
-    }
+        };
+    });
+
+    // Wait for all push operations to complete in parallel
+    const results = (await Promise.all(pushPromises)).filter(r => r !== null);
 
     res.json({
         success: true,
