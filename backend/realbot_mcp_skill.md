@@ -1,63 +1,56 @@
 # Realbot MCP Skills (Multi-Device Edition v5)
 
-**新架構！** 每個裝置 (Device) 有自己獨立的 4 個實體欄位 (Entity 0-3)。
-不同裝置的 Entity 0 不會互相干擾。
+## 🆕 v5 Major Change: Matrix Architecture
 
-**API Base URL**: `https://realbot-production.up.railway.app`
-
----
-
-## 🆕 v5 重大改變：矩陣架構
-
-### 舊架構 (v4)
+### Old Architecture (v4)
 ```
 Server
-└── entitySlots[0-3]  // 全域共享，先搶先贏
+└── entitySlots[0-3]  // Global shared, first come first served
 ```
 
-### 新架構 (v5)
+### New Architecture (v5)
 ```
 Server
 └── devices[deviceId]
-    └── entities[0-3]  // 每個裝置有獨立的 4 個 Entity
+    └── entities[0-3]  // Each device has 4 independent entities
 
-Device A (手機1) ← Bot A
+Device A (Phone 1) ← Bot A
 ├── Entity 0
 ├── Entity 1
 ├── Entity 2
-└── Entity 3
+├── Entity 3
 
-Device B (手機2) ← Bot B
-├── Entity 0  // 不會跟 Device A 的 Entity 0 衝突！
+Device B (Phone 2) ← Bot B
+├── Entity 0  // No conflict with Entity 0 of Device A!
 ├── Entity 1
 └── ...
 ```
 
-### API 變化
-**所有 API 現在都需要 `deviceId` 參數！**
+### API Changes
+**All APIs now require `deviceId` parameter!**
 
-| 舊 API | 新 API |
-|--------|--------|
+| Old API | New API |
+|---------|---------|
 | `GET /api/status?entityId=0` | `GET /api/status?deviceId=xxx&entityId=0` |
 | `POST /api/transform { entityId, ... }` | `POST /api/transform { deviceId, entityId, ... }` |
 
 ---
 
-## ⚠️ 重要: Bot 認證機制
+## ⚠️ Important: Bot Authentication
 
-綁定成功後，Server 會回傳：
-- `deviceId` - 綁定的裝置 ID
-- `entityId` - 綁定的實體 ID (0-3)
-- `botSecret` - 32 位元認證 token
+After successful binding, Server returns:
+- `deviceId` - Bound Device ID
+- `entityId` - Bound Entity ID (0-3)
+- `botSecret` - 32-bit authentication token
 
-**Bot 必須保存這三個值，所有控制指令都需要它們！**
+**Bot must save these three values. All control commands require them!**
 
 ---
 
-## 🚀 Push 模式 (Webhook 推播)
+## 🚀 Push Mode (Webhook)
 
 ### `register_webhook`
-註冊 webhook URL，啟用 Push 模式。
+Register webhook URL to enable Push mode.
 
 *   **Endpoint**: `POST /api/bot/register`
 *   **Body**:
@@ -72,39 +65,51 @@ Device B (手機2) ← Bot B
     }
     ```
 
-### Webhook 推播格式 (OpenClaw 格式)
+### Webhook Push Format (OpenClaw)
 ```json
 {
   "tool": "sessions_send",
   "args": {
     "sessionKey": "{session_key}",
-    "message": "[Device xxx Entity 0 收到新訊息]\n來源: client\n內容: Hello!"
+    "message": "[Device xxx Entity 0 received message]\nSource: client\nContent: Hello!"
   }
 }
 ```
 
+### ⚠️ Important Behavior: Update Status Immediately
+
+When Bot receives message via Push, **it must immediately call `update_claw_status`** to update status, letting the device know the message is received and processing.
+
+**Correct Flow:**
+1. Receive Push message
+2. **Immediately** call `POST /api/transform` to update status (e.g., `state: "BUSY"`, `message: "Processing..."`)
+3. Execute tasks (query, calc, API calls)
+4. After task completion, call `POST /api/transform` again with final result
+
+**Incorrect Flow:** Process first then update status -> Device user wonders "Did Bot receive it?"
+
 ---
 
-## 1. 綁定流程 (Binding Flow)
+## 1. Binding Flow
 
-### 流程說明
-1. Android 裝置呼叫 `/api/device/register` 取得 binding code
-2. Bot 使用該 code 呼叫 `/api/bind` 綁定
-3. **Bot 保存回傳的 `deviceId`, `entityId`, `botSecret`**
-4. 綁定後，Bot 使用這三個值控制該 entity
+### Process
+1. Android device calls `/api/device/register` to get binding code
+2. Bot uses code to call `/api/bind`
+3. **Bot saves returned `deviceId`, `entityId`, `botSecret`**
+4. After binding, Bot uses these values to control the entity
 
 ### `bind_to_entity`
-使用 binding code 綁定到特定實體。
+Bind to specific entity using binding code.
 
 *   **Endpoint**: `POST /api/bind`
 *   **Body**:
     ```json
     {
       "code": "123456",
-      "name": "小龍蝦阿財"
+      "name": "Lobster Joe"
     }
     ```
-    - `name` (選填): 實體名稱，最多 20 字元，會顯示在桌布上
+    - `name` (Optional): Entity name, max 20 chars, displayed on wallpaper
 *   **Returns**:
     ```json
     {
@@ -114,18 +119,33 @@ Device B (手機2) ← Bot B
       "entityId": 0,
       "botSecret": "a1b2c3d4e5f6...",
       "deviceInfo": { "deviceId": "device-xxx", "entityId": 0, "status": "ONLINE" },
+      "versionInfo": {
+        "latestVersion": "1.0.3",
+        "deviceVersion": "1.0.2",
+        "isOutdated": true,
+        "versionWarning": "App version 1.0.2 is outdated. Please update to v1.0.3 for best experience."
+      },
       "skills_documentation": "..."
     }
     ```
 
-**⚠️ 重要**: 必須保存 `deviceId`, `entityId`, `botSecret`！
+**⚠️ Important**: Must save `deviceId`, `entityId`, `botSecret`!
+
+### App Version Check
+The `versionInfo` field tells you about the Android app version:
+- `latestVersion`: Latest release version
+- `deviceVersion`: User's current app version
+- `isOutdated`: `true` if user should update
+- `versionWarning`: Warning message to show user (or `null` if up-to-date)
+
+**If `isOutdated` is `true`**, consider notifying the user to update their app for the best experience.
 
 ---
 
-## 2. 實體狀態控制 (Entity Control)
+## 2. Entity Control
 
 ### `update_claw_status`
-更新指定實體的狀態與訊息。
+Update status and message of specific entity.
 
 *   **Endpoint**: `POST /api/transform`
 *   **Body**:
@@ -134,7 +154,7 @@ Device B (手機2) ← Bot B
       "deviceId": "device-xxx",
       "entityId": 0,
       "botSecret": "your-bot-secret",
-      "name": "阿財",
+      "name": "Joe",
       "message": "Hello!",
       "state": "EXCITED",
       "character": "LOBSTER",
@@ -144,28 +164,28 @@ Device B (手機2) ← Bot B
       }
     }
     ```
-    - `name` (選填): 實體名稱，最多 20 字元，會顯示在桌布上。設為空字串可清除名稱。
+    - `name` (Optional): Entity name, max 20 chars. Empty string to clear.
 
 ### `get_claw_status`
-取得指定實體的當前狀態。
+Get current status of specific entity.
 
 *   **Endpoint**: `GET /api/status?deviceId=xxx&entityId=0`
 
 ### `wake_up_claw`
-喚醒指定實體。
+Wake up specific entity.
 
 *   **Endpoint**: `POST /api/wakeup`
 *   **Body**: `{ "deviceId": "xxx", "entityId": 0, "botSecret": "..." }`
 
 ---
 
-## 3. 查看所有實體 (View All Entities)
+## 3. View All Entities
 
 ### `list_entities`
-取得所有已綁定的實體列表。
+Get list of all bound entities.
 
 *   **Endpoint**: `GET /api/entities`
-*   **Optional**: `?deviceId=xxx` 過濾特定裝置
+*   **Optional**: `?deviceId=xxx` Filter by device
 *   **Returns**:
     ```json
     {
@@ -181,10 +201,10 @@ Device B (手機2) ← Bot B
 
 ---
 
-## 4. 訊息收發 (Messaging)
+## 4. Messaging
 
 ### `send_message_to_entity` (Client → Bot)
-手機端發送訊息給 Bot。支援單一實體或廣播模式。
+Phone sends message to Bot. Supports single entity or broadcast.
 
 *   **Endpoint**: `POST /api/client/speak`
 *   **Body**:
@@ -197,11 +217,11 @@ Device B (手機2) ← Bot B
     }
     ```
 
-#### 廣播模式 (Broadcast)
-`entityId` 可以是：
-- **數字**: 單一實體 (e.g., `0`)
-- **陣列**: 多個實體 (e.g., `[0, 1, 2]`)
-- **"all"**: 所有已綁定的實體
+#### Broadcast Mode
+`entityId` can be:
+- **Number**: Single entity (e.g., `0`)
+- **Array**: Multiple entities (e.g., `[0, 1, 2]`)
+- **"all"**: All bound entities
 
 ```json
 {
@@ -212,7 +232,7 @@ Device B (手機2) ← Bot B
 }
 ```
 
-**回應**:
+**Response**:
 ```json
 {
   "success": true,
@@ -227,7 +247,7 @@ Device B (手機2) ← Bot B
 ```
 
 ### `entity_speak_to` (Entity → Entity)
-實體間訊息傳送。需要發送方的 botSecret 認證。
+Entity to entity messaging. Requires sender's botSecret.
 
 *   **Endpoint**: `POST /api/entity/speak-to`
 *   **Body**:
@@ -252,7 +272,7 @@ Device B (手機2) ← Bot B
     }
     ```
 
-**接收方收到的訊息格式**:
+**Receiver Message Format**:
 ```json
 {
   "text": "Hey Entity 1!",
@@ -263,25 +283,25 @@ Device B (手機2) ← Bot B
 }
 ```
 
-**Push 通知格式**:
+**Push Notification Format**:
 ```
-[Device device-xxx Entity 1 收到新訊息]
-來源: entity:0:LOBSTER
-內容: Hey Entity 1!
+[Device device-xxx Entity 1 received message]
+Source: entity:0:LOBSTER
+Content: Hey Entity 1!
 ```
 
-### `listen_for_messages` (Bot 接收訊息)
-Bot 檢查待處理訊息。
+### `listen_for_messages` (Bot Polls Messages)
+Bot checks for pending messages.
 
 *   **Endpoint**: `GET /api/client/pending?deviceId=xxx&entityId=0&botSecret=xxx`
-*   **無 botSecret**: 只回傳 count（偷看模式）
-*   **有 botSecret**: 回傳並消費訊息
+*   **No botSecret**: Peek count only
+*   **With botSecret**: Retrieve and consume messages
 
 ---
 
-## 5. 動畫範例
+## 5. Animation Examples
 
-### 揮手 (Wave)
+### Wave
 ```json
 {
   "deviceId": "device-xxx",
@@ -293,7 +313,7 @@ Bot 檢查待處理訊息。
 }
 ```
 
-### 舉雙手歡呼 (Cheer)
+### Cheer
 ```json
 {
   "deviceId": "device-xxx",
@@ -307,58 +327,58 @@ Bot 檢查待處理訊息。
 
 ---
 
-## 6. Debug 端點
+## 6. Debug Endpoints
 
 ### `GET /api/debug/devices`
-查看所有裝置與實體狀態。
+View all devices and entity states.
 
 ### `POST /api/debug/reset`
-重置所有裝置（測試用）。
+Reset all devices (Test only).
 
 ---
 
-## 7. 需要 botSecret 的端點
+## 7. Endpoints requiring botSecret
 
-| 端點 | 用途 | 需要 deviceId | 需要 botSecret |
-|------|------|---------------|----------------|
-| POST /api/bind | 綁定 | ❌ (code 包含) | ❌ (會產生) |
-| POST /api/transform | 更新狀態 | ✅ | ✅ |
-| POST /api/wakeup | 喚醒 | ✅ | ✅ |
-| DELETE /api/entity | 移除實體 | ✅ | ✅ |
-| POST /api/bot/register | 註冊 Webhook | ✅ | ✅ |
-| DELETE /api/bot/register | 取消 Webhook | ✅ | ✅ |
-| GET /api/status | 查詢狀態 | ✅ | ❌ |
-| GET /api/entities | 列出所有 | ❌ (可選) | ❌ |
-| GET /api/client/pending | 收訊息 | ✅ | ⚠️ (無則只回傳 count) |
-| POST /api/client/speak | 發訊息(支援廣播) | ✅ | ❌ |
-| POST /api/entity/speak-to | 實體間對話 | ✅ | ✅ (發送方) |
+| Endpoint | Purpose | Needs deviceId | Needs botSecret |
+|----------|---------|----------------|-----------------|
+| POST /api/bind | Bind | ❌ (in code) | ❌ (Generated) |
+| POST /api/transform | Update Status | ✅ | ✅ |
+| POST /api/wakeup | Wake Up | ✅ | ✅ |
+| DELETE /api/entity | Remove Entity | ✅ | ✅ |
+| POST /api/bot/register | Register Webhook | ✅ | ✅ |
+| DELETE /api/bot/register | Unregister Webhook | ✅ | ✅ |
+| GET /api/status | Query Status | ✅ | ❌ |
+| GET /api/entities | List All | ❌ (Optional) | ❌ |
+| GET /api/client/pending | Poll Messages | ✅ | ⚠️ (Peek count if missing) |
+| POST /api/client/speak | Client Speak | ✅ | ❌ |
+| POST /api/entity/speak-to | Entity Speak | ✅ | ✅ (Sender) |
 
 ---
 
-## 8. 多裝置隔離範例
+## 8. Multi-Device Isolation Example
 
 ```
-裝置 A (deviceId: "phone-alice")
-├── Entity 0 ← Bot Alice 控制
-└── Entity 1 ← Bot Alice2 控制
+Device A (deviceId: "phone-alice")
+├── Entity 0 ← Controlled by Bot Alice
+└── Entity 1 ← Controlled by Bot Alice2
 
-裝置 B (deviceId: "phone-bob")
-├── Entity 0 ← Bot Bob 控制 (不會跟 Alice 的 Entity 0 衝突！)
-└── Entity 1 ← Bot Bob2 控制
+Device B (deviceId: "phone-bob")
+├── Entity 0 ← Controlled by Bot Bob (No conflict with Alice Entity 0)
+└── Entity 1 ← Controlled by Bot Bob2
 
-Bot Alice 綁定時收到:
+Bot Alice receives on bind:
 {
   "deviceId": "phone-alice",
   "entityId": 0,
   "botSecret": "abc123..."
 }
 
-Bot Bob 綁定時收到:
+Bot Bob receives on bind:
 {
   "deviceId": "phone-bob",
   "entityId": 0,
-  "botSecret": "def456..."  // 不同的 secret！
+  "botSecret": "def456..."  // Different secret!
 }
 ```
 
-每個 Bot 只能控制自己綁定的 (deviceId, entityId) 組合。
+Each Bot can only control its bound (deviceId, entityId) combination.
