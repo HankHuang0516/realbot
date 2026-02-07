@@ -766,6 +766,115 @@ app.post('/api/entity/speak-to', async (req, res) => {
 });
 
 /**
+ * POST /api/entity/broadcast
+ * Broadcast message from one entity to all other bound entities on the same device.
+ * Body: { deviceId, fromEntityId, botSecret, text }
+ *
+ * Requires botSecret of the SENDING entity for authentication.
+ * All other bound entities on the same device will receive the message.
+ */
+app.post('/api/entity/broadcast', async (req, res) => {
+    const { deviceId, fromEntityId, botSecret, text } = req.body;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+    if (!text) {
+        return res.status(400).json({ success: false, message: "text required" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const fromId = parseInt(fromEntityId);
+    if (isNaN(fromId) || fromId < 0 || fromId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid fromEntityId" });
+    }
+
+    const fromEntity = device.entities[fromId];
+
+    // Verify botSecret of sending entity
+    if (!fromEntity.isBound || fromEntity.botSecret !== botSecret) {
+        return res.status(403).json({ success: false, message: "Invalid botSecret for sending entity" });
+    }
+
+    // Create message source identifier
+    const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
+
+    // Find all other bound entities and send in parallel
+    const targetIds = [];
+    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+        if (i !== fromId && device.entities[i].isBound) {
+            targetIds.push(i);
+        }
+    }
+
+    if (targetIds.length === 0) {
+        return res.json({
+            success: true,
+            message: "No other bound entities to broadcast to",
+            from: { entityId: fromId, character: fromEntity.character },
+            sentCount: 0,
+            results: []
+        });
+    }
+
+    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}"`);
+
+    // Parallel processing - send to all entities simultaneously
+    const pushPromises = targetIds.map(async (toId) => {
+        const toEntity = device.entities[toId];
+
+        toEntity.message = `From Entity ${fromId}: "${text}"`;
+        toEntity.lastUpdated = Date.now();
+
+        const messageObj = {
+            text: text,
+            from: sourceLabel,
+            fromEntityId: fromId,
+            fromCharacter: fromEntity.character,
+            timestamp: Date.now(),
+            read: false
+        };
+        toEntity.messageQueue.push(messageObj);
+
+        // Push to target bot if webhook is registered
+        let pushResult = { pushed: false, reason: "no_webhook" };
+        if (toEntity.webhook) {
+            pushResult = await pushToBot(toEntity, deviceId, "entity_broadcast", {
+                message: `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`
+            });
+
+            if (pushResult.pushed) {
+                messageObj.delivered = true;
+            }
+        }
+
+        return {
+            entityId: toId,
+            character: toEntity.character,
+            pushed: pushResult.pushed,
+            mode: toEntity.webhook ? "push" : "polling"
+        };
+    });
+
+    // Wait for all push operations to complete in parallel
+    const results = await Promise.all(pushPromises);
+    const pushedCount = results.filter(r => r.pushed).length;
+
+    res.json({
+        success: true,
+        message: `Broadcast sent from Entity ${fromId} to ${results.length} entities`,
+        from: { entityId: fromId, character: fromEntity.character },
+        sentCount: results.length,
+        pushedCount: pushedCount,
+        results: results
+    });
+});
+
+/**
  * GET /api/client/pending
  * Get pending messages for entity.
  * Query: ?deviceId=xxx&entityId=0&botSecret=xxx

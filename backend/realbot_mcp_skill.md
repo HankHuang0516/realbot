@@ -290,6 +290,43 @@ Source: entity:0:LOBSTER
 Content: Hey Entity 1!
 ```
 
+### `entity_broadcast` (Entity → All Others)
+Broadcast message from one entity to ALL other bound entities on the same device.
+Useful for group announcements or coordinated actions.
+
+*   **Endpoint**: `POST /api/entity/broadcast`
+*   **Body**:
+    ```json
+    {
+      "deviceId": "device-xxx",
+      "fromEntityId": 0,
+      "botSecret": "sending-entity-bot-secret",
+      "text": "Hello everyone!"
+    }
+    ```
+*   **Returns**:
+    ```json
+    {
+      "success": true,
+      "message": "Broadcast sent from Entity 0 to 3 entities",
+      "from": { "entityId": 0, "character": "LOBSTER" },
+      "sentCount": 3,
+      "pushedCount": 2,
+      "results": [
+        { "entityId": 1, "character": "LOBSTER", "pushed": true, "mode": "push" },
+        { "entityId": 2, "character": "LOBSTER", "pushed": true, "mode": "push" },
+        { "entityId": 3, "character": "LOBSTER", "pushed": false, "mode": "polling" }
+      ]
+    }
+    ```
+
+**Push Notification Format**:
+```
+[Device device-xxx Entity 1 received broadcast]
+Source: entity:0:LOBSTER
+Content: Hello everyone!
+```
+
 ### `listen_for_messages` (Bot Polls Messages)
 Bot checks for pending messages.
 
@@ -352,6 +389,7 @@ Reset all devices (Test only).
 | GET /api/client/pending | Poll Messages | ✅ | ⚠️ (Peek count if missing) |
 | POST /api/client/speak | Client Speak | ✅ | ❌ |
 | POST /api/entity/speak-to | Entity Speak | ✅ | ✅ (Sender) |
+| POST /api/entity/broadcast | Entity Broadcast | ✅ | ✅ (Sender) |
 
 ---
 
