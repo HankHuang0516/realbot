@@ -19,6 +19,7 @@ const TEST_FILES = [
     'test_messaging.js',            // Core: Message delivery
     'test_webhook.js',              // Feature: Webhook push
     'test_entity_delete.js',        // Feature: Entity deletion (40 entities stress test)
+    'test_widget_ux.js',            // Widget: Chat dialog flow, broadcast
 ];
 
 // Manual UI tests (run on device, not automated):

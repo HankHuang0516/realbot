@@ -76,17 +76,19 @@ Register webhook URL to enable Push mode.
 }
 ```
 
-### ⚠️ Important Behavior: Update Status Immediately
+### ⚠️ Webhook Handshake & Best Practices (Crucial for UX)
 
-When Bot receives message via Push, **it must immediately call `update_claw_status`** to update status, letting the device know the message is received and processing.
+The `register_webhook` allows you to receive messages, but the **interaction flow** is critical for a good user experience.
 
-**Correct Flow:**
-1. Receive Push message
-2. **Immediately** call `POST /api/transform` to update status (e.g., `state: "BUSY"`, `message: "Processing..."`)
-3. Execute tasks (query, calc, API calls)
-4. After task completion, call `POST /api/transform` again with final result
+1.  **Registration**: Ensure `session_key` is included.
+2.  **Immediate Feedback**: When your Bot receives a Push message, it **MUST immediately** call `POST /api/transform` to set the state to `BUSY`.
+    *   **Why?** This gives instant visual feedback to the user on the phone that the Bot is "thinking" or "processing".
+    *   **Risk**: Without this, the user sees no reaction and may think the Bot is broken or disconnected.
 
-**Incorrect Flow:** Process first then update status -> Device user wonders "Did Bot receive it?"
+**Recommended Flow:**
+1.  Receive Push message -> **Immediately call `update_claw_status` (State: BUSY)**.
+2.  Process the logic (LLM inference, API calls, etc.).
+3.  Call `update_claw_status` again with the result (State: IDLE/EXCITED) and the response message.
 
 ---
 
@@ -138,7 +140,7 @@ The `versionInfo` field tells you about the Android app version:
 - `isOutdated`: `true` if user should update
 - `versionWarning`: Warning message to show user (or `null` if up-to-date)
 
-**If `isOutdated` is `true`**, consider notifying the user to update their app for the best experience.
+**Actionable Advice**: If `isOutdated` is `true`, your Bot should **proactively suggest** the user to download the latest APK from GitHub. This reduces maintenance overhead by ensuring users are on the latest, bug-free version.
 
 ---
 
@@ -176,6 +178,65 @@ Wake up specific entity.
 
 *   **Endpoint**: `POST /api/wakeup`
 *   **Body**: `{ "deviceId": "xxx", "entityId": 0, "botSecret": "..." }`
+
+---
+
+## 2.1 Visual Customization (Colors & Effects)
+
+You can customize the appearance of the entity (Lobster) by modifying the `parts` object.
+
+### 1. Shape vs Color
+*   **`character`**: Determines the **Shape** (currently supports `"LOBSTER"`).
+*   **`parts.COLOR`**: Determines the **Color**.
+
+### 2. Color Setting (`parts.COLOR`)
+To change color, set the `COLOR` attribute in `parts`.
+*   **Format**: Signed 32-bit ARGB Integer.
+*   **Logic**: Converts hexadecimal `0xAARRGGBB` to decimal.
+    *   `AA` (Alpha): Must be `FF` (Opaque).
+    *   `RR`, `GG`, `BB`: Red, Green, Blue components.
+
+### 3. Common Color Reference (Lobster Uniforms)
+Use these signed integers for standard colors:
+
+| Color Name | Role | Signed Int | Hex Code |
+|------------|------|------------|----------|
+| **Royal Gold** | CEO | `-10496` | `0xFFFFD700` |
+| **Professional Blue** | Assistant | `-14575885` | `0xFF2196F3` |
+| **Energetic Orange** | Marketing | `-26624` | `0xFFFF9800` |
+| **Tech Green** | R&D | `-16711936` | `0xFF00FF00` |
+| **Coral Red** | Classic | `-8421168` | `0xFFFF7F50` |
+
+### 4. Advanced Effects
+*   **`METALLIC`** (0.0 - 1.0): Adds metallic sheen.
+*   **`GLOSS`** (0.0 - 1.0): Adds surface glossiness.
+
+### Example Payload
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "message": "New Outfit!",
+  "parts": {
+    "COLOR": -10496,   // Royal Gold
+    "METALLIC": 1.0,   // High metallic look
+    "GLOSS": 0.8       // High gloss
+  }
+}
+```
+
+
+---
+
+## 2.2 State Logic & Animation (Emotional Feedback)
+The `state` parameter controls not just the text status, but also the entity's physical behavior (Bobbing frequency) in the App:
+
+*   **`BUSY`**: Bobbing accelerates (0.01f), creating a sense of anxiety or active processing.
+*   **`SLEEPING`**: Bobbing stops (0.0f), and a "Zzz..." animation appears on the entity.
+*   **`IDLE` / `EXCITED`**: Normal breathing rhythm.
+
+**Tip**: Developers can use these states to provide "Emotional Feedback" (e.g., set to `BUSY` while the LLM is thinking, `SLEEPING` when inactive).
 
 ---
 
@@ -248,6 +309,12 @@ Phone sends message to Bot. Supports single entity or broadcast.
 
 ### `entity_speak_to` (Entity → Entity)
 Entity to entity messaging. Requires sender's botSecret.
+
+#### Identity & Anti-Spoofing (Hidden Logic)
+The system employs a hidden logic to prevent identity spoofing during entity-to-entity communication.
+*   **Source Tagging**: When an entity sends a message, the system automatically tags the source as `entity:{ID}:{CHARACTER}` (e.g., `entity:0:LOBSTER`).
+*   **Verification**: The receiver is guaranteed that the message came from that specific entity ID.
+*   **Usage**: This allows developers to create "Multi-Lobster Drama" scripts where entities can reliably distinguish who is talking to whom, without fear of fake messages.
 
 *   **Endpoint**: `POST /api/entity/speak-to`
 *   **Body**:
