@@ -1,0 +1,39 @@
+# Release History
+
+Track git commits for each release to enable changelog generation via `git diff`.
+
+---
+
+## Latest
+v1.0.4 | b0d267b5b1ed328d94eacad899144af9cb714e60f | 2026-02-08
+
+---
+
+## History
+
+| Version | Commit | Date | Notes |
+|---------|--------|------|-------|
+| v1.0.4 | b0d267b | 2026-02-08 | Battery level reporting, entity broadcast |
+| v1.0.3 | 515327f | 2026-02-07 | Multi-entity architecture, regression tests |
+| v1.0.2 | (unknown) | - | Previous release |
+
+---
+
+## How to Use
+
+### Generate Changelog for New Release
+```bash
+# 1. Get previous release commit
+PREV=$(grep -A1 "## Latest" RELEASE_HISTORY.md | tail -1 | cut -d'|' -f2 | tr -d ' ')
+
+# 2. View changes since last release
+git log --oneline $PREV..HEAD
+git diff --stat $PREV..HEAD
+
+# 3. After release, update this file with new commit hash
+```
+
+### After Release Checklist
+1. Update "Latest" section with new version, commit, date
+2. Move previous "Latest" to "History" table
+3. Commit this file with the release
