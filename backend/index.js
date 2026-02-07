@@ -297,6 +297,54 @@ app.post('/api/device/status', (req, res) => {
     });
 });
 
+/**
+ * POST /api/device/battery
+ * Android app reports real device battery level.
+ * Body: { deviceId, deviceSecret, batteryLevel }
+ */
+app.post('/api/device/battery', (req, res) => {
+    const { deviceId, deviceSecret, batteryLevel } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    // Verify device secret
+    if (device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Validate battery level
+    const level = parseInt(batteryLevel);
+    if (isNaN(level) || level < 0 || level > 100) {
+        return res.status(400).json({ success: false, message: "batteryLevel must be 0-100" });
+    }
+
+    // Update battery level for ALL bound entities on this device
+    let updatedCount = 0;
+    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+        const entity = device.entities[i];
+        if (entity && entity.isBound) {
+            entity.batteryLevel = level;
+            updatedCount++;
+        }
+    }
+
+    console.log(`[Battery] Device ${deviceId}: ${level}% (updated ${updatedCount} entities)`);
+
+    res.json({
+        success: true,
+        deviceId: deviceId,
+        batteryLevel: level,
+        entitiesUpdated: updatedCount
+    });
+});
+
 // ============================================
 // BOT BINDING (OpenClaw)
 // ============================================
@@ -577,6 +625,48 @@ app.delete('/api/entity', (req, res) => {
 
     console.log(`[Remove] Device ${deviceId} Entity ${eId} unbound`);
     res.json({ success: true, message: `Entity ${eId} removed` });
+});
+
+/**
+ * DELETE /api/device/entity
+ * Device-side entity removal (uses deviceSecret instead of botSecret).
+ * Body: { deviceId, deviceSecret, entityId }
+ *
+ * This allows the device owner to remove entities without needing bot credentials.
+ */
+app.delete('/api/device/entity', (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    // Verify deviceSecret
+    if (device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, message: "Invalid deviceSecret" });
+    }
+
+    const entity = device.entities[eId];
+
+    if (!entity.isBound) {
+        return res.status(400).json({ success: false, message: `Entity ${eId} is not bound` });
+    }
+
+    // Reset entity to unbound state
+    device.entities[eId] = createDefaultEntity(eId);
+
+    console.log(`[Device Remove] Device ${deviceId} Entity ${eId} unbound by device owner`);
+    res.json({ success: true, message: `Entity ${eId} removed by device` });
 });
 
 // ============================================
