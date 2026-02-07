@@ -14,12 +14,15 @@ const TEST_FILES = [
     'test_device_isolation.js',     // Critical: Multi-device isolation
     'test_messaging.js',            // Core: Message delivery
     'test_webhook.js',              // Feature: Webhook push
-    // 'test_entity_isolation.js',  // TODO: Needs v5 update
-    // 'test_name_feature.js',      // TODO: Needs v5 update
-    // 'test_entity_communication.js', // TODO: Needs v5 update - uses old endpoint format
+    'test_entity_delete.js',        // Feature: Entity deletion (40 entities stress test)
 ];
 
-const TEST_TIMEOUT = 30000; // 30 seconds per test
+// Manual UI tests (run on device, not automated):
+// - test_entity_isolation.js     - Manual device UI testing
+// - test_entity_communication.js - Manual device UI testing
+// - test_name_feature.js         - Manual device UI testing
+
+const TEST_TIMEOUT = 60000; // 60 seconds per test (entity_delete needs more time)
 
 async function runTest(testFile) {
     return new Promise((resolve) => {
@@ -75,7 +78,10 @@ async function runTest(testFile) {
                 output.includes('All tests passed') ||
                 output.includes('all tests passed') ||
                 output.includes('All isolation tests passed') ||
+                output.includes('deletion tests passed') ||
+                output.includes('webhook registration tests passed') ||
                 (output.includes('RESULTS:') && output.includes(', 0 failed')) ||
+                (output.includes('Results:') && output.includes('0 failed')) ||
                 (output.includes('Result:') && output.includes('passed') && !output.includes('0/')) ||
                 (output.match(/\d+\/\d+ tests passed/) && output.includes('✅'));
             resolve({ file: testFile, passed, code, output });

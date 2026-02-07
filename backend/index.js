@@ -478,54 +478,7 @@ app.post('/api/transform', (req, res) => {
     });
 });
 
-/**
- * POST /api/wakeup
- * Wake up specific entity.
- * Body: { deviceId, entityId: 0-3, botSecret }
- * REQUIRES botSecret for authentication!
- */
-app.post('/api/wakeup', (req, res) => {
-    const { deviceId, entityId, botSecret } = req.body;
-
-    if (!deviceId) {
-        return res.status(400).json({ success: false, message: "deviceId required" });
-    }
-
-    const eId = parseInt(entityId) || 0;
-    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
-        return res.status(400).json({ success: false, message: "Invalid entityId" });
-    }
-
-    const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, message: "Device not found" });
-    }
-
-    const entity = device.entities[eId];
-
-    if (!entity.isBound) {
-        return res.status(400).json({ success: false, message: `Entity ${eId} not bound` });
-    }
-
-    // Verify botSecret
-    if (!botSecret || botSecret !== entity.botSecret) {
-        return res.status(403).json({ success: false, message: "Invalid botSecret" });
-    }
-
-    entity.state = "EXCITED";
-    entity.message = "I'm Awake!";
-    entity.lastUpdated = Date.now();
-
-    setTimeout(() => {
-        if (entity.state === "EXCITED") {
-            entity.state = "IDLE";
-            entity.message = "Ready.";
-        }
-    }, 5000);
-
-    console.log(`[Wakeup] Device ${deviceId} Entity ${eId}`);
-    res.json({ success: true, message: `Entity ${eId} woken up` });
-});
+// POST /api/wakeup - REMOVED (client-side wakeup retained without push)
 
 /**
  * DELETE /api/entity
