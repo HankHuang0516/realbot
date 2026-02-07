@@ -59,11 +59,12 @@ async function runTest() {
     botSecret = bindRes.data.botSecret;
     console.log(`   Entity ${entityId} ready, botSecret: ${botSecret.substring(0, 8)}...\n`);
 
-    // Step 2: Check initial mode (should be polling)
+    // Step 2: Check initial mode (should be polling) - v5: use /api/debug/devices
     console.log('2. Checking initial mode (should be polling)...');
-    const slotsRes1 = await api('GET', '/api/debug/slots');
-    const slot1 = slotsRes1.data.slots.find(s => s.entityId === entityId);
-    if (slot1.mode === 'polling' && !slot1.webhookRegistered) {
+    const devicesRes1 = await api('GET', '/api/debug/devices');
+    const device1 = devicesRes1.data.devices?.find(d => d.deviceId === deviceId);
+    const slot1 = device1?.entities?.find(e => e.entityId === entityId);
+    if (slot1 && slot1.mode === 'polling' && !slot1.webhookRegistered) {
         console.log(`   Mode: ${slot1.mode}, webhookRegistered: ${slot1.webhookRegistered}`);
         passed++;
     } else {
@@ -71,9 +72,10 @@ async function runTest() {
         failed++;
     }
 
-    // Step 3: Register webhook
+    // Step 3: Register webhook - v5: include deviceId
     console.log('\n3. Registering webhook...');
     const webhookRes = await api('POST', '/api/bot/register', {
+        deviceId,
         entityId,
         botSecret,
         webhook_url: 'https://example-bot.com',
@@ -90,11 +92,12 @@ async function runTest() {
         failed++;
     }
 
-    // Step 4: Verify webhook in debug slots
-    console.log('\n4. Verifying webhook status in debug slots...');
-    const slotsRes2 = await api('GET', '/api/debug/slots');
-    const slot2 = slotsRes2.data.slots.find(s => s.entityId === entityId);
-    if (slot2.mode === 'push' && slot2.webhookRegistered) {
+    // Step 4: Verify webhook in debug devices - v5
+    console.log('\n4. Verifying webhook status in debug devices...');
+    const devicesRes2 = await api('GET', '/api/debug/devices');
+    const device2 = devicesRes2.data.devices?.find(d => d.deviceId === deviceId);
+    const slot2 = device2?.entities?.find(e => e.entityId === entityId);
+    if (slot2 && slot2.mode === 'push' && slot2.webhookRegistered) {
         console.log(`   Mode: ${slot2.mode}, webhookRegistered: ${slot2.webhookRegistered}`);
         passed++;
     } else {
@@ -102,26 +105,34 @@ async function runTest() {
         failed++;
     }
 
-    // Step 5: Send message - should attempt push (will fail since example.com won't accept)
+    // Step 5: Send message - should attempt push (will fail since example.com won't accept) - v5: include deviceId
     console.log('\n5. Testing client speak with webhook...');
     const speakRes = await api('POST', '/api/client/speak', {
+        deviceId,
         entityId,
         text: 'Test message for webhook'
     });
 
-    if (speakRes.data.success && speakRes.data.mode === 'push') {
-        console.log(`   Result: ${speakRes.data.message}`);
-        console.log(`   Mode: ${speakRes.data.mode}`);
-        console.log(`   Push: ${speakRes.data.push} (expected: queued - webhook is fake)`);
-        passed++;
+    // v5: Response now has targets array instead of direct mode
+    if (speakRes.data.success && speakRes.data.targets) {
+        const target = speakRes.data.targets.find(t => t.entityId === entityId);
+        if (target && target.mode === 'push') {
+            console.log(`   Result: ${speakRes.data.message}`);
+            console.log(`   Mode: ${target.mode}, pushed: ${target.pushed}`);
+            passed++;
+        } else {
+            console.log(`   Target not in push mode: ${JSON.stringify(target)}`);
+            failed++;
+        }
     } else {
         console.log(`   Unexpected response: ${JSON.stringify(speakRes.data)}`);
         failed++;
     }
 
-    // Step 6: Test webhook registration without botSecret (should fail)
+    // Step 6: Test webhook registration without botSecret (should fail) - v5
     console.log('\n6. Testing webhook registration without botSecret...');
     const badWebhookRes = await api('POST', '/api/bot/register', {
+        deviceId,
         entityId,
         webhook_url: 'https://attacker.com',
         token: 'stolen-token',
@@ -136,9 +147,9 @@ async function runTest() {
         failed++;
     }
 
-    // Step 7: Unregister webhook
+    // Step 7: Unregister webhook - v5: include deviceId
     console.log('\n7. Unregistering webhook...');
-    const unregRes = await api('DELETE', `/api/bot/register?entityId=${entityId}&botSecret=${botSecret}`);
+    const unregRes = await api('DELETE', `/api/bot/register?deviceId=${deviceId}&entityId=${entityId}&botSecret=${botSecret}`);
 
     if (unregRes.data.success && unregRes.data.mode === 'polling') {
         console.log(`   Result: ${unregRes.data.message}`);
@@ -149,11 +160,12 @@ async function runTest() {
         failed++;
     }
 
-    // Step 8: Verify back to polling mode
+    // Step 8: Verify back to polling mode - v5
     console.log('\n8. Verifying back to polling mode...');
-    const slotsRes3 = await api('GET', '/api/debug/slots');
-    const slot3 = slotsRes3.data.slots.find(s => s.entityId === entityId);
-    if (slot3.mode === 'polling' && !slot3.webhookRegistered) {
+    const devicesRes3 = await api('GET', '/api/debug/devices');
+    const device3 = devicesRes3.data.devices?.find(d => d.deviceId === deviceId);
+    const slot3 = device3?.entities?.find(e => e.entityId === entityId);
+    if (slot3 && slot3.mode === 'polling' && !slot3.webhookRegistered) {
         console.log(`   Mode: ${slot3.mode}, webhookRegistered: ${slot3.webhookRegistered}`);
         passed++;
     } else {
