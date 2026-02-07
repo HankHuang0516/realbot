@@ -18,6 +18,10 @@ app.use(express.json());
 
 const MAX_ENTITIES_PER_DEVICE = 4;
 
+// Latest app version - update this with each release
+// Bot will warn users if their app version is older than this
+const LATEST_APP_VERSION = "1.0.3";
+
 // Device registry - each device has its own entities
 const devices = {};
 
@@ -57,8 +61,36 @@ function createDefaultEntity(entityId) {
         batteryLevel: 100,
         lastUpdated: Date.now(),
         messageQueue: [],
-        webhook: null
+        webhook: null,
+        appVersion: null // Device app version (e.g., "1.0.3")
     };
+}
+
+// Helper: Get version info for responses
+function getVersionInfo(deviceAppVersion) {
+    const isOutdated = deviceAppVersion && deviceAppVersion !== LATEST_APP_VERSION &&
+        compareVersions(deviceAppVersion, LATEST_APP_VERSION) < 0;
+    return {
+        latestVersion: LATEST_APP_VERSION,
+        deviceVersion: deviceAppVersion || null,
+        isOutdated: isOutdated,
+        versionWarning: isOutdated
+            ? `App version ${deviceAppVersion} is outdated. Please update to v${LATEST_APP_VERSION} for best experience.`
+            : null
+    };
+}
+
+// Helper: Compare semantic versions (returns -1, 0, or 1)
+function compareVersions(v1, v2) {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const p1 = parts1[i] || 0;
+        const p2 = parts2[i] || 0;
+        if (p1 < p2) return -1;
+        if (p1 > p2) return 1;
+    }
+    return 0;
 }
 
 // Helper: Get or create device
@@ -162,7 +194,7 @@ app.get('/api/health', (req, res) => {
  * NEW: Each device now has its own 4 entity slots!
  */
 app.post('/api/device/register', (req, res) => {
-    const { entityId, deviceId, deviceSecret } = req.body;
+    const { entityId, deviceId, deviceSecret, appVersion } = req.body;
 
     // Validate entityId
     const eId = parseInt(entityId);
@@ -195,21 +227,28 @@ app.post('/api/device/register', (req, res) => {
     const code = generateBindingCode();
     const expires = Date.now() + (5 * 60 * 1000); // 5 minutes
 
-    // Store pending binding
+    // Store pending binding (include appVersion for tracking)
     pendingBindings[code] = {
         deviceId: deviceId,
         entityId: eId,
-        expires: expires
+        expires: expires,
+        appVersion: appVersion || null
     };
 
-    console.log(`[Register] Device ${deviceId} Entity ${eId}: Code ${code}`);
+    // Store appVersion on entity (update even if already bound)
+    if (appVersion) {
+        device.entities[eId].appVersion = appVersion;
+    }
+
+    console.log(`[Register] Device ${deviceId} Entity ${eId}: Code ${code} (app v${appVersion || 'unknown'})`);
 
     res.json({
         success: true,
         deviceId: deviceId,
         entityId: eId,
         bindingCode: code,
-        expiresIn: 300 // 5 minutes in seconds
+        expiresIn: 300, // 5 minutes in seconds
+        versionInfo: getVersionInfo(appVersion)
     });
 });
 
@@ -219,7 +258,7 @@ app.post('/api/device/register', (req, res) => {
  * Body: { entityId: 0-3, deviceId: "...", deviceSecret: "..." }
  */
 app.post('/api/device/status', (req, res) => {
-    const { entityId, deviceId, deviceSecret } = req.body;
+    const { entityId, deviceId, deviceSecret, appVersion } = req.body;
 
     const eId = parseInt(entityId);
     if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
@@ -238,6 +277,11 @@ app.post('/api/device/status', (req, res) => {
 
     const entity = device.entities[eId];
 
+    // Update app version on entity (track latest version seen)
+    if (appVersion) {
+        entity.appVersion = appVersion;
+    }
+
     res.json({
         deviceId: deviceId,
         entityId: entity.entityId,
@@ -248,7 +292,8 @@ app.post('/api/device/status', (req, res) => {
         parts: entity.parts,
         batteryLevel: entity.batteryLevel,
         lastUpdated: entity.lastUpdated,
-        isBound: entity.isBound
+        isBound: entity.isBound,
+        versionInfo: getVersionInfo(appVersion || entity.appVersion)
     });
 });
 
@@ -303,10 +348,13 @@ app.post('/api/bind', (req, res) => {
     entity.message = "Connected!";
     entity.lastUpdated = Date.now();
 
+    // Get app version from pending binding (stored when device registered)
+    const deviceAppVersion = binding.appVersion || entity.appVersion;
+
     // Clear used binding code
     delete pendingBindings[code];
 
-    console.log(`[Bind] Device ${deviceId} Entity ${entityId} bound with botSecret${name ? ` (name: ${name})` : ''}`);
+    console.log(`[Bind] Device ${deviceId} Entity ${entityId} bound with botSecret${name ? ` (name: ${name})` : ''} (app v${deviceAppVersion || 'unknown'})`);
 
     res.json({
         success: true,
@@ -320,6 +368,7 @@ app.post('/api/bind', (req, res) => {
             entityId: entityId,
             status: "ONLINE"
         },
+        versionInfo: getVersionInfo(deviceAppVersion),
         skills_documentation: loadSkillDoc()
     });
 });
@@ -371,11 +420,12 @@ app.get('/api/entities', (req, res) => {
 /**
  * GET /api/status
  * Get status for specific device + entity.
- * Query: ?deviceId=xxx&entityId=0
+ * Query: ?deviceId=xxx&entityId=0&appVersion=1.0.3
  */
 app.get('/api/status', (req, res) => {
     const deviceId = req.query.deviceId;
     const eId = parseInt(req.query.entityId) || 0;
+    const appVersion = req.query.appVersion;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -392,6 +442,11 @@ app.get('/api/status', (req, res) => {
 
     const entity = device.entities[eId];
 
+    // Update app version on entity (track latest version seen from this device)
+    if (appVersion) {
+        entity.appVersion = appVersion;
+    }
+
     res.json({
         deviceId: deviceId,
         entityId: entity.entityId,
@@ -402,7 +457,8 @@ app.get('/api/status', (req, res) => {
         parts: entity.parts,
         batteryLevel: entity.batteryLevel,
         lastUpdated: entity.lastUpdated,
-        isBound: entity.isBound
+        isBound: entity.isBound,
+        versionInfo: getVersionInfo(appVersion || entity.appVersion)
     });
 });
 
@@ -474,7 +530,8 @@ app.post('/api/transform', (req, res) => {
             state: entity.state,
             message: entity.message,
             parts: entity.parts
-        }
+        },
+        versionInfo: getVersionInfo(entity.appVersion)
     });
 });
 
@@ -766,7 +823,8 @@ app.get('/api/client/pending', (req, res) => {
         deviceId: deviceId,
         entityId: eId,
         count: pending.length,
-        messages: pending
+        messages: pending,
+        versionInfo: getVersionInfo(entity.appVersion)
     });
 });
 

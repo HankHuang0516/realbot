@@ -7,9 +7,13 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// Test directory
+const TEST_DIR = path.join(__dirname, 'tests');
+
 // Test files to run (in order of importance)
 // Note: Tests must be v5 compatible (deviceId + entityId based)
 const TEST_FILES = [
+    'test_ux_coverage.js',          // REQUIRED: UX coverage must be >= 98%
     'test_ux_improvements.js',      // Critical: API structure, isBound
     'test_device_isolation.js',     // Critical: Multi-device isolation
     'test_messaging.js',            // Core: Message delivery
@@ -26,7 +30,7 @@ const TEST_TIMEOUT = 60000; // 60 seconds per test (entity_delete needs more tim
 
 async function runTest(testFile) {
     return new Promise((resolve) => {
-        const testPath = path.join(__dirname, testFile);
+        const testPath = path.join(TEST_DIR, testFile);
 
         if (!fs.existsSync(testPath)) {
             console.log(`SKIP: ${testFile} (file not found)`);
@@ -39,7 +43,7 @@ async function runTest(testFile) {
         console.log('='.repeat(60));
 
         const child = spawn('node', [testPath], {
-            cwd: __dirname,
+            cwd: TEST_DIR,
             stdio: 'pipe'
         });
 
