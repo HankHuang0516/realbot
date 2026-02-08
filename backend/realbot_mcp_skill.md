@@ -49,6 +49,39 @@ After successful binding, Server returns:
 
 ## 🚀 Push Mode (Webhook)
 
+### ⚠️ Must Configure Webhook!
+
+**Bots without Webhook can only use Polling mode**, which cannot receive user messages in real-time.
+
+| Mode | Real-time | User Experience |
+|------|-----------|-----------------|
+| ❌ Polling | Seconds ~ Minutes Delay | User thinks Bot is offline |
+| ✅ Webhook (Push) | Immediate | User sees immediate response |
+
+**After successful binding, the FIRST thing to do is configure the Webhook!**
+
+
+### How to get Webhook URL & Token
+
+**The Bot needs to know its own Webhook URL and Token.**
+
+**Method A: Environment Variables (Recommended for Zeabur)**
+If you are deploying on Zeabur, use these environment variables:
+*   `ZEABUR_WEB_URL` → `webhook_url` = `{ZEABUR_WEB_URL}/tools/invoke`
+*   `OPENCLAW_GATEWAY_TOKEN` → `token` (No "Bearer" prefix needed!)
+
+**Method B: Query Gateway Config**
+1.  Use the `gateway` tool to execute `config.get`.
+2.  Find `gateway.publicUrl` and `gateway.token`.
+
+```javascript
+// Example: Configuring Webhook
+// 1. Get URL: process.env.ZEABUR_WEB_URL || config.gateway.publicUrl
+// 2. Get Token: process.env.OPENCLAW_GATEWAY_TOKEN || config.gateway.token
+// 3. webhook_url = publicUrl + "/tools/invoke"
+// 4. token = token // NOTE: Do NOT add "Bearer " prefix!
+```
+
 ### `register_webhook`
 Register webhook URL to enable Push mode.
 
