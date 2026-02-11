@@ -1,5 +1,8 @@
-// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5)
+// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5.1)
 // Each device has its own 4 entity slots (matrix architecture)
+// v5.1 Changes:
+//   - Bug #1 Fix: Added validation to prevent crashes from malformed requests
+//   - Bug #2 Fix: Implemented data persistence to survive Railway redeployment
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -27,6 +30,95 @@ const devices = {};
 
 // Pending binding codes (code -> { deviceId, entityId, expires })
 const pendingBindings = {};
+
+// ============================================
+// DATA PERSISTENCE (Fix for Bug #2: Survive Railway Redeployment)
+// ============================================
+
+// Data directory and file path
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'devices.json');
+const AUTO_SAVE_INTERVAL = 30000; // Auto-save every 30 seconds
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    console.log('[Persistence] Data directory created:', DATA_DIR);
+}
+
+// Save devices data to disk
+function saveData() {
+    try {
+        const data = {
+            devices: devices,
+            savedAt: Date.now(),
+            version: LATEST_APP_VERSION
+        };
+        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+        console.log(`[Persistence] Data saved: ${Object.keys(devices).length} devices`);
+        return true;
+    } catch (err) {
+        console.error('[Persistence] Failed to save data:', err.message);
+        return false;
+    }
+}
+
+// Load devices data from disk
+function loadData() {
+    try {
+        if (!fs.existsSync(DATA_FILE)) {
+            console.log('[Persistence] No existing data file found, starting fresh');
+            return false;
+        }
+
+        const fileContent = fs.readFileSync(DATA_FILE, 'utf8');
+        const data = JSON.parse(fileContent);
+
+        // Restore devices
+        if (data.devices) {
+            Object.assign(devices, data.devices);
+            console.log(`[Persistence] Data loaded: ${Object.keys(devices).length} devices restored (saved at: ${new Date(data.savedAt).toISOString()})`);
+
+            // Log bound entities
+            let boundCount = 0;
+            for (const deviceId in devices) {
+                for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+                    if (devices[deviceId].entities[i]?.isBound) boundCount++;
+                }
+            }
+            console.log(`[Persistence] ${boundCount} bound entities restored`);
+            return true;
+        }
+        return false;
+    } catch (err) {
+        console.error('[Persistence] Failed to load data:', err.message);
+        return false;
+    }
+}
+
+// Auto-save interval
+setInterval(() => {
+    const deviceCount = Object.keys(devices).length;
+    if (deviceCount > 0) {
+        saveData();
+    }
+}, AUTO_SAVE_INTERVAL);
+
+// Graceful shutdown - save data before exit
+process.on('SIGINT', () => {
+    console.log('[Persistence] Received SIGINT, saving data before exit...');
+    saveData();
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('[Persistence] Received SIGTERM, saving data before exit...');
+    saveData();
+    process.exit(0);
+});
+
+// Load data on startup
+loadData();
 
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
@@ -404,6 +496,9 @@ app.post('/api/bind', (req, res) => {
 
     console.log(`[Bind] Device ${deviceId} Entity ${entityId} bound with botSecret${name ? ` (name: ${name})` : ''} (app v${deviceAppVersion || 'unknown'})`);
 
+    // Save data immediately after binding (critical operation)
+    saveData();
+
     res.json({
         success: true,
         message: `Device ${deviceId} Entity ${entityId} bound successfully`,
@@ -535,6 +630,12 @@ app.post('/api/transform', (req, res) => {
 
     const entity = device.entities[eId];
 
+    // Check if entity exists
+    if (!entity) {
+        console.warn(`[Transform] Device ${deviceId} Entity ${eId} not found (possible malformed request)`);
+        return res.status(404).json({ success: false, message: `Entity ${eId} not found` });
+    }
+
     if (!entity.isBound) {
         return res.status(400).json({
             success: false,
@@ -624,6 +725,10 @@ app.delete('/api/entity', (req, res) => {
     device.entities[eId] = createDefaultEntity(eId);
 
     console.log(`[Remove] Device ${deviceId} Entity ${eId} unbound`);
+
+    // Save data immediately after unbinding (critical operation)
+    saveData();
+
     res.json({ success: true, message: `Entity ${eId} removed` });
 });
 
@@ -666,6 +771,10 @@ app.delete('/api/device/entity', (req, res) => {
     device.entities[eId] = createDefaultEntity(eId);
 
     console.log(`[Device Remove] Device ${deviceId} Entity ${eId} unbound by device owner`);
+
+    // Save data immediately after unbinding (critical operation)
+    saveData();
+
     res.json({ success: true, message: `Entity ${eId} removed by device` });
 });
 
@@ -805,6 +914,16 @@ app.post('/api/entity/speak-to', async (req, res) => {
     const fromEntity = device.entities[fromId];
     const toEntity = device.entities[toId];
 
+    // Check if entities exist
+    if (!fromEntity) {
+        console.warn(`[Entity] Device ${deviceId} Entity ${fromId} not found (possible malformed request)`);
+        return res.status(404).json({ success: false, message: `Entity ${fromId} not found` });
+    }
+    if (!toEntity) {
+        console.warn(`[Entity] Device ${deviceId} Entity ${toId} not found (possible malformed request)`);
+        return res.status(404).json({ success: false, message: `Entity ${toId} not found` });
+    }
+
     // Verify botSecret of sending entity
     if (!fromEntity.isBound || fromEntity.botSecret !== botSecret) {
         return res.status(403).json({ success: false, message: "Invalid botSecret for sending entity" });
@@ -884,6 +1003,12 @@ app.post('/api/entity/broadcast', async (req, res) => {
     }
 
     const fromEntity = device.entities[fromId];
+
+    // Check if entity exists
+    if (!fromEntity) {
+        console.warn(`[Broadcast] Device ${deviceId} Entity ${fromId} not found (possible malformed request)`);
+        return res.status(404).json({ success: false, message: `Entity ${fromId} not found` });
+    }
 
     // Verify botSecret of sending entity
     if (!fromEntity.isBound || fromEntity.botSecret !== botSecret) {
@@ -1142,6 +1267,9 @@ app.post('/api/bot/register', (req, res) => {
     };
 
     console.log(`[Bot Register] Device ${deviceId} Entity ${eId} webhook registered: ${webhook_url}`);
+
+    // Save data after webhook registration
+    saveData();
 
     res.json({
         success: true,

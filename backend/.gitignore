@@ -20,3 +20,10 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Data persistence (keep directory structure, ignore data files)
+data/*.json
+!data/.gitkeep
+
+# Test files
+test-entity-info.json
