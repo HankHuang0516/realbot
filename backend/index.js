@@ -1302,10 +1302,18 @@ app.post('/api/bot/register', (req, res) => {
         });
     }
 
+    // Clean token: Remove "Bearer " prefix if present (case-insensitive)
+    // This prevents "Bearer Bearer xyz" issue when backend adds Bearer prefix during push
+    let cleanToken = token.trim();
+    if (cleanToken.toLowerCase().startsWith('bearer ')) {
+        cleanToken = cleanToken.substring(7).trim(); // Remove "Bearer " (7 chars)
+        console.log(`[Bot Register] Cleaned token: removed "Bearer " prefix`);
+    }
+
     // Store webhook info
     entity.webhook = {
         url: webhook_url,
-        token: token,
+        token: cleanToken,
         sessionKey: session_key,
         registeredAt: Date.now()
     };

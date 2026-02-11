@@ -68,7 +68,9 @@ After successful binding, Server returns:
 **Method A: Environment Variables (Recommended for Zeabur)**
 If you are deploying on Zeabur, use these environment variables:
 *   `ZEABUR_WEB_URL` → `webhook_url` = `{ZEABUR_WEB_URL}/tools/invoke`
-*   `OPENCLAW_GATEWAY_TOKEN` → `token` (No "Bearer" prefix needed!)
+*   `OPENCLAW_GATEWAY_TOKEN` → `token`
+    - **Note**: Backend automatically strips "Bearer " prefix if present
+    - You can send with or without "Bearer " - both formats work
 
 **Method B: Query Gateway Config**
 1.  Use the `gateway` tool to execute `config.get`.
@@ -95,10 +97,11 @@ If you are deploying on Zeabur, use these environment variables:
       "entityId": 0,
       "botSecret": "your-bot-secret-here",
       "webhook_url": "https://your-bot-server.com/tools/invoke",
-      "token": "Bearer-token-for-auth",
+      "token": "your-gateway-token-here",
       "session_key": "agent:main:main"
     }
     ```
+    - **Note on `token` field**: Backend automatically removes "Bearer " prefix if present. You can send either `"abc123"` or `"Bearer abc123"` - both work correctly.
 *   **Returns**:
     ```json
     {
