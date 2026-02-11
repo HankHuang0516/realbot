@@ -1,12 +1,13 @@
-// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5.1)
+// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5.2)
 // Each device has its own 4 entity slots (matrix architecture)
-// v5.1 Changes:
+// v5.2 Changes (PostgreSQL):
 //   - Bug #1 Fix: Added validation to prevent crashes from malformed requests
-//   - Bug #2 Fix: Implemented data persistence to survive Railway redeployment
+//   - Bug #2 Fix: Implemented PostgreSQL data persistence (fallback to file storage)
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const db = require('./db');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -33,92 +34,129 @@ const pendingBindings = {};
 
 // ============================================
 // DATA PERSISTENCE (Fix for Bug #2: Survive Railway Redeployment)
+// PostgreSQL with file-based fallback
 // ============================================
 
-// Data directory and file path
+const AUTO_SAVE_INTERVAL = 30000; // Auto-save every 30 seconds
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'devices.json');
-const AUTO_SAVE_INTERVAL = 30000; // Auto-save every 30 seconds
+let usePostgreSQL = false; // Will be set to true if PostgreSQL is available
 
-// Ensure data directory exists
+// Ensure data directory exists (for fallback)
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
-    console.log('[Persistence] Data directory created:', DATA_DIR);
 }
 
-// Save devices data to disk
-function saveData() {
-    try {
-        const data = {
-            devices: devices,
-            savedAt: Date.now(),
-            version: LATEST_APP_VERSION
-        };
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-        console.log(`[Persistence] Data saved: ${Object.keys(devices).length} devices`);
-        return true;
-    } catch (err) {
-        console.error('[Persistence] Failed to save data:', err.message);
-        return false;
-    }
-}
+// Save devices data (PostgreSQL primary, file fallback)
+async function saveData() {
+    const deviceCount = Object.keys(devices).length;
+    if (deviceCount === 0) return true;
 
-// Load devices data from disk
-function loadData() {
-    try {
-        if (!fs.existsSync(DATA_FILE)) {
-            console.log('[Persistence] No existing data file found, starting fresh');
+    if (usePostgreSQL) {
+        // Save to PostgreSQL
+        return await db.saveAllDevices(devices);
+    } else {
+        // Fallback to file storage
+        try {
+            const data = {
+                devices: devices,
+                savedAt: Date.now(),
+                version: LATEST_APP_VERSION
+            };
+            fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+            console.log(`[File] Data saved: ${deviceCount} devices`);
+            return true;
+        } catch (err) {
+            console.error('[File] Failed to save data:', err.message);
             return false;
         }
-
-        const fileContent = fs.readFileSync(DATA_FILE, 'utf8');
-        const data = JSON.parse(fileContent);
-
-        // Restore devices
-        if (data.devices) {
-            Object.assign(devices, data.devices);
-            console.log(`[Persistence] Data loaded: ${Object.keys(devices).length} devices restored (saved at: ${new Date(data.savedAt).toISOString()})`);
-
-            // Log bound entities
-            let boundCount = 0;
-            for (const deviceId in devices) {
-                for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
-                    if (devices[deviceId].entities[i]?.isBound) boundCount++;
-                }
-            }
-            console.log(`[Persistence] ${boundCount} bound entities restored`);
-            return true;
-        }
-        return false;
-    } catch (err) {
-        console.error('[Persistence] Failed to load data:', err.message);
-        return false;
     }
+}
+
+// Load devices data (PostgreSQL primary, file fallback)
+async function loadData() {
+    if (usePostgreSQL) {
+        // Load from PostgreSQL
+        const loadedDevices = await db.loadAllDevices();
+        Object.assign(devices, loadedDevices);
+        return Object.keys(loadedDevices).length > 0;
+    } else {
+        // Fallback to file storage
+        try {
+            if (!fs.existsSync(DATA_FILE)) {
+                console.log('[File] No existing data file found, starting fresh');
+                return false;
+            }
+
+            const fileContent = fs.readFileSync(DATA_FILE, 'utf8');
+            const data = JSON.parse(fileContent);
+
+            if (data.devices) {
+                Object.assign(devices, data.devices);
+                console.log(`[File] Data loaded: ${Object.keys(devices).length} devices restored`);
+
+                let boundCount = 0;
+                for (const deviceId in devices) {
+                    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+                        if (devices[deviceId].entities[i]?.isBound) boundCount++;
+                    }
+                }
+                console.log(`[File] ${boundCount} bound entities restored`);
+                return true;
+            }
+            return false;
+        } catch (err) {
+            console.error('[File] Failed to load data:', err.message);
+            return false;
+        }
+    }
+}
+
+// Initialize database and load data
+async function initPersistence() {
+    console.log('[Persistence] Initializing...');
+
+    // Try PostgreSQL first
+    usePostgreSQL = await db.initDatabase();
+
+    if (usePostgreSQL) {
+        console.log('[Persistence] Using PostgreSQL (primary)');
+    } else {
+        console.log('[Persistence] Using file storage (fallback)');
+        console.log('[Persistence] To enable PostgreSQL: Add PostgreSQL service in Railway');
+    }
+
+    // Load existing data
+    await loadData();
 }
 
 // Auto-save interval
-setInterval(() => {
+setInterval(async () => {
     const deviceCount = Object.keys(devices).length;
     if (deviceCount > 0) {
-        saveData();
+        await saveData();
     }
 }, AUTO_SAVE_INTERVAL);
 
 // Graceful shutdown - save data before exit
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     console.log('[Persistence] Received SIGINT, saving data before exit...');
-    saveData();
+    await saveData();
+    if (usePostgreSQL) await db.closeDatabase();
     process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
     console.log('[Persistence] Received SIGTERM, saving data before exit...');
-    saveData();
+    await saveData();
+    if (usePostgreSQL) await db.closeDatabase();
     process.exit(0);
 });
 
-// Load data on startup
-loadData();
+// Initialize persistence on startup (async)
+initPersistence().catch(err => {
+    console.error('[Persistence] Initialization failed:', err.message);
+});
 
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
@@ -1372,6 +1410,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, () => {
-    console.log(`Claw Backend v5 (Matrix Architecture) running on port ${port}`);
+    console.log(`Claw Backend v5.2 (PostgreSQL) running on port ${port}`);
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
+    console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 });
