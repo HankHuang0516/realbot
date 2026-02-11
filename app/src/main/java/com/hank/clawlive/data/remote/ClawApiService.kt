@@ -2,6 +2,7 @@ package com.hank.clawlive.data.remote
 
 import com.hank.clawlive.data.model.AgentStatus
 import com.hank.clawlive.data.model.ApiResponse
+import com.hank.clawlive.data.model.ClientMessageResponse
 import com.hank.clawlive.data.model.DeviceStatusRequest
 import com.hank.clawlive.data.model.MultiEntityResponse
 import com.hank.clawlive.data.model.RegisterRequest
@@ -43,7 +44,7 @@ interface ClawApiService {
     // Send message to bot (requires deviceId)
     // entityId can be: Int, List<Int>, or "all" for broadcast
     @POST("api/client/speak")
-    suspend fun sendClientMessage(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+    suspend fun sendClientMessage(@Body body: Map<String, @JvmSuppressWildcards Any>): ClientMessageResponse
 
     // ============================================
     // MULTI-ENTITY ENDPOINTS
