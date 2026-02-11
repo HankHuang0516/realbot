@@ -889,13 +889,19 @@ app.post('/api/client/speak', async (req, res) => {
         // Push to bot if webhook is registered
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (entity.webhook) {
+            console.log(`[Push] Attempting push to Device ${deviceId} Entity ${eId} (webhook: ${entity.webhook.url})`);
             pushResult = await pushToBot(entity, deviceId, "new_message", {
                 message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`
             });
 
             if (pushResult.pushed) {
                 messageObj.delivered = true;
+                console.log(`[Push] ✓ Successfully pushed to Device ${deviceId} Entity ${eId}`);
+            } else {
+                console.warn(`[Push] ✗ Failed to push to Device ${deviceId} Entity ${eId}: ${pushResult.reason}`);
             }
+        } else {
+            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${eId} - message will be queued for polling`);
         }
 
         return {
@@ -1370,7 +1376,18 @@ async function pushToBot(entity, deviceId, eventType, payload) {
 
     const { url, token, sessionKey } = entity.webhook;
 
+    const requestPayload = {
+        tool: "sessions_send",
+        args: {
+            sessionKey: sessionKey,
+            message: payload.message || JSON.stringify(payload)
+        }
+    };
+
     try {
+        console.log(`[Push] Sending to ${url} with sessionKey: ${sessionKey.substring(0, 8)}...`);
+        console.log(`[Push] Payload:`, JSON.stringify(requestPayload, null, 2));
+
         // OpenClaw /tools/invoke format
         const response = await fetch(url, {
             method: 'POST',
@@ -1378,25 +1395,25 @@ async function pushToBot(entity, deviceId, eventType, payload) {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                tool: "sessions_send",
-                args: {
-                    sessionKey: sessionKey,
-                    message: payload.message || JSON.stringify(payload)
-                }
-            })
+            body: JSON.stringify(requestPayload)
         });
 
         if (response.ok) {
-            console.log(`[Push] Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully`);
+            const responseText = await response.text().catch(() => '');
+            console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully (status: ${response.status})`);
+            if (responseText) {
+                console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
+            }
             return { pushed: true };
         } else {
             const errorText = await response.text().catch(() => '');
-            console.log(`[Push] Device ${deviceId} Entity ${entity.entityId}: Push failed with status ${response.status} - ${errorText}`);
-            return { pushed: false, reason: `http_${response.status}` };
+            console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push failed with status ${response.status}`);
+            console.error(`[Push] Error response: ${errorText}`);
+            return { pushed: false, reason: `http_${response.status}`, error: errorText };
         }
     } catch (err) {
-        console.error(`[Push] Device ${deviceId} Entity ${entity.entityId}: Push error:`, err.message);
+        console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push error:`, err.message);
+        console.error(`[Push] Full error:`, err);
         return { pushed: false, reason: err.message };
     }
 }
