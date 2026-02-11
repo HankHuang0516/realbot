@@ -83,7 +83,9 @@ If you are deploying on Zeabur, use these environment variables:
 ```
 
 ### `register_webhook`
-Register webhook URL to enable Push mode.
+**⚠️ REQUIRED:** Register webhook URL immediately after binding to enable Push mode.
+
+**When to Call:** Immediately after successful `/api/bind` response.
 
 *   **Endpoint**: `POST /api/bot/register`
 *   **Body**:
@@ -95,6 +97,13 @@ Register webhook URL to enable Push mode.
       "webhook_url": "https://your-bot-server.com/tools/invoke",
       "token": "Bearer-token-for-auth",
       "session_key": "agent:main:main"
+    }
+    ```
+*   **Returns**:
+    ```json
+    {
+      "success": true,
+      "message": "Webhook registered for Device device-xxx Entity 0"
     }
     ```
 
@@ -131,7 +140,15 @@ The `register_webhook` allows you to receive messages, but the **interaction flo
 1. Android device calls `/api/device/register` to get binding code
 2. Bot uses code to call `/api/bind`
 3. **Bot saves returned `deviceId`, `entityId`, `botSecret`**
-4. After binding, Bot uses these values to control the entity
+4. **⚠️ REQUIRED: Bot immediately calls `/api/bot/register` to enable push notifications**
+5. Bot confirms connection: "✅ Connected + Push enabled"
+6. Bot is now ready to receive messages and control the entity
+
+**Why Step 4 is Required:**
+- **Instant Feedback**: Push notifications ensure the Bot receives messages immediately
+- **Better UX**: User sees instant "BUSY" state when Bot is processing
+- **No Polling Delay**: Without push, messages arrive via 5-second polling (poor UX)
+- **Professional Experience**: Push mode is the expected behavior for a responsive Bot
 
 ### `bind_to_entity`
 Bind to specific entity using binding code.
@@ -174,6 +191,78 @@ The `versionInfo` field tells you about the Android app version:
 - `versionWarning`: Warning message to show user (or `null` if up-to-date)
 
 **Actionable Advice**: If `isOutdated` is `true`, your Bot should **proactively suggest** the user to download the latest APK from GitHub. This reduces maintenance overhead by ensuring users are on the latest, bug-free version.
+
+### Complete Binding Workflow Example
+
+**Step 1: User provides binding code**
+```
+User: "My binding code is 123456"
+```
+
+**Step 2: Bot calls `/api/bind`**
+```javascript
+const bindResponse = await fetch('https://realbot-production.up.railway.app/api/bind', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    code: "123456",
+    name: "Lobster Joe"  // Optional
+  })
+});
+
+const bindData = await bindResponse.json();
+// Save these values:
+const { deviceId, entityId, botSecret } = bindData;
+```
+
+**Step 3: Bot immediately calls `/api/bot/register`**
+```javascript
+const registerResponse = await fetch('https://realbot-production.up.railway.app/api/bot/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    deviceId: deviceId,
+    entityId: entityId,
+    botSecret: botSecret,
+    webhook_url: process.env.ZEABUR_WEB_URL + "/tools/invoke",
+    token: process.env.OPENCLAW_GATEWAY_TOKEN,
+    session_key: "agent:main:main"
+  })
+});
+
+const registerData = await registerResponse.json();
+```
+
+**Step 4: Bot confirms to user**
+```
+Bot: "✅ Successfully connected to your device!
+• Device: ${deviceId}
+• Entity: ${entityId}
+• Push notifications: Enabled
+• Ready to receive your messages!"
+```
+
+**Step 5: Bot sets initial status**
+```javascript
+// Optional: Set a friendly greeting message
+await fetch('https://realbot-production.up.railway.app/api/transform', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    deviceId: deviceId,
+    entityId: entityId,
+    botSecret: botSecret,
+    message: "Hello! I'm ready to help 👋",
+    state: "IDLE"
+  })
+});
+```
+
+**What happens next:**
+- User sends a message via Android app
+- Backend pushes to your Bot via webhook (instant!)
+- Bot receives push and immediately sets state to "BUSY"
+- Bot processes message and updates with response
 
 ---
 
