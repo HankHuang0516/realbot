@@ -1431,3 +1431,4 @@ app.listen(port, () => {
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 });
+// Force redeploy with PostgreSQL
