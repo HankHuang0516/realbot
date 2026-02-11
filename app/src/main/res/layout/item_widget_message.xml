@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="4dp"
+    android:gravity="center_vertical">
+
+    <!-- Entity Icon/Emoji -->
+    <TextView
+        android:id="@+id/messageIcon"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:text="🦞"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginEnd="6dp" />
+
+    <!-- Message Text -->
+    <TextView
+        android:id="@+id/messageText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Hello world"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <!-- Timestamp (optional, can be removed if space is tight) -->
+    <TextView
+        android:id="@+id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="12:34"
+        android:textColor="#AAAAAA"
+        android:textSize="10sp"
+        android:layout_marginStart="4dp" />
+
+</LinearLayout>

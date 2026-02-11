@@ -7,12 +7,15 @@
     <!-- Required for some devices to keep service alive properly if needed, usually BIND_WALLPAPER handles it -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Photo picker for custom wallpaper background -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher_foreground"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_launcher_foreground"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.ClawLiveCompanion">
 
@@ -30,6 +33,12 @@
                 android:resource="@xml/wallpaper" />
         </service>
 
+        <!-- RemoteViewsService for Chat Widget ListView -->
+        <service
+            android:name=".widget.ChatWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -38,6 +47,55 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MessageActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.ClawLiveCompanion.TransparentDialog"
+            android:excludeFromRecents="true"
+            android:taskAffinity="" />
+
+        <activity
+            android:name=".EntityManagerActivity"
+            android:exported="false"
+            android:label="Entity Manager"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".DebugRenderActivity"
+            android:exported="false"
+            android:label="Debug Render"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="Settings"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".WallpaperPreviewActivity"
+            android:exported="false"
+            android:label="Wallpaper Preview"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ChatActivity"
+            android:exported="false"
+            android:label="@string/chat_history"
+            android:parentActivityName=".MainActivity" />
+
+        <receiver
+            android:name=".widget.ChatWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/claw_chat_widget_info" />
+        </receiver>
 
     </application>
 
