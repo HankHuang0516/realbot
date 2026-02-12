@@ -1,4 +1,96 @@
 <resources>
-    <string name="app_name">Claw Live Companion</string>
+    <string name="app_name">E-Claw (電子蝦)</string>
     <string name="wallpaper_description">Live status of your AI agent</string>
+
+    <!-- Main Activity -->
+    <string name="main_title">E-Claw</string>
+    <string name="no_agents_connected">No agents connected</string>
+    <string name="tap_to_add_entity">Tap + Add Entity to connect your first agent</string>
+    <string name="add_entity">+ Add Entity</string>
+    <string name="select_entity_slot">Select Entity Slot</string>
+    <string name="binding_code">Binding Code</string>
+    <string name="code_placeholder">------</string>
+    <string name="tap_to_generate_code">Tap to generate code</string>
+    <string name="generate">Generate</string>
+    <string name="regenerate">Regenerate</string>
+    <string name="copy">Copy</string>
+    <string name="broadcast_to_all">Broadcast to All</string>
+    <string name="set_live_wallpaper">Set Live Wallpaper</string>
+    <string name="expires_in">Expires in %ds</string>
+    <string name="command_copied">Command copied!</string>
+    <string name="sent">Sent!</string>
+    <string name="broadcast_sent">Broadcast sent!</string>
+    <string name="failed_format">Failed: %s</string>
+    
+    <!-- Dialogs -->
+    <string name="send_message">Send Message</string>
+    <string name="send">Send</string>
+    <string name="cancel">Cancel</string>
+    <string name="to_format">To: %s (#%d)</string>
+    <string name="message_hint">Message to %s…</string>
+    <string name="broadcast_message_hint">Broadcast message…</string>
+    <string name="send_to_entities">Send to %d entities</string>
+    <string name="entity_format">Entity %d</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="usage_title">Today\'s Usage</string>
+    <string name="premium_badge">PREMIUM</string>
+    <string name="sends_today">sends today</string>
+    <string name="unlock_unlimited">✨ Unlock Unlimited - %s/month</string>
+    <string name="unlock_unlimited_no_price">✨ Unlock Unlimited</string>
+    
+    <!-- Layout -->
+    <string name="entity_layout">Entity Layout</string>
+    <string name="layout_single">Single</string>
+    <string name="layout_dual">Dual</string>
+    <string name="layout_quad">Quad</string>
+    <string name="desc_single">Single entity displayed at center</string>
+    <string name="desc_dual">Two entities side by side</string>
+    <string name="desc_quad">Four entities in grid layout</string>
+    <string name="custom_layout">Custom Layout</string>
+    <string name="manage_entities">Manage Entities</string>
+    
+    <!-- Language -->
+    <string name="language_title">Language (語言)</string>
+    <string name="language_system">System Default</string>
+    <string name="language_en">English</string>
+    <string name="language_zh">中文 (繁體)</string>
+    
+    <!-- Wallpaper Preview -->
+    <string name="wallpaper_preview_title">Wallpaper Preview</string>
+    <string name="use_custom_layout">Use Custom Layout</string>
+    <string name="custom_background">Custom Background</string>
+    <string name="select_photo">Select Photo</string>
+    <string name="reset">Reset</string>
+    <string name="set_wallpaper">Set Wallpaper</string>
+    <string name="drag_to_position">Drag entities to position them</string>
+    <string name="pinch_to_resize">Pinch to resize, drag to move</string>
+    <string name="back">Back</string>
+    
+    <!-- Layout Editor -->
+    <string name="done">Done</string>
+    
+    <!-- Entity Manager -->
+    <string name="entities_title">Entities</string>
+    <string name="loading_entities">Loading entities…</string>
+    <string name="layout_grid">Grid</string>
+    <string name="layout_row">Row</string>
+    <string name="layout_column">Column</string>
+    <string name="layout_diamond">Diamond</string>
+    <string name="layout_corners">Corners</string>
+    <string name="entity_size">Entity Size</string>
+    <string name="size_small">Small</string>
+    <string name="size_large">Large</string>
+    <string name="refresh">Refresh</string>
+
+    <!-- Chat -->
+    <string name="chat_history">Chat</string>
+    <string name="filter_all">All</string>
+    <string name="filter_my_messages">My Messages</string>
+    <string name="type_message">Type a message…</string>
+    <string name="no_messages_yet">No messages yet</string>
+    <string name="you">You</string>
+    <string name="to_entities">To: %s</string>
 </resources>
+

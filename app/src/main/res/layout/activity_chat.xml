@@ -234,8 +234,7 @@
                         android:layout_weight="1"
                         android:background="@drawable/bubble_received"
                         android:hint="@string/type_message"
-                        android:imeOptions="actionSend"
-                        android:inputType="textCapSentences"
+                        android:inputType="textCapSentences|textMultiLine"
                         android:maxLines="4"
                         android:padding="12dp"
                         android:textSize="14sp" />

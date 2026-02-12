@@ -29,7 +29,9 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import android.widget.GridLayout
 import com.hank.clawlive.data.local.DeviceManager
+import com.hank.clawlive.data.local.EntityEmojiManager
 import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
 import com.hank.clawlive.data.remote.NetworkModule
@@ -48,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
     private val api = NetworkModule.api
     private val deviceManager by lazy { DeviceManager.getInstance(this) }
+    private val emojiManager by lazy { EntityEmojiManager.getInstance(this) }
     private val stateRepository by lazy {
         StateRepository(NetworkModule.api, this)
     }
@@ -260,8 +263,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindAgentCard(view: View, entity: EntityStatus) {
-        // Icon
-        view.findViewById<TextView>(R.id.tvEntityIcon).text = "lobster emoji"
+        // Emoji Icon (tap to change)
+        val iconView = view.findViewById<TextView>(R.id.tvEntityIcon)
+        iconView.text = emojiManager.getEmoji(entity.entityId)
+        iconView.setOnClickListener {
+            showEmojiPicker(entity.entityId, iconView)
+        }
 
         // Name
         val displayName = entity.name ?: getString(R.string.entity_format, entity.entityId)
@@ -296,6 +303,42 @@ class MainActivity : AppCompatActivity() {
             CharacterState.SLEEPING -> Color.parseColor("#607D8B")
             CharacterState.EXCITED -> Color.parseColor("#E91E63")
         }
+    }
+
+    private fun showEmojiPicker(entityId: Int, iconView: TextView) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_emoji_picker, null)
+        val grid = dialogView.findViewById<GridLayout>(R.id.emojiGrid)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        val currentEmoji = emojiManager.getEmoji(entityId)
+
+        EntityEmojiManager.EMOJI_OPTIONS.forEach { emoji ->
+            val tv = TextView(this).apply {
+                text = emoji
+                textSize = 28f
+                gravity = android.view.Gravity.CENTER
+                val size = (52 * resources.displayMetrics.density).toInt()
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = size
+                    height = size
+                }
+                setBackgroundResource(
+                    if (emoji == currentEmoji) R.drawable.badge_background
+                    else android.R.color.transparent
+                )
+                setOnClickListener {
+                    emojiManager.setEmoji(entityId, emoji)
+                    iconView.text = emoji
+                    dialog.dismiss()
+                }
+            }
+            grid.addView(tv)
+        }
+
+        dialog.show()
     }
 
     private fun showSendMessageDialog(entity: EntityStatus) {
