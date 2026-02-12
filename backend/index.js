@@ -188,7 +188,6 @@ function createDefaultEntity(entityId) {
         state: "IDLE",
         message: `Entity #${entityId} waiting...`,
         parts: {},
-        batteryLevel: 100,
         lastUpdated: Date.now(),
         messageQueue: [],
         webhook: null,

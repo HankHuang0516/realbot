@@ -37,7 +37,6 @@ import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.repository.StateRepository
-import com.hank.clawlive.service.BatteryMonitor
 import com.hank.clawlive.ui.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -57,8 +56,6 @@ class MainActivity : AppCompatActivity() {
     private val stateRepository by lazy {
         StateRepository(NetworkModule.api, this)
     }
-    private var batteryMonitor: BatteryMonitor? = null
-
     companion object {
         private const val API_BASE_URL = "https://eclaw.up.railway.app"
         private const val FREE_ENTITY_LIMIT = 4
@@ -100,24 +97,6 @@ class MainActivity : AppCompatActivity() {
         setupEdgeToEdgeInsets()
         setupClickListeners()
         observeUiState()
-        initBatteryMonitor()
-    }
-
-    private fun initBatteryMonitor() {
-        batteryMonitor = BatteryMonitor(this) { batteryLevel ->
-            stateRepository.updateBatteryLevel(batteryLevel)
-        }
-        val initialLevel = batteryMonitor?.start() ?: -1
-        if (initialLevel >= 0) {
-            lifecycleScope.launch {
-                stateRepository.updateBatteryLevel(initialLevel)
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        batteryMonitor?.stop()
-        super.onDestroy()
     }
 
     override fun onResume() {
