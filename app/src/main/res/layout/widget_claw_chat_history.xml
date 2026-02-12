@@ -29,8 +29,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@android:drawable/ic_menu_more"
-            android:contentDescription="Open Chat"
-            android:tint="#AAAAAA" />
+            android:contentDescription="Open Chat" />
 
     </LinearLayout>
 
@@ -98,7 +97,6 @@
             android:layout_height="24dp"
             android:src="@android:drawable/ic_menu_send"
             android:contentDescription="Send"
-            android:tint="#AAAAAA"
             android:layout_marginStart="8dp"/>
 
     </LinearLayout>
