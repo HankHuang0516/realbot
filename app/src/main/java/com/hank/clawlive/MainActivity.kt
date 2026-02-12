@@ -60,7 +60,7 @@ class MainActivity : AppCompatActivity() {
     private var batteryMonitor: BatteryMonitor? = null
 
     companion object {
-        private const val API_BASE_URL = "https://realbot-production.up.railway.app"
+        private const val API_BASE_URL = "https://eclaw.up.railway.app"
         private const val FREE_ENTITY_LIMIT = 4
         private const val PREMIUM_ENTITY_LIMIT = 8
     }

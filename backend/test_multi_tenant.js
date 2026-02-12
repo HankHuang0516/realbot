@@ -5,7 +5,7 @@
  * Updated to use current entityId-based architecture.
  */
 
-const BASE_URL = 'https://realbot-production.up.railway.app';
+const BASE_URL = 'https://eclaw.up.railway.app';
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -22,14 +22,14 @@ async function api(method, path, body = null) {
 }
 
 async function runMultiEntityTest() {
-    console.log(`ðŸ‘¥ Starting Multi-Entity Independence Test on: ${BASE_URL}\n`);
+    console.log(`?‘¥ Starting Multi-Entity Independence Test on: ${BASE_URL}\n`);
 
     // Check current state
     const entities = await api('GET', '/api/entities');
     console.log(`Active entities: ${entities.activeCount}/${entities.maxEntities}`);
 
     if (entities.activeCount < 2) {
-        console.log('\nâš ï¸  Need at least 2 bound entities to test independence.');
+        console.log('\n? ï?  Need at least 2 bound entities to test independence.');
         console.log('Skipping multi-entity test.\n');
 
         // Still test single entity state changes
@@ -56,9 +56,9 @@ async function runMultiEntityTest() {
         console.log(`Entity 1: ${entity1.state} - "${entity1.message}"`);
 
         if (entity0.message !== entity1.message || entity0.state !== entity1.state) {
-            console.log('\nâœ… SUCCESS: Entities have independent state!');
+            console.log('\n??SUCCESS: Entities have independent state!');
         } else {
-            console.log('\nâš ï¸  Entities have same state (may be coincidence)');
+            console.log('\n? ï?  Entities have same state (may be coincidence)');
         }
     }
 }

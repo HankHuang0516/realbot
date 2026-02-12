@@ -4,7 +4,7 @@
  * Tests eye lid and angle animations with proper botSecret authentication.
  */
 
-const BASE_URL = 'https://realbot-production.up.railway.app';
+const BASE_URL = 'https://eclaw.up.railway.app';
 const DELAY_EMOTION = 2000;
 const DELAY_ANIM = 200;
 
@@ -46,12 +46,12 @@ async function verify(expectedState, expectedMessage) {
     const res = await api('GET', `/api/status?entityId=${entityId}`);
     const data = res.data;
     const ok = data.state === expectedState && data.message === expectedMessage;
-    console.log(ok ? `   âœ… ${data.state} - "${data.message}"` : `   âŒ Got: ${data.state}`);
+    console.log(ok ? `   ??${data.state} - "${data.message}"` : `   ??Got: ${data.state}`);
     return ok;
 }
 
 async function setupAuth() {
-    console.log('ğŸ” Setting up authentication...\n');
+    console.log('?? Setting up authentication...\n');
 
     const deviceId = `eye-test-${Date.now()}`;
     const deviceSecret = `secret-${Date.now()}`;
@@ -63,7 +63,7 @@ async function setupAuth() {
     });
 
     if (!registerRes.data.success) {
-        console.log(`âŒ Register failed: ${registerRes.data.message}`);
+        console.log(`??Register failed: ${registerRes.data.message}`);
         return false;
     }
 
@@ -72,27 +72,27 @@ async function setupAuth() {
     });
 
     if (!bindRes.data.success) {
-        console.log(`âŒ Bind failed: ${bindRes.data.message}`);
+        console.log(`??Bind failed: ${bindRes.data.message}`);
         return false;
     }
 
     botSecret = bindRes.data.botSecret;
-    console.log(`   âœ… Authenticated! botSecret: ${botSecret.substring(0, 8)}...\n`);
+    console.log(`   ??Authenticated! botSecret: ${botSecret.substring(0, 8)}...\n`);
     return true;
 }
 
 async function runEyeTest() {
-    console.log(`ğŸ‘€ Starting Eye Expression Test on: ${BASE_URL}\n`);
+    console.log(`?? Starting Eye Expression Test on: ${BASE_URL}\n`);
 
     if (!await setupAuth()) {
-        console.log('âŒ Cannot run test without authentication');
+        console.log('??Cannot run test without authentication');
         return;
     }
 
     let passed = 0, failed = 0;
 
     // 1. Blink Test
-    console.log("ğŸ˜‰ Blink Test");
+    console.log("?? Blink Test");
     for (let i = 0; i < 3; i++) {
         await send("IDLE", "Blinking...", { "EYE_LID": 1.0 }); // Close
         await sleep(150);
@@ -103,7 +103,7 @@ async function runEyeTest() {
     await sleep(DELAY_EMOTION);
 
     // 2. Angry (Combat)
-    console.log("ğŸ˜¡ Angry - Slanted & Half Lidded");
+    console.log("?˜¡ Angry - Slanted & Half Lidded");
     await send("BUSY", "ANGRY!!!", {
         "CLAW_LEFT": -10, "CLAW_RIGHT": 10,
         "EYE_LID": 0.5,
@@ -113,7 +113,7 @@ async function runEyeTest() {
     await sleep(DELAY_EMOTION);
 
     // 3. Sad (Crying)
-    console.log("ğŸ˜¢ Sad - Droopy Outward");
+    console.log("?˜¢ Sad - Droopy Outward");
     await send("SLEEPING", "Sad...", {
         "CLAW_LEFT": 10, "CLAW_RIGHT": -10,
         "EYE_LID": 0.6,
@@ -123,7 +123,7 @@ async function runEyeTest() {
     await sleep(DELAY_EMOTION);
 
     // 4. Suspicious/Squint
-    console.log("ğŸ¤¨ Suspicious - Narrow Eyes");
+    console.log("?¤¨ Suspicious - Narrow Eyes");
     await send("IDLE", "Hmm...", {
         "EYE_LID": 0.7,
         "EYE_ANGLE": 0.0
@@ -132,7 +132,7 @@ async function runEyeTest() {
     await sleep(DELAY_EMOTION);
 
     // 5. Surprise/Wide Awake
-    console.log("ğŸ˜³ Surprise - Wide Open");
+    console.log("?˜³ Surprise - Wide Open");
     await send("EXCITED", "O_O", {
         "EYE_LID": -0.2,
         "EYE_ANGLE": 0.0
@@ -141,15 +141,15 @@ async function runEyeTest() {
     await sleep(DELAY_EMOTION);
 
     // Reset
-    console.log("ğŸµ Reset to Normal");
+    console.log("?µ Reset to Normal");
     await send("IDLE", "Normal", { "EYE_LID": 0.0, "EYE_ANGLE": 0.0 });
     if (await verify("IDLE", "Normal")) passed++; else failed++;
 
     // Summary
     console.log(`\n${'='.repeat(50)}`);
-    console.log(`ğŸ“Š Result: ${passed}/${passed + failed} verified`);
+    console.log(`?? Result: ${passed}/${passed + failed} verified`);
     if (failed === 0) {
-        console.log(`âœ… All eye expressions verified!`);
+        console.log(`??All eye expressions verified!`);
     }
 }
 

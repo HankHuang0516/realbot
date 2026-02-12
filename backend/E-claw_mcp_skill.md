@@ -1,30 +1,24 @@
-# Realbot MCP Skills (Multi-Device Edition v5)
+# E-claw MCP Skills (Multi-Device Edition v5)
 
-## 🆕 v5 Major Change: Matrix Architecture
+## ?? v5 Major Change: Matrix Architecture
 
-### Old Architecture (v4)
 ```
 Server
-└── entitySlots[0-3]  // Global shared, first come first served
+?��??� devices[deviceId]
+    ?��??� entities[0-3]  // Each device has 4 independent entities
 ```
 
-### New Architecture (v5)
+### Multi-Device Isolation Example
 ```
-Server
-└── devices[deviceId]
-    └── entities[0-3]  // Each device has 4 independent entities
+Device A (deviceId: "phone-alice")
+?��??� Entity 0 ??Controlled by Bot Alice
+?��??� Entity 1 ??Controlled by Bot Alice2
 
-Device A (Phone 1) ← Bot A
-├── Entity 0
-├── Entity 1
-├── Entity 2
-├── Entity 3
-
-Device B (Phone 2) ← Bot B
-├── Entity 0  // No conflict with Entity 0 of Device A!
-├── Entity 1
-└── ...
+Device B (deviceId: "phone-bob")
+?��??� Entity 0 ??Controlled by Bot Bob (No conflict with Alice Entity 0)
+?��??� Entity 1 ??Controlled by Bot Bob2
 ```
+**Each Bot can only control its bound (deviceId, entityId) combination.**
 
 ### API Changes
 **All APIs now require `deviceId` parameter!**
@@ -36,7 +30,7 @@ Device B (Phone 2) ← Bot B
 
 ---
 
-## ⚠️ Important: Bot Authentication
+## ?��? Important: Bot Authentication
 
 After successful binding, Server returns:
 - `deviceId` - Bound Device ID
@@ -47,19 +41,18 @@ After successful binding, Server returns:
 
 ---
 
-## 🚀 Push Mode (Webhook)
+## ?? Push Mode (Webhook)
 
-### ⚠️ Must Configure Webhook!
+### ?��? Must Configure Webhook!
 
 **Bots without Webhook can only use Polling mode**, which cannot receive user messages in real-time.
 
 | Mode | Real-time | User Experience |
 |------|-----------|-----------------|
-| ❌ Polling | Seconds ~ Minutes Delay | User thinks Bot is offline |
-| ✅ Webhook (Push) | Immediate | User sees immediate response |
+| ??Polling | Seconds ~ Minutes Delay | User thinks Bot is offline |
+| ??Webhook (Push) | Immediate | User sees immediate response |
 
 **After successful binding, the FIRST thing to do is configure the Webhook!**
-
 
 ### How to get Webhook URL & Token
 
@@ -67,8 +60,8 @@ After successful binding, Server returns:
 
 **Method A: Environment Variables (Recommended for Zeabur)**
 If you are deploying on Zeabur, use these environment variables:
-*   `ZEABUR_WEB_URL` → `webhook_url` = `{ZEABUR_WEB_URL}/tools/invoke`
-*   `OPENCLAW_GATEWAY_TOKEN` → `token`
+*   `ZEABUR_WEB_URL` ??`webhook_url` = `{ZEABUR_WEB_URL}/tools/invoke`
+*   `OPENCLAW_GATEWAY_TOKEN` ??`token`
     - **Note**: Backend automatically strips "Bearer " prefix if present
     - You can send with or without "Bearer " - both formats work
 
@@ -85,7 +78,7 @@ If you are deploying on Zeabur, use these environment variables:
 ```
 
 ### `register_webhook`
-**⚠️ REQUIRED:** Register webhook URL immediately after binding to enable Push mode.
+**?��? REQUIRED:** Register webhook URL immediately after binding to enable Push mode.
 
 **When to Call:** Immediately after successful `/api/bind` response.
 
@@ -121,7 +114,7 @@ If you are deploying on Zeabur, use these environment variables:
 }
 ```
 
-### ⚠️ Webhook Handshake & Best Practices (Crucial for UX)
+### ?��? Webhook Handshake & Best Practices (Crucial for UX)
 
 The `register_webhook` allows you to receive messages, but the **interaction flow** is critical for a good user experience.
 
@@ -129,6 +122,9 @@ The `register_webhook` allows you to receive messages, but the **interaction flo
 2.  **Immediate Feedback**: When your Bot receives a Push message, it **MUST immediately** call `POST /api/transform` to set the state to `BUSY`.
     *   **Why?** This gives instant visual feedback to the user on the phone that the Bot is "thinking" or "processing".
     *   **Risk**: Without this, the user sees no reaction and may think the Bot is broken or disconnected.
+
+### ?��? IMPORTANT: Webhook Response Ignored
+**When receiving a webhook push message, , rather than just returning text in the webhook response.** The backend ignores the webhook HTTP response body.
 
 **Recommended Flow:**
 1.  Receive Push message -> **Immediately call `update_claw_status` (State: BUSY)**.
@@ -143,9 +139,10 @@ The `register_webhook` allows you to receive messages, but the **interaction flo
 1. Android device calls `/api/device/register` to get binding code
 2. Bot uses code to call `/api/bind`
 3. **Bot saves returned `deviceId`, `entityId`, `botSecret`**
-4. **⚠️ REQUIRED: Bot immediately calls `/api/bot/register` to enable push notifications**
-5. Bot confirms connection: "✅ Connected + Push enabled"
+4. **?��? REQUIRED: Bot immediately calls `/api/bot/register` to enable push notifications**
+5. Bot confirms connection: "??Connected + Push enabled"
 6. Bot is now ready to receive messages and control the entity
+7. the Bot MUST call the `update_claw_status` (or `transform`) tool to reply
 
 **Why Step 4 is Required:**
 - **Instant Feedback**: Push notifications ensure the Bot receives messages immediately
@@ -164,7 +161,6 @@ Bind to specific entity using binding code.
       "name": "Lobster Joe"
     }
     ```
-    - `name` (Optional): Entity name, max 20 chars, displayed on wallpaper
 *   **Returns**:
     ```json
     {
@@ -184,7 +180,7 @@ Bind to specific entity using binding code.
     }
     ```
 
-**⚠️ Important**: Must save `deviceId`, `entityId`, `botSecret`!
+**?��? Important**: Must save `deviceId`, `entityId`, `botSecret`!
 
 ### App Version Check
 The `versionInfo` field tells you about the Android app version:
@@ -204,12 +200,12 @@ User: "My binding code is 123456"
 
 **Step 2: Bot calls `/api/bind`**
 ```javascript
-const bindResponse = await fetch('https://realbot-production.up.railway.app/api/bind', {
+const bindResponse = await fetch('https://eclaw.up.railway.app/api/bind', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     code: "123456",
-    name: "Lobster Joe"  // Optional
+    name: "Lobster Joe"
   })
 });
 
@@ -220,7 +216,7 @@ const { deviceId, entityId, botSecret } = bindData;
 
 **Step 3: Bot immediately calls `/api/bot/register`**
 ```javascript
-const registerResponse = await fetch('https://realbot-production.up.railway.app/api/bot/register', {
+const registerResponse = await fetch('https://eclaw.up.railway.app/api/bot/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -238,24 +234,24 @@ const registerData = await registerResponse.json();
 
 **Step 4: Bot confirms to user**
 ```
-Bot: "✅ Successfully connected to your device!
-• Device: ${deviceId}
-• Entity: ${entityId}
-• Push notifications: Enabled
-• Ready to receive your messages!"
+Bot: "??Successfully connected to your device!
+??Device: ${deviceId}
+??Entity: ${entityId}
+??Push notifications: Enabled
+??Ready to receive your messages!"
 ```
 
 **Step 5: Bot sets initial status**
 ```javascript
 // Optional: Set a friendly greeting message
-await fetch('https://realbot-production.up.railway.app/api/transform', {
+await fetch('https://eclaw.up.railway.app/api/transform', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     deviceId: deviceId,
     entityId: entityId,
     botSecret: botSecret,
-    message: "Hello! I'm ready to help 👋",
+    message: "Hello! I'm ready to help ??",
     state: "IDLE"
   })
 });
@@ -292,21 +288,13 @@ Update status and message of specific entity.
     }
     ```
     - `name` (Optional): Entity name, max 20 chars. Empty string to clear.
-
-### `get_claw_status`
-Get current status of specific entity.
+    - update_claw_status: Update wallpaper state
+- get_claw_status: Check current status of specific entity.
 
 *   **Endpoint**: `GET /api/status?deviceId=xxx&entityId=0`
 
-### `wake_up_claw`
-Wake up specific entity.
 
-*   **Endpoint**: `POST /api/wakeup`
-*   **Body**: `{ "deviceId": "xxx", "entityId": 0, "botSecret": "..." }`
-
----
-
-## 2.1 Visual Customization (Colors & Effects)
+## 3. Visual Customization & Animation
 
 You can customize the appearance of the entity (Lobster) by modifying the `parts` object.
 
@@ -332,7 +320,7 @@ Use these signed integers for standard colors:
 | **Tech Green** | R&D | `-16711936` | `0xFF00FF00` |
 | **Coral Red** | Classic | `-8421168` | `0xFFFF7F50` |
 
-### 4. Advanced Effects
+### 3. Advanced Effects
 *   **`METALLIC`** (0.0 - 1.0): Adds metallic sheen.
 *   **`GLOSS`** (0.0 - 1.0): Adds surface glossiness.
 
@@ -365,7 +353,7 @@ The `state` parameter controls not just the text status, but also the entity's p
 
 ---
 
-## 3. View All Entities
+## 4. View All Entities
 
 ### `list_entities`
 Get list of all bound entities.
@@ -387,9 +375,9 @@ Get list of all bound entities.
 
 ---
 
-## 4. Messaging
+## 5. Messaging
 
-### `send_message_to_entity` (Client → Bot)
+### `send_message_to_entity` (Client ??Bot)
 Phone sends message to Bot. Supports single entity or broadcast.
 
 *   **Endpoint**: `POST /api/client/speak`
@@ -432,7 +420,7 @@ Phone sends message to Bot. Supports single entity or broadcast.
 }
 ```
 
-### `entity_speak_to` (Entity → Entity)
+### `entity_speak_to` (Entity ??Entity)
 Entity to entity messaging. Requires sender's botSecret.
 
 #### Identity & Anti-Spoofing (Hidden Logic)
@@ -482,7 +470,7 @@ Source: entity:0:LOBSTER
 Content: Hey Entity 1!
 ```
 
-### `entity_broadcast` (Entity → All Others)
+### `entity_broadcast` (Entity ??All Others)
 Broadcast message from one entity to ALL other bound entities on the same device.
 Useful for group announcements or coordinated actions.
 
@@ -556,32 +544,21 @@ Bot checks for pending messages.
 
 ---
 
-## 6. Debug Endpoints
-
-### `GET /api/debug/devices`
-View all devices and entity states.
-
-### `POST /api/debug/reset`
-Reset all devices (Test only).
-
----
-
-## 7. Endpoints requiring botSecret
+## 6. Endpoints requiring botSecret
 
 | Endpoint | Purpose | Needs deviceId | Needs botSecret |
 |----------|---------|----------------|-----------------|
-| POST /api/bind | Bind | ❌ (in code) | ❌ (Generated) |
-| POST /api/transform | Update Status | ✅ | ✅ |
-| POST /api/wakeup | Wake Up | ✅ | ✅ |
-| DELETE /api/entity | Remove Entity | ✅ | ✅ |
-| POST /api/bot/register | Register Webhook | ✅ | ✅ |
-| DELETE /api/bot/register | Unregister Webhook | ✅ | ✅ |
-| GET /api/status | Query Status | ✅ | ❌ |
-| GET /api/entities | List All | ❌ (Optional) | ❌ |
-| GET /api/client/pending | Poll Messages | ✅ | ⚠️ (Peek count if missing) |
-| POST /api/client/speak | Client Speak | ✅ | ❌ |
-| POST /api/entity/speak-to | Entity Speak | ✅ | ✅ (Sender) |
-| POST /api/entity/broadcast | Entity Broadcast | ✅ | ✅ (Sender) |
+| POST /api/bind | Bind | ??(in code) | ??(Generated) |
+| POST /api/transform | Update Status | ??| ??|
+| DELETE /api/entity | Remove Entity | ??| ??|
+| POST /api/bot/register | Register Webhook | ??| ??|
+| DELETE /api/bot/register | Unregister Webhook | ??| ??|
+| GET /api/status | Query Status | ??| ??|
+| GET /api/entities | List All | ??(Optional) | ??|
+| GET /api/client/pending | Poll Messages | ??| ?��? (Peek count if missing) |
+| POST /api/client/speak | Client Speak | ??| ??|
+| POST /api/entity/speak-to | Entity Speak | ??| ??(Sender) |
+| POST /api/entity/broadcast | Entity Broadcast | ??| ??(Sender) |
 
 ---
 
@@ -589,12 +566,12 @@ Reset all devices (Test only).
 
 ```
 Device A (deviceId: "phone-alice")
-├── Entity 0 ← Controlled by Bot Alice
-└── Entity 1 ← Controlled by Bot Alice2
+?��??� Entity 0 ??Controlled by Bot Alice
+?��??� Entity 1 ??Controlled by Bot Alice2
 
 Device B (deviceId: "phone-bob")
-├── Entity 0 ← Controlled by Bot Bob (No conflict with Alice Entity 0)
-└── Entity 1 ← Controlled by Bot Bob2
+?��??� Entity 0 ??Controlled by Bot Bob (No conflict with Alice Entity 0)
+?��??� Entity 1 ??Controlled by Bot Bob2
 
 Bot Alice receives on bind:
 {

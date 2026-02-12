@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit
 
 object NetworkModule {
 
-    private const val BASE_URL = "https://realbot-production.up.railway.app/"
+    private const val BASE_URL = "https://eclaw.up.railway.app/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY

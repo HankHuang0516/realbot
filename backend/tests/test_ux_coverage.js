@@ -11,7 +11,7 @@
  * - Timeout = backend hung = FAIL
  */
 
-const API_BASE = 'https://realbot-production.up.railway.app';
+const API_BASE = 'https://eclaw.up.railway.app';
 const TIMEOUT_MS = 5000; // 5 seconds per endpoint
 
 // Generate unique test device ID to ensure proper device registration
@@ -183,14 +183,14 @@ async function runTests() {
 
         if (result.passed) {
             const note = result.isBusiness404 ? '(biz 404)' : '';
-            console.log(`✅ ${result.status} ${note}`);
+            console.log(`??${result.status} ${note}`);
             passed++;
         } else {
             const reason = result.error ||
                 (result.isRoute404 ? 'ROUTE 404 (endpoint missing!)' :
                 (result.isServerError ? `SERVER ERROR ${result.status}` :
                 `UNEXPECTED ${result.status}`));
-            console.log(`❌ ${reason}`);
+            console.log(`??${reason}`);
             failed++;
             failures.push(result);
         }
@@ -219,13 +219,13 @@ async function runTests() {
     }
 
     if (coverageMet && failed === 0) {
-        console.log('✅ UX Coverage Test PASSED');
+        console.log('??UX Coverage Test PASSED');
         console.log('All endpoints respond correctly, no 404 or timeout errors.');
     } else if (!coverageMet) {
-        console.log(`❌ UX Coverage Test FAILED - Coverage ${coverage}% < 98%`);
+        console.log(`??UX Coverage Test FAILED - Coverage ${coverage}% < 98%`);
         console.log('Fix failing endpoints before release.');
     } else {
-        console.log('❌ UX Coverage Test FAILED - Some endpoints failed');
+        console.log('??UX Coverage Test FAILED - Some endpoints failed');
         console.log('Fix failing endpoints before release.');
     }
 

@@ -9,7 +9,7 @@
  * 4. Webhook unregistration works
  */
 
-const BASE_URL = 'https://realbot-production.up.railway.app';
+const BASE_URL = 'https://eclaw.up.railway.app';
 
 async function api(method, path, body = null) {
     const options = {

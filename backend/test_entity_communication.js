@@ -7,7 +7,7 @@
  * Usage: node test_entity_communication.js
  */
 
-const API_BASE = process.env.API_BASE || 'https://realbot-production.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
 
 async function api(method, endpoint, body = null) {
     const options = {
@@ -41,7 +41,7 @@ async function runTests() {
     }
 
     entities.entities.forEach(e => {
-        const emoji = e.character === 'LOBSTER' ? 'ðŸ¦ž' : 'ðŸ·';
+        const emoji = e.character === 'LOBSTER' ? '??' : '?·';
         console.log(`   ${emoji} Entity #${e.entityId}: ${e.state} - "${e.message}"`);
     });
 
@@ -100,7 +100,7 @@ async function runTests() {
         state: 'EXCITED',
         message: 'Hey everyone! Let\'s chat!'
     });
-    console.log('   ðŸ¦ž Entity 0: "Hey everyone! Let\'s chat!"');
+    console.log('   ?? Entity 0: "Hey everyone! Let\'s chat!"');
     await sleep(500);
 
     // Entity 1 (Pig) responds
@@ -110,7 +110,7 @@ async function runTests() {
         message: 'Oink! I\'m here!'
     });
     await api('POST', '/api/entity/1/speak-to/0', { text: 'Nice to meet you, Lobster!' });
-    console.log('   ðŸ· Entity 1: "Oink! I\'m here!" -> "Nice to meet you, Lobster!"');
+    console.log('   ?· Entity 1: "Oink! I\'m here!" -> "Nice to meet you, Lobster!"');
     await sleep(500);
 
     // Entity 2 joins (if bound)
@@ -122,7 +122,7 @@ async function runTests() {
         });
         await api('POST', '/api/entity/2/speak-to/0', { text: 'Lobster #2 reporting!' });
         await api('POST', '/api/entity/2/speak-to/1', { text: 'Hey Pig!' });
-        console.log('   ðŸ¦ž Entity 2: "Hello friends!" -> speaks to 0 and 1');
+        console.log('   ?? Entity 2: "Hello friends!" -> speaks to 0 and 1');
         await sleep(500);
     }
 
@@ -134,7 +134,7 @@ async function runTests() {
             message: 'Munch munch...'
         });
         await api('POST', '/api/entity/broadcast', { from: 3, text: 'Anyone want some food?' });
-        console.log('   ðŸ· Entity 3: "Munch munch..." -> broadcasts to all');
+        console.log('   ?· Entity 3: "Munch munch..." -> broadcasts to all');
         await sleep(500);
     }
 
@@ -142,7 +142,7 @@ async function runTests() {
     console.log('\n9. Final entity states...');
     const finalEntities = await api('GET', '/api/entities');
     finalEntities.entities.forEach(e => {
-        const emoji = e.character === 'LOBSTER' ? 'ðŸ¦ž' : 'ðŸ·';
+        const emoji = e.character === 'LOBSTER' ? '??' : '?·';
         console.log(`   ${emoji} Entity #${e.entityId}: ${e.state} - "${e.message}"`);
     });
 

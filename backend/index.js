@@ -251,7 +251,7 @@ function getEntity(deviceId, entityId) {
 // Helper: Load MCP skill documentation
 function loadSkillDoc() {
     try {
-        const docPath = path.join(__dirname, 'realbot_mcp_skill.md');
+        const docPath = path.join(__dirname, 'E-claw_mcp_skill.md');
         return fs.readFileSync(docPath, 'utf8');
     } catch (err) {
         return "MCP Skill documentation not found.";
@@ -1425,6 +1425,36 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         return { pushed: false, reason: err.message };
     }
 }
+
+// ============================================
+// FEEDBACK ENDPOINT
+// ============================================
+
+app.post('/api/feedback', async (req, res) => {
+    try {
+        const { deviceId, message, appVersion } = req.body;
+
+        if (!message || !message.trim()) {
+            return res.status(400).json({ success: false, message: "Message is required" });
+        }
+
+        const trimmedMessage = message.trim();
+        if (trimmedMessage.length > 2000) {
+            return res.status(400).json({ success: false, message: "Message too long (max 2000 chars)" });
+        }
+
+        // Save to PostgreSQL if available
+        if (usePostgreSQL) {
+            await db.saveFeedback(deviceId || 'unknown', trimmedMessage, appVersion || '');
+        }
+
+        console.log(`[Feedback] From ${deviceId || 'unknown'}: ${trimmedMessage.substring(0, 100)}`);
+        res.json({ success: true, message: "Feedback received" });
+    } catch (err) {
+        console.error('[Feedback] Error:', err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
 
 // Error Handling
 app.use((err, req, res, next) => {

@@ -176,7 +176,7 @@ Railway sends SIGTERM before deployment, allowing data to be saved.
 
 For data persistence to work on Railway, a Volume must be configured:
 
-1. Go to Railway project â†’ Backend service â†’ Settings
+1. Go to Railway project ??Backend service ??Settings
 2. Scroll to "Volumes" section
 3. Click "New Volume"
 4. Set mount path: `/app/backend/data`
@@ -200,12 +200,12 @@ Created comprehensive test suite to validate fixes.
 - Run: `npm test` or `node stress-test.js`
 
 **Test Cases:**
-- âœ… Malformed entity-to-entity speak (9 scenarios)
-- âœ… Malformed transform requests (8 scenarios)
-- âœ… Random garbage requests (50 requests with random data)
-- âœ… Entity binding stability
-- âœ… Server health monitoring
-- âœ… Data persistence validation
+- ??Malformed entity-to-entity speak (9 scenarios)
+- ??Malformed transform requests (8 scenarios)
+- ??Random garbage requests (50 requests with random data)
+- ??Entity binding stability
+- ??Server health monitoring
+- ??Data persistence validation
 
 ### 2. `backend/test-persistence.js`
 - Tests data persistence across server restarts
@@ -228,7 +228,7 @@ Added test scripts:
 ```json
 "test": "node stress-test.js",
 "test:verbose": "VERBOSE=true node stress-test.js",
-"test:production": "API_BASE=https://realbot-production.up.railway.app node stress-test.js",
+"test:production": "API_BASE=https://eclaw.up.railway.app node stress-test.js",
 "test:persistence": "node test-persistence.js",
 "test:persistence:check": "node test-persistence.js --check"
 ```
@@ -239,15 +239,15 @@ Added test scripts:
 
 ```
 backend/
-â”œâ”€â”€ data/                        # NEW: Data persistence directory
-â”‚   â”œâ”€â”€ .gitkeep                # Ensures directory is tracked in git
-â”‚   â””â”€â”€ devices.json            # Runtime data (ignored by git)
-â”œâ”€â”€ index.js                     # MODIFIED: Added validation + persistence
-â”œâ”€â”€ stress-test.js              # NEW: Comprehensive stress tests
-â”œâ”€â”€ test-persistence.js         # NEW: Redeployment persistence tests
-â”œâ”€â”€ TEST-README.md              # NEW: Testing documentation
-â”œâ”€â”€ package.json                # MODIFIED: Added test scripts
-â””â”€â”€ .gitignore                  # MODIFIED: Added data/* and test files
+?œâ??€ data/                        # NEW: Data persistence directory
+??  ?œâ??€ .gitkeep                # Ensures directory is tracked in git
+??  ?”â??€ devices.json            # Runtime data (ignored by git)
+?œâ??€ index.js                     # MODIFIED: Added validation + persistence
+?œâ??€ stress-test.js              # NEW: Comprehensive stress tests
+?œâ??€ test-persistence.js         # NEW: Redeployment persistence tests
+?œâ??€ TEST-README.md              # NEW: Testing documentation
+?œâ??€ package.json                # MODIFIED: Added test scripts
+?”â??€ .gitignore                  # MODIFIED: Added data/* and test files
 ```
 
 ---
@@ -255,24 +255,24 @@ backend/
 ## Verification
 
 ### Before Fixes:
-- âŒ Malformed request â†’ Server crash â†’ All entities disconnect
-- âŒ Railway redeploy â†’ All data lost â†’ All entities must rebind
+- ??Malformed request ??Server crash ??All entities disconnect
+- ??Railway redeploy ??All data lost ??All entities must rebind
 
 ### After Fixes:
-- âœ… Malformed request â†’ 404/400 error â†’ Server continues â†’ Entities stay connected
-- âœ… Railway redeploy â†’ Data restored â†’ Entities stay connected â†’ Zero downtime
+- ??Malformed request ??404/400 error ??Server continues ??Entities stay connected
+- ??Railway redeploy ??Data restored ??Entities stay connected ??Zero downtime
 
 ---
 
 ## Deployment Checklist
 
-1. âœ… Code changes committed to git
-2. â¬œ Railway Volume configured (`/app/backend/data`)
-3. â¬œ Push to Railway
-4. â¬œ Wait for deployment
-5. â¬œ Run production tests: `npm run test:production`
-6. â¬œ Verify existing entities still bound
-7. â¬œ Monitor logs for persistence messages
+1. ??Code changes committed to git
+2. â¬?Railway Volume configured (`/app/backend/data`)
+3. â¬?Push to Railway
+4. â¬?Wait for deployment
+5. â¬?Run production tests: `npm run test:production`
+6. â¬?Verify existing entities still bound
+7. â¬?Monitor logs for persistence messages
 
 ---
 

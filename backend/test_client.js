@@ -4,7 +4,7 @@
  * Tests claw wave animations with proper botSecret authentication.
  */
 
-const BASE_URL = 'https://realbot-production.up.railway.app';
+const BASE_URL = 'https://eclaw.up.railway.app';
 const DELAY_MS = 2000;
 
 let botSecret = null;
@@ -25,7 +25,7 @@ async function api(method, path, body = null) {
 }
 
 async function setupAuth() {
-    console.log('🔐 Setting up authentication...');
+    console.log('?? Setting up authentication...');
 
     const deviceId = `anim-test-${Date.now()}`;
     const deviceSecret = `secret-${Date.now()}`;
@@ -37,7 +37,7 @@ async function setupAuth() {
     });
 
     if (!registerRes.data.success) {
-        console.log(`❌ Register failed: ${registerRes.data.message}`);
+        console.log(`??Register failed: ${registerRes.data.message}`);
         return false;
     }
 
@@ -46,12 +46,12 @@ async function setupAuth() {
     });
 
     if (!bindRes.data.success) {
-        console.log(`❌ Bind failed: ${bindRes.data.message}`);
+        console.log(`??Bind failed: ${bindRes.data.message}`);
         return false;
     }
 
     botSecret = bindRes.data.botSecret;
-    console.log(`   ✅ Authenticated!\n`);
+    console.log(`   ??Authenticated!\n`);
     return true;
 }
 
@@ -63,9 +63,9 @@ async function sendTransform(body) {
             ...body
         });
         if (res.data.success) {
-            console.log(`   ✅ ${res.data.currentState.state} - "${res.data.currentState.message}"`);
+            console.log(`   ??${res.data.currentState.state} - "${res.data.currentState.message}"`);
         } else {
-            console.log(`   ❌ Failed: ${res.data.message}`);
+            console.log(`   ??Failed: ${res.data.message}`);
         }
         return res.data.success;
     } catch (e) {
@@ -75,17 +75,17 @@ async function sendTransform(body) {
 }
 
 async function runTest() {
-    console.log(`🦞 Starting Animation Sequence on: ${BASE_URL}\n`);
+    console.log(`?? Starting Animation Sequence on: ${BASE_URL}\n`);
 
     if (!await setupAuth()) {
-        console.log('❌ Cannot run animations without authentication');
+        console.log('??Cannot run animations without authentication');
         return;
     }
 
     let passed = 0, failed = 0;
 
     // 1. Wave Left
-    console.log("Action 1: Wave Left Claw 🦞 /");
+    console.log("Action 1: Wave Left Claw ?? /");
     if (await sendTransform({
         character: "LOBSTER",
         state: "BUSY",
@@ -95,7 +95,7 @@ async function runTest() {
     await sleep(DELAY_MS);
 
     // 2. Wave Right
-    console.log("Action 2: Wave Right Claw 🦞 \\");
+    console.log("Action 2: Wave Right Claw ?? \\");
     if (await sendTransform({
         character: "LOBSTER",
         state: "BUSY",
@@ -105,7 +105,7 @@ async function runTest() {
     await sleep(DELAY_MS);
 
     // 3. BIG CLAWS (Both Open)
-    console.log("Action 3: BIG CLAWS 🦞 \\_/");
+    console.log("Action 3: BIG CLAWS ?? \\_/");
     if (await sendTransform({
         character: "LOBSTER",
         state: "EXCITED",
@@ -115,7 +115,7 @@ async function runTest() {
     await sleep(DELAY_MS);
 
     // 4. Reset to Idle
-    console.log("Action 4: Reset 🦞 | |");
+    console.log("Action 4: Reset ?? | |");
     if (await sendTransform({
         character: "LOBSTER",
         state: "IDLE",
@@ -125,9 +125,9 @@ async function runTest() {
 
     // Summary
     console.log(`\n${'='.repeat(50)}`);
-    console.log(`📊 Result: ${passed}/${passed + failed} animations completed`);
+    console.log(`?? Result: ${passed}/${passed + failed} animations completed`);
     if (failed === 0) {
-        console.log(`✅ Animation Sequence Complete!`);
+        console.log(`??Animation Sequence Complete!`);
     }
 }
 

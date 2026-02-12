@@ -3,7 +3,7 @@
  * Run: node test_name_feature.js
  */
 
-const API_BASE = 'https://realbot-production.up.railway.app';
+const API_BASE = 'https://eclaw.up.railway.app';
 
 async function testNameFeature() {
     console.log('=== Entity Name Feature Test ===\n');
@@ -42,7 +42,7 @@ async function testNameFeature() {
     console.log('\n=== Test Complete ===');
     console.log('\nTo test with a bound entity:');
     console.log('1. Generate binding code in Android app');
-    console.log('2. Bind with name: curl -X POST ' + API_BASE + '/api/bind -H "Content-Type: application/json" -d \'{"code":"YOUR_CODE","name":"測試名字"}\'');
+    console.log('2. Bind with name: curl -X POST ' + API_BASE + '/api/bind -H "Content-Type: application/json" -d \'{"code":"YOUR_CODE","name":"測試?��?"}\'');
     console.log('3. Check status: curl ' + API_BASE + '/api/entities');
 }
 

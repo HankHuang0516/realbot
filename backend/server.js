@@ -49,7 +49,7 @@ function generateBindingCode() {
 // Helper: Load MCP skill documentation
 function loadSkillDoc() {
     try {
-        const docPath = path.join(__dirname, 'realbot_mcp_skill.md');
+        const docPath = path.join(__dirname, 'E-claw_mcp_skill.md');
         return fs.readFileSync(docPath, 'utf8');
     } catch (err) {
         return "MCP Skill documentation not found.";

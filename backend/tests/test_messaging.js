@@ -2,7 +2,7 @@
  * Test Broadcast and Entity-to-Entity Messaging
  */
 
-const BASE_URL = 'https://realbot-production.up.railway.app';
+const BASE_URL = 'https://eclaw.up.railway.app';
 
 async function api(method, path, body = null) {
     const options = {
@@ -71,10 +71,10 @@ async function runTest() {
     console.log(`   Response: ${JSON.stringify(single.data)}`);
 
     if (single.data.success && single.data.targets?.length === 1) {
-        console.log('   ✅ Single message sent successfully');
+        console.log('   ??Single message sent successfully');
         passed++;
     } else {
-        console.log('   ❌ Single message failed');
+        console.log('   ??Single message failed');
         failed++;
     }
 
@@ -93,10 +93,10 @@ async function runTest() {
     console.log(`   Response: ${JSON.stringify(broadcast.data)}`);
 
     if (broadcast.data.success && broadcast.data.targets?.length === 2 && broadcast.data.broadcast) {
-        console.log('   ✅ Broadcast to array worked');
+        console.log('   ??Broadcast to array worked');
         passed++;
     } else {
-        console.log('   ❌ Broadcast to array failed');
+        console.log('   ??Broadcast to array failed');
         failed++;
     }
 
@@ -115,10 +115,10 @@ async function runTest() {
     console.log(`   Response: ${JSON.stringify(broadcastAll.data)}`);
 
     if (broadcastAll.data.success && broadcastAll.data.targets?.length >= 2) {
-        console.log(`   ✅ Broadcast to "all" sent to ${broadcastAll.data.targets.length} entities`);
+        console.log(`   ??Broadcast to "all" sent to ${broadcastAll.data.targets.length} entities`);
         passed++;
     } else {
-        console.log('   ❌ Broadcast to "all" failed');
+        console.log('   ??Broadcast to "all" failed');
         failed++;
     }
 
@@ -138,10 +138,10 @@ async function runTest() {
     console.log(`   Response: ${JSON.stringify(e2e.data)}`);
 
     if (e2e.data.success && e2e.data.from?.entityId === 0 && e2e.data.to?.entityId === 1) {
-        console.log('   ✅ Entity 0 → Entity 1 message sent');
+        console.log('   ??Entity 0 ??Entity 1 message sent');
         passed++;
     } else {
-        console.log('   ❌ Entity-to-entity message failed');
+        console.log('   ??Entity-to-entity message failed');
         failed++;
     }
 
@@ -157,10 +157,10 @@ async function runTest() {
     const e2eMsg = pending.data.messages?.find(m => m.from === 'entity:0:LOBSTER');
     if (e2eMsg) {
         console.log(`   Found entity message: "${e2eMsg.text}" from ${e2eMsg.from}`);
-        console.log('   ✅ Entity-to-entity message received correctly');
+        console.log('   ??Entity-to-entity message received correctly');
         passed++;
     } else {
-        console.log('   ❌ Entity-to-entity message not found');
+        console.log('   ??Entity-to-entity message not found');
         console.log(`   Messages: ${JSON.stringify(pending.data.messages)}`);
         failed++;
     }
@@ -181,10 +181,10 @@ async function runTest() {
     console.log(`   Status: ${wrongSecret.status}`);
 
     if (wrongSecret.status === 403) {
-        console.log('   ✅ Correctly rejected wrong botSecret');
+        console.log('   ??Correctly rejected wrong botSecret');
         passed++;
     } else {
-        console.log('   ❌ Should have rejected wrong botSecret');
+        console.log('   ??Should have rejected wrong botSecret');
         failed++;
     }
 
@@ -204,10 +204,10 @@ async function runTest() {
     console.log(`   Status: ${selfMsg.status}`);
 
     if (selfMsg.status === 400 && selfMsg.data.message.includes('self')) {
-        console.log('   ✅ Correctly rejected self-message');
+        console.log('   ??Correctly rejected self-message');
         passed++;
     } else {
-        console.log('   ❌ Should have rejected self-message');
+        console.log('   ??Should have rejected self-message');
         failed++;
     }
 
@@ -219,7 +219,7 @@ async function runTest() {
     console.log('='.repeat(60));
 
     if (failed === 0) {
-        console.log('\n✅ All messaging tests passed!');
+        console.log('\n??All messaging tests passed!');
         console.log('\nFeatures working:');
         console.log('  - Single entity message');
         console.log('  - Broadcast to array [0, 1, 2]');
@@ -228,7 +228,7 @@ async function runTest() {
         console.log('  - botSecret authentication');
         console.log('  - Self-message rejection');
     } else {
-        console.log(`\n❌ ${failed} test(s) failed`);
+        console.log(`\n??${failed} test(s) failed`);
     }
 }
 

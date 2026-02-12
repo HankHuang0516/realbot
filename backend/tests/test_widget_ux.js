@@ -3,7 +3,7 @@
  * Tests the chat widget flow: entity selection, single/broadcast messaging
  */
 
-const API_BASE = process.env.API_BASE || 'https://realbot-production.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
 
 const TEST_DEVICE_ID = `test-widget-${Date.now()}`;
 const TEST_DEVICE_SECRET = 'test-secret';
@@ -70,14 +70,14 @@ async function runTests() {
         const data = await res.json();
 
         if (data.success && data.targets?.length === 1 && data.targets[0].entityId === 0) {
-            console.log('✅ Single entity message works with Int entityId');
+            console.log('??Single entity message works with Int entityId');
             passed++;
         } else {
-            console.log('❌ Single entity message failed:', data);
+            console.log('??Single entity message failed:', data);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -97,14 +97,14 @@ async function runTests() {
         const data = await res.json();
 
         if (data.success && data.targets?.length === 1) {
-            console.log('✅ Single entity message works with String entityId (legacy)');
+            console.log('??Single entity message works with String entityId (legacy)');
             passed++;
         } else {
-            console.log('❌ String entityId failed:', data);
+            console.log('??String entityId failed:', data);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -124,15 +124,15 @@ async function runTests() {
         const data = await res.json();
 
         if (data.success && data.targets?.length === 2 && data.broadcast === true) {
-            console.log('✅ Broadcast to array works');
+            console.log('??Broadcast to array works');
             console.log(`   Sent to ${data.targets.length} entities`);
             passed++;
         } else {
-            console.log('❌ Broadcast failed:', data);
+            console.log('??Broadcast failed:', data);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -152,15 +152,15 @@ async function runTests() {
         const data = await res.json();
 
         if (data.success && data.targets?.length >= 2 && data.broadcast === true) {
-            console.log('✅ Broadcast to "all" works');
+            console.log('??Broadcast to "all" works');
             console.log(`   Sent to ${data.targets.length} bound entities`);
             passed++;
         } else {
-            console.log('❌ Broadcast to "all" failed:', data);
+            console.log('??Broadcast to "all" failed:', data);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -179,14 +179,14 @@ async function runTests() {
         });
 
         if (res.status === 404) {
-            console.log('✅ Invalid device returns 404 (not 500)');
+            console.log('??Invalid device returns 404 (not 500)');
             passed++;
         } else {
-            console.log(`❌ Expected 404, got ${res.status}`);
+            console.log(`??Expected 404, got ${res.status}`);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -204,14 +204,14 @@ async function runTests() {
         });
 
         if (res.status === 400) {
-            console.log('✅ Missing deviceId returns 400');
+            console.log('??Missing deviceId returns 400');
             passed++;
         } else {
-            console.log(`❌ Expected 400, got ${res.status}`);
+            console.log(`??Expected 400, got ${res.status}`);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -224,15 +224,15 @@ async function runTests() {
         const data = await res.json();
 
         if (data.count > 0 && data.messages?.length > 0) {
-            console.log(`✅ Bot received ${data.count} messages`);
+            console.log(`??Bot received ${data.count} messages`);
             console.log(`   Latest: "${data.messages[data.messages.length - 1].text}"`);
             passed++;
         } else {
-            console.log('❌ No messages in queue:', data);
+            console.log('??No messages in queue:', data);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -245,15 +245,15 @@ async function runTests() {
         const data = await res.json();
 
         if (data.versionInfo && data.versionInfo.latestVersion) {
-            console.log('✅ Response includes versionInfo');
+            console.log('??Response includes versionInfo');
             console.log(`   Latest version: ${data.versionInfo.latestVersion}`);
             passed++;
         } else {
-            console.log('❌ Missing versionInfo:', data);
+            console.log('??Missing versionInfo:', data);
             failed++;
         }
     } catch (e) {
-        console.log('❌ Exception:', e.message);
+        console.log('??Exception:', e.message);
         failed++;
     }
 
@@ -272,10 +272,10 @@ async function main() {
         console.log('============================================================\n');
 
         if (failed > 0) {
-            console.log('❌ Widget UX tests FAILED');
+            console.log('??Widget UX tests FAILED');
             process.exit(1);
         } else {
-            console.log('✅ All widget UX tests PASSED');
+            console.log('??All widget UX tests PASSED');
             process.exit(0);
         }
     } catch (e) {

@@ -6,7 +6,7 @@
  * Verifies deletion process has no bugs.
  */
 
-const API_BASE = 'https://realbot-production.up.railway.app';
+const API_BASE = 'https://eclaw.up.railway.app';
 const NUM_DEVICES = 10;
 const ENTITIES_PER_DEVICE = 4;
 
@@ -70,7 +70,7 @@ async function setupDevices() {
                 deleted: false
             });
 
-            process.stdout.write(`E${e}✓ `);
+            process.stdout.write(`E${e}??`);
         }
 
         testData.devices.push(device);
@@ -107,10 +107,10 @@ async function runDeletionTests() {
     console.log('\n--- Test 1: Verify initial entity count ---');
     const initial = await verifyEntityCount(initialCount);
     if (initial.match) {
-        console.log(`✅ Initial count correct: ${initial.actual}`);
+        console.log(`??Initial count correct: ${initial.actual}`);
         passed++;
     } else {
-        console.log(`❌ Count mismatch: expected ${initial.expected}, got ${initial.actual}`);
+        console.log(`??Count mismatch: expected ${initial.expected}, got ${initial.actual}`);
         failed++;
     }
 
@@ -145,7 +145,7 @@ async function runDeletionTests() {
             totalDeleted++;
             process.stdout.write('.');
         } else {
-            console.log(`\n  ❌ Failed to delete D:${device.deviceId.slice(-8)} E:${entity.entityId}: ${res.data.message}`);
+            console.log(`\n  ??Failed to delete D:${device.deviceId.slice(-8)} E:${entity.entityId}: ${res.data.message}`);
             failed++;
         }
     }
@@ -156,10 +156,10 @@ async function runDeletionTests() {
     const expectedAfterDelete = initialCount - totalDeleted;
     const afterDelete = await verifyEntityCount(expectedAfterDelete);
     if (afterDelete.match) {
-        console.log(`✅ Count correct after deletion: ${afterDelete.actual}`);
+        console.log(`??Count correct after deletion: ${afterDelete.actual}`);
         passed++;
     } else {
-        console.log(`❌ Count mismatch: expected ${afterDelete.expected}, got ${afterDelete.actual}`);
+        console.log(`??Count mismatch: expected ${afterDelete.expected}, got ${afterDelete.actual}`);
         failed++;
     }
 
@@ -174,14 +174,14 @@ async function runDeletionTests() {
         });
 
         if (res.status === 400 || res.status === 404 || !res.data.success) {
-            console.log(`✅ Correctly rejected re-deletion: ${res.data.message}`);
+            console.log(`??Correctly rejected re-deletion: ${res.data.message}`);
             passed++;
         } else {
-            console.log(`❌ Should have rejected re-deletion`);
+            console.log(`??Should have rejected re-deletion`);
             failed++;
         }
     } else {
-        console.log('⏭️ Skipped (no deleted entities)');
+        console.log('?��? Skipped (no deleted entities)');
     }
 
     // Test 5: Try to delete entity 0 (should fail - entity 0 is protected)
@@ -198,16 +198,16 @@ async function runDeletionTests() {
         // Check if entity 0 is still there
         const statusRes = await api('GET', `/api/status?deviceId=${deviceWithEntity0.deviceId}&entityId=0`);
         if (statusRes.data.isBound) {
-            console.log(`✅ Entity 0 still exists (protected or rejection handled)`);
+            console.log(`??Entity 0 still exists (protected or rejection handled)`);
             passed++;
         } else if (res.data.success) {
             // If deletion succeeded, that's also valid behavior
-            console.log(`ℹ️ Entity 0 deletion allowed (not protected)`);
+            console.log(`?��? Entity 0 deletion allowed (not protected)`);
             entity0.deleted = true;
             totalDeleted++;
             passed++;
         } else {
-            console.log(`❌ Unexpected state for entity 0`);
+            console.log(`??Unexpected state for entity 0`);
             failed++;
         }
     }
@@ -226,10 +226,10 @@ async function runDeletionTests() {
         });
 
         if (res.status === 403) {
-            console.log(`✅ Correctly rejected wrong botSecret (403)`);
+            console.log(`??Correctly rejected wrong botSecret (403)`);
             passed++;
         } else {
-            console.log(`❌ Should have returned 403, got ${res.status}`);
+            console.log(`??Should have returned 403, got ${res.status}`);
             failed++;
         }
     }
@@ -258,10 +258,10 @@ async function runDeletionTests() {
     }
 
     if (deleteSuccess === remaining.length) {
-        console.log(`✅ All ${deleteSuccess} entities deleted successfully`);
+        console.log(`??All ${deleteSuccess} entities deleted successfully`);
         passed++;
     } else {
-        console.log(`❌ Only ${deleteSuccess}/${remaining.length} deleted`);
+        console.log(`??Only ${deleteSuccess}/${remaining.length} deleted`);
         failed++;
     }
 
@@ -273,10 +273,10 @@ async function runDeletionTests() {
 
     const finalCheck = await verifyEntityCount(entity0Count);
     if (finalCheck.match) {
-        console.log(`✅ Final count correct: ${finalCheck.actual} (only entity 0s remain)`);
+        console.log(`??Final count correct: ${finalCheck.actual} (only entity 0s remain)`);
         passed++;
     } else {
-        console.log(`❌ Final count mismatch: expected ${finalCheck.expected}, got ${finalCheck.actual}`);
+        console.log(`??Final count mismatch: expected ${finalCheck.expected}, got ${finalCheck.actual}`);
         failed++;
     }
 
@@ -290,9 +290,9 @@ async function runDeletionTests() {
     console.log(`\nResults: ${passed} passed, ${failed} failed`);
 
     if (failed === 0) {
-        console.log('\n✅ All entity deletion tests passed!');
+        console.log('\n??All entity deletion tests passed!');
     } else {
-        console.log('\n❌ Some tests failed!');
+        console.log('\n??Some tests failed!');
     }
 
     return { passed, failed };
