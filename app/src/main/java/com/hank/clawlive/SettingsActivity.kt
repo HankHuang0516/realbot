@@ -1,12 +1,13 @@
 package com.hank.clawlive
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -19,37 +20,38 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.hank.clawlive.billing.BillingManager
 import com.hank.clawlive.billing.SubscriptionState
+import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
+import com.hank.clawlive.data.remote.NetworkModule
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var billingManager: BillingManager
     private lateinit var usageManager: UsageManager
-    private lateinit var layoutPrefs: LayoutPreferences
+    private val layoutPrefs: LayoutPreferences by lazy { LayoutPreferences.getInstance(this) }
+    private val deviceManager: DeviceManager by lazy { DeviceManager.getInstance(this) }
 
     // UI elements
     private lateinit var cardSubscription: MaterialCardView
     private lateinit var layoutPremiumBadge: LinearLayout
     private lateinit var tvUsageCount: TextView
+    private lateinit var tvEntityCount: TextView
     private lateinit var progressUsage: ProgressBar
     private lateinit var btnSubscribe: MaterialButton
-    private lateinit var chipGroupLayout: ChipGroup
-    private lateinit var chipLayoutSingle: Chip
-    private lateinit var chipLayoutDual: Chip
-    private lateinit var chipLayoutQuad: Chip
-    private lateinit var tvLayoutDescription: TextView
+    private lateinit var btnFeedback: MaterialButton
     private lateinit var chipGroupLanguage: ChipGroup
     private lateinit var chipLangSystem: Chip
     private lateinit var chipLangEn: Chip
     private lateinit var chipLangZh: Chip
-    private lateinit var btnEntityManager: MaterialButton
-    private lateinit var btnDebugRender: MaterialButton
     private lateinit var btnBack: ImageButton
     private lateinit var topBar: LinearLayout
 
@@ -63,14 +65,13 @@ class SettingsActivity : AppCompatActivity() {
 
         billingManager = BillingManager.getInstance(this)
         usageManager = UsageManager.getInstance(this)
-        layoutPrefs = LayoutPreferences.getInstance(this)
 
         initViews()
         setupEdgeToEdgeInsets()
         setupClickListeners()
-        loadCurrentLayout()
         loadCurrentLanguage()
         observeSubscriptionState()
+        updateEntityCount()
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -79,7 +80,6 @@ class SettingsActivity : AppCompatActivity() {
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
 
-            // Apply top inset to top bar (status bar + cutout)
             topBar.updatePadding(
                 left = insets.left + dpToPx(8),
                 top = insets.top + dpToPx(8),
@@ -98,6 +98,7 @@ class SettingsActivity : AppCompatActivity() {
         super.onResume()
         billingManager.refreshState()
         updateUsageDisplay()
+        updateEntityCount()
     }
 
     private fun initViews() {
@@ -106,19 +107,14 @@ class SettingsActivity : AppCompatActivity() {
         tvUsageCount = findViewById(R.id.tvUsageCount)
         progressUsage = findViewById(R.id.progressUsage)
         btnSubscribe = findViewById(R.id.btnSubscribe)
-        chipGroupLayout = findViewById(R.id.chipGroupLayout)
-        chipLayoutSingle = findViewById(R.id.chipLayoutSingle)
-        chipLayoutDual = findViewById(R.id.chipLayoutDual)
-        chipLayoutQuad = findViewById(R.id.chipLayoutQuad)
-        tvLayoutDescription = findViewById(R.id.tvLayoutDescription)
         chipGroupLanguage = findViewById(R.id.chipGroupLanguage)
         chipLangSystem = findViewById(R.id.chipLangSystem)
         chipLangEn = findViewById(R.id.chipLangEn)
         chipLangZh = findViewById(R.id.chipLangZh)
-        btnEntityManager = findViewById(R.id.btnEntityManager)
-        btnDebugRender = findViewById(R.id.btnDebugRender)
         btnBack = findViewById(R.id.btnBack)
         topBar = findViewById(R.id.topBar)
+        tvEntityCount = findViewById(R.id.tvEntityCount)
+        btnFeedback = findViewById(R.id.btnFeedback)
     }
 
     private fun setupClickListeners() {
@@ -126,36 +122,12 @@ class SettingsActivity : AppCompatActivity() {
             billingManager.launchPurchaseFlow(this)
         }
 
-        btnEntityManager.setOnClickListener {
-            startActivity(Intent(this, EntityManagerActivity::class.java))
-        }
-
-        btnDebugRender.setOnClickListener {
-            startActivity(Intent(this, DebugRenderActivity::class.java))
-        }
-
         btnBack.setOnClickListener {
             finish()
         }
 
-        // Layout selection
-        chipGroupLayout.setOnCheckedStateChangeListener { _, checkedIds ->
-            if (checkedIds.isNotEmpty()) {
-                when (checkedIds[0]) {
-                    R.id.chipLayoutSingle -> {
-                        layoutPrefs.displayMode = LayoutPreferences.MODE_SINGLE
-                        tvLayoutDescription.text = getString(R.string.desc_single)
-                    }
-                    R.id.chipLayoutDual -> {
-                        layoutPrefs.displayMode = LayoutPreferences.MODE_DUAL
-                        tvLayoutDescription.text = getString(R.string.desc_dual)
-                    }
-                    R.id.chipLayoutQuad -> {
-                        layoutPrefs.displayMode = LayoutPreferences.MODE_QUAD
-                        tvLayoutDescription.text = getString(R.string.desc_quad)
-                    }
-                }
-            }
+        btnFeedback.setOnClickListener {
+            showFeedbackDialog()
         }
 
         // Language selection
@@ -166,31 +138,11 @@ class SettingsActivity : AppCompatActivity() {
                     R.id.chipLangZh -> LocaleListCompat.forLanguageTags("zh-TW")
                     else -> LocaleListCompat.getEmptyLocaleList() // System Default
                 }
-                
-                // Only set if different to avoid loop/unnecessary recreation? 
-                // AppCompatDelegate handles check internally, but we can check.
+
                 val current = AppCompatDelegate.getApplicationLocales()
                 if (current.toLanguageTags() != localeList.toLanguageTags()) {
                      AppCompatDelegate.setApplicationLocales(localeList)
                 }
-            }
-        }
-    }
-
-    private fun loadCurrentLayout() {
-        val mode = layoutPrefs.displayMode
-        when (mode) {
-            LayoutPreferences.MODE_SINGLE -> {
-                chipLayoutSingle.isChecked = true
-                tvLayoutDescription.text = getString(R.string.desc_single)
-            }
-            LayoutPreferences.MODE_DUAL -> {
-                chipLayoutDual.isChecked = true
-                tvLayoutDescription.text = getString(R.string.desc_dual)
-            }
-            LayoutPreferences.MODE_QUAD -> {
-                chipLayoutQuad.isChecked = true
-                tvLayoutDescription.text = getString(R.string.desc_quad)
             }
         }
     }
@@ -208,7 +160,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun updateUsageDisplay() {
         tvUsageCount.text = usageManager.getUsageDisplay()
         progressUsage.progress = (usageManager.getUsageProgress() * 100).toInt()
-        
+
         // Change progress bar color when limit reached
         if (!usageManager.canUseMessage() && !usageManager.isPremium) {
             progressUsage.progressTintList = getColorStateList(android.R.color.holo_red_light)
@@ -239,7 +191,7 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             layoutPremiumBadge.visibility = View.GONE
             btnSubscribe.visibility = View.VISIBLE
-            
+
             // Update button text with price if available
             if (state.subscriptionPrice.isNotEmpty()) {
                 btnSubscribe.text = getString(R.string.unlock_unlimited, state.subscriptionPrice)
@@ -251,6 +203,55 @@ class SettingsActivity : AppCompatActivity() {
             progressUsage.progressTintList = getColorStateList(android.R.color.holo_red_light)
         } else {
             progressUsage.progressTintList = android.content.res.ColorStateList.valueOf(0xFFFFD23F.toInt())
+        }
+    }
+
+    private fun updateEntityCount() {
+        val registeredCount = layoutPrefs.getRegisteredEntityIds().size
+        tvEntityCount.text = "$registeredCount/4"
+    }
+
+    private fun showFeedbackDialog() {
+        val inputLayout = TextInputLayout(this).apply {
+            hint = getString(R.string.feedback_hint)
+            boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
+            setPadding(dpToPx(16), dpToPx(8), dpToPx(16), 0)
+        }
+        val input = TextInputEditText(this).apply {
+            maxLines = 5
+            minLines = 3
+        }
+        inputLayout.addView(input)
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.feedback)
+            .setView(inputLayout)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val message = input.text?.toString()?.trim() ?: ""
+                if (message.isEmpty()) {
+                    Toast.makeText(this, R.string.feedback_empty, Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                sendFeedback(message)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun sendFeedback(message: String) {
+        lifecycleScope.launch {
+            try {
+                val body = mapOf(
+                    "deviceId" to deviceManager.deviceId,
+                    "message" to message,
+                    "appVersion" to (packageManager.getPackageInfo(packageName, 0).versionName ?: "")
+                )
+                NetworkModule.api.sendFeedback(body)
+                Toast.makeText(this@SettingsActivity, R.string.feedback_sent, Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to send feedback")
+                Toast.makeText(this@SettingsActivity, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 }
