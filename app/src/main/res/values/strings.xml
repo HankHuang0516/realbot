@@ -37,8 +37,8 @@
     <string name="usage_title">Today\'s Usage</string>
     <string name="premium_badge">PREMIUM</string>
     <string name="sends_today">sends today</string>
-    <string name="unlock_unlimited">✨ Unlock Unlimited - %s/month</string>
-    <string name="unlock_unlimited_no_price">✨ Unlock Unlimited</string>
+    <string name="unlock_unlimited">✨ Unlock Unlimited Chat &amp; More Slots - %s/month</string>
+    <string name="unlock_unlimited_no_price">✨ Unlock Unlimited Chat &amp; More Slots</string>
     
     <!-- Layout -->
     <string name="entity_layout">Entity Layout</string>
@@ -92,5 +92,24 @@
     <string name="no_messages_yet">No messages yet</string>
     <string name="you">You</string>
     <string name="to_entities">To: %s</string>
+
+    <!-- Bot Avatar -->
+    <string name="bot_avatar">Bot Avatar</string>
+    <string name="avatar_subtitle">Entity %d</string>
+
+    <!-- Entity Management -->
+    <string name="remove_entity">Remove</string>
+    <string name="remove_confirm_title">Remove Entity?</string>
+    <string name="remove_confirm_message">Are you sure you want to remove %1$s (#%2$d)? This will unbind it from the wallpaper.</string>
+    <string name="entity_removed">%s removed</string>
+    <string name="entity_count_format">%1$d/%2$d entities</string>
+    <string name="entities_label">entities</string>
+
+    <!-- Feedback -->
+    <string name="feedback">Feedback</string>
+    <string name="feedback_hint">Tell us what you think…</string>
+    <string name="feedback_sent">Feedback sent, thank you!</string>
+    <string name="feedback_empty">Please enter your feedback</string>
+    <string name="submit">Submit</string>
 </resources>
 

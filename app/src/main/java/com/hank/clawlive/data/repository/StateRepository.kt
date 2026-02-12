@@ -19,6 +19,7 @@ class StateRepository(
 ) {
     private val layoutPrefs = LayoutPreferences.getInstance(context)
     private val deviceManager = DeviceManager.getInstance(context)
+    private val chatRepository = ChatRepository.getInstance(context)
 
     /**
      * Polls the API every [intervalMs] for single entity status.
@@ -50,6 +51,7 @@ class StateRepository(
     /**
      * Polls the API every [intervalMs] for multi-entity status.
      * Filters to only show entities for THIS device (v5 matrix architecture).
+     * Also processes entity messages for chat history.
      */
     fun getMultiEntityStatusFlow(intervalMs: Long = 5_000): Flow<MultiEntityResponse> = flow {
         while (true) {
@@ -64,6 +66,15 @@ class StateRepository(
                     response.entities
                 } else {
                     response.entities.filter { it.entityId in registeredIds }
+                }
+
+                // Process entity messages for chat history (with deduplication)
+                filteredEntities.forEach { entity ->
+                    try {
+                        chatRepository.processEntityMessage(entity)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error processing entity message for chat history")
+                    }
                 }
 
                 val filteredResponse = MultiEntityResponse(

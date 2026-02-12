@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">E-Claw (電子蝦)</string>
+    <string name="wallpaper_description">AI 代理的即時狀態</string>
+
+    <!-- Main Activity -->
+    <string name="main_title">E-Claw</string>
+    <string name="no_agents_connected">尚未連接任何代理</string>
+    <string name="tap_to_add_entity">點擊「+ 新增實體」連接您的第一個代理</string>
+    <string name="add_entity">+ 新增實體</string>
+    <string name="select_entity_slot">選擇實體欄位</string>
+    <string name="binding_code">綁定碼</string>
+    <string name="code_placeholder">------</string>
+    <string name="tap_to_generate_code">點擊產生綁定碼</string>
+    <string name="generate">產生</string>
+    <string name="regenerate">重新產生</string>
+    <string name="copy">複製</string>
+    <string name="broadcast_to_all">廣播給全部</string>
+    <string name="set_live_wallpaper">設定動態桌布</string>
+    <string name="expires_in">%d 秒後過期</string>
+    <string name="command_copied">指令已複製！</string>
+    <string name="sent">已發送！</string>
+    <string name="broadcast_sent">廣播已發送！</string>
+    <string name="failed_format">失敗：%s</string>
+
+    <!-- Dialogs -->
+    <string name="send_message">發送訊息</string>
+    <string name="send">發送</string>
+    <string name="cancel">取消</string>
+    <string name="to_format">發送至：%s (#%d)</string>
+    <string name="message_hint">發送訊息給 %s…</string>
+    <string name="broadcast_message_hint">廣播訊息…</string>
+    <string name="send_to_entities">發送給 %d 個實體</string>
+    <string name="entity_format">實體 %d</string>
+
+    <!-- Settings -->
+    <string name="settings_title">設定</string>
+    <string name="usage_title">今日用量</string>
+    <string name="premium_badge">尊爵會員</string>
+    <string name="sends_today">則訊息</string>
+    <string name="unlock_unlimited">✨ 解鎖無限暢聊與更多實體額度 - %s/月</string>
+    <string name="unlock_unlimited_no_price">✨ 解鎖無限暢聊與更多實體額度</string>
+
+    <!-- Layout -->
+    <string name="entity_layout">顯示佈局</string>
+    <string name="layout_single">單一</string>
+    <string name="layout_dual">雙重</string>
+    <string name="layout_quad">四格</string>
+    <string name="desc_single">單一實體顯示於中間</string>
+    <string name="desc_dual">兩個實體並排顯示</string>
+    <string name="desc_quad">四個實體格狀排列</string>
+    <string name="custom_layout">自訂佈局</string>
+    <string name="manage_entities">管理實體</string>
+
+    <!-- Language -->
+    <string name="language_title">語言 (Language)</string>
+    <string name="language_system">系統預設</string>
+    <string name="language_en">English</string>
+    <string name="language_zh">中文 (繁體)</string>
+
+    <!-- Wallpaper Preview -->
+    <string name="wallpaper_preview_title">桌布預覽</string>
+    <string name="use_custom_layout">使用自訂佈局</string>
+    <string name="custom_background">自訂背景</string>
+    <string name="select_photo">選擇照片</string>
+    <string name="reset">重置</string>
+    <string name="set_wallpaper">設定桌布</string>
+    <string name="drag_to_position">拖曳實體調整位置</string>
+    <string name="pinch_to_resize">雙指縮放調整大小，單指拖曳移動位置</string>
+    <string name="back">返回</string>
+
+    <!-- Layout Editor -->
+    <string name="done">完成</string>
+
+    <!-- Entity Manager -->
+    <string name="entities_title">實體</string>
+    <string name="loading_entities">載入實體中…</string>
+    <string name="layout_grid">網格</string>
+    <string name="layout_row">橫列</string>
+    <string name="layout_column">直欄</string>
+    <string name="layout_diamond">菱形</string>
+    <string name="layout_corners">角落</string>
+    <string name="entity_size">實體大小</string>
+    <string name="size_small">小</string>
+    <string name="size_large">大</string>
+    <string name="refresh">重新整理</string>
+
+    <!-- Chat -->
+    <string name="chat_history">聊天</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_my_messages">我的訊息</string>
+    <string name="type_message">輸入訊息…</string>
+    <string name="no_messages_yet">目前沒有訊息</string>
+    <string name="you">我</string>
+    <string name="to_entities">發送至：%s</string>
+
+    <!-- Bot Avatar -->
+    <string name="bot_avatar">Bot 頭像</string>
+    <string name="avatar_subtitle">實體 %d</string>
+
+    <!-- Entity Management -->
+    <string name="remove_entity">移除</string>
+    <string name="remove_confirm_title">移除實體？</string>
+    <string name="remove_confirm_message">確定要移除 %1$s (#%2$d) 嗎？這將會解除綁定此實體。</string>
+    <string name="entity_removed">%s 已移除</string>
+    <string name="entity_count_format">%1$d/%2$d 個實體</string>
+    <string name="entities_label">個實體</string>
+
+    <!-- Feedback -->
+    <string name="feedback">意見回饋</string>
+    <string name="feedback_hint">請告訴我們您的想法…</string>
+    <string name="feedback_sent">意見已送出，感謝您！</string>
+    <string name="feedback_empty">請輸入意見內容</string>
+    <string name="submit">送出</string>
+</resources>

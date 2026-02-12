@@ -7,7 +7,7 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import com.hank.clawlive.data.local.EntityEmojiManager
+import com.hank.clawlive.data.local.EntityAvatarManager
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -158,10 +158,10 @@ class EntityManagerActivity : AppCompatActivity() {
         val cardView = LayoutInflater.from(this)
             .inflate(R.layout.item_entity_card, entityListContainer, false)
 
-        // Character icon (from emoji manager)
-        val emojiManager = EntityEmojiManager.getInstance(this)
+        // Character icon (from avatar manager)
+        val avatarManager = EntityAvatarManager.getInstance(this)
         val tvCharacterIcon = cardView.findViewById<TextView>(R.id.tvCharacterIcon)
-        tvCharacterIcon.text = emojiManager.getEmoji(entity.entityId)
+        tvCharacterIcon.text = avatarManager.getAvatar(entity.entityId)
 
         // Entity label
         val tvEntityLabel = cardView.findViewById<TextView>(R.id.tvEntityLabel)

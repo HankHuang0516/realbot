@@ -15,6 +15,7 @@ import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.remote.ClawApiService
+import com.hank.clawlive.data.repository.ChatRepository
 import com.hank.clawlive.widget.ChatWidgetProvider
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -25,6 +26,7 @@ class MessageActivity : AppCompatActivity() {
     private val chatPrefs: ChatPreferences by lazy { ChatPreferences.getInstance(this) }
     private val deviceManager: DeviceManager by lazy { DeviceManager.getInstance(this) }
     private val usageManager: UsageManager by lazy { UsageManager.getInstance(this) }
+    private val chatRepository: ChatRepository by lazy { ChatRepository.getInstance(this) }
 
     private lateinit var chipGroupEntities: ChipGroup
     private lateinit var chipEntity0: Chip
@@ -168,7 +170,7 @@ class MessageActivity : AppCompatActivity() {
         // Increment usage immediately (optimistic)
         usageManager.incrementUsage()
 
-        // Save to preferences (for widget history)
+        // Save to preferences (for widget history - legacy)
         chatPrefs.saveLastMessage(text, selectedIds)
 
         // Close immediately so user can see wallpaper response
@@ -176,6 +178,13 @@ class MessageActivity : AppCompatActivity() {
 
         // Send message in background (fire and forget)
         lifecycleScope.launch {
+            // Save to database FIRST (optimistic - before API call)
+            val messageId = chatRepository.saveOutgoingMessage(
+                text = text,
+                entityIds = selectedIds,
+                source = "android_widget"
+            )
+
             try {
                 val entityIdValue: Any = if (selectedIds.size == 1) {
                     selectedIds.first()
@@ -189,14 +198,20 @@ class MessageActivity : AppCompatActivity() {
                     "text" to text,
                     "source" to "android_widget"
                 )
-                api.sendClientMessage(request)
+                val response = api.sendClientMessage(request)
 
-                Timber.d("Message sent to device ${deviceManager.deviceId} entities $selectedIds")
+                // Mark as synced after API success
+                chatRepository.markMessageSynced(messageId)
+
+                // Log push status
+                val pushedCount = response.targets.count { it.pushed }
+                Timber.d("Message sent to device ${deviceManager.deviceId} entities $selectedIds (push: $pushedCount/${response.targets.size})")
 
                 // Update widget in background
                 ChatWidgetProvider.updateWidgets(this@MessageActivity)
             } catch (e: Exception) {
                 // Log error but don't show to user - they already closed the dialog
+                // Message is still in database (isSynced = false)
                 Timber.e(e, "Background message send failed (user already moved on)")
             }
         }

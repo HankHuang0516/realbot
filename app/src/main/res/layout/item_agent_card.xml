@@ -23,7 +23,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Entity Icon (tap to change emoji) -->
+            <!-- Entity Avatar (tap to change) -->
             <TextView
                 android:id="@+id/tvEntityIcon"
                 android:layout_width="48dp"
@@ -110,16 +110,19 @@
 
         </LinearLayout>
 
-        <!-- Send Message Button -->
+        <!-- Remove Entity Button -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSendMessage"
+            android:id="@+id/btnRemoveEntity"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Send Message"
-            app:icon="@drawable/ic_send"
-            app:iconGravity="textStart"
-            style="@style/Widget.Material3.Button.TonalButton" />
+            android:layout_marginTop="8dp"
+            android:text="@string/remove_entity"
+            android:textColor="#FF6B6B"
+            app:iconTint="#FF6B6B"
+            app:strokeColor="#FF6B6B"
+            app:rippleColor="#33FF6B6B"
+            app:cornerRadius="8dp"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
 
     </LinearLayout>
 

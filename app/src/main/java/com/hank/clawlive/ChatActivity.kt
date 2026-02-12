@@ -20,7 +20,7 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.hank.clawlive.data.local.ChatPreferences
 import com.hank.clawlive.data.local.DeviceManager
-import com.hank.clawlive.data.local.EntityEmojiManager
+import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.local.database.ChatMessage
@@ -41,7 +41,7 @@ class ChatActivity : AppCompatActivity() {
     private val deviceManager: DeviceManager by lazy { DeviceManager.getInstance(this) }
     private val layoutPrefs: LayoutPreferences by lazy { LayoutPreferences.getInstance(this) }
     private val usageManager: UsageManager by lazy { UsageManager.getInstance(this) }
-    private val emojiManager: EntityEmojiManager by lazy { EntityEmojiManager.getInstance(this) }
+    private val avatarManager: EntityAvatarManager by lazy { EntityAvatarManager.getInstance(this) }
 
     private lateinit var recyclerChat: RecyclerView
     private lateinit var chatAdapter: ChatAdapter
@@ -140,7 +140,7 @@ class ChatActivity : AppCompatActivity() {
             if (id in registeredIds) {
                 chip.visibility = View.VISIBLE
                 chip.isChecked = true
-                chip.text = "${emojiManager.getEmoji(id)} Entity $id"
+                chip.text = "${avatarManager.getAvatar(id)} Entity $id"
             } else {
                 chip.visibility = View.GONE
             }
@@ -259,12 +259,12 @@ class ChatActivity : AppCompatActivity() {
         chipAll.visibility = View.VISIBLE
         chipMyMessages.visibility = View.VISIBLE
 
-        // Show entity chips only if they have messages, with saved emoji
+        // Show entity chips only if they have messages, with saved avatar
         val entityChipMap = mapOf(0 to chipEntity0, 1 to chipEntity1, 2 to chipEntity2, 3 to chipEntity3)
         entityChipMap.forEach { (id, chip) ->
             if (id in entityIds) {
                 chip.visibility = View.VISIBLE
-                chip.text = "${emojiManager.getEmoji(id)} Entity $id"
+                chip.text = "${avatarManager.getAvatar(id)} Entity $id"
             } else {
                 chip.visibility = View.GONE
             }

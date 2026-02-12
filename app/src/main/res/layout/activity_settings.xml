@@ -6,13 +6,15 @@
     android:orientation="vertical"
     android:background="#000000">
 
-    <!-- Minimal Header with back button -->
+    <!-- Minimal Header with back button (padding applied via WindowInsets) -->
     <LinearLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="8dp">
+        android:paddingHorizontal="8dp"
+        android:paddingBottom="8dp">
 
         <ImageButton
             android:id="@+id/btnBack"
@@ -27,7 +29,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Settings"
+            android:text="@string/settings_title"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
@@ -78,7 +80,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Today's Usage"
+                            android:text="@string/usage_title"
                             android:textSize="16sp"
                             android:textColor="@android:color/white"
                             android:textStyle="bold"/>
@@ -104,20 +106,20 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="PREMIUM"
+                                android:text="@string/premium_badge"
                                 android:textSize="10sp"
                                 android:textColor="@android:color/white"
                                 android:textStyle="bold"/>
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Usage Display Row -->
+                    <!-- Message Usage Row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
+                        android:gravity="center_vertical|bottom"
+                        android:layout_marginBottom="4dp">
 
                         <TextView
                             android:id="@+id/tvUsageCount"
@@ -132,7 +134,37 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="  sends today"
+                            android:text="@string/sends_today"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="14sp"
+                            android:textColor="#CCFFFFFF"/>
+                    </LinearLayout>
+
+                    <!-- Entity Usage Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical|bottom"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:id="@+id/tvEntityCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0/4"
+                            android:textSize="32sp"
+                            android:textColor="@android:color/white"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/entities_label"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp"
                             android:textSize="14sp"
                             android:textColor="#CCFFFFFF"/>
                     </LinearLayout>
@@ -154,7 +186,7 @@
                         android:id="@+id/btnSubscribe"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Unlock Unlimited"
+                        android:text="@string/unlock_unlimited_no_price"
                         android:textColor="@android:color/white"
                         android:textStyle="bold"
                         android:background="@drawable/bg_subscribe_button"
@@ -165,11 +197,11 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Entity Layout Settings Section -->
+            <!-- Language Settings Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Entity Layout"
+                android:text="@string/language_title"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
@@ -188,68 +220,45 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <!-- Layout Toggle Buttons -->
                     <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupLayout"
+                        android:id="@+id/chipGroupLanguage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:singleSelection="true"
-                        app:selectionRequired="true"
-                        android:layout_marginBottom="16dp">
+                        app:selectionRequired="true">
 
                         <com.google.android.material.chip.Chip
-                            android:id="@+id/chipLayoutSingle"
+                            android:id="@+id/chipLangSystem"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Single"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:checked="true"/>
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipLayoutDual"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Dual"
+                            android:text="@string/language_system"
                             style="@style/Widget.Material3.Chip.Filter"/>
 
                         <com.google.android.material.chip.Chip
-                            android:id="@+id/chipLayoutQuad"
+                            android:id="@+id/chipLangEn"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Quad"
+                            android:text="@string/language_en"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangZh"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_zh"
                             style="@style/Widget.Material3.Chip.Filter"/>
 
                     </com.google.android.material.chip.ChipGroup>
 
-                    <TextView
-                        android:id="@+id/tvLayoutDescription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Single entity displayed at center"
-                        android:textSize="14sp"
-                        android:textColor="#999999"
-                        android:layout_marginBottom="16dp"/>
-
-                    <!-- Custom Layout Button (inside card) -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnDebugRender"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Custom Layout"
-                        app:icon="@drawable/ic_drag"
-                        app:iconGravity="textStart"
-                        app:cornerRadius="8dp"
-                        style="@style/Widget.Material3.Button.OutlinedButton"/>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Entity Manager Button -->
+            <!-- Feedback Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEntityManager"
+                android:id="@+id/btnFeedback"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Manage Entities"
+                android:text="@string/feedback"
                 android:textColor="@android:color/white"
                 app:cornerRadius="12dp"
                 style="@style/Widget.Material3.Button.TonalButton"/>

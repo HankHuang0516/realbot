@@ -8,7 +8,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.EditText
+import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -29,18 +29,19 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import android.widget.GridLayout
 import com.hank.clawlive.data.local.DeviceManager
-import com.hank.clawlive.data.local.EntityEmojiManager
+import com.hank.clawlive.data.local.EntityAvatarManager
+import com.hank.clawlive.data.local.LayoutPreferences
+import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
 import com.hank.clawlive.data.remote.NetworkModule
+import com.hank.clawlive.data.repository.StateRepository
+import com.hank.clawlive.service.BatteryMonitor
 import com.hank.clawlive.ui.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import com.hank.clawlive.data.repository.StateRepository
-import com.hank.clawlive.service.BatteryMonitor
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -50,7 +51,9 @@ class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
     private val api = NetworkModule.api
     private val deviceManager by lazy { DeviceManager.getInstance(this) }
-    private val emojiManager by lazy { EntityEmojiManager.getInstance(this) }
+    private val avatarManager by lazy { EntityAvatarManager.getInstance(this) }
+    private val layoutPrefs by lazy { LayoutPreferences.getInstance(this) }
+    private val usageManager by lazy { UsageManager.getInstance(this) }
     private val stateRepository by lazy {
         StateRepository(NetworkModule.api, this)
     }
@@ -58,6 +61,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val API_BASE_URL = "https://realbot-production.up.railway.app"
+        private const val FREE_ENTITY_LIMIT = 4
+        private const val PREMIUM_ENTITY_LIMIT = 8
     }
 
     // UI elements
@@ -74,10 +79,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnGenerateCode: MaterialButton
     private lateinit var btnCopyCommand: MaterialButton
     private lateinit var progressBar: ProgressBar
-    private lateinit var btnBroadcast: MaterialButton
+    private lateinit var btnChat: MaterialButton
     private lateinit var btnSetWallpaper: MaterialButton
     private lateinit var topBar: LinearLayout
     private lateinit var bottomActions: LinearLayout
+    private lateinit var tvEntityCount: TextView
 
     private var boundEntities: List<EntityStatus> = emptyList()
     private var isAddEntityExpanded = false
@@ -97,17 +103,12 @@ class MainActivity : AppCompatActivity() {
         initBatteryMonitor()
     }
 
-    /**
-     * Initialize battery monitoring to report real device battery level to backend.
-     * This replaces the simulated battery decay on the server.
-     */
     private fun initBatteryMonitor() {
         batteryMonitor = BatteryMonitor(this) { batteryLevel ->
             stateRepository.updateBatteryLevel(batteryLevel)
         }
         val initialLevel = batteryMonitor?.start() ?: -1
         if (initialLevel >= 0) {
-            // Report initial battery level immediately
             lifecycleScope.launch {
                 stateRepository.updateBatteryLevel(initialLevel)
             }
@@ -138,30 +139,25 @@ class MainActivity : AppCompatActivity() {
         btnGenerateCode = findViewById(R.id.btnGenerateCode)
         btnCopyCommand = findViewById(R.id.btnCopyCommand)
         progressBar = findViewById(R.id.progressBar)
-        btnBroadcast = findViewById(R.id.btnBroadcast)
+        btnChat = findViewById(R.id.btnChat)
         btnSetWallpaper = findViewById(R.id.btnSetWallpaper)
         topBar = findViewById(R.id.topBar)
         bottomActions = findViewById(R.id.bottomActions)
+        tvEntityCount = findViewById(R.id.tvEntityCount)
     }
 
-    /**
-     * Apply WindowInsets for edge-to-edge display.
-     * UI elements get proper padding to avoid system bars.
-     */
     private fun setupEdgeToEdgeInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, windowInsets ->
             val insets = windowInsets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
 
-            // Apply top inset to top bar (status bar + cutout)
             topBar.updatePadding(
                 left = insets.left + 16.dpToPx(),
                 top = insets.top + 12.dpToPx(),
                 right = insets.right + 16.dpToPx()
             )
 
-            // Apply bottom inset to bottom actions (navigation bar)
             bottomActions.updatePadding(
                 left = insets.left + 16.dpToPx(),
                 right = insets.right + 16.dpToPx(),
@@ -185,8 +181,8 @@ class MainActivity : AppCompatActivity() {
             openWallpaperPicker()
         }
 
-        btnBroadcast.setOnClickListener {
-            showBroadcastDialog()
+        btnChat.setOnClickListener {
+            startActivity(Intent(this, ChatActivity::class.java))
         }
 
         // Add Entity expandable section
@@ -233,10 +229,17 @@ class MainActivity : AppCompatActivity() {
                 val response = api.getAllEntities(deviceId = deviceManager.deviceId)
                 boundEntities = response.entities.filter { it.isBound }
                 updateAgentCards()
+                updateEntityCount()
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load entities")
             }
         }
+    }
+
+    private fun updateEntityCount() {
+        val maxEntities = if (usageManager.isPremium) PREMIUM_ENTITY_LIMIT else FREE_ENTITY_LIMIT
+        tvEntityCount.text = getString(R.string.entity_count_format, boundEntities.size, maxEntities)
+        tvEntityCount.visibility = View.VISIBLE
     }
 
     private fun updateAgentCards() {
@@ -244,14 +247,12 @@ class MainActivity : AppCompatActivity() {
 
         if (boundEntities.isEmpty()) {
             emptyStateContainer.visibility = View.VISIBLE
-            btnBroadcast.visibility = View.GONE
             // Auto-expand add entity section when empty
             if (!isAddEntityExpanded) {
                 toggleAddEntitySection()
             }
         } else {
             emptyStateContainer.visibility = View.GONE
-            btnBroadcast.visibility = View.VISIBLE
 
             boundEntities.forEach { entity ->
                 val cardView = LayoutInflater.from(this)
@@ -263,11 +264,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindAgentCard(view: View, entity: EntityStatus) {
-        // Emoji Icon (tap to change)
+        // Avatar Icon (tap to change)
         val iconView = view.findViewById<TextView>(R.id.tvEntityIcon)
-        iconView.text = emojiManager.getEmoji(entity.entityId)
+        iconView.text = avatarManager.getAvatar(entity.entityId)
         iconView.setOnClickListener {
-            showEmojiPicker(entity.entityId, iconView)
+            showAvatarPicker(entity.entityId, iconView)
         }
 
         // Name
@@ -289,9 +290,9 @@ class MainActivity : AppCompatActivity() {
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         view.findViewById<TextView>(R.id.tvMessageTime).text = timeFormat.format(Date(entity.lastUpdated))
 
-        // Send Message Button
-        view.findViewById<MaterialButton>(R.id.btnSendMessage).setOnClickListener {
-            showSendMessageDialog(entity)
+        // Remove Entity Button
+        view.findViewById<MaterialButton>(R.id.btnRemoveEntity).setOnClickListener {
+            showRemoveConfirmDialog(entity)
         }
     }
 
@@ -305,33 +306,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showEmojiPicker(entityId: Int, iconView: TextView) {
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_emoji_picker, null)
-        val grid = dialogView.findViewById<GridLayout>(R.id.emojiGrid)
+    private fun showAvatarPicker(entityId: Int, iconView: TextView) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_avatar_picker, null)
+        val grid = dialogView.findViewById<GridLayout>(R.id.avatarGrid)
+        val subtitle = dialogView.findViewById<TextView>(R.id.tvAvatarSubtitle)
+        subtitle.text = getString(R.string.avatar_subtitle, entityId)
 
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
 
-        val currentEmoji = emojiManager.getEmoji(entityId)
+        val currentAvatar = avatarManager.getAvatar(entityId)
 
-        EntityEmojiManager.EMOJI_OPTIONS.forEach { emoji ->
+        EntityAvatarManager.AVATAR_OPTIONS.forEach { avatar ->
             val tv = TextView(this).apply {
-                text = emoji
+                text = avatar
                 textSize = 28f
                 gravity = android.view.Gravity.CENTER
                 val size = (52 * resources.displayMetrics.density).toInt()
+                val margin = (4 * resources.displayMetrics.density).toInt()
                 layoutParams = GridLayout.LayoutParams().apply {
                     width = size
                     height = size
+                    setMargins(margin, margin, margin, margin)
                 }
                 setBackgroundResource(
-                    if (emoji == currentEmoji) R.drawable.badge_background
+                    if (avatar == currentAvatar) R.drawable.badge_background
                     else android.R.color.transparent
                 )
                 setOnClickListener {
-                    emojiManager.setEmoji(entityId, emoji)
-                    iconView.text = emoji
+                    avatarManager.setAvatar(entityId, avatar)
+                    iconView.text = avatar
                     dialog.dismiss()
                 }
             }
@@ -341,87 +346,61 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showSendMessageDialog(entity: EntityStatus) {
+    private fun showRemoveConfirmDialog(entity: EntityStatus) {
         val displayName = entity.name ?: getString(R.string.entity_format, entity.entityId)
 
-        val editText = EditText(this).apply {
-            hint = getString(R.string.message_hint, displayName)
-            setPadding(48, 32, 48, 32)
-        }
-
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.send_message))
-            .setMessage(getString(R.string.to_format, displayName, entity.entityId))
-            .setView(editText)
-            .setPositiveButton(getString(R.string.send)) { _, _ ->
-                val message = editText.text.toString().trim()
-                if (message.isNotEmpty()) {
-                    sendMessageToEntity(entity.entityId, message)
-                }
+            .setTitle(getString(R.string.remove_confirm_title))
+            .setMessage(getString(R.string.remove_confirm_message, displayName, entity.entityId))
+            .setPositiveButton(getString(R.string.remove_entity)) { _, _ ->
+                // Second confirmation
+                AlertDialog.Builder(this)
+                    .setTitle(getString(R.string.remove_confirm_title))
+                    .setMessage("⚠️ $displayName (#${entity.entityId})")
+                    .setPositiveButton(getString(R.string.remove_entity)) { _, _ ->
+                        removeEntity(entity)
+                    }
+                    .setNegativeButton(getString(R.string.cancel), null)
+                    .show()
             }
             .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
-    private fun showBroadcastDialog() {
-        val editText = EditText(this).apply {
-            hint = getString(R.string.broadcast_message_hint)
-            setPadding(48, 32, 48, 32)
-        }
+    private fun removeEntity(entity: EntityStatus) {
+        lifecycleScope.launch {
+            try {
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "entityId" to entity.entityId
+                )
+                val response = api.removeEntityByDevice(body)
 
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.broadcast_to_all))
-            .setMessage(getString(R.string.send_to_entities, boundEntities.size))
-            .setView(editText)
-            .setPositiveButton(getString(R.string.broadcast_to_all)) { _, _ ->
-                val message = editText.text.toString().trim()
-                if (message.isNotEmpty()) {
-                    broadcastMessage(message)
+                if (response.success) {
+                    layoutPrefs.removeRegisteredEntity(entity.entityId)
+                    val displayName = entity.name ?: getString(R.string.entity_format, entity.entityId)
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.entity_removed, displayName),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    delay(500)
+                    loadBoundEntities()
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.failed_format, response.message),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-            }
-            .setNegativeButton(getString(R.string.cancel), null)
-            .show()
-    }
-
-    private fun sendMessageToEntity(entityId: Int, message: String) {
-        // Fire and Forget: Show success immediately, send in background
-        Toast.makeText(this@MainActivity, getString(R.string.sent), Toast.LENGTH_SHORT).show()
-
-        lifecycleScope.launch {
-            try {
-                val request = mapOf<String, Any>(
-                    "deviceId" to deviceManager.deviceId,
-                    "entityId" to entityId,
-                    "text" to message,
-                    "source" to "android_main"
-                )
-                api.sendClientMessage(request)
-                delay(500)
-                loadBoundEntities()
             } catch (e: Exception) {
-                Timber.e(e, "Failed to send message (fire and forget)")
-            }
-        }
-    }
-
-    private fun broadcastMessage(message: String) {
-        // Fire and Forget: Show success immediately, send in background
-        Toast.makeText(this@MainActivity, getString(R.string.broadcast_sent), Toast.LENGTH_SHORT).show()
-
-        lifecycleScope.launch {
-            try {
-                val entityIds = boundEntities.map { it.entityId }
-                val request = mapOf<String, Any>(
-                    "deviceId" to deviceManager.deviceId,
-                    "entityId" to entityIds,
-                    "text" to message,
-                    "source" to "android_broadcast"
-                )
-                api.sendClientMessage(request)
-                delay(500)
-                loadBoundEntities()
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to broadcast (fire and forget)")
+                Timber.e(e, "Failed to remove entity")
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.failed_format, e.message),
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -497,9 +476,10 @@ Connect my Claw Live wallpaper device (v$appVersion):
 POST $API_BASE_URL/api/bind
 Body: {"code": "$code"}
 
+IMPORTANT: The response will contain a 'skills_documentation' field. You MUST read the 'Realbot MCP Skills' documentation within it to understand the interaction protocol (Matrix Architecture, Push Mode, etc.).
+
 After binding, use these tools:
 - update_claw_status: Update wallpaper state
-- wake_up_claw: Wake up the character
 - get_claw_status: Check current status
         """.trimIndent()
     }
@@ -519,7 +499,6 @@ After binding, use these tools:
     }
 
     private fun openWallpaperPicker() {
-        // Open custom preview page for entity positioning and background selection
         startActivity(Intent(this, WallpaperPreviewActivity::class.java))
     }
 }
