@@ -1,7 +1,7 @@
 const BASE_URL = 'https://eclaw.up.railway.app';
 
 async function monitor() {
-    console.log(`?“¡ Monitoring for Incoming Messages on ${BASE_URL}...`);
+    console.log(`ðŸ“¡ Monitoring for Incoming Messages on ${BASE_URL}...`);
     console.log("(Send a message from your Phone Widget now)");
 
     setInterval(async () => {
@@ -10,7 +10,7 @@ async function monitor() {
             const data = await res.json();
 
             if (data.count && data.count > 0) {
-                console.log("\n?“¬ [New Message Received!]");
+                console.log("\nðŸ“¬ [New Message Received!]");
                 data.messages.forEach(msg => {
                     console.log(`   From: ${msg.source || 'User'}`);
                     console.log(`   Text: "${msg.text}"`);

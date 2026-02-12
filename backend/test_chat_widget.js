@@ -23,7 +23,7 @@ async function api(method, path, body = null) {
 
 async function runTest() {
     console.log('='.repeat(60));
-    console.log('?�� Chat Widget Flow Test');
+    console.log('🧪 Chat Widget Flow Test');
     console.log('='.repeat(60));
     console.log(`Target: ${BASE_URL}\n`);
 
@@ -34,7 +34,7 @@ async function runTest() {
     console.log(`   isBound: ${status.isBound !== false ? 'Yes' : 'No'}`);
 
     if (!status.isBound && status.isBound !== undefined) {
-        console.log('\n??Entity 0 is not bound. Please bind first.');
+        console.log('\n❌ Entity 0 is not bound. Please bind first.');
         return;
     }
 
@@ -56,7 +56,7 @@ async function runTest() {
         entityId: '0',
         source: 'test_script'
     });
-    console.log(`   Result: ${sendResult.success ? '??SUCCESS' : '??FAILED'}`);
+    console.log(`   Result: ${sendResult.success ? '✅ SUCCESS' : '❌ FAILED'}`);
     console.log(`   Message: "${TEST_MESSAGE}"`);
 
     // Step 4: Peek mode (no botSecret)
@@ -67,11 +67,11 @@ async function runTest() {
     console.log(`   Note: ${peekResult.note || 'N/A'}`);
 
     if (peekResult.count > 0 && peekResult.messages?.length === 0) {
-        console.log('   ??Peek mode working: count visible, content hidden');
+        console.log('   ✅ Peek mode working: count visible, content hidden');
     } else if (peekResult.count === 0) {
-        console.log('   ?��?  No messages in queue (might have been consumed)');
+        console.log('   ⚠️  No messages in queue (might have been consumed)');
     } else {
-        console.log('   ??Unexpected: messages should be hidden without botSecret');
+        console.log('   ❌ Unexpected: messages should be hidden without botSecret');
     }
 
     // Step 5: Wrong botSecret
@@ -79,10 +79,10 @@ async function runTest() {
     const wrongSecretResult = await fetch(`${BASE_URL}/api/client/pending?entityId=0&botSecret=wrong-secret`);
     console.log(`   HTTP Status: ${wrongSecretResult.status}`);
     if (wrongSecretResult.status === 403) {
-        console.log('   ??Correctly rejected with 403');
+        console.log('   ✅ Correctly rejected with 403');
     } else {
         const data = await wrongSecretResult.json();
-        console.log(`   ??Unexpected response:`, data);
+        console.log(`   ❌ Unexpected response:`, data);
     }
 
     // Step 6: Check if message still exists after peek and wrong secret
@@ -90,14 +90,14 @@ async function runTest() {
     const checkAgain = await api('GET', '/api/client/pending?entityId=0');
     console.log(`   Count still: ${checkAgain.count}`);
     if (checkAgain.count > 0) {
-        console.log('   ??Message preserved (not consumed by peek/wrong secret)');
+        console.log('   ✅ Message preserved (not consumed by peek/wrong secret)');
     } else {
-        console.log('   ?��?  Message might have been consumed by another process');
+        console.log('   ⚠️  Message might have been consumed by another process');
     }
 
     // Summary
     console.log('\n' + '='.repeat(60));
-    console.log('?? Test Summary');
+    console.log('📊 Test Summary');
     console.log('='.repeat(60));
     console.log('To complete the test with correct botSecret:');
     console.log('1. Get your botSecret from when you bound the entity');
@@ -108,7 +108,7 @@ async function runTest() {
 
 // Additional test: Full flow with manual botSecret input
 async function testWithBotSecret(botSecret) {
-    console.log('\n?? Testing with provided botSecret...');
+    console.log('\n🔐 Testing with provided botSecret...');
 
     // Send fresh message
     const testMsg = `AUTHENTICATED_TEST_${Date.now()}`;
@@ -125,12 +125,12 @@ async function testWithBotSecret(botSecret) {
     console.log(`   Messages received: ${result.messages?.length || 0}`);
 
     if (result.messages?.length > 0) {
-        console.log('   ??Successfully retrieved messages:');
+        console.log('   ✅ Successfully retrieved messages:');
         result.messages.forEach(m => {
             console.log(`      - "${m.text}" from ${m.from}`);
         });
     } else if (result.success === false) {
-        console.log(`   ??Error: ${result.message}`);
+        console.log(`   ❌ Error: ${result.message}`);
     }
 }
 

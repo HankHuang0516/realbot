@@ -261,12 +261,12 @@ async function runTests() {
     console.log('='.repeat(60));
 
     if (failed > 0) {
-        console.log('\n?†Ô?  Some tests failed. Please check the backend.');
+        console.log('\n‚ö†Ô∏è  Some tests failed. Please check the backend.');
         console.log('\nCritical checks:');
         console.log('  - /api/entities must include isBound: true for bound entities');
         console.log('  - Android filters by isBound field, missing = no cards shown');
     } else {
-        console.log('\n??All tests passed!');
+        console.log('\n‚úÖ All tests passed!');
     }
 
     return { passed, failed };

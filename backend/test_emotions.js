@@ -37,7 +37,7 @@ async function send(state, message, left, right) {
             parts: { "CLAW_LEFT": left, "CLAW_RIGHT": right }
         });
         if (!res.data.success) {
-            console.log(`   ?†Ô?  Transform rejected: ${res.data.message}`);
+            console.log(`   ‚ö†Ô∏è  Transform rejected: ${res.data.message}`);
         }
         return res.data.success;
     } catch (e) {
@@ -53,19 +53,19 @@ async function verify(expectedState, expectedMessage) {
         const stateOk = data.state === expectedState;
         const msgOk = data.message === expectedMessage;
         if (stateOk && msgOk) {
-            console.log(`   ??Verified: ${data.state} - "${data.message}"`);
+            console.log(`   ‚úÖ Verified: ${data.state} - "${data.message}"`);
         } else {
-            console.log(`   ??Mismatch! Got: ${data.state} - "${data.message}"`);
+            console.log(`   ‚ùå Mismatch! Got: ${data.state} - "${data.message}"`);
         }
         return stateOk && msgOk;
     } catch (e) {
-        console.log(`   ??Verify failed: ${e.message}`);
+        console.log(`   ‚ùå Verify failed: ${e.message}`);
         return false;
     }
 }
 
 async function setupAuth() {
-    console.log('?? Setting up authentication...\n');
+    console.log('üîê Setting up authentication...\n');
 
     // Step 1: Register entity
     const deviceId = `emotion-test-${Date.now()}`;
@@ -78,7 +78,7 @@ async function setupAuth() {
     });
 
     if (!registerRes.data.success) {
-        console.log(`??Register failed: ${registerRes.data.message}`);
+        console.log(`‚ùå Register failed: ${registerRes.data.message}`);
         return false;
     }
 
@@ -90,29 +90,29 @@ async function setupAuth() {
     });
 
     if (!bindRes.data.success) {
-        console.log(`??Bind failed: ${bindRes.data.message}`);
+        console.log(`‚ùå Bind failed: ${bindRes.data.message}`);
         return false;
     }
 
     botSecret = bindRes.data.botSecret;
-    console.log(`   ??Authenticated! botSecret: ${botSecret.substring(0, 8)}...`);
+    console.log(`   ‚úÖ Authenticated! botSecret: ${botSecret.substring(0, 8)}...`);
     return true;
 }
 
 async function runEmotions() {
-    console.log(`?é≠ Starting Emotion Showcase on: ${BASE_URL}\n`);
+    console.log(`üé≠ Starting Emotion Showcase on: ${BASE_URL}\n`);
 
     // Setup authentication first
     if (!await setupAuth()) {
-        console.log('\n??Cannot run emotions without authentication');
+        console.log('\n‚ùå Cannot run emotions without authentication');
         return;
     }
 
-    console.log('\n?é¨ Running Emotion Showcase...\n');
+    console.log('\nüé¨ Running Emotion Showcase...\n');
     let passed = 0, failed = 0;
 
-    // 1. ??(Joy) - Rapid Excited Waving
-    console.log("?? ??(Joy) - Yatta!");
+    // 1. Âñú (Joy) - Rapid Excited Waving
+    console.log("üòä Âñú (Joy) - Yatta!");
     const joyMsg = "So Happy! ^o^";
     await send("EXCITED", joyMsg, -60, 60); await sleep(DELAY_ANIM);
     await send("EXCITED", joyMsg, -45, 45); await sleep(DELAY_ANIM);
@@ -121,23 +121,23 @@ async function runEmotions() {
     if (await verify("EXCITED", joyMsg)) passed++; else failed++;
     await sleep(DELAY_EMOTION);
 
-    // 2. ??(Anger) - Combat Mode, Stiff
-    console.log("?ò° ??(Anger) - Grrr...");
+    // 2. ÊÄí (Anger) - Combat Mode, Stiff
+    console.log("üò° ÊÄí (Anger) - Grrr...");
     const angerMsg = "DO NOT TOUCH ME!";
     await send("BUSY", angerMsg, -10, 10);
     if (await verify("BUSY", angerMsg)) passed++; else failed++;
     await sleep(DELAY_EMOTION);
 
-    // 3. ?Ä (Sorrow) - Droopy
-    console.log("?ò¢ ?Ä (Sorrow) - *Sob*");
+    // 3. ÂìÄ (Sorrow) - Droopy
+    console.log("üò¢ ÂìÄ (Sorrow) - *Sob*");
     const sadMsg = "Sad Lobster... T_T";
     await send("IDLE", sadMsg, 10, -10);
     if (await verify("IDLE", sadMsg)) passed++; else failed++;
     await sleep(DELAY_EMOTION);
 
-    // 4. Ê®?(Fun) - Dancing / Waving
-    console.log("?•≥ Ê®?(Fun) - Party Time!");
-    const funMsg = "Dancing~ ??;
+    // 4. Ê®Ç (Fun) - Dancing / Waving
+    console.log("ü•≥ Ê®Ç (Fun) - Party Time!");
+    const funMsg = "Dancing~ ‚ô™";
     for (let i = 0; i < 3; i++) {
         await send("BUSY", funMsg, -45, 10); await sleep(300);
         await send("BUSY", funMsg, -10, 45); await sleep(300);
@@ -145,34 +145,34 @@ async function runEmotions() {
     if (await verify("BUSY", funMsg)) passed++; else failed++;
     await sleep(DELAY_EMOTION);
 
-    // 5. È©?(Surprise/Shock) - Wide Open
-    console.log("?ò± È©?(Shock) - WHAT?!");
+    // 5. È©ö (Surprise/Shock) - Wide Open
+    console.log("üò± È©ö (Shock) - WHAT?!");
     const shockMsg = "OMFG!!";
     await send("EXCITED", shockMsg, -90, 90);
     if (await verify("EXCITED", shockMsg)) passed++; else failed++;
     await sleep(DELAY_EMOTION);
 
-    // 6. ??(Fear) - Hiding/Protecting Face
-    console.log("?ò® ??(Fear) - Don't eat me!");
+    // 6. ÊÅê (Fear) - Hiding/Protecting Face
+    console.log("üò® ÊÅê (Fear) - Don't eat me!");
     const fearMsg = "Hiding...";
     await send("SLEEPING", fearMsg, 90, -90);
     if (await verify("SLEEPING", fearMsg)) passed++; else failed++;
     await sleep(DELAY_EMOTION);
 
     // Reset
-    console.log("?çµ Back to Normal");
+    console.log("üçµ Back to Normal");
     const normalMsg = "I am calm now.";
     await send("IDLE", normalMsg, 0, 0);
     if (await verify("IDLE", normalMsg)) passed++; else failed++;
 
     // Summary
     console.log(`\n${'='.repeat(50)}`);
-    console.log(`?? Result: ${passed}/${passed + failed} verified`);
+    console.log(`üìä Result: ${passed}/${passed + failed} verified`);
     if (failed === 0) {
-        console.log(`??All states correctly updated on server!`);
-        console.log(`\n?í° Watch your Android wallpaper to see the animations!`);
+        console.log(`‚úÖ All states correctly updated on server!`);
+        console.log(`\nüí° Watch your Android wallpaper to see the animations!`);
     } else {
-        console.log(`?†Ô?  ${failed} state(s) had mismatches`);
+        console.log(`‚ö†Ô∏è  ${failed} state(s) had mismatches`);
     }
 }
 

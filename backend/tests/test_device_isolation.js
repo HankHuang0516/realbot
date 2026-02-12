@@ -86,10 +86,10 @@ async function runTest() {
         message: 'Hello from Bot A!'
     });
     if (transformA.data.success) {
-        console.log(`   ??Success: "${transformA.data.currentState.message}"`);
+        console.log(`   ✅ Success: "${transformA.data.currentState.message}"`);
         passed++;
     } else {
-        console.log(`   ??Failed: ${transformA.data.message}`);
+        console.log(`   ❌ Failed: ${transformA.data.message}`);
         failed++;
     }
 
@@ -101,10 +101,10 @@ async function runTest() {
         message: 'Hello from Bot B!'
     });
     if (transformB.data.success) {
-        console.log(`   ??Success: "${transformB.data.currentState.message}"`);
+        console.log(`   ✅ Success: "${transformB.data.currentState.message}"`);
         passed++;
     } else {
-        console.log(`   ??Failed: ${transformB.data.message}`);
+        console.log(`   ❌ Failed: ${transformB.data.message}`);
         failed++;
     }
 
@@ -118,19 +118,19 @@ async function runTest() {
 
     console.log('7. Check Device A Entity 0 message...');
     if (statusA.data.message === 'Hello from Bot A!') {
-        console.log(`   ??Correct: "${statusA.data.message}"`);
+        console.log(`   ✅ Correct: "${statusA.data.message}"`);
         passed++;
     } else {
-        console.log(`   ??Wrong: "${statusA.data.message}"`);
+        console.log(`   ❌ Wrong: "${statusA.data.message}"`);
         failed++;
     }
 
     console.log('\n8. Check Device B Entity 0 message...');
     if (statusB.data.message === 'Hello from Bot B!') {
-        console.log(`   ??Correct: "${statusB.data.message}"`);
+        console.log(`   ✅ Correct: "${statusB.data.message}"`);
         passed++;
     } else {
-        console.log(`   ??Wrong: "${statusB.data.message}"`);
+        console.log(`   ❌ Wrong: "${statusB.data.message}"`);
         failed++;
     }
 
@@ -147,13 +147,13 @@ async function runTest() {
         message: 'Hacked!'
     });
     if (crossAccess.status === 403) {
-        console.log(`   ??Correctly rejected (403): ${crossAccess.data.message}`);
+        console.log(`   ✅ Correctly rejected (403): ${crossAccess.data.message}`);
         passed++;
     } else if (crossAccess.data.success) {
-        console.log(`   ??SECURITY ISSUE: Cross-device access succeeded!`);
+        console.log(`   ❌ SECURITY ISSUE: Cross-device access succeeded!`);
         failed++;
     } else {
-        console.log(`   ?��? Unexpected: ${crossAccess.status} - ${crossAccess.data.message}`);
+        console.log(`   ⚠️ Unexpected: ${crossAccess.status} - ${crossAccess.data.message}`);
         failed++;
     }
 
@@ -182,10 +182,10 @@ async function runTest() {
     const wrongMsgA = pendingA.data.messages.find(m => m.text === 'Message for Bot B');
 
     if (msgA && !wrongMsgA) {
-        console.log(`   ??Bot A only sees its own message: "${msgA.text}"`);
+        console.log(`   ✅ Bot A only sees its own message: "${msgA.text}"`);
         passed++;
     } else {
-        console.log(`   ??Message isolation failed!`);
+        console.log(`   ❌ Message isolation failed!`);
         console.log(`      Messages: ${JSON.stringify(pendingA.data.messages)}`);
         failed++;
     }
@@ -196,10 +196,10 @@ async function runTest() {
     const wrongMsgB = pendingB.data.messages.find(m => m.text === 'Message for Bot A');
 
     if (msgB && !wrongMsgB) {
-        console.log(`   ??Bot B only sees its own message: "${msgB.text}"`);
+        console.log(`   ✅ Bot B only sees its own message: "${msgB.text}"`);
         passed++;
     } else {
-        console.log(`   ??Message isolation failed!`);
+        console.log(`   ❌ Message isolation failed!`);
         console.log(`      Messages: ${JSON.stringify(pendingB.data.messages)}`);
         failed++;
     }
@@ -212,13 +212,13 @@ async function runTest() {
     console.log('='.repeat(60));
 
     if (failed === 0) {
-        console.log('\n??All isolation tests passed!');
+        console.log('\n✅ All isolation tests passed!');
         console.log('\nMatrix Architecture Working:');
-        console.log(`  - Device A (${deviceIdA.substring(0, 20)}...) Entity 0 ??Bot A`);
-        console.log(`  - Device B (${deviceIdB.substring(0, 20)}...) Entity 0 ??Bot B`);
+        console.log(`  - Device A (${deviceIdA.substring(0, 20)}...) Entity 0 ← Bot A`);
+        console.log(`  - Device B (${deviceIdB.substring(0, 20)}...) Entity 0 ← Bot B`);
         console.log('  - Both use Entity 0, but completely isolated!');
     } else {
-        console.log(`\n??${failed} test(s) failed - check isolation logic`);
+        console.log(`\n❌ ${failed} test(s) failed - check isolation logic`);
     }
 }
 

@@ -85,14 +85,15 @@ node test-persistence.js --check
 ### Expected Output (Success)
 
 ```
-?”â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â?
-?? Claw Backend Stress Test - Bug #1 & Bug #2 Validation  ???šâ??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â?
+â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+â•‘  Claw Backend Stress Test - Bug #1 & Bug #2 Validation  â•‘
+â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 [Test] Health Check
-??Health check passed
+âœ“ Health check passed
 
 [Setup] Creating test entity
-??Test entity created: test-device-abc12345 / Entity 0
+âœ“ Test entity created: test-device-abc12345 / Entity 0
 
 [Bug #1 Test] Malformed entity-to-entity speak requests
 Malformed requests: 9 handled correctly, 0 caused issues
@@ -104,16 +105,17 @@ Malformed requests: 8 handled correctly, 0 caused issues
 Random garbage requests: 50/50 handled correctly
 
 [Test] Entity still bound after stress test
-??Entity still bound after stress test
+âœ“ Entity still bound after stress test
 
 [Bug #2 Test] Data persistence check
-??Entity persists after server operations
+âœ“ Entity persists after server operations
 
 [Final] Health check after stress test
-??Health check passed
+âœ“ Health check passed
 
-?”â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â?
-??                     TEST SUMMARY                         ???šâ??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â??â?
+â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
+â•‘                      TEST SUMMARY                         â•‘
+â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 Total Tests: 72
 Passed: 72
@@ -121,7 +123,7 @@ Failed: 0
 
 Success Rate: 100.00%
 
-??ALL TESTS PASSED - Backend is stable! ??
+âœ“ ALL TESTS PASSED - Backend is stable! ğŸ‰
 ```
 
 ## Railway Volume Setup (for Bug #2 fix)
@@ -152,13 +154,13 @@ API_BASE=https://eclaw.up.railway.app node backend/stress-test.js
 
 ## Test Coverage
 
-- ??Malformed entity-to-entity speak (9 test cases)
-- ??Malformed transform requests (8 test cases)
-- ??Random garbage requests (50 test cases)
-- ??Entity binding stability
-- ??Server health monitoring
-- ??Data persistence across restarts
-- ??Graceful error handling
+- âœ… Malformed entity-to-entity speak (9 test cases)
+- âœ… Malformed transform requests (8 test cases)
+- âœ… Random garbage requests (50 test cases)
+- âœ… Entity binding stability
+- âœ… Server health monitoring
+- âœ… Data persistence across restarts
+- âœ… Graceful error handling
 
 ## Troubleshooting
 
