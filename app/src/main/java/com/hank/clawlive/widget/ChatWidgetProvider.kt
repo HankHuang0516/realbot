@@ -9,10 +9,11 @@ import android.content.Intent
 import android.widget.RemoteViews
 import com.hank.clawlive.ChatActivity
 import com.hank.clawlive.R
-import timber.log.Timber
+import com.hank.clawlive.data.local.ChatPreferences
 
 /**
- * Chat Widget Provider with ListView showing recent chat history
+ * Simple 1x1 resizable chat widget
+ * Clicking opens ChatActivity as a floating dialog
  */
 class ChatWidgetProvider : AppWidgetProvider() {
 
@@ -21,68 +22,52 @@ class ChatWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // Perform this loop procedure for each App Widget that belongs to this provider
+        val chatPrefs = ChatPreferences.getInstance(context)
+
         appWidgetIds.forEach { appWidgetId ->
-            updateAppWidget(context, appWidgetManager, appWidgetId)
+            updateAppWidget(context, appWidgetManager, appWidgetId, chatPrefs)
         }
     }
 
     private fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
-        appWidgetId: Int
+        appWidgetId: Int,
+        chatPrefs: ChatPreferences
     ) {
-        Timber.d("Updating widget $appWidgetId")
-
-        // Construct the RemoteViews object
-        val views = RemoteViews(context.packageName, R.layout.widget_claw_chat_history)
-
-        // Set up the RemoteViewsService for the ListView
-        val serviceIntent = Intent(context, ChatWidgetService::class.java)
-        views.setRemoteAdapter(R.id.widget_message_list, serviceIntent)
-
-        // Set up the intent that will open ChatActivity when widget is clicked
-        val chatIntent = Intent(context, ChatActivity::class.java).apply {
+        // Create intent to launch ChatActivity as floating dialog
+        val intent = Intent(context, ChatActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        val chatPendingIntent = PendingIntent.getActivity(
+        val pendingIntent = PendingIntent.getActivity(
             context,
             0,
-            chatIntent,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Set click listeners
-        views.setOnClickPendingIntent(R.id.widget_input_section, chatPendingIntent)
-        views.setOnClickPendingIntent(R.id.widget_send_btn, chatPendingIntent)
-        views.setOnClickPendingIntent(R.id.widget_open_chat, chatPendingIntent)
+        val views = RemoteViews(context.packageName, R.layout.widget_claw_chat)
 
-        // Set the empty view for the ListView
-        views.setEmptyView(R.id.widget_message_list, R.id.widget_empty_state)
+        // Set dynamic text from last message
+        val displayText = chatPrefs.getWidgetDisplayText()
+        views.setTextViewText(R.id.widget_text, displayText)
 
-        // Instruct the widget manager to update the widget
+        val textColor = if (chatPrefs.lastMessage.isNullOrEmpty()) {
+            0xFFAAAAAA.toInt()
+        } else {
+            0xFFFFFFFF.toInt()
+        }
+        views.setTextColor(R.id.widget_text, textColor)
+
+        // On Click -> Launch ChatActivity floating dialog
+        views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+        views.setOnClickPendingIntent(R.id.widget_send_btn, pendingIntent)
+
         appWidgetManager.updateAppWidget(appWidgetId, views)
-
-        // Notify the widget that data has changed
-        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_message_list)
-    }
-
-    override fun onEnabled(context: Context) {
-        // Enter relevant functionality for when the first widget is created
-        Timber.d("Widget enabled")
-    }
-
-    override fun onDisabled(context: Context) {
-        // Enter relevant functionality for when the last widget is disabled
-        Timber.d("Widget disabled")
     }
 
     companion object {
-        /**
-         * Static helper to update widgets from anywhere in the app
-         */
         fun updateWidgets(context: Context) {
-            Timber.d("Updating all widgets")
             val intent = Intent(context, ChatWidgetProvider::class.java).apply {
                 action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
             }
@@ -94,11 +79,6 @@ class ChatWidgetProvider : AppWidgetProvider() {
 
             intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
             context.sendBroadcast(intent)
-
-            // Also notify data set changed for ListView
-            widgetIds.forEach { widgetId ->
-                widgetManager.notifyAppWidgetViewDataChanged(widgetId, R.id.widget_message_list)
-            }
         }
     }
 }

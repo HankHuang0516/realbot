@@ -3,15 +3,12 @@ package com.hank.clawlive
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -72,14 +69,10 @@ class ChatActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Enable edge-to-edge display
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
         setContentView(R.layout.activity_chat)
 
         initViews()
-        setupEdgeToEdgeInsets()
+        setupFloatingDialog()
         setupRecyclerView()
         setupTargetChips()
         setupListeners()
@@ -108,32 +101,16 @@ class ChatActivity : AppCompatActivity() {
         inputSection = findViewById(R.id.inputSection)
     }
 
-    private fun setupEdgeToEdgeInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, windowInsets ->
-            val insets = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-            )
-
-            // Apply top inset to top bar
-            topBar.updatePadding(
-                left = insets.left + dpToPx(12),
-                top = insets.top + dpToPx(12),
-                right = insets.right + dpToPx(12)
-            )
-
-            // Apply bottom inset to input section
-            inputSection.updatePadding(
-                left = insets.left + dpToPx(8),
-                right = insets.right + dpToPx(8),
-                bottom = insets.bottom + dpToPx(8)
-            )
-
-            WindowInsetsCompat.CONSUMED
+    private fun setupFloatingDialog() {
+        // Tap outside the card to dismiss
+        val rootDimBackground = findViewById<FrameLayout>(R.id.rootDimBackground)
+        rootDimBackground.setOnClickListener {
+            finish()
         }
-    }
 
-    private fun dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
+        // Prevent clicks on the card from dismissing
+        val chatCard = findViewById<View>(R.id.chatCard)
+        chatCard.setOnClickListener { /* consume click */ }
     }
 
     private fun setupRecyclerView() {

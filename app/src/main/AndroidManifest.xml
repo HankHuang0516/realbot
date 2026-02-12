@@ -33,12 +33,6 @@
                 android:resource="@xml/wallpaper" />
         </service>
 
-        <!-- RemoteViewsService for Chat Widget ListView -->
-        <service
-            android:name=".widget.ChatWidgetService"
-            android:permission="android.permission.BIND_REMOTEVIEWS"
-            android:exported="false" />
-
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -84,7 +78,9 @@
             android:name=".ChatActivity"
             android:exported="false"
             android:label="@string/chat_history"
-            android:parentActivityName=".MainActivity" />
+            android:theme="@style/Theme.ClawLiveCompanion.FloatingChat"
+            android:parentActivityName=".MainActivity"
+            android:excludeFromRecents="true" />
 
         <receiver
             android:name=".widget.ChatWidgetProvider"
