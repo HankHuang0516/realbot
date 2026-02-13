@@ -455,7 +455,7 @@ Connect my Claw Live wallpaper device (v$appVersion):
 POST $API_BASE_URL/api/bind
 Body: {"code": "$code"}
 
-IMPORTANT: The response will contain a 'skills_documentation' field. You MUST read the 'Realbot MCP Skills' documentation within it to understand the interaction protocol (Matrix Architecture, Push Mode, etc.).
+IMPORTANT: The response will contain a 'skills_documentation' field. You MUST read the 'E-claw MCP Skills' documentation within it to understand the interaction protocol (Matrix Architecture, Push Mode, etc.).
 
 After binding, use these tools:
 - update_claw_status: Update wallpaper state
