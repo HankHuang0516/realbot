@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.hank.clawlive.BilingualVerificationTest" tests="32" failures="0" errors="0" skipped="0" time="277.638" timestamp="2026-02-12T12:49:07" hostname="localhost">
+  <properties>
+    <property name="device" value="Pixel_9a(AVD) - 16" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="testAllStringResourcesHaveChineseTranslation" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900440263E9" />
+  <testcase name="testMainActivityInChinese" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900440298E9" />
+  <testcase name="testNoHardcodedEnglishInChineseLocale" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900446355E9" />
+  <testcase name="testSettingsActivityInEnglish" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900451481E9" />
+  <testcase name="testMainActivityInEnglish" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900458019E9" />
+  <testcase name="testEntityManagerActivityInBothLocales" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900464603E9" />
+  <testcase name="testSettingsActivityInChinese" classname="com.hank.clawlive.BilingualVerificationTest" time="-1.770900476701E9" />
+  <testcase name="testTopBarHasSafeInsetFromStatusBar" classname="com.hank.clawlive.DebugRenderActivityUiTest" time="-1.77090036598E9" />
+  <testcase name="testBottomControlsHasSafeInsetFromNavigationBar" classname="com.hank.clawlive.DebugRenderActivityUiTest" time="-1.770900369859E9" />
+  <testcase name="testDoneButtonIsAccessible" classname="com.hank.clawlive.DebugRenderActivityUiTest" time="-1.770900373043E9" />
+  <testcase name="testSafeInsetsAppliedCorrectly" classname="com.hank.clawlive.DebugRenderActivityUiTest" time="-1.770900375995E9" />
+  <testcase name="testBackButtonIsAccessible" classname="com.hank.clawlive.DebugRenderActivityUiTest" time="-1.770900378868E9" />
+  <testcase name="testTopBarHasSafeInsetFromStatusBar" classname="com.hank.clawlive.EntityManagerActivityUiTest" time="-1.770900351671E9" />
+  <testcase name="testSafeInsetsAppliedCorrectly" classname="com.hank.clawlive.EntityManagerActivityUiTest" time="-1.770900354838E9" />
+  <testcase name="testBackButtonIsAccessible" classname="com.hank.clawlive.EntityManagerActivityUiTest" time="-1.770900357892E9" />
+  <testcase name="testBottomBarHasSafeInsetFromNavigationBar" classname="com.hank.clawlive.EntityManagerActivityUiTest" time="-1.770900360159E9" />
+  <testcase name="testRefreshButtonIsAccessible" classname="com.hank.clawlive.EntityManagerActivityUiTest" time="-1.770900363448E9" />
+  <testcase name="testSettingsButtonIsAccessible" classname="com.hank.clawlive.MainActivityUiTest" time="-1.770900327054E9" />
+  <testcase name="testTopBarHasSafeInsetFromStatusBar" classname="com.hank.clawlive.MainActivityUiTest" time="-1.770900330633E9" />
+  <testcase name="testSafeInsetsAppliedCorrectly" classname="com.hank.clawlive.MainActivityUiTest" time="-1.770900333079E9" />
+  <testcase name="testSetWallpaperButtonIsAccessible" classname="com.hank.clawlive.MainActivityUiTest" time="-1.770900336095E9" />
+  <testcase name="testBottomActionsHasSafeInsetFromNavigationBar" classname="com.hank.clawlive.MainActivityUiTest" time="-1.770900339242E9" />
+  <testcase name="testTopBarHasSafeInsetFromStatusBar" classname="com.hank.clawlive.SettingsActivityUiTest" time="-1.770900484121E9" />
+  <testcase name="testSafeInsetsAppliedCorrectly" classname="com.hank.clawlive.SettingsActivityUiTest" time="-1.77090049095E9" />
+  <testcase name="testBackButtonIsAccessible" classname="com.hank.clawlive.SettingsActivityUiTest" time="-1.770900496959E9" />
+  <testcase name="testTopBarHasSafeInsetFromStatusBar" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.770900502407E9" />
+  <testcase name="testSetWallpaperButtonIsClickable" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.770900508035E9" />
+  <testcase name="testBottomControlsHasSafeInsetFromNavigationBar" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.770900514269E9" />
+  <testcase name="testSafeInsetsAppliedCorrectly" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.770900520193E9" />
+  <testcase name="testAllInteractiveElementsHaveMinimumTouchTarget" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.770900526278E9" />
+  <testcase name="testBackButtonIsClickable" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.770900531404E9" />
+  <testcase name="testPreviewViewIsFullScreen" classname="com.hank.clawlive.WallpaperPreviewUiTest" time="-1.77090053771E9" />
+</testsuite>

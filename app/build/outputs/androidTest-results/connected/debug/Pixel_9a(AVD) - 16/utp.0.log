@@ -1,0 +1,201 @@
+資訊: Constructing runner from config.
+資訊: Configuring Android Instrumentation driver: android_instrumentation_runtime {
+  instrumentation_info {
+    app_package: "com.hank.clawlive"
+    test_package: "com.hank.clawlive.test"
+    test_runner_class: "androidx.test.runner.AndroidJUnitRunner"
+  }
+  instrumentation_args {
+    args_map {
+      key: "additionalTestOutputDir"
+      value: "/sdcard/Android/media/com.hank.clawlive/additional_test_output"
+    }
+  }
+}
+am_instrument_timeout: 31536000
+
+資訊: Configuring AndroidTestApkInstallerPlugin: apks_to_install {
+  apk_paths: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\apk\\debug\\app-debug.apk"
+  install_options {
+  }
+  uninstall_after_test: true
+}
+apks_to_install {
+  apk_paths: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\apk\\androidTest\\debug\\app-debug-androidTest.apk"
+  install_options {
+  }
+  uninstall_after_test: true
+}
+instrumentation_target_package_id: "com.hank.clawlive"
+
+資訊: No installables found in test fixture. Nothing to install.
+資訊: Installing [C:\Hank\Other\project\realbot\app\build\outputs\apk\debug\app-debug.apk] on device emulator-5554.
+資訊: Installing [C:\Hank\Other\project\realbot\app\build\outputs\apk\androidTest\debug\app-debug-androidTest.apk] on device emulator-5554.
+資訊: Start logcat streaming.
+資訊: Running Android Instrumentation driver.
+資訊: Copying files from device to host: /sdcard/Android/media/com.hank.clawlive/additional_test_output to C:\Hank\Other\project\realbot\app\build\outputs\connected_android_test_additional_output\debugAndroidTest\connected\Pixel_9a(AVD) - 16
+資訊: Stop logcat streaming.
+資訊: Uninstalling com.hank.clawlive for device emulator-5554.
+資訊: Uninstalling com.hank.clawlive.test for device emulator-5554.
+嚴重: Execute com.hank.clawlive.BilingualVerificationTest.testAllStringResourcesHaveChineseTranslation: FAILED
+java.lang.AssertionError: java.lang.AssertionError: String no_agents_connected should have Chinese translation. Actual: 尚未連接任何代理
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failEquals(Assert.java:187)
+at org.junit.Assert.assertNotEquals(Assert.java:163)
+at com.hank.clawlive.BilingualVerificationTest.testAllStringResourcesHaveChineseTranslation(BilingualVerificationTest.kt:275)
+
+java.lang.AssertionError: String no_agents_connected should have Chinese translation. Actual: 尚未連接任何代理
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failEquals(Assert.java:187)
+at org.junit.Assert.assertNotEquals(Assert.java:163)
+at com.hank.clawlive.BilingualVerificationTest.testAllStringResourcesHaveChineseTranslation(BilingualVerificationTest.kt:275)
+資訊: Execute com.hank.clawlive.BilingualVerificationTest.testMainActivityInChinese: PASSED
+資訊: Execute com.hank.clawlive.BilingualVerificationTest.testNoHardcodedEnglishInChineseLocale: PASSED
+資訊: Execute com.hank.clawlive.BilingualVerificationTest.testSettingsActivityInEnglish: PASSED
+嚴重: Execute com.hank.clawlive.BilingualVerificationTest.testMainActivityInEnglish: FAILED
+java.lang.AssertionError: java.lang.AssertionError: Should have English content in English locale
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at com.hank.clawlive.BilingualVerificationTest.testMainActivityInEnglish$lambda$3$lambda$2(BilingualVerificationTest.kt:82)
+at com.hank.clawlive.BilingualVerificationTest.$r8$lambda$1whKR64xAc-6MsImwkqvdvfdeTo(Unknown Source:0)
+at com.hank.clawlive.BilingualVerificationTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)
+at android.os.Handler.handleCallback(Handler.java:995)
+at android.os.Handler.dispatchMessage(Handler.java:103)
+at android.os.Looper.loopOnce(Looper.java:248)
+at android.os.Looper.loop(Looper.java:338)
+at android.app.ActivityThread.main(ActivityThread.java:9067)
+at java.lang.reflect.Method.invoke(Native Method)
+at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+
+java.lang.AssertionError: Should have English content in English locale
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at com.hank.clawlive.BilingualVerificationTest.testMainActivityInEnglish$lambda$3$lambda$2(BilingualVerificationTest.kt:82)
+at com.hank.clawlive.BilingualVerificationTest.$r8$lambda$1whKR64xAc-6MsImwkqvdvfdeTo(Unknown Source:0)
+at com.hank.clawlive.BilingualVerificationTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)
+at android.os.Handler.handleCallback(Handler.java:995)
+at android.os.Handler.dispatchMessage(Handler.java:103)
+at android.os.Looper.loopOnce(Looper.java:248)
+at android.os.Looper.loop(Looper.java:338)
+at android.app.ActivityThread.main(ActivityThread.java:9067)
+at java.lang.reflect.Method.invoke(Native Method)
+at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+資訊: Execute com.hank.clawlive.BilingualVerificationTest.testEntityManagerActivityInBothLocales: PASSED
+資訊: Execute com.hank.clawlive.BilingualVerificationTest.testSettingsActivityInChinese: PASSED
+資訊: Execute com.hank.clawlive.DebugRenderActivityUiTest.testTopBarHasSafeInsetFromStatusBar: PASSED
+資訊: Execute com.hank.clawlive.DebugRenderActivityUiTest.testBottomControlsHasSafeInsetFromNavigationBar: PASSED
+資訊: Execute com.hank.clawlive.DebugRenderActivityUiTest.testDoneButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.DebugRenderActivityUiTest.testSafeInsetsAppliedCorrectly: PASSED
+資訊: Execute com.hank.clawlive.DebugRenderActivityUiTest.testBackButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.EntityManagerActivityUiTest.testTopBarHasSafeInsetFromStatusBar: PASSED
+資訊: Execute com.hank.clawlive.EntityManagerActivityUiTest.testSafeInsetsAppliedCorrectly: PASSED
+資訊: Execute com.hank.clawlive.EntityManagerActivityUiTest.testBackButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.EntityManagerActivityUiTest.testBottomBarHasSafeInsetFromNavigationBar: PASSED
+資訊: Execute com.hank.clawlive.EntityManagerActivityUiTest.testRefreshButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.MainActivityUiTest.testSettingsButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.MainActivityUiTest.testTopBarHasSafeInsetFromStatusBar: PASSED
+資訊: Execute com.hank.clawlive.MainActivityUiTest.testSafeInsetsAppliedCorrectly: PASSED
+資訊: Execute com.hank.clawlive.MainActivityUiTest.testSetWallpaperButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.MainActivityUiTest.testBottomActionsHasSafeInsetFromNavigationBar: PASSED
+資訊: Execute com.hank.clawlive.SettingsActivityUiTest.testTopBarHasSafeInsetFromStatusBar: PASSED
+資訊: Execute com.hank.clawlive.SettingsActivityUiTest.testSafeInsetsAppliedCorrectly: PASSED
+資訊: Execute com.hank.clawlive.SettingsActivityUiTest.testBackButtonIsAccessible: PASSED
+資訊: Execute com.hank.clawlive.WallpaperPreviewUiTest.testTopBarHasSafeInsetFromStatusBar: PASSED
+資訊: Execute com.hank.clawlive.WallpaperPreviewUiTest.testSetWallpaperButtonIsClickable: PASSED
+資訊: Execute com.hank.clawlive.WallpaperPreviewUiTest.testBottomControlsHasSafeInsetFromNavigationBar: PASSED
+資訊: Execute com.hank.clawlive.WallpaperPreviewUiTest.testSafeInsetsAppliedCorrectly: PASSED
+嚴重: Execute com.hank.clawlive.WallpaperPreviewUiTest.testAllInteractiveElementsHaveMinimumTouchTarget: FAILED
+java.lang.AssertionError: java.lang.AssertionError: View 2131230817 should have adequate touch target (w=105, h=105, min=126)
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at com.hank.clawlive.WallpaperPreviewUiTest.testAllInteractiveElementsHaveMinimumTouchTarget$lambda$11$lambda$10(WallpaperPreviewUiTest.kt:203)
+at com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$35D5_MIpFFR6nBOX0vmUTJo6zy4(Unknown Source:0)
+at com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)
+at android.os.Handler.handleCallback(Handler.java:995)
+at android.os.Handler.dispatchMessage(Handler.java:103)
+at android.os.Looper.loopOnce(Looper.java:248)
+at android.os.Looper.loop(Looper.java:338)
+at android.app.ActivityThread.main(ActivityThread.java:9067)
+at java.lang.reflect.Method.invoke(Native Method)
+at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+
+java.lang.AssertionError: View 2131230817 should have adequate touch target (w=105, h=105, min=126)
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.assertTrue(Assert.java:42)
+at com.hank.clawlive.WallpaperPreviewUiTest.testAllInteractiveElementsHaveMinimumTouchTarget$lambda$11$lambda$10(WallpaperPreviewUiTest.kt:203)
+at com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$35D5_MIpFFR6nBOX0vmUTJo6zy4(Unknown Source:0)
+at com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)
+at android.os.Handler.handleCallback(Handler.java:995)
+at android.os.Handler.dispatchMessage(Handler.java:103)
+at android.os.Looper.loopOnce(Looper.java:248)
+at android.os.Looper.loop(Looper.java:338)
+at android.app.ActivityThread.main(ActivityThread.java:9067)
+at java.lang.reflect.Method.invoke(Native Method)
+at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+資訊: Execute com.hank.clawlive.WallpaperPreviewUiTest.testBackButtonIsClickable: PASSED
+嚴重: Execute com.hank.clawlive.WallpaperPreviewUiTest.testPreviewViewIsFullScreen: FAILED
+java.lang.AssertionError: java.lang.AssertionError: Preview view should match parent width expected:<1073741824> but was:<0>
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at com.hank.clawlive.WallpaperPreviewUiTest.testPreviewViewIsFullScreen$lambda$9$lambda$8(WallpaperPreviewUiTest.kt:168)
+at com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$986wJ_aqhUrpKUklGyf23WEFSuQ(Unknown Source:0)
+at com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda5.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)
+at android.os.Handler.handleCallback(Handler.java:995)
+at android.os.Handler.dispatchMessage(Handler.java:103)
+at android.os.Looper.loopOnce(Looper.java:248)
+at android.os.Looper.loop(Looper.java:338)
+at android.app.ActivityThread.main(ActivityThread.java:9067)
+at java.lang.reflect.Method.invoke(Native Method)
+at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+
+java.lang.AssertionError: Preview view should match parent width expected:<1073741824> but was:<0>
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failNotEquals(Assert.java:835)
+at org.junit.Assert.assertEquals(Assert.java:120)
+at com.hank.clawlive.WallpaperPreviewUiTest.testPreviewViewIsFullScreen$lambda$9$lambda$8(WallpaperPreviewUiTest.kt:168)
+at com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$986wJ_aqhUrpKUklGyf23WEFSuQ(Unknown Source:0)
+at com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda5.perform(D8$$SyntheticClass:0)
+at androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)
+at androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)
+at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)
+at java.util.concurrent.FutureTask.run(FutureTask.java:317)
+at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)
+at android.os.Handler.handleCallback(Handler.java:995)
+at android.os.Handler.dispatchMessage(Handler.java:103)
+at android.os.Looper.loopOnce(Looper.java:248)
+at android.os.Looper.loop(Looper.java:338)
+at android.app.ActivityThread.main(ActivityThread.java:9067)
+at java.lang.reflect.Method.invoke(Native Method)
+at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)

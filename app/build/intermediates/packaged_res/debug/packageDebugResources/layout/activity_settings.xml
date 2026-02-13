@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#000000">
+
+    <!-- Minimal Header with back button (padding applied via WindowInsets) -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingBottom="8dp">
+
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_back_arrow"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back"
+            android:padding="8dp"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings_title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp"/>
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="24dp">
+
+            <!-- Usage & Subscription Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardSubscription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="6dp"
+                app:cardBackgroundColor="@android:color/transparent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_usage_card"
+                    android:padding="20dp">
+
+                    <!-- Header Row: Title + Premium Badge -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/usage_title"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/white"
+                            android:textStyle="bold"/>
+
+                        <!-- Premium Badge (hidden by default) -->
+                        <LinearLayout
+                            android:id="@+id/layoutPremiumBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:background="@drawable/bg_subscribe_button"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="4dp"
+                            android:visibility="gone">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:src="@drawable/ic_premium"
+                                android:layout_marginEnd="4dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/premium_badge"
+                                android:textSize="10sp"
+                                android:textColor="@android:color/white"
+                                android:textStyle="bold"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Message Usage Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical|bottom"
+                        android:layout_marginBottom="4dp">
+
+                        <TextView
+                            android:id="@+id/tvUsageCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0/15"
+                            android:textSize="32sp"
+                            android:textColor="@android:color/white"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/sends_today"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="14sp"
+                            android:textColor="#CCFFFFFF"/>
+                    </LinearLayout>
+
+                    <!-- Entity Usage Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical|bottom"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:id="@+id/tvEntityCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0/4"
+                            android:textSize="32sp"
+                            android:textColor="@android:color/white"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/entities_label"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginBottom="4dp"
+                            android:textSize="14sp"
+                            android:textColor="#CCFFFFFF"/>
+                    </LinearLayout>
+
+                    <!-- Progress Bar -->
+                    <ProgressBar
+                        android:id="@+id/progressUsage"
+                        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressTint="#FFD23F"
+                        android:progressBackgroundTint="#33FFFFFF"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- Subscribe Button (hidden for premium users) -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSubscribe"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/unlock_unlimited_no_price"
+                        android:textColor="@android:color/white"
+                        android:textStyle="bold"
+                        android:background="@drawable/bg_subscribe_button"
+                        app:backgroundTint="@null"
+                        app:cornerRadius="24dp"
+                        android:paddingVertical="12dp"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Feedback Button (Moved to top as requested) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFeedback"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/feedback"
+                android:textColor="@android:color/black"
+                app:backgroundTint="@android:color/white"
+                android:layout_marginBottom="12dp"
+                app:cornerRadius="12dp"
+                style="@style/Widget.Material3.Button.TonalButton"/>
+
+            <!-- Privacy Policy Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPrivacyPolicy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/privacy_policy_title"
+                android:textColor="@android:color/black"
+                app:backgroundTint="@android:color/white"
+                android:layout_marginBottom="24dp"
+                app:cornerRadius="12dp"
+                style="@style/Widget.Material3.Button.TonalButton"/>
+
+            <!-- Language Settings Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/language_title"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupLanguage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangSystem"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_system"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangEn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_en"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangZh"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_zh"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                    </com.google.android.material.chip.ChipGroup>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- App Version -->
+            <TextView
+                android:id="@+id/tvAppVersion"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#80FFFFFF"
+                android:textSize="12sp"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

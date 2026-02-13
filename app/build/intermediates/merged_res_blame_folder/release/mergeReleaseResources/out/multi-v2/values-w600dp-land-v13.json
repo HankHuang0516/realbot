@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.hank.clawlive.app-mergeReleaseResources-2:/values-w600dp-land-v13/values-w600dp-land-v13.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\8.13\\transforms\\243c871e21d3a3dfdf245a7172b60ada\\transformed\\material-1.11.0\\res\\values-w600dp-land-v13\\values-w600dp-land-v13.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "54",
+                        "endOffsets": "105"
+                    }
+                }
+            ]
+        }
+    ]
+}

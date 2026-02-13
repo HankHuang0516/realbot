@@ -4,7 +4,7 @@
             "outputFile": "com.hank.clawlive.app-mergeDebugResources-2:/values-w360dp-port-v13/values-w360dp-port-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\85b649aa160eb67aa91835488281c728\\transformed\\material-1.11.0\\res\\values-w360dp-port-v13\\values-w360dp-port-v13.xml",
+                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\8.13\\transforms\\243c871e21d3a3dfdf245a7172b60ada\\transformed\\material-1.11.0\\res\\values-w360dp-port-v13\\values-w360dp-port-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",

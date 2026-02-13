@@ -6,7 +6,6 @@ data class AgentStatus(
     val state: CharacterState = CharacterState.IDLE,
     val message: String = "Loading...",
     val parts: Map<String, Float>? = null,
-    val batteryLevel: Int = 100,
     val lastUpdated: Long = System.currentTimeMillis(),
     val isBound: Boolean = false // Server returns this field
 ) {

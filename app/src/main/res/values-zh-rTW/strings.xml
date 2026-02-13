@@ -117,4 +117,27 @@
     <string name="feedback_sent">意見已送出，感謝您！</string>
     <string name="feedback_empty">請輸入意見內容</string>
     <string name="submit">送出</string>
+    <string name="app_version">版本：%s</string>
+
+    <!-- Privacy Policy -->
+    <string name="privacy_policy_title">隱私權政策</string>
+    <string name="privacy_policy_content">
+<b>1. 隱私權至上承諾</b>\n
+E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲明：<b>我們絕不會販賣、洩露或濫用您的任何個人資料。</b>\n\n
+<b>2. 我們收集什麼資料？</b>\n
+為了提供服務，我們僅收集運作所需的最少資料：\n
+- 裝置 ID：用於區分不同裝置。\n
+- App 版本：用於相容性檢查。\n
+- 綁定資料：Agent 名稱與狀態。\n\n
+<b>我們「不」收集：</b>\n
+- 您的姓名、電話或 Email。\n
+- 您的 GPS 位置。\n
+- 您的相機或麥克風資料。\n\n
+<b>3. OpenClaw 協議</b>\n
+我們是 OpenClaw 生態系統的堅定支持者。我們不會建立封閉的「圍牆花園」，並承諾保持互通性。\n\n
+<b>4. AI 對話隱私</b>\n
+訊息透過加密 HTTPS 傳送至您綁定的 AI Agent。資料流向由您掌控。\n\n
+<b>5. 聯絡我們</b>\n
+如有任何疑問，請透過我們的官方 Email 聯繫。
+    </string>
 </resources>

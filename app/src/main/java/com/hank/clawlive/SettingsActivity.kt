@@ -50,7 +50,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnFeedback: MaterialButton
     private lateinit var btnPrivacyPolicy: MaterialButton
     private lateinit var chipGroupLanguage: ChipGroup
-    private lateinit var chipLangSystem: Chip
     private lateinit var chipLangEn: Chip
     private lateinit var chipLangZh: Chip
     private lateinit var btnBack: ImageButton
@@ -109,8 +108,6 @@ class SettingsActivity : AppCompatActivity() {
         tvUsageCount = findViewById(R.id.tvUsageCount)
         progressUsage = findViewById(R.id.progressUsage)
         btnSubscribe = findViewById(R.id.btnSubscribe)
-        chipGroupLanguage = findViewById(R.id.chipGroupLanguage)
-        chipLangSystem = findViewById(R.id.chipLangSystem)
         chipLangEn = findViewById(R.id.chipLangEn)
         chipLangZh = findViewById(R.id.chipLangZh)
         btnBack = findViewById(R.id.btnBack)
@@ -141,9 +138,8 @@ class SettingsActivity : AppCompatActivity() {
         chipGroupLanguage.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isNotEmpty()) {
                 val localeList = when (checkedIds[0]) {
-                    R.id.chipLangEn -> LocaleListCompat.forLanguageTags("en")
                     R.id.chipLangZh -> LocaleListCompat.forLanguageTags("zh-TW")
-                    else -> LocaleListCompat.getEmptyLocaleList() // System Default
+                    else -> LocaleListCompat.forLanguageTags("en")
                 }
 
                 val current = AppCompatDelegate.getApplicationLocales()
@@ -156,11 +152,23 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadCurrentLanguage() {
         val locales = AppCompatDelegate.getApplicationLocales()
-        val tag = locales.toLanguageTags()
-        when {
-            tag.startsWith("en") -> chipLangEn.isChecked = true
-            tag.startsWith("zh") -> chipLangZh.isChecked = true
-            else -> chipLangSystem.isChecked = true
+        if (!locales.isEmpty) {
+            // App has a specific locale set
+            val tag = locales.toLanguageTags()
+            if (tag.contains("zh")) {
+                chipLangZh.isChecked = true
+            } else {
+                chipLangEn.isChecked = true
+            }
+        } else {
+            // Follow system: Check system locale
+            val systemLocale = LocaleListCompat.getDefault()
+            val systemTag = systemLocale.toLanguageTags()
+            if (systemTag.contains("zh")) {
+                chipLangZh.isChecked = true
+            } else {
+                chipLangEn.isChecked = true
+            }
         }
     }
 

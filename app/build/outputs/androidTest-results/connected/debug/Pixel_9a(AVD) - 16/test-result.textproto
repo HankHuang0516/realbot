@@ -1,0 +1,2985 @@
+# proto-message: google.testing.platform.proto.api.core.TestSuiteResult
+# 2026-02-12T12:49:07.681587600Z:
+test_suite_meta_data {
+  scheduled_test_case_count: 64
+  device {
+    id: "emulator-5554"
+    friendly_name: "primary"
+  }
+}
+test_status: FAILED
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testAllStringResourcesHaveChineseTranslation"
+    start_time {
+      seconds: 1770900440
+      nanos: 252000000
+    }
+    end_time {
+      seconds: 1770900440
+      nanos: 284000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError: String no_agents_connected should have Chinese translation. Actual: \345\260\232\346\234\252\351\200\243\346\216\245\344\273\273\344\275\225\344\273\243\347\220\206\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.failEquals(Assert.java:187)\nat org.junit.Assert.assertNotEquals(Assert.java:163)\nat com.hank.clawlive.BilingualVerificationTest.testAllStringResourcesHaveChineseTranslation(BilingualVerificationTest.kt:275)\n"
+    error_type: "java.lang.AssertionError"
+    stack_trace: "java.lang.AssertionError: String no_agents_connected should have Chinese translation. Actual: \345\260\232\346\234\252\351\200\243\346\216\245\344\273\273\344\275\225\344\273\243\347\220\206\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.failEquals(Assert.java:187)\nat org.junit.Assert.assertNotEquals(Assert.java:163)\nat com.hank.clawlive.BilingualVerificationTest.testAllStringResourcesHaveChineseTranslation(BilingualVerificationTest.kt:275)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testAllStringResourcesHaveChineseTranslation.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testAllStringResourcesHaveChineseTranslation.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testMainActivityInChinese"
+    start_time {
+      seconds: 1770900440
+      nanos: 290000000
+    }
+    end_time {
+      seconds: 1770900445
+      nanos: 650000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testMainActivityInChinese.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testMainActivityInChinese.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testNoHardcodedEnglishInChineseLocale"
+    start_time {
+      seconds: 1770900446
+      nanos: 346000000
+    }
+    end_time {
+      seconds: 1770900451
+      nanos: 392000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testNoHardcodedEnglishInChineseLocale.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testNoHardcodedEnglishInChineseLocale.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSettingsActivityInEnglish"
+    start_time {
+      seconds: 1770900451
+      nanos: 472000000
+    }
+    end_time {
+      seconds: 1770900457
+      nanos: 901000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testSettingsActivityInEnglish.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testSettingsActivityInEnglish.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testMainActivityInEnglish"
+    start_time {
+      seconds: 1770900458
+      nanos: 10000000
+    }
+    end_time {
+      seconds: 1770900464
+      nanos: 257000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError: Should have English content in English locale\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.hank.clawlive.BilingualVerificationTest.testMainActivityInEnglish$lambda$3$lambda$2(BilingualVerificationTest.kt:82)\nat com.hank.clawlive.BilingualVerificationTest.$r8$lambda$1whKR64xAc-6MsImwkqvdvfdeTo(Unknown Source:0)\nat com.hank.clawlive.BilingualVerificationTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)\nat androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)\nat androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)\nat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)\nat java.util.concurrent.FutureTask.run(FutureTask.java:317)\nat android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)\nat android.os.Handler.handleCallback(Handler.java:995)\nat android.os.Handler.dispatchMessage(Handler.java:103)\nat android.os.Looper.loopOnce(Looper.java:248)\nat android.os.Looper.loop(Looper.java:338)\nat android.app.ActivityThread.main(ActivityThread.java:9067)\nat java.lang.reflect.Method.invoke(Native Method)\nat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)\nat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)\n"
+    error_type: "java.lang.AssertionError"
+    stack_trace: "java.lang.AssertionError: Should have English content in English locale\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.hank.clawlive.BilingualVerificationTest.testMainActivityInEnglish$lambda$3$lambda$2(BilingualVerificationTest.kt:82)\nat com.hank.clawlive.BilingualVerificationTest.$r8$lambda$1whKR64xAc-6MsImwkqvdvfdeTo(Unknown Source:0)\nat com.hank.clawlive.BilingualVerificationTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)\nat androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)\nat androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)\nat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)\nat java.util.concurrent.FutureTask.run(FutureTask.java:317)\nat android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)\nat android.os.Handler.handleCallback(Handler.java:995)\nat android.os.Handler.dispatchMessage(Handler.java:103)\nat android.os.Looper.loopOnce(Looper.java:248)\nat android.os.Looper.loop(Looper.java:338)\nat android.app.ActivityThread.main(ActivityThread.java:9067)\nat java.lang.reflect.Method.invoke(Native Method)\nat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)\nat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testMainActivityInEnglish.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testMainActivityInEnglish.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testEntityManagerActivityInBothLocales"
+    start_time {
+      seconds: 1770900464
+      nanos: 594000000
+    }
+    end_time {
+      seconds: 1770900476
+      nanos: 611000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testEntityManagerActivityInBothLocales.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testEntityManagerActivityInBothLocales.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "BilingualVerificationTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSettingsActivityInChinese"
+    start_time {
+      seconds: 1770900476
+      nanos: 692000000
+    }
+    end_time {
+      seconds: 1770900484
+      nanos: 4000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testSettingsActivityInChinese.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.BilingualVerificationTest-testSettingsActivityInChinese.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DebugRenderActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testTopBarHasSafeInsetFromStatusBar"
+    start_time {
+      seconds: 1770900365
+      nanos: 969000000
+    }
+    end_time {
+      seconds: 1770900369
+      nanos: 770000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DebugRenderActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBottomControlsHasSafeInsetFromNavigationBar"
+    start_time {
+      seconds: 1770900369
+      nanos: 850000000
+    }
+    end_time {
+      seconds: 1770900373
+      nanos: 7000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testBottomControlsHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testBottomControlsHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DebugRenderActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testDoneButtonIsAccessible"
+    start_time {
+      seconds: 1770900373
+      nanos: 37000000
+    }
+    end_time {
+      seconds: 1770900375
+      nanos: 957000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testDoneButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testDoneButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DebugRenderActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSafeInsetsAppliedCorrectly"
+    start_time {
+      seconds: 1770900375
+      nanos: 988000000
+    }
+    end_time {
+      seconds: 1770900378
+      nanos: 781000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DebugRenderActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBackButtonIsAccessible"
+    start_time {
+      seconds: 1770900378
+      nanos: 862000000
+    }
+    end_time {
+      seconds: 1770900381
+      nanos: 956000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testBackButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.DebugRenderActivityUiTest-testBackButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EntityManagerActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testTopBarHasSafeInsetFromStatusBar"
+    start_time {
+      seconds: 1770900351
+      nanos: 662000000
+    }
+    end_time {
+      seconds: 1770900354
+      nanos: 826000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EntityManagerActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSafeInsetsAppliedCorrectly"
+    start_time {
+      seconds: 1770900354
+      nanos: 830000000
+    }
+    end_time {
+      seconds: 1770900357
+      nanos: 883000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EntityManagerActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBackButtonIsAccessible"
+    start_time {
+      seconds: 1770900357
+      nanos: 885000000
+    }
+    end_time {
+      seconds: 1770900360
+      nanos: 119000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testBackButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testBackButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EntityManagerActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBottomBarHasSafeInsetFromNavigationBar"
+    start_time {
+      seconds: 1770900360
+      nanos: 150000000
+    }
+    end_time {
+      seconds: 1770900363
+      nanos: 411000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testBottomBarHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testBottomBarHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EntityManagerActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testRefreshButtonIsAccessible"
+    start_time {
+      seconds: 1770900363
+      nanos: 440000000
+    }
+    end_time {
+      seconds: 1770900365
+      nanos: 835000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testRefreshButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.EntityManagerActivityUiTest-testRefreshButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "MainActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSettingsButtonIsAccessible"
+    start_time {
+      seconds: 1770900327
+      nanos: 47000000
+    }
+    end_time {
+      seconds: 1770900330
+      nanos: 622000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testSettingsButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testSettingsButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "MainActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testTopBarHasSafeInsetFromStatusBar"
+    start_time {
+      seconds: 1770900330
+      nanos: 626000000
+    }
+    end_time {
+      seconds: 1770900333
+      nanos: 42000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "MainActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSafeInsetsAppliedCorrectly"
+    start_time {
+      seconds: 1770900333
+      nanos: 72000000
+    }
+    end_time {
+      seconds: 1770900336
+      nanos: 5000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "MainActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSetWallpaperButtonIsAccessible"
+    start_time {
+      seconds: 1770900336
+      nanos: 86000000
+    }
+    end_time {
+      seconds: 1770900339
+      nanos: 203000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testSetWallpaperButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testSetWallpaperButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "MainActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBottomActionsHasSafeInsetFromNavigationBar"
+    start_time {
+      seconds: 1770900339
+      nanos: 234000000
+    }
+    end_time {
+      seconds: 1770900342
+      nanos: 774000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testBottomActionsHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.MainActivityUiTest-testBottomActionsHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "SettingsActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testTopBarHasSafeInsetFromStatusBar"
+    start_time {
+      seconds: 1770900484
+      nanos: 111000000
+    }
+    end_time {
+      seconds: 1770900490
+      nanos: 860000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.SettingsActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.SettingsActivityUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "SettingsActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSafeInsetsAppliedCorrectly"
+    start_time {
+      seconds: 1770900490
+      nanos: 941000000
+    }
+    end_time {
+      seconds: 1770900496
+      nanos: 895000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.SettingsActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.SettingsActivityUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "SettingsActivityUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBackButtonIsAccessible"
+    start_time {
+      seconds: 1770900496
+      nanos: 951000000
+    }
+    end_time {
+      seconds: 1770900502
+      nanos: 368000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.SettingsActivityUiTest-testBackButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.SettingsActivityUiTest-testBackButtonIsAccessible.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testTopBarHasSafeInsetFromStatusBar"
+    start_time {
+      seconds: 1770900502
+      nanos: 399000000
+    }
+    end_time {
+      seconds: 1770900507
+      nanos: 971000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testTopBarHasSafeInsetFromStatusBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSetWallpaperButtonIsClickable"
+    start_time {
+      seconds: 1770900508
+      nanos: 27000000
+    }
+    end_time {
+      seconds: 1770900513
+      nanos: 896000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testSetWallpaperButtonIsClickable.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testSetWallpaperButtonIsClickable.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBottomControlsHasSafeInsetFromNavigationBar"
+    start_time {
+      seconds: 1770900514
+      nanos: 261000000
+    }
+    end_time {
+      seconds: 1770900520
+      nanos: 182000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testBottomControlsHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testBottomControlsHasSafeInsetFromNavigationBar.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testSafeInsetsAppliedCorrectly"
+    start_time {
+      seconds: 1770900520
+      nanos: 187000000
+    }
+    end_time {
+      seconds: 1770900525
+      nanos: 571000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testSafeInsetsAppliedCorrectly.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testAllInteractiveElementsHaveMinimumTouchTarget"
+    start_time {
+      seconds: 1770900526
+      nanos: 269000000
+    }
+    end_time {
+      seconds: 1770900531
+      nanos: 286000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError: View 2131230817 should have adequate touch target (w=105, h=105, min=126)\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.hank.clawlive.WallpaperPreviewUiTest.testAllInteractiveElementsHaveMinimumTouchTarget$lambda$11$lambda$10(WallpaperPreviewUiTest.kt:203)\nat com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$35D5_MIpFFR6nBOX0vmUTJo6zy4(Unknown Source:0)\nat com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)\nat androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)\nat androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)\nat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)\nat java.util.concurrent.FutureTask.run(FutureTask.java:317)\nat android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)\nat android.os.Handler.handleCallback(Handler.java:995)\nat android.os.Handler.dispatchMessage(Handler.java:103)\nat android.os.Looper.loopOnce(Looper.java:248)\nat android.os.Looper.loop(Looper.java:338)\nat android.app.ActivityThread.main(ActivityThread.java:9067)\nat java.lang.reflect.Method.invoke(Native Method)\nat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)\nat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)\n"
+    error_type: "java.lang.AssertionError"
+    stack_trace: "java.lang.AssertionError: View 2131230817 should have adequate touch target (w=105, h=105, min=126)\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.assertTrue(Assert.java:42)\nat com.hank.clawlive.WallpaperPreviewUiTest.testAllInteractiveElementsHaveMinimumTouchTarget$lambda$11$lambda$10(WallpaperPreviewUiTest.kt:203)\nat com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$35D5_MIpFFR6nBOX0vmUTJo6zy4(Unknown Source:0)\nat com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda4.perform(D8$$SyntheticClass:0)\nat androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)\nat androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)\nat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)\nat java.util.concurrent.FutureTask.run(FutureTask.java:317)\nat android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)\nat android.os.Handler.handleCallback(Handler.java:995)\nat android.os.Handler.dispatchMessage(Handler.java:103)\nat android.os.Looper.loopOnce(Looper.java:248)\nat android.os.Looper.loop(Looper.java:338)\nat android.app.ActivityThread.main(ActivityThread.java:9067)\nat java.lang.reflect.Method.invoke(Native Method)\nat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)\nat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testAllInteractiveElementsHaveMinimumTouchTarget.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testAllInteractiveElementsHaveMinimumTouchTarget.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testBackButtonIsClickable"
+    start_time {
+      seconds: 1770900531
+      nanos: 392000000
+    }
+    end_time {
+      seconds: 1770900537
+      nanos: 493000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testBackButtonIsClickable.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testBackButtonIsClickable.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "WallpaperPreviewUiTest"
+    test_package: "com.hank.clawlive"
+    test_method: "testPreviewViewIsFullScreen"
+    start_time {
+      seconds: 1770900537
+      nanos: 702000000
+    }
+    end_time {
+      seconds: 1770900543
+      nanos: 502000000
+    }
+    device {
+      id: "emulator-5554"
+      friendly_name: "primary"
+    }
+  }
+  test_status: FAILED
+  error {
+    error_message: "java.lang.AssertionError: Preview view should match parent width expected:<1073741824> but was:<0>\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.failNotEquals(Assert.java:835)\nat org.junit.Assert.assertEquals(Assert.java:120)\nat com.hank.clawlive.WallpaperPreviewUiTest.testPreviewViewIsFullScreen$lambda$9$lambda$8(WallpaperPreviewUiTest.kt:168)\nat com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$986wJ_aqhUrpKUklGyf23WEFSuQ(Unknown Source:0)\nat com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda5.perform(D8$$SyntheticClass:0)\nat androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)\nat androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)\nat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)\nat java.util.concurrent.FutureTask.run(FutureTask.java:317)\nat android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)\nat android.os.Handler.handleCallback(Handler.java:995)\nat android.os.Handler.dispatchMessage(Handler.java:103)\nat android.os.Looper.loopOnce(Looper.java:248)\nat android.os.Looper.loop(Looper.java:338)\nat android.app.ActivityThread.main(ActivityThread.java:9067)\nat java.lang.reflect.Method.invoke(Native Method)\nat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)\nat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)\n"
+    error_type: "java.lang.AssertionError"
+    stack_trace: "java.lang.AssertionError: Preview view should match parent width expected:<1073741824> but was:<0>\nat org.junit.Assert.fail(Assert.java:89)\nat org.junit.Assert.failNotEquals(Assert.java:835)\nat org.junit.Assert.assertEquals(Assert.java:120)\nat com.hank.clawlive.WallpaperPreviewUiTest.testPreviewViewIsFullScreen$lambda$9$lambda$8(WallpaperPreviewUiTest.kt:168)\nat com.hank.clawlive.WallpaperPreviewUiTest.$r8$lambda$986wJ_aqhUrpKUklGyf23WEFSuQ(Unknown Source:0)\nat com.hank.clawlive.WallpaperPreviewUiTest$$ExternalSyntheticLambda5.perform(D8$$SyntheticClass:0)\nat androidx.test.core.app.ActivityScenario.lambda$onActivity$2$androidx-test-core-app-ActivityScenario(ActivityScenario.java:789)\nat androidx.test.core.app.ActivityScenario$$ExternalSyntheticLambda2.run(Unknown Source:4)\nat java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:524)\nat java.util.concurrent.FutureTask.run(FutureTask.java:317)\nat android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2616)\nat android.os.Handler.handleCallback(Handler.java:995)\nat android.os.Handler.dispatchMessage(Handler.java:103)\nat android.os.Looper.loopOnce(Looper.java:248)\nat android.os.Looper.loop(Looper.java:338)\nat android.app.ActivityThread.main(ActivityThread.java:9067)\nat java.lang.reflect.Method.invoke(Native Method)\nat com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)\nat com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testPreviewViewIsFullScreen.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\logcat-com.hank.clawlive.WallpaperPreviewUiTest-testPreviewViewIsFullScreen.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\cpuinfo"
+    }
+  }
+}
+output_artifact {
+  label {
+    label: "test-results.log"
+    namespace: "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver"
+  }
+  source_path {
+    path: "C:\\Hank\\Other\\project\\realbot\\app\\build\\outputs\\androidTest-results\\connected\\debug\\Pixel_9a(AVD) - 16\\testlog\\test-results.log"
+  }
+  type: TEST_DATA
+  mime_type: "text/plain"
+}

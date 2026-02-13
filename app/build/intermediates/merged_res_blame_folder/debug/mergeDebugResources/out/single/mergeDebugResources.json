@@ -1,14 +1,282 @@
 [
     {
-        "merged": "com.hank.clawlive.app-debug-4:/xml_wallpaper.xml.flat",
-        "source": "com.hank.clawlive.app-main-6:/xml/wallpaper.xml"
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-hdpi_ic_launcher_background.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-hdpi\\ic_launcher_background.png"
     },
     {
-        "merged": "com.hank.clawlive.app-debug-4:/layout_activity_main.xml.flat",
-        "source": "com.hank.clawlive.app-main-6:/layout/activity_main.xml"
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\xml_claw_chat_widget_info.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\xml\\claw_chat_widget_info.xml"
     },
     {
-        "merged": "com.hank.clawlive.app-debug-4:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "com.hank.clawlive.app-main-6:/drawable/ic_launcher_foreground.xml"
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_layout_header_minimal.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\layout_header_minimal.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_bg_subscribe_button.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\bg_subscribe_button.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_premium.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_premium.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_privacy_policy.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_privacy_policy.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_send.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_send.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_chat_bubble_pig.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\chat_bubble_pig.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-mdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_settings.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxhdpi_ic_launcher_background.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxhdpi\\ic_launcher_background.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_widget_claw_chat_history.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\widget_claw_chat_history.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_widget_claw_chat.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\widget_claw_chat.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_rounded_widget_bg.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\rounded_widget_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_badge_eating.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\badge_eating.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxxhdpi_ic_launcher_background.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxxhdpi\\ic_launcher_background.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_item_message_sent.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\item_message_sent.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_item_agent_card.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\item_agent_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxhdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxhdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_bg_usage_card.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\bg_usage_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_message.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_message.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_badge_background.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\badge_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_badge_idle.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\badge_idle.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxxhdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxxhdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_bubble_received.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\bubble_received.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_item_message_received.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\item_message_received.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_badge_sleeping.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\badge_sleeping.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_gradient_top_fade.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\gradient_top_fade.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-hdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-hdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_item_entity_card.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\item_entity_card.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_chat_bubble_bg.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\chat_bubble_bg.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_item_widget_message.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\item_widget_message.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\xml_wallpaper.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\xml\\wallpaper.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_bubble_sent.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\bubble_sent.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_dialog_avatar_picker.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\dialog_avatar_picker.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-mdpi_ic_launcher_background.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-mdpi\\ic_launcher_background.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_broadcast.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_broadcast.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xhdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xhdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_image.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_image.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xhdpi_ic_launcher_background.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xhdpi\\ic_launcher_background.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_message_bubble_background.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\message_bubble_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_chat_bubble_lobster.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\chat_bubble_lobster.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_back_arrow.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_back_arrow.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_badge_busy.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\badge_busy.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_layout_editor.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_layout_editor.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_badge_excited.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\badge_excited.xml"
+    },
+    {
+        "merged": "com.hank.clawlive.app-debug-4:/layout_activity_settings.xml.flat",
+        "source": "com.hank.clawlive.app-main-6:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_gradient_bottom_fade.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\gradient_bottom_fade.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_drag.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_drag.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_entity_manager.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_entity_manager.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_wallpaper_preview.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_wallpaper_preview.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_settings.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_settings.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_dialog_emoji_picker.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\dialog_emoji_picker.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_privacy.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_privacy.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_chat.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\activity_chat.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_expand_more.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_expand_more.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-mdpi_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-mdpi\\ic_launcher_foreground.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\mipmap-xhdpi\\ic_launcher.png"
     }
 ]

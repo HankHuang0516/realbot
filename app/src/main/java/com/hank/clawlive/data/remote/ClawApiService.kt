@@ -64,14 +64,6 @@ interface ClawApiService {
     suspend fun removeEntityByDevice(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
     // ============================================
-    // BATTERY REPORTING
-    // ============================================
-
-    // Report real device battery level to backend
-    @POST("api/device/battery")
-    suspend fun updateBatteryLevel(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
-
-    // ============================================
     // FEEDBACK
     // ============================================
 

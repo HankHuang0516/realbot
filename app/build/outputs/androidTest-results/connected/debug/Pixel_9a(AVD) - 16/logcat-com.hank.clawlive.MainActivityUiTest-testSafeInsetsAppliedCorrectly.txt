@@ -1,0 +1,700 @@
+02-12 12:45:33.226  7341  7358 I TestRunner: started: testSafeInsetsAppliedCorrectly(com.hank.clawlive.MainActivityUiTest)
+02-12 12:45:33.227  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2043
+02-12 12:45:33.232   776  2690 I ImeTracker: system_server:f757ec1c: onRequestHide at ORIGIN_SERVER reason IME_REQUESTED_CHANGED_LISTENER fromUser false
+02-12 12:45:33.236  7341  7358 W Settings: Setting always_finish_activities has moved from android.provider.Settings.System to android.provider.Settings.Global, returning read-only value.
+02-12 12:45:33.242   513   530 I RanchuHwc: logCompositionFallbackIfChanged: layer 369 CompositionType fallback from 2 to 1
+02-12 12:45:33.251   776   817 I ImeTracker: system_server:f757ec1c: onCancelled at PHASE_SERVER_SHOULD_HIDE
+02-12 12:45:33.263   513   530 I RanchuHwc: logCompositionFallbackIfChanged: layer 370 CompositionType fallback from 2 to 1
+02-12 12:45:33.296  1524  1524 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+02-12 12:45:33.296  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kig->ilu, kig->ilu, kig->ilu, kig->ijm, kig->ilu, kig->fef, kig->ilu, kig->fcb, kig->lux, kig->ilu, kig->fro, kig->khg, kig->ilu, kig->ilu, kig->ilu, kig->jnx, kig->gkl, kig->ilu, kig->khc, kig->ilu, kig->jvb, kig->ilu, kig->ilu, kig->imt] takes 69ms
+02-12 12:45:33.298  1194  1194 D RecentsView: onTaskRemoved: 76, not handling task stack changes
+02-12 12:45:33.298  1194  1194 D RecentsView: onTaskRemoved: 76, not handling task stack changes
+02-12 12:45:33.316   776  2690 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@6c49ef6f does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+02-12 12:45:33.325  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1293 onStartInput(EditorInfo{EditorInfo{packageName=com.google.android.apps.nexuslauncher, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+02-12 12:45:33.327  1524  1524 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+02-12 12:45:33.330  1524  7441 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:33.332  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.clearTemporarilyEnabledLanguages():2071 temporarilyEnabledEntryTuples [LanguageTagVariantTuple{languageTag=zh-TW, variant=zhuyin}]
+02-12 12:45:33.333  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.changeCurrentInputMethodEntry():2958 Set current input method entry: source=UNSPECIFIED, entryChanged=true, kek{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_app_first_start_timestamp=1770813848499_cache_additional_ime_defs_for_condition_change=false_cache_ime_defs_for_condition_change=false_deprecate_long_press_space_for_ime_picker=false_device=phone_device_size=default_enable_access_points_in_password_number=false_enable_flick_symbols=true_enable_more_candidates_view_for_multilingual=false_enable_number_row=false_enable_preemptive_decode=true_enable_premium_exp_tablet_layout_change=false_enable_secondary_digits=true_enable_secondary_symbols=false_expressions=normal_four_or_more_letter_rows=false_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=qwerty_rtl_layout=false_show_secondary_digits=true_show_suggestions=true_split_with_duplicate_keys=true_variant=qwerty, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.libraries.inputmethod.ime.experiment.ExperimentImeWrapper, imeDef.languageTag=en-US}
+02-12 12:45:33.334  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.loadAdditionalImeDefsForCurrentEntry():2981 loadAdditionalImeDefsForCurrentEntry(): kek{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_app_first_start_timestamp=1770813848499_cache_additional_ime_defs_for_condition_change=false_cache_ime_defs_for_condition_change=false_deprecate_long_press_space_for_ime_picker=false_device=phone_device_size=default_enable_access_points_in_password_number=false_enable_flick_symbols=true_enable_more_candidates_view_for_multilingual=false_enable_number_row=false_enable_preemptive_decode=true_enable_premium_exp_tablet_layout_change=false_enable_secondary_digits=true_enable_secondary_symbols=false_expressions=normal_four_or_more_letter_rows=false_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=qwerty_rtl_layout=false_show_secondary_digits=true_show_suggestions=true_split_with_duplicate_keys=true_variant=qwerty, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.libraries.inputmethod.ime.experiment.ExperimentImeWrapper, imeDef.languageTag=en-US}
+02-12 12:45:33.335  1524  1524 I InputMethodEntryManager: InputMethodEntryManager$6.onSuccess():2997 Success load additional ImeDefs, entryChanged=true, additionalImeDefsChanged=false, [kyj{stringId=password, language=und-Latn-x-password, languageTag=und-Latn-x-password, processedConditions={variant=qwerty, enable_access_points_in_password_number=false, enable_number_row=false, device=phone}, className=com.google.android.libraries.inputmethod.ime.password.PasswordIme, label=2132019061, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@62ac17d, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=number, language=und-Latn-x-number, languageTag=und-Latn-x-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019005, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@8dadbf, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=number_password, language=und-Latn-x-number-password, languageTag=und-Latn-x-number-password, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019006, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@7fd5c8c, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=phone_number, language=und-Latn-x-phone-number, languageTag=und-Latn-x-phone-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019096, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@95b3fd5, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=date_time, language=und-Latn-x-date-time, languageTag=und-Latn-x-date-time, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132017724, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@d0b43ea, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=dummy_hard, language=en, languageTag=en, processedConditions={device=unknown}, className=com.google.android.apps.inputmethod.libs.latin5.LatinDummyIme, label=0, keyEventIn
+02-12 12:45:33.337  1524  1524 I InputMethodEntryManager: terpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@d7966db, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=password_floating_hard_qwerty, language=und-Latn-x-password, languageTag=und-Latn-x-password, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231749, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@269b578, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=phone_number_floating_hard_qwerty, language=und-Latn-x-phone-number, languageTag=und-Latn-x-phone-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231925, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@f1d0451, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=number_floating_hard_qwerty, language=und-Latn-x-number, languageTag=und-Latn-x-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231925, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@e51b4b6, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=date_time_floating_hard_qwerty, language=und-Latn-x-date-time, languageTag=und-Latn-x-date-time, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231925, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@89d95b7, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}]
+02-12 12:45:33.338  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.onSuccessLoadingAdditionalImeDefs():3063 Additional ImeDefs have been loaded, maybe notify entry change: true
+02-12 12:45:33.343  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$3.onCurrentInputMethodEntryChanged():149 entry: en-US, source: UNSPECIFIED
+02-12 12:45:33.346  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$3.onCurrentInputMethodEntryChanged():163 switchSubtype(en-US)
+02-12 12:45:33.357  1653  1661 I AiAiEcho: Settings changed for uri: content://settings/secure/input_methods_subtype_history
+02-12 12:45:33.361  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:33.364  1194  1194 W SplitSelectStateCtor: Missing session instanceIds
+02-12 12:45:33.364  1194  1194 D StatsLog: LAUNCHER_SPLIT_SELECTION_EXIT_INTERRUPTED
+02-12 12:45:33.365  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:33.365  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:33.365  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:33.373  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:33.375  1524  7196 I MDDSuperpacks: MDDSuperpacks$2.onSuccess():274 Sync success for handwriting_recognition with result: {old=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], new=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], metadata=false, last batch=true}
+02-12 12:45:33.377  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:33.378  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:33.378  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:33.378  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:33.380  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:33.384  1653  1661 I AiAiEcho: Settings changed for uri: content://settings/secure/selected_input_method_subtype
+02-12 12:45:33.384  1524  7116 I HandwritingOnlineSuperpacks: HandwritingOnlineSuperpacks.syncInternal():187 syncInternal(): syncing packs
+02-12 12:45:33.385  1524  7116 I HandwritingOnlineSuperpacks: HandwritingOnlineSuperpacks$2.onSyncSuccess():225 syncInternal(): complete {old=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], new=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], metadata=false, last batch=true}
+02-12 12:45:33.385  1524  7116 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:33.388  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:33.391  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+02-12 12:45:33.392  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:33.392  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:33.392  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:33.392  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:33.392  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:33.393  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kds->iic, kds->ktx, kds->lwm, kds->lcn, kds->gkk, ldt->lds] takes 50ms
+02-12 12:45:33.393  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kds->leg] takes 55ms
+02-12 12:45:33.396  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d329cad8) locale list changing from [en-US] to [zh-TW]
+02-12 12:45:33.396  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:33.397  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:33.397  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:33.397  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:33.397  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d329a558) locale list changing from [en-US] to [zh-TW]
+02-12 12:45:33.399  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d32995b8) locale list changing from [en-US] to [zh-TW]
+02-12 12:45:33.400  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:33.406  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:33.407  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+02-12 12:45:33.410  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module etf is unavailable
+02-12 12:45:33.414  1059  1059 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+02-12 12:45:33.414  1059  1059 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+02-12 12:45:33.422  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module kth is unavailable
+02-12 12:45:33.429  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module ggx is unavailable
+02-12 12:45:33.438  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():121 Create keyboard group manager listenable future in fyg
+02-12 12:45:33.440   556  1250 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+02-12 12:45:33.447   776   911 I InputReader: Reconfiguring input devices, changes=KEYBOARD_LAYOUTS
+02-12 12:45:33.457  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.onCurrentInputMethodEntryChanged():2285 onCurrentInputMethodEntryChanged(): imeDefsChanged=true, entryLanguageVariantChanged=true, keyboardContextChanged=true
+02-12 12:45:33.458  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.clearInputMethodServiceData():1016 clearInputMethodServiceData for entryChange
+02-12 12:45:33.459  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():537 Destroy existing keyboard group manager in fso
+02-12 12:45:33.461  1524  7115 I ExpressiveConceptsPredictionModuleImpl: ExpressiveConceptsPredictionModuleImpl.onCreate():36 onCreate()
+02-12 12:45:33.467  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d32b1f78) locale list changing from [] to [zh-TW]
+02-12 12:45:33.471  1524  7115 I NativeLibHelper: NativeLibHelper.loadLibrary():162 Loaded native library:integrated_shared_object (result=true)
+02-12 12:45:33.473  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():121 Create keyboard group manager listenable future in fso
+02-12 12:45:33.474  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():537 Destroy existing keyboard group manager in fve
+02-12 12:45:33.474  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():121 Create keyboard group manager listenable future in fve
+02-12 12:45:33.475  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():537 Destroy existing keyboard group manager in fyg
+02-12 12:45:33.478  1524  7189 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():86 parseKeyboardGroupDef() 2132214028 -> 0_resource_name_obfuscated : WaitTime = 3 ms : RunTime = 1 ms
+02-12 12:45:33.478  1524  7189 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():86 parseKeyboardGroupDef() 2132214032 -> 0_resource_name_obfuscated : WaitTime = 4 ms : RunTime = 0 ms
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: AbstractOpenableExtension$1.onFailure():144 failed to parse keyboard group def : 2132216938 -> 0_resource_name_obfuscated.
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: java.util.concurrent.CancellationException: Task was cancelled.
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.r(PG:33)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.get(PG:3)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at a.k(PG:2)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at pqu.E(PG:10)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qek.run(PG:88)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qds.execute(PG:1)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.h(PG:1)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.k(PG:101)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.cancel(PG:53)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.m(PG:17)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcu.c(PG:3)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.k(PG:30)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qcq.cancel(PG:53)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at enq.j(PG:60)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at enq.I(PG:1)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at enq.J(PG:1)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at jpv.h(PG:33)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kgn.ab(PG:20)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at dbj.p(PG:206)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kgi.e(PG:3)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kdr.cz(PG:9)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at lhl.run(PG:1025)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qds.execute(PG:1)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at nco.v(PG:13)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at lhn.m(PG:96)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at lhn.k(PG:25)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kds.g(PG:10)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kew.b(PG:553)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qek.run(PG:94)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at jaf.execute(PG:12)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qet.b(PG:6)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at pqu.G(PG:10)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kfb.T(PG:319)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kfb.l(PG:94)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at jjw.g(PG:171)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at jjs.c(PG:10)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kif.cz(PG:47)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at lhl.run(PG:1025)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at qds.execute(PG:1)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at nco.v(PG:13)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at lhn.m(PG:96)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at lhn.k(PG:25)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at kgn.onStartInput(PG:250)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.inputmethodservice.InputMethodService.doStartInput(InputMethodService.java:3521)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.inputmethodservice.InputMethodService$InputMethodImpl.startInput(InputMethodService.java:879)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.inputmethodservice.InputMethodService$InputMethodImpl.dispatchStartInput(InputMethodService.java:908)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.inputmethodservice.IInputMethodWrapper.executeMessage(IInputMethodWrapper.java:201)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at com.android.internal.os.HandlerCaller$MyHandler.handleMessage(HandlerCaller.java:44)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.os.Handler.dispatchMessage(Handler.java:110)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.os.Looper.loopOnce(Looper.java:248)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.os.Looper.loop(Looper.java:338)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at android.app.ActivityThread.main(ActivityThread.java:9067)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at java.lang.reflect.Method.invoke(Native Method)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:593)
+02-12 12:45:33.479  1524  1524 E AbstractOpenableExtension: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:932)
+02-12 12:45:33.482  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():121 Create keyboard group manager listenable future in fyg
+02-12 12:45:33.484  1524  1524 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():46 leave 281 height for app when ime window height:2219, header height:116 and isFullscreenMode:false, so the max keyboard body height is:1822
+02-12 12:45:33.485  1524  7195 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():86 parseKeyboardGroupDef() 2132216938 -> 0_resource_name_obfuscated : WaitTime = 25 ms : RunTime = 4 ms
+02-12 12:45:33.485  1524  7195 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():86 parseKeyboardGroupDef() 2132216938 -> 0_resource_name_obfuscated : WaitTime = 3 ms : RunTime = 0 ms
+02-12 12:45:33.490  1524  1524 I KeyboardModeManager: KeyboardModeManager.onCurrentInputMethodEntryChanged():1400 Reload data for context change
+02-12 12:45:33.490  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: PRE_ON_CREATE
+02-12 12:45:33.490  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.initializeInputMethodServiceData():834 initializeInputMethodServiceData for kek{languageTag=en-US, variant=qwerty, hasLocalizedResources=true, conditionCacheKey=_app_first_start_timestamp=1770813848499_cache_additional_ime_defs_for_condition_change=false_cache_ime_defs_for_condition_change=false_deprecate_long_press_space_for_ime_picker=false_device=phone_device_size=default_enable_access_points_in_password_number=false_enable_flick_symbols=true_enable_more_candidates_view_for_multilingual=false_enable_number_row=false_enable_preemptive_decode=true_enable_premium_exp_tablet_layout_change=false_enable_secondary_digits=true_enable_secondary_symbols=false_expressions=normal_four_or_more_letter_rows=false_keyboard_mode=normal_language=en-US_layout_9key_split=false_orientation=portrait_physical_keyboard=qwerty_rtl_layout=false_show_secondary_digits=true_show_suggestions=true_split_with_duplicate_keys=true_variant=qwerty, imeDef.stringId=ime_english_united_states, imeDef.className=com.google.android.libraries.inputmethod.ime.experiment.ExperimentImeWrapper, imeDef.languageTag=en-US}
+02-12 12:45:33.491  7341  7341 V ActivityScenario: Activity lifecycle changed event received but ignored because the reported transition was not ON_CREATE while the last known transition was PRE_ON_CREATE
+02-12 12:45:33.499   776  1608 D FileUtils: Rounded bytes from 2067259392 to 4000000000
+02-12 12:45:33.504  1524  1524 I KeyboardThemeProvider: KeyboardThemeProvider.applyKeyboardTheme():27 Apply keyboard theme: theme_!gsf_!pgsans_!pgsf_!use_system_font_BORDER=true_FLAVOR_DPI=XXHDPI_KEYBOARD_WIDTH_CATEGORY=NORMAL_LIGHT_THEME=true_PHYSICAL_DIAGONAL=6.0111027_SCREEN_SHORTEST_WIDTH=411_SCREEN_SHORTEST_WIDTH_NO_SCALE=411_bottom4dp_enable_google_fonts_icons=true_enable_popup_on_keypress=true_keyboard_redesign_google_sans=true_noshadow_overlay_builtin_dynamic_color_light_base.binarypb:gm3-light-fffaf8ff-ff475d92-6dac7c28fa7faa76f8370bbfdbc77981_silkpopup_unify_function_key_color=true
+02-12 12:45:33.510  1524  1524 I AndroidIME: InputBundleManager.loadActiveInputBundleId():483 loadActiveInputBundleId: und-Latn-x-password, password
+02-12 12:45:33.510  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kds->kgi] takes 53ms
+02-12 12:45:33.510  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.disableTemporaryEnabledEntries():2109
+02-12 12:45:33.521  1524  7115 I NativeLibHelper: NativeLibHelper.loadLibrary():162 Loaded native library:integrated_shared_object (result=true)
+02-12 12:45:33.522  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$2.onEnabledInputMethodEntriesChanged():131 1 entries
+02-12 12:45:33.522  1524  7115 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: expressive_concepts
+02-12 12:45:33.532  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:33.537   671   756 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:33.539  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.542  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.542  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.542  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:33.542  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:33.542  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.542  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.542  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.542  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:33.546  1653  1661 I AiAiEcho: Settings changed for uri: content://settings/secure/enabled_input_methods
+02-12 12:45:33.548  1194  1194 D WorkspaceRevealAnim: onAnimationEnd: workspace alpha = 1.0
+02-12 12:45:33.554  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kdz->lwl, ilp->erl] takes 35ms
+02-12 12:45:33.556  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kdz->ivx] takes 37ms
+02-12 12:45:33.557  1524  1524 I HardKeyTracker: HardKeyTracker.unregisterKeySequence():182 Unregister key sequence lsr{labelResId=0, callback=jlb@dacfbe8, lastModifier=0, keyCodes=[59, 59], actions=[1, 0]}
+02-12 12:45:33.558  1524  1524 I HardKeyTracker: HardKeyTracker.unregisterKeySequence():182 Unregister key sequence lsr{labelResId=0, callback=jlb@b98a2e7, lastModifier=0, keyCodes=[60, 60], actions=[1, 0]}
+02-12 12:45:33.558  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module kty is unavailable
+02-12 12:45:33.559  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:33.563  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:33.563  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:33.563  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:33.566  7391  7391 D VRI[InstrumentationActivityInvoker$EmptyActivity]: visibilityChanged oldVisibility=true newVisibility=false
+02-12 12:45:33.570  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:33.572  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kig->jjs] takes 242ms
+02-12 12:45:33.578  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:33.580  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:33.580  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:33.580  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:33.583  1524  7113 I DelightKLPDownloader: DelightKLPDownloader.downloadKLPInternal():199 downloading KLP for en_840
+02-12 12:45:33.583  1524  7113 I ManifestedDataDownloader: ManifestedDataDownloader.download():63 downloading manifest https://www.gstatic.com/android/keyboard/dictionarypack/2025031619/metadata.json-perlang/en-840.json?v=2025052001
+02-12 12:45:33.583  1524  7113 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:33.584  1524  7195 I LatinImeEntryActivation: LatinImeActivationContentObserver.activeLanguagesHaveChanged():70 Active entries changed: [en-US, zh-XD] -> {en-US}
+02-12 12:45:33.584  1524  7195 I LmManager: LmManager.asyncUpdateEnabledLanguageModels():96 asyncUpdateEnabledLanguageModels()
+02-12 12:45:33.584  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:33.585  1524  7195 I SuperDelight: SuperDelightManager.initializeOverridesSuperpacks():405 initializeOverridesSuperpacks()
+02-12 12:45:33.593  1524  7195 I DelightKLPDownloader: DelightKLPDownloader.downloadKLPInternal():199 downloading KLP for en_840
+02-12 12:45:33.593  1524  7195 I ManifestedDataDownloader: ManifestedDataDownloader.download():63 downloading manifest https://www.gstatic.com/android/keyboard/dictionarypack/2025031619/metadata.json-perlang/en-840.json?v=2025052001
+02-12 12:45:33.596  1524  7195 I SuperDelight: SuperDelightManager.initializeBundledDelightSuperpacks():379 initializeBundledDelightSuperpacks()
+02-12 12:45:33.600  1524  1524 I PKIndicatorController: PKIndicatorController$3.maybeShowLanguageSwitchIndicator():137 Entry changed. Showing language indicator.
+02-12 12:45:33.602  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:33.605  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: CREATED
+02-12 12:45:33.605  7341  7341 V ActivityScenario: Update currentActivityStage to CREATED, currentActivity=com.hank.clawlive.MainActivity@ad6a872
+02-12 12:45:33.606  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+02-12 12:45:33.607  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: STARTED
+02-12 12:45:33.607  7341  7341 V ActivityScenario: Update currentActivityStage to STARTED, currentActivity=com.hank.clawlive.MainActivity@ad6a872
+02-12 12:45:33.614  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: RESUMED
+02-12 12:45:33.614  7341  7341 V ActivityScenario: Update currentActivityStage to RESUMED, currentActivity=com.hank.clawlive.MainActivity@ad6a872
+02-12 12:45:33.616  7341  7366 I okhttp.OkHttpClient: --> POST https://realbot-production.up.railway.app/api/device/status
+02-12 12:45:33.616  7341  7366 I okhttp.OkHttpClient: Content-Type: application/json; charset=UTF-8
+02-12 12:45:33.616  7341  7366 I okhttp.OkHttpClient: Content-Length: 176
+02-12 12:45:33.617  7341  7366 I okhttp.OkHttpClient: {"appVersion":"1.0.4","deviceId":"594756f7-245c-4b0a-b164-3f90d205345d","deviceSecret":"453af835-abb6-4fb0-a53d-772c6d6ca52c-303c70ba-6d69-4be7-a76e-b091d67b52af","entityId":0}
+02-12 12:45:33.617  7341  7366 I okhttp.OkHttpClient: --> END POST (176-byte body)
+02-12 12:45:33.623  7341  7374 I okhttp.OkHttpClient: --> POST https://realbot-production.up.railway.app/api/device/battery
+02-12 12:45:33.623  1524  1524 I HandwritingSuperpacks: HandwritingSuperpacks.register():273 register(): version '86', url 'https://dl.google.com/handwriting/models/handwriting_release.superpack_manifest.20231127.json' [ONLINE]
+02-12 12:45:33.623  7341  7374 I okhttp.OkHttpClient: Content-Type: application/json; charset=UTF-8
+02-12 12:45:33.623  7341  7374 I okhttp.OkHttpClient: Content-Length: 161
+02-12 12:45:33.623  1524  1524 I HandwritingOfflineSuperpacks: HandwritingOfflineSuperpacks.syncInternal():80 no bundled lm for handwriting.
+02-12 12:45:33.624  1524  1524 I DictionarySuperpacksManager: DictionarySuperpacksManager$1.onEnabledInputMethodEntriesChanged():65 onEnabledInputMethodEntriesChanged
+02-12 12:45:33.624  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kig->ghi, kig->ljw, kig->fmc, kig->ghi, kig->ljw, kig->fmc, kds->ijn, kds->iim, kds->jvx, kjw->iwj, kdz->epv, kdz->epv, kdz->eql, kdz->eth] takes 24ms
+02-12 12:45:33.624  7341  7374 I okhttp.OkHttpClient: {"deviceId":"594756f7-245c-4b0a-b164-3f90d205345d","deviceSecret":"453af835-abb6-4fb0-a53d-772c6d6ca52c-303c70ba-6d69-4be7-a76e-b091d67b52af","batteryLevel":100}
+02-12 12:45:33.625  7341  7374 I okhttp.OkHttpClient: --> END POST (161-byte body)
+02-12 12:45:33.625  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$4.onSetCurrentInputMethodSubtype():192 en_US
+02-12 12:45:33.625  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$4.onSetCurrentInputMethodSubtype():204 Subtype en_US was caused by entry
+02-12 12:45:33.625  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():555 KeyboardGroupManager destroyed in fso.
+02-12 12:45:33.625  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():555 KeyboardGroupManager destroyed in fve.
+02-12 12:45:33.626  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension$3.onFailure():563 Failed to load KeyboardGroupManager in fyg.
+02-12 12:45:33.638  1059  1059 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+02-12 12:45:33.678  7341  7370 I okhttp.OkHttpClient: --> GET https://realbot-production.up.railway.app/api/entities?deviceId=594756f7-245c-4b0a-b164-3f90d205345d
+02-12 12:45:33.678  7341  7370 I okhttp.OkHttpClient: --> END GET
+02-12 12:45:33.701  1059  1284 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda13@57abbb9
+02-12 12:45:33.740   776   817 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:33.740   776   817 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:33.796  7660  7660 W dumpsys : Thread Pool max thread count is 0. Cannot cache binder as linkToDeath cannot be implemented. serviceName: package
+02-12 12:45:33.818  1524  7196 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [2020031023_en] got for superpack: expressive_concepts
+02-12 12:45:33.819  1524  7115 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: expressive_concepts
+02-12 12:45:33.856  1524  7116 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:33.865   776   814 I ActivityTaskManager: Displayed com.hank.clawlive/.MainActivity for user 0: +536ms
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: <-- 404 https://realbot-production.up.railway.app/api/device/status (273ms)
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: access-control-allow-origin: *
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: content-type: application/json; charset=utf-8
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: date: Thu, 12 Feb 2026 12:45:33 GMT
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: etag: W/"2e-XzkA4brlTAXn/IWfhZ4/CGIFWRk"
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: server: railway-edge
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: x-powered-by: Express
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: x-railway-edge: railway/asia-southeast1-eqsg3a
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: x-railway-request-id: W1wWItBdSeWEX9NyDcO5xA
+02-12 12:45:33.891  7341  7366 I okhttp.OkHttpClient: content-length: 46
+02-12 12:45:33.892  7341  7366 I okhttp.OkHttpClient: {"success":false,"message":"Device not found"}
+02-12 12:45:33.892  7341  7366 I okhttp.OkHttpClient: <-- END HTTP (46-byte body)
+02-12 12:45:33.899  7341  7374 I okhttp.OkHttpClient: <-- 404 https://realbot-production.up.railway.app/api/device/battery (273ms)
+02-12 12:45:33.899  7341  7374 I okhttp.OkHttpClient: access-control-allow-origin: *
+02-12 12:45:33.899  7341  7374 I okhttp.OkHttpClient: content-type: application/json; charset=utf-8
+02-12 12:45:33.900  7341  7374 I okhttp.OkHttpClient: date: Thu, 12 Feb 2026 12:45:33 GMT
+02-12 12:45:33.900  7341  7374 I okhttp.OkHttpClient: etag: W/"2e-XzkA4brlTAXn/IWfhZ4/CGIFWRk"
+02-12 12:45:33.901  7341  7374 I okhttp.OkHttpClient: server: railway-edge
+02-12 12:45:33.902  7341  7374 I okhttp.OkHttpClient: x-powered-by: Express
+02-12 12:45:33.902  7341  7374 I okhttp.OkHttpClient: x-railway-edge: railway/asia-southeast1-eqsg3a
+02-12 12:45:33.902  7341  7374 I okhttp.OkHttpClient: x-railway-request-id: iGIo4VeAQ4KvuGGYDcO5xA
+02-12 12:45:33.909  7341  7374 I okhttp.OkHttpClient: content-length: 46
+02-12 12:45:33.918  7341  7374 I okhttp.OkHttpClient: {"success":false,"message":"Device not found"}
+02-12 12:45:33.918  7341  7374 I okhttp.OkHttpClient: <-- END HTTP (46-byte body)
+02-12 12:45:33.948  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: <-- 200 https://realbot-production.up.railway.app/api/entities?deviceId=594756f7-245c-4b0a-b164-3f90d205345d (277ms)
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: access-control-allow-origin: *
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: content-type: application/json; charset=utf-8
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: date: Thu, 12 Feb 2026 12:45:33 GMT
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: etag: W/"48-2fOd9+JV3yPppyzk4jG/C+TPjFs"
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: server: railway-edge
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: x-powered-by: Express
+02-12 12:45:33.957  7341  7370 I okhttp.OkHttpClient: x-railway-edge: railway/asia-southeast1-eqsg3a
+02-12 12:45:33.958  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.958  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.961  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:33.961  7341  7370 I okhttp.OkHttpClient: x-railway-request-id: rM5cb6S-SgeT8sWdDcO5xA
+02-12 12:45:33.962  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:33.962  7341  7370 I okhttp.OkHttpClient: content-length: 72
+02-12 12:45:33.994  7341  7370 I okhttp.OkHttpClient: {"entities":[],"activeCount":0,"deviceCount":7,"maxEntitiesPerDevice":4}
+02-12 12:45:33.994  7341  7370 I okhttp.OkHttpClient: <-- END HTTP (72-byte body)
+02-12 12:45:34.001  1524  7441 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:34.077   776   916 I ImeTracker: com.hank.clawlive:d69e9b12: onRequestHide at ORIGIN_SERVER reason HIDE_UNSPECIFIED_WINDOW fromUser false
+02-12 12:45:34.100  1524  4139 W RemoteInputConnection: getExtractedText() was cancelled.
+02-12 12:45:34.153  1524  4165 W AndroidFuture: Remote result com.android.internal.infra.AndroidFuture@2912163[Completed normally] ignored, as local future is already completed: com.android.internal.infra.AndroidFuture@5899160[Completed exceptionally: java.util.concurrent.CancellationException]
+02-12 12:45:34.164  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2043
+02-12 12:45:34.169   776  2005 I ImeTracker: system_server:505673a4: onRequestHide at ORIGIN_SERVER reason IME_REQUESTED_CHANGED_LISTENER fromUser false
+02-12 12:45:34.215  1988  1988 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/base.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+02-12 12:45:34.221   776   817 I ImeTracker: system_server:505673a4: onCancelled at PHASE_SERVER_SHOULD_HIDE
+02-12 12:45:34.242  1988  1988 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_AdsDynamite_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.246  1988  1988 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_CronetDynamite_installtime.odex) is kOatUpToDate with filter 'speed-profile' executable 'false'
+02-12 12:45:34.247  7341  7341 D InsetsController: hide(ime(), fromIme=false)
+02-12 12:45:34.254  1988  1988 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_DynamiteLoader_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.256  7341  7341 I ImeTracker: com.hank.clawlive:d69e9b12: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+02-12 12:45:34.265  1988  1988 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_DynamiteModulesA_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.271  1988  1988 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_DynamiteModulesC_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.275  1988  4248 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_GoogleCertificates_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.279  1988  4248 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_MapsDynamite_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.283  1988  4248 I artd    : GetBestInfo: odex next to the dex file (/data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/oat/x86_64/split_MeasurementDynamite_installtime.odex) is kOatUpToDate with filter 'speed' executable 'false'
+02-12 12:45:34.289  1988  4248 I artd    : GetBestInfo: /data/app/~~FHj_2wo0r6E2oGCGfU0o7g==/com.google.android.gms--LXJHOaqr-1sEUWd8Qrf3w==/split_maps_core_dynamite_ondemand.apk has no usable artifacts
+02-12 12:45:34.292  1194  1194 D VRI[NexusLauncherActivity]: visibilityChanged oldVisibility=true newVisibility=false
+02-12 12:45:34.299  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000d/dl-Appsearch.optional_250834100800.apk has no usable artifacts
+02-12 12:45:34.306  1194  1194 D NexusLauncherModelDelegate: notifySmartspaceEvent: SmartspaceTargetEvent{mSmartspaceTarget=null, mSmartspaceActionId='null', mEventType=7}
+02-12 12:45:34.308  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000013/dl-MlkitBarcodeUi.optional_260235100800.apk has no usable artifacts
+02-12 12:45:34.316  1524  1524 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+02-12 12:45:34.320  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kig->ilu, kig->ilu, kig->ilu, kig->ijm, kig->ilu, kig->fef, kig->ilu, kig->fcb, kig->lux, kig->ilu, kig->fro, kig->khg, kig->ilu, kig->ilu, kig->ilu, kig->jnx, kig->gkl, kig->ilu, kig->khc, kig->ilu, kig->jvb, kig->ilu, kig->ilu, kig->ilu, kig->imt] takes 154ms
+02-12 12:45:34.328  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000001/CronetDynamite.apk has no usable artifacts
+02-12 12:45:34.329  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1293 onStartInput(EditorInfo{EditorInfo{packageName=com.hank.clawlive, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+02-12 12:45:34.331  1524  1524 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+02-12 12:45:34.340  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000b/dl-TfliteDynamiteDynamite.integ_252130102100800.apk has no usable artifacts
+02-12 12:45:34.355  7391  7391 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda13@6e331b8
+02-12 12:45:34.359  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000002/DynamiteLoader.apk has no usable artifacts
+02-12 12:45:34.366  7391  7391 D ViewRootImpl: Skipping stats log for color mode
+02-12 12:45:34.371  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000012/dl-Appsearch.optional_260235100800.apk has no usable artifacts
+02-12 12:45:34.388  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.enableLanguagesAndChangeCurrentTemporarily():1811 enabledLanguages: [zh-Hant-TW], specifiedCurrentLanguage null
+02-12 12:45:34.389  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.enableInputMethodEntriesTemporarily():2031 temporarilyEnabledEntryTuples [LanguageTagVariantTuple{languageTag=zh-TW, variant=zhuyin}]
+02-12 12:45:34.393  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$2.onEnabledInputMethodEntriesChanged():131 2 entries
+02-12 12:45:34.407  1194  1194 D BaseDepthController: setSurface:
+02-12 12:45:34.407  1194  1194 D BaseDepthController: 	mWaitingOnSurfaceValidity: false
+02-12 12:45:34.407  1194  1194 D BaseDepthController: 	mBaseSurface: null
+02-12 12:45:34.408  1194  1194 D BaseDepthController: mSurface is null and mCurrentBlur is: 0
+02-12 12:45:34.413  1194  1194 D StateManager: goToState - fromState: Normal, toState: Normal, partial trace:
+02-12 12:45:34.413  1194  1194 D StateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 72a59688580715d19f0e415c69e80376c2f062d1648c80db6730905005a27c20:4)
+02-12 12:45:34.413  1194  1194 D StateManager: 	at com.android.launcher3.statemanager.StateManager.moveToRestState(go/retraceme 72a59688580715d19f0e415c69e80376c2f062d1648c80db6730905005a27c20:1)
+02-12 12:45:34.413  1194  1194 D StateManager: 	at com.android.launcher3.statemanager.StatefulActivity.onStop(go/retraceme 72a59688580715d19f0e415c69e80376c2f062d1648c80db6730905005a27c20:34)
+02-12 12:45:34.413  1194  1194 D StatsLog: LAUNCHER_ONSTOP
+02-12 12:45:34.418  1653  1661 I AiAiEcho: Settings changed for uri: content://settings/secure/enabled_input_methods
+02-12 12:45:34.421  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:34.422  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:34.422  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:34.422  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:34.428  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:34.434  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:34.434  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:34.434  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:34.434  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:34.435  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:34.438  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000005/GoogleCertificates.apk has no usable artifacts
+02-12 12:45:34.441  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:34.441  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000015/dl-MlkitOcrCommon.optional_260235100800.apk has no usable artifacts
+02-12 12:45:34.445  1059  1284 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda13@d20027d
+02-12 12:45:34.453  1194  1194 D StatsLog: LAUNCHER_GOOGLE_SEARCH_RESTORE_LIST_SIZE_AFTER_ACTIVITY_RESTART
+02-12 12:45:34.454  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000010/dl-VisionOcr.optional_260235100000.apk has no usable artifacts
+02-12 12:45:34.458  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+02-12 12:45:34.461  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000009/dl-MlkitBarcodeUi.optional_250834100800.apk has no usable artifacts
+02-12 12:45:34.468  1059  1059 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+02-12 12:45:34.473  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000c/dl-VisionOcr.optional_250834100000.apk has no usable artifacts
+02-12 12:45:34.484  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kdz->lwl, ilp->erl] takes 86ms
+02-12 12:45:34.485  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kdz->ivx] takes 91ms
+02-12 12:45:34.489  1524  7195 I LatinImeEntryActivation: LatinImeActivationContentObserver.activeLanguagesHaveChanged():70 Active entries changed: [en-US] -> {en-US, zh-XD}
+02-12 12:45:34.490  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/0000000e/dl-MlkitOcrCommon.optional_250834100800.apk has no usable artifacts
+02-12 12:45:34.490  1524  7195 I LmManager: LmManager.asyncUpdateEnabledLanguageModels():96 asyncUpdateEnabledLanguageModels()
+02-12 12:45:34.490  1524  7195 I SuperDelight: SuperDelightManager.initializeOverridesSuperpacks():405 initializeOverridesSuperpacks()
+02-12 12:45:34.493  1524  7189 I SuperDelight: SuperDelightManager.initializeBundledDelightSuperpacks():379 initializeBundledDelightSuperpacks()
+02-12 12:45:34.496  1524  7195 I DelightKLPDownloader: DelightKLPDownloader.downloadKLPInternal():199 downloading KLP for en_840
+02-12 12:45:34.496  1524  7195 I ManifestedDataDownloader: ManifestedDataDownloader.download():63 downloading manifest https://www.gstatic.com/android/keyboard/dictionarypack/2025031619/metadata.json-perlang/en-840.json?v=2025052001
+02-12 12:45:34.497  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000011/dl-PlayCloudSearch.optional_260235100000.apk has no usable artifacts
+02-12 12:45:34.499  1524  7195 E DelightKLPDownloader: DelightKLPDownloader.getBestAvailableLocale():123 klp for zh_XD is not found
+02-12 12:45:34.501  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_emoticon_content_description scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.501  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_emoticon_content_description
+02-12 12:45:34.504  1194  1194 D RecentsView: onTaskRemoved: 77, not handling task stack changes
+02-12 12:45:34.505  1194  1194 D RecentsView: onTaskRemoved: 77, not handling task stack changes
+02-12 12:45:34.505  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:34.505  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.505  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.505  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.505  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:34.505  1988  4248 I artd    : GetBestInfo: vdex next to the dex file (/data/user/0/com.google.android.gms/app_dg_cache/94DF452EEF4B8E717545DCDEA6CC3C50A319A195/oat/x86_64/the.vdex) is kOatUpToDate with filter 'verify' executable 'false'
+02-12 12:45:34.508  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __KLP_manifest_delight__en-840 scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.508  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __KLP_manifest_delight__en-840
+02-12 12:45:34.508  1988  4248 I artd    : GetBestInfo: /data/user_de/0/com.google.android.gms/app_chimera/m/00000007/MeasurementDynamite.apk has no usable artifacts
+02-12 12:45:34.520  1524  7118 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [2020031023_en] got for superpack: expressive_concepts
+02-12 12:45:34.532  1524  7442 I DownloadManager: DownloadManager$4.onFailure():573 download for __KLP_manifest_delight__en-840 is cancelled
+02-12 12:45:34.532  1524  7442 I DownloadManager: DownloadManager.downloadInternal():410 Previous download for __KLP_manifest_delight__en-840 is cancelled
+02-12 12:45:34.532  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __KLP_manifest_delight__en-840 scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.532  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __KLP_manifest_delight__en-840
+02-12 12:45:34.533  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_bundled_delight scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.533  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_bundled_delight
+02-12 12:45:34.534  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_handwriting_recognition scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.534  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_handwriting_recognition
+02-12 12:45:34.541  1524  7262 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:34.543  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [ldi->lef] takes 36ms
+02-12 12:45:34.544  1524  7115 I BlocklistManager: BlocklistManager.loadFileBasedBlocklist():67 Blocklist is loaded with /data/data/com.google.android.inputmethod.latin/files/datadownload/shared/public/datadownloadfile_1770813853702/emotion_model_500_entries.blacklist, load result is true
+02-12 12:45:34.545  1524  7115 I ExpressiveConceptsPredictionModuleImpl: ExpressiveConceptsPredictionModuleImpl.setupPredictorIfNeeded():75 Prediction manager has been set up.
+02-12 12:45:34.547  1524  1524 I HardKeyTracker: HardKeyTracker.registerKeySequence():138 Register key sequence lsr{labelResId=0, callback=jlb@c694666, lastModifier=0, keyCodes=[59, 59], actions=[1, 0]}
+02-12 12:45:34.548  1524  1524 I HardKeyTracker: HardKeyTracker.registerKeySequence():138 Register key sequence lsr{labelResId=0, callback=jlb@cf3d5fd, lastModifier=0, keyCodes=[60, 60], actions=[1, 0]}
+02-12 12:45:34.548  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kdz->leh] takes 63ms
+02-12 12:45:34.551  1524  7114 I DelightKLPDownloader: DelightKLPDownloader.downloadKLPInternal():199 downloading KLP for en_840
+02-12 12:45:34.553  1524  7114 I ManifestedDataDownloader: ManifestedDataDownloader.download():63 downloading manifest https://www.gstatic.com/android/keyboard/dictionarypack/2025031619/metadata.json-perlang/en-840.json?v=2025052001
+02-12 12:45:34.560  1524  7114 E DelightKLPDownloader: DelightKLPDownloader.getBestAvailableLocale():123 klp for zh_XD is not found
+02-12 12:45:34.573  1524  7262 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:34.575  1524  7116 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:34.576  1524  7115 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:34.576  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.changeCurrentInputMethodEntry():2958 Set current input method entry: source=UNSPECIFIED, entryChanged=true, kek{languageTag=zh-TW, variant=zhuyin, hasLocalizedResources=true, conditionCacheKey=_app_first_start_timestamp=1770813848499_cache_additional_ime_defs_for_condition_change=false_cache_ime_defs_for_condition_change=false_deprecate_long_press_space_for_ime_picker=false_device=phone_device_size=default_enable_access_points_in_password_number=false_enable_chinese_inline_composing_shape_based=true_enable_chinese_inline_composing_zh_tw=true_enable_flick_symbols=true_enable_more_candidates_view_for_multilingual=false_enable_number_row=false_enable_preemptive_decode=true_enable_premium_exp_tablet_layout_change=false_enable_secondary_digits=true_enable_secondary_symbols=false_enable_voice_in_chinese=true_expressions=normal_four_or_more_letter_rows=false_keyboard_mode=normal_language=zh-TW_layout_9key_split=false_orientation=portrait_physical_keyboard=qwerty_pref_enable_chinese_inline_composing_tw=false_rtl_layout=false_show_secondary_digits=true_show_suggestions=true_split_with_duplicate_keys=true_variant=zhuyin_zhuyin_use_staggered_layout=false, imeDef.stringId=ime_zh_tw_zhuyin, imeDef.className=com.google.android.apps.inputmethod.libs.chinese.ime.AsyncChineseProcessorBasedIme, imeDef.languageTag=zh-XD}
+02-12 12:45:34.577  1524  7113 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:34.577  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.loadAdditionalImeDefsForCurrentEntry():2981 loadAdditionalImeDefsForCurrentEntry(): kek{languageTag=zh-TW, variant=zhuyin, hasLocalizedResources=true, conditionCacheKey=_app_first_start_timestamp=1770813848499_cache_additional_ime_defs_for_condition_change=false_cache_ime_defs_for_condition_change=false_deprecate_long_press_space_for_ime_picker=false_device=phone_device_size=default_enable_access_points_in_password_number=false_enable_chinese_inline_composing_shape_based=true_enable_chinese_inline_composing_zh_tw=true_enable_flick_symbols=true_enable_more_candidates_view_for_multilingual=false_enable_number_row=false_enable_preemptive_decode=true_enable_premium_exp_tablet_layout_change=false_enable_secondary_digits=true_enable_secondary_symbols=false_enable_voice_in_chinese=true_expressions=normal_four_or_more_letter_rows=false_keyboard_mode=normal_language=zh-TW_layout_9key_split=false_orientation=portrait_physical_keyboard=qwerty_pref_enable_chinese_inline_composing_tw=false_rtl_layout=false_show_secondary_digits=true_show_suggestions=true_split_with_duplicate_keys=true_variant=zhuyin_zhuyin_use_staggered_layout=false, imeDef.stringId=ime_zh_tw_zhuyin, imeDef.className=com.google.android.apps.inputmethod.libs.chinese.ime.AsyncChineseProcessorBasedIme, imeDef.languageTag=zh-XD}
+02-12 12:45:34.586  1524  1524 I InputMethodEntryManager: InputMethodEntryManager$6.onSuccess():2997 Success load additional ImeDefs, entryChanged=true, additionalImeDefsChanged=false, [kyj{stringId=password_ascii, language=und-Latn-x-password-ascii, languageTag=und-Latn-x-password-ascii, processedConditions={enable_access_points_in_password_number=false, show_suggestions=true, enable_number_row=false, device=phone}, className=com.google.android.libraries.inputmethod.ime.password.PasswordIme, label=2132019061, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@30b2f18, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=ime_qwerty, language=en-GB, languageTag=en-GB, processedConditions={enable_number_row=false, device=phone}, className=com.google.android.apps.inputmethod.libs.latin5.LatinIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=true, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=A, displayAppCompletions=true, extraValues=kyb{#0x7f0b020f=TypedValue{t=0x3/d=0x0 "false"}, #0x7f0b0219=TypedValue{t=0x3/d=0x0 "false"}, #0x7f0b0236=TypedValue{t=0x3/d=0x2370 "${variant}" a=9 r=0x7f1405e3}}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=true, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@8ac8d71, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=zh_tw_zhuyin_hard_qwerty, language=zh-TW, languageTag=zh-TW, processedConditions={device=phone, enable_chinese_inline_composing_shape_based=true, pref_enable_chinese_inline_composing_tw=false, enable_voice_in_chinese=true}, className=com.google.android.libraries.inputmethod.ime.processor.ProcessorBasedIme, label=2132022562, keyEventInterpreter=com.google.android.apps.inputmethod.libs.chinese.PositionBasedKeyEventInterpreter, inlineComposing=false, autoCapital=false, announceAutoSelectedCandidate=true, statusIcon=2131231964, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{#0x7f0b0217=TypedValue{t=0x3/d=0x3494 "enable_double_space_period" a=9 r=0x7f140826}, #0x7f0b0230=TypedValue{t=0x3/d=0x0 "。"}}, processors=lac@e515940, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@954b079, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=number, language=und-Latn-x-number, languageTag=und-Latn-x-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019005, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@8dadbf, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=number_password, language=und-Latn-x-number-password, languageTag=und-Latn-x-number-password, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019006, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel
+02-12 12:45:34.586  1524  1524 I InputMethodEntryManager: =null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@7fd5c8c, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=phone_number, language=und-Latn-x-phone-number, languageTag=und-Latn-x-phone-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019096, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@95b3fd5, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=date_time, language=und-Latn-x-date-time, languageTag=und-Latn-x-date-time, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132017724, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=0, primeKeyboardType=SOFT, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@d0b43ea, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=dummy_hard, language=en, languageTag=en, processedConditions={device=unknown}, className=com.google.android.apps.inputmethod.libs.latin5.LatinDummyIme, label=0, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=true, statusIcon=0, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@d7966db, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=password_floating_hard_qwerty, language=und-Latn-x-password, languageTag=und-Latn-x-password, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231749, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@269b578, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=phone_number_floating_hard_qwerty, language=und-Latn-x-phone-number, languageTag=und-Latn-x-phone-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231925, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@f1d0451, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=numb
+02-12 12:45:34.586  1524  1524 I InputMethodEntryManager: er_floating_hard_qwerty, language=und-Latn-x-number, languageTag=und-Latn-x-number, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231925, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@e51b4b6, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}, kyj{stringId=date_time_floating_hard_qwerty, language=und-Latn-x-date-time, languageTag=und-Latn-x-date-time, processedConditions={}, className=com.google.android.libraries.inputmethod.ime.DummyIme, label=2132019097, keyEventInterpreter=null, inlineComposing=true, autoCapital=false, announceAutoSelectedCandidate=false, statusIcon=2131231925, primeKeyboardType=HARD_QWERTY, indicatorIcon=0, indicatorLabel=null, displayAppCompletions=false, extraValues=kyb{}, processors=lac@9f2fa60, unacceptableMetaKeys=4098, languageSpecificSettings=0, asciiCapable=false, alwaysShowSuggestions=false, useAsciiPasswordKeyboard=false, secondaryIme=null, keyboardGroupDef=kzl@89d95b7, phenotypeFlagId=0, localizationLanguageTag=null, supportsInlineSuggestion=false}]
+02-12 12:45:34.586  1524  7195 I SuperDelight: SuperDelightManager.syncOverridesLanguageModels():687 SuperDelightManager#syncOverridesLanguageModels(): Superpack delight_overrides not found or negative version provided
+02-12 12:45:34.586  1524  1524 I InputMethodEntryManager: InputMethodEntryManager.onSuccessLoadingAdditionalImeDefs():3063 Additional ImeDefs have been loaded, maybe notify entry change: true
+02-12 12:45:34.598  1524  7195 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: delight_overrides
+02-12 12:45:34.608  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$3.onCurrentInputMethodEntryChanged():149 entry: zh-TW, source: UNSPECIFIED
+02-12 12:45:34.609  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$3.onCurrentInputMethodEntryChanged():163 switchSubtype(zh-TW)
+02-12 12:45:34.633  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kds->iic, kds->ktx, kds->lwm, kds->lcn, kds->gkk, ldz->ldy] takes 25ms
+02-12 12:45:34.633   776   911 I InputReader: Reconfiguring input devices, changes=KEYBOARD_LAYOUTS
+02-12 12:45:34.633  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module dqa is unavailable
+02-12 12:45:34.637  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kds->leg] takes 29ms
+02-12 12:45:34.638  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module fxo is unavailable
+02-12 12:45:34.654  1524  1524 I ExtensionManager: ExtensionManager.updateExtensionWrappersMap():230 The same notification is already processed
+02-12 12:45:34.663  1653  1661 I AiAiEcho: Settings changed for uri: content://settings/secure/input_methods_subtype_history
+02-12 12:45:34.665  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:34.666  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():537 Destroy existing keyboard group manager in fyg
+02-12 12:45:34.667  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module IOcrEntryPointOpenableExtension is unavailable
+02-12 12:45:34.667  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:34.667  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:34.667  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:34.668  1653  1661 I AiAiEcho: Settings changed for uri: content://settings/secure/selected_input_method_subtype
+02-12 12:45:34.668  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:34.669  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:34.669  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:34.669  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:34.669  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:34.670  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:34.670  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:34.671  1524  1524 I ExpressiveConceptsPredictionModuleImpl: ExpressiveConceptsPredictionModuleImpl.onDestroy():80 onDestroy()
+02-12 12:45:34.671  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:34.671  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:34.671  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:34.671  1524  1524 I ModuleManager: ModuleManager$ModuleInitListener.maybeUnloadModuleOnUnavailable():1350 module ful is unavailable
+02-12 12:45:34.673  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:34.673  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:34.676  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:34.676  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:34.676  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:34.677  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:34.677  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:34.681  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.onCurrentInputMethodEntryChanged():2285 onCurrentInputMethodEntryChanged(): imeDefsChanged=true, entryLanguageVariantChanged=true, keyboardContextChanged=true
+02-12 12:45:34.681  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.clearInputMethodServiceData():1016 clearInputMethodServiceData for entryChange
+02-12 12:45:34.682  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+02-12 12:45:34.682  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():537 Destroy existing keyboard group manager in fso
+02-12 12:45:34.682  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():121 Create keyboard group manager listenable future in fso
+02-12 12:45:34.683  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.maybeDestroyExistingKeyboardGroupManager():537 Destroy existing keyboard group manager in fve
+02-12 12:45:34.683  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension.createKeyboardGroupManagerListenableFuture():121 Create keyboard group manager listenable future in fve
+02-12 12:45:34.683  1524  1524 I KeyboardHeightUtil: KeyboardHeightUtil.calculateMaxKeyboardBodyHeight():46 leave 281 height for app when ime window height:2219, header height:116 and isFullscreenMode:false, so the max keyboard body height is:1822
+02-12 12:45:34.684  1524  1524 I KeyboardModeManager: KeyboardModeManager.onCurrentInputMethodEntryChanged():1400 Reload data for context change
+02-12 12:45:34.685  1524  1524 I GoogleInputMethodService: GoogleInputMethodService.initializeInputMethodServiceData():834 initializeInputMethodServiceData for kek{languageTag=zh-TW, variant=zhuyin, hasLocalizedResources=true, conditionCacheKey=_app_first_start_timestamp=1770813848499_cache_additional_ime_defs_for_condition_change=false_cache_ime_defs_for_condition_change=false_deprecate_long_press_space_for_ime_picker=false_device=phone_device_size=default_enable_access_points_in_password_number=false_enable_chinese_inline_composing_shape_based=true_enable_chinese_inline_composing_zh_tw=true_enable_flick_symbols=true_enable_more_candidates_view_for_multilingual=false_enable_number_row=false_enable_preemptive_decode=true_enable_premium_exp_tablet_layout_change=false_enable_secondary_digits=true_enable_secondary_symbols=false_enable_voice_in_chinese=true_expressions=normal_four_or_more_letter_rows=false_keyboard_mode=normal_language=zh-TW_layout_9key_split=false_orientation=portrait_physical_keyboard=qwerty_pref_enable_chinese_inline_composing_tw=false_rtl_layout=false_show_secondary_digits=true_show_suggestions=true_split_with_duplicate_keys=true_variant=zhuyin_zhuyin_use_staggered_layout=false, imeDef.stringId=ime_zh_tw_zhuyin, imeDef.className=com.google.android.apps.inputmethod.libs.chinese.ime.AsyncChineseProcessorBasedIme, imeDef.languageTag=zh-XD}
+02-12 12:45:34.685  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:34.685  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.685  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.685  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.685  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:34.686   776  2005 D FileUtils: Rounded bytes from 2067259392 to 4000000000
+02-12 12:45:34.687  1524  1524 I KeyboardThemeProvider: KeyboardThemeProvider.applyKeyboardTheme():27 Apply keyboard theme: theme_!gsf_!pgsans_!pgsf_!use_system_font_BORDER=true_FLAVOR_DPI=XXHDPI_KEYBOARD_WIDTH_CATEGORY=NORMAL_LIGHT_THEME=true_PHYSICAL_DIAGONAL=6.0111027_SCREEN_SHORTEST_WIDTH=411_SCREEN_SHORTEST_WIDTH_NO_SCALE=411_bottom4dp_enable_google_fonts_icons=true_enable_popup_on_keypress=true_keyboard_redesign_google_sans=true_noshadow_overlay_builtin_dynamic_color_light_base.binarypb:gm3-light-fffaf8ff-ff475d92-6dac7c28fa7faa76f8370bbfdbc77981_silkpopup_unify_function_key_color=true
+02-12 12:45:34.689  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:34.692  1524  7189 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():86 parseKeyboardGroupDef() 2132214032 -> 0_resource_name_obfuscated : WaitTime = 8 ms : RunTime = 1 ms
+02-12 12:45:34.693  1524  7195 I KeyboardGroupDefParser: KeyboardGroupDefParser.parseKeyboardGroupDef():86 parseKeyboardGroupDef() 2132214028 -> 0_resource_name_obfuscated : WaitTime = 9 ms : RunTime = 0 ms
+02-12 12:45:34.696  1524  1524 I AndroidIME: InputBundleManager.loadActiveInputBundleId():483 loadActiveInputBundleId: und-Latn-x-password-ascii, password_ascii
+02-12 12:45:34.696  1524  1524 W NotificationCenter: NotificationCenter$NotificationQueue.notifyPendingNotificationsOnExecutor():877 Heavy notify work detected on UI thread: [kig->jjs] takes 336ms
+02-12 12:45:34.698  1524  1524 I Choreographer: Skipped 31 frames!  The application may be doing too much work on its main thread.
+02-12 12:45:34.699  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:34.702  1524  1524 I HandwritingSuperpacks: HandwritingSuperpacks.register():273 register(): version '86', url 'https://dl.google.com/handwriting/models/handwriting_release.superpack_manifest.20231127.json' [ONLINE]
+02-12 12:45:34.704  1524  1524 I HandwritingOfflineSuperpacks: HandwritingOfflineSuperpacks.syncInternal():80 no bundled lm for handwriting.
+02-12 12:45:34.704  1524  1524 I DictionarySuperpacksManager: DictionarySuperpacksManager$1.onEnabledInputMethodEntriesChanged():65 onEnabledInputMethodEntriesChanged
+02-12 12:45:34.705  1524  1524 I SuperpacksManagerBase: SuperpacksManagerBase.registerSuperpackManifest():117 registerSuperpackManifest()
+02-12 12:45:34.705  1524  1524 I SuperpacksManagerBase: SuperpacksManagerBase.getMetadataUriAndVersion():278 getMetadataUriAndVersion() :  2025082201 : https://www.gstatic.com/android/keyboard/hmmpack/2024120903/metadata_2024120903.json
+02-12 12:45:34.707  1524  1524 I PKIndicatorController: PKIndicatorController$3.maybeShowLanguageSwitchIndicator():137 Entry changed. Showing language indicator.
+02-12 12:45:34.710  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.710  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface lockscreen with targets# 0 (types=[])
+02-12 12:45:34.714  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.715  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:34.715  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:34.717  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$4.onSetCurrentInputMethodSubtype():192 zh_TW
+02-12 12:45:34.718  1524  1524 I SystemSubtypesReportModule: SystemSubtypesReportModule$4.onSetCurrentInputMethodSubtype():204 Subtype zh_TW was caused by entry
+02-12 12:45:34.719  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():555 KeyboardGroupManager destroyed in fyg.
+02-12 12:45:34.719  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():555 KeyboardGroupManager destroyed in fso.
+02-12 12:45:34.719  1524  1524 I AbstractOpenableExtension: AbstractOpenableExtension$3.onSuccess():555 KeyboardGroupManager destroyed in fve.
+02-12 12:45:34.732  7341  7341 I System.out: === MainActivity Safe Insets Test ===
+02-12 12:45:34.733  7341  7341 I System.out: Status bar height: 142
+02-12 12:45:34.733  7341  7341 I System.out: Navigation bar height: 63
+02-12 12:45:34.733  7341  7341 I System.out: Top bar padding: top=173
+02-12 12:45:34.733  7341  7341 I System.out: Bottom actions padding: bottom=105
+02-12 12:45:34.748   776  2005 V GrammaticalInflectionUtils: AttributionSource: android.content.AttributionSource@6dfec80e does not have READ_SYSTEM_GRAMMATICAL_GENDER permission.
+02-12 12:45:34.757  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_emoticon_content_description is finished with files # mxp@388e70e2
+02-12 12:45:34.760  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __KLP_manifest_delight__en-840 is finished with files # mxp@1da44f1e
+02-12 12:45:34.761  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_bundled_delight is finished with files # mxp@58d99e11
+02-12 12:45:34.762  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_handwriting_recognition is finished with files # mxp@1c734294
+02-12 12:45:34.762  1524  7441 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:34.763  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_emoticon_content_description scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.763  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_emoticon_content_description
+02-12 12:45:34.764  1524  7441 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:34.765  1524  7189 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for emoticon_content_description
+02-12 12:45:34.767  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __KLP_manifest_delight__en-840 scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.767  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __KLP_manifest_delight__en-840
+02-12 12:45:34.778  1524  7114 I HandwritingOnlineSuperpacks: HandwritingOnlineSuperpacks.syncInternal():168 syncPackMapping()
+02-12 12:45:34.778  1524  7114 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for handwriting_recognition
+02-12 12:45:34.789  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: PAUSED
+02-12 12:45:34.789  7341  7341 V ActivityScenario: Update currentActivityStage to PAUSED, currentActivity=com.hank.clawlive.MainActivity@ad6a872
+02-12 12:45:34.794  7391  7408 I EGL_emulation: Opening libGLESv1_CM_emulation.so
+02-12 12:45:34.794  7391  7408 I EGL_emulation: Opening libGLESv2_emulation.so
+02-12 12:45:34.822   556   556 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+02-12 12:45:34.823  1059  1059 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+02-12 12:45:34.823  1059  1059 W PageIndicator: Total number of pages invalid: 0. Assuming 1 page.
+02-12 12:45:34.841  7391  7408 W HWUI    : Failed to choose config with EGL_SWAP_BEHAVIOR_PRESERVED, retrying without...
+02-12 12:45:34.851  7391  7408 W HWUI    : Failed to initialize 101010-2 format, error = EGL_SUCCESS
+02-12 12:45:34.855   776   817 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:34.855   776   817 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:34.894   776   817 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:34.894   776   817 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:34.895  1524  7114 I ManifestedDataDownloader: ManifestedDataDownloader.checkVersionAndDownload():91 filegroup __KLP_delight__en-840 with version 2025031300 is already downloaded
+02-12 12:45:34.895  1524  7114 I ManifestedDataDownloader: ManifestedDataDownloader.checkVersionAndDownload():91 filegroup __KLP_delight__en-840 with version 2025031300 is already downloaded
+02-12 12:45:34.896  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_emoticon_content_description is finished with files # mxp@388e70e2
+02-12 12:45:34.898  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __KLP_manifest_delight__en-840 is finished with files # mxp@1da44f1e
+02-12 12:45:34.898  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __KLP_manifest_delight__en-840 scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.899  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __KLP_manifest_delight__en-840
+02-12 12:45:34.899  1524  7435 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: emoticon_content_description
+02-12 12:45:34.899  1524  7189 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for emoticon_content_description
+02-12 12:45:34.900  1524  7195 I SuperDelight: SuperDelightManager.syncBundledLanguageModels():773 SuperDelightManager#syncBundledLanguageModels(): Syncing for version 2025021100
+02-12 12:45:34.900  1524  7195 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for bundled_delight
+02-12 12:45:34.901  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_bundled_delight scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.901  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_bundled_delight
+02-12 12:45:34.901  1524  7114 I DelightKLPDownloader: DelightKLPDownloader$2.onSuccess():222 klp en_840 downloaded with version 2025031300
+02-12 12:45:34.901  1524  7442 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_handwriting_recognition scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:34.902  1524  7442 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_handwriting_recognition
+02-12 12:45:34.903  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __KLP_manifest_delight__en-840 is finished with files # mxp@1da44f1e
+02-12 12:45:34.905  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_bundled_delight is finished with files # mxp@58d99e11
+02-12 12:45:34.905  1524  7201 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:34.906  1524  7201 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:34.908  1524  7114 I DelightKLPDownloader: DelightKLPDownloader$2.onSuccess():222 klp en_840 downloaded with version 2025031300
+02-12 12:45:34.912  1524  7442 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_handwriting_recognition is finished with files # mxp@1c734294
+02-12 12:45:34.918  1524  7667 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:34.922  1524  7114 I HandwritingOnlineSuperpacks: HandwritingOnlineSuperpacks.syncInternal():168 syncPackMapping()
+02-12 12:45:34.922  1524  7114 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for handwriting_recognition
+02-12 12:45:34.925  1524  7667 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:34.926  1524  7668 E MDDSuperpacks: MDDSuperpacks.parseManifest():476 cannot find metadata for delight_overrides
+02-12 12:45:34.927  1524  7201 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:34.928  1524  7201 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:34.929  1524  7668 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: bundled_delight
+02-12 12:45:34.933  1524  7668 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():41 BundledSlicing#getSlices() : Locale = [en_US]
+02-12 12:45:34.934  1524  7668 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():67 BundledSlicing#getSlices(): result {slices=[bundled_delight:main_en_us_2024102000_2], last batch=true, sync metadata=false}
+02-12 12:45:34.938  1524  7189 I SuperDelight: SuperDelightManager.syncBundledLanguageModels():773 SuperDelightManager#syncBundledLanguageModels(): Syncing for version 2025021100
+02-12 12:45:34.938  1524  7189 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for bundled_delight
+02-12 12:45:34.943  1524  7201 I MDDSuperpacks: MDDSuperpacks$2.onFailure():281 Sync for bundled_delight cancelled
+02-12 12:45:34.945  1524  7442 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [main_en_us_2024102000_2] got for superpack: bundled_delight
+02-12 12:45:34.946  1524  7114 I ManifestedDataDownloader: ManifestedDataDownloader.checkVersionAndDownload():91 filegroup __KLP_delight__en-840 with version 2025031300 is already downloaded
+02-12 12:45:34.949  1524  7189 I LmManager: LmManager$1.onFailure():87 Bundled delight sync failed
+02-12 12:45:34.949  1524  7189 I LmManager: java.util.concurrent.CancellationException: Task was cancelled.
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcq.r(PG:33)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcq.get(PG:3)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at a.k(PG:2)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at pqu.E(PG:10)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qek.run(PG:88)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qds.execute(PG:1)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcq.h(PG:1)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcq.k(PG:101)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcq.cancel(PG:53)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at dmp.g(PG:37)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at dga.apply(PG:328)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at l$$ExternalSyntheticApiModelOutline0.m(D8$$SyntheticClass:42)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at dmt.x(PG:16)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at dmt.k(PG:14)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at djw.a(PG:504)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcs.e(PG:3)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at qcu.run(PG:38)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at jab.run(PG:51)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1156)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:651)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at java.lang.Thread.run(Thread.java:1119)
+02-12 12:45:34.949  1524  7189 I LmManager: 	at izq.run(PG:8)
+02-12 12:45:34.949  1524  7452 W MDDSuperpacks: MDDSuperpacks.constructPackSet():578 file group is empty
+02-12 12:45:34.950  1524  7195 I SuperDelight: SuperDelightManager$2.onSuccess():635 delight_overrides sync success, adding to data file manager
+02-12 12:45:34.960  1524  7667 I MDDSuperpacks: MDDSuperpacks$2.onFailure():281 Sync for handwriting_recognition cancelled
+02-12 12:45:34.960  1524  7114 I ManifestedDataDownloader: ManifestedDataDownloader.checkVersionAndDownload():91 filegroup __KLP_delight__en-840 with version 2025031300 is already downloaded
+02-12 12:45:34.968  1524  7668 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: emoticon_content_description
+02-12 12:45:34.968  1524  7666 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [] got for superpack: delight_overrides
+02-12 12:45:34.977  1524  7195 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: bundled_delight
+02-12 12:45:34.985  1524  7455 I MDDSuperpacks: MDDSuperpacks$2.onFailure():281 Sync for emoticon_content_description cancelled
+02-12 12:45:34.989  1524  7114 I DelightKLPDownloader: DelightKLPDownloader$2.onSuccess():222 klp en_840 downloaded with version 2025031300
+02-12 12:45:34.992  1524  7114 I DelightKLPDownloader: DelightKLPDownloader$2.onSuccess():222 klp en_840 downloaded with version 2025031300
+02-12 12:45:34.996  1524  7195 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: delight_overrides
+02-12 12:45:34.996  1524  7189 I SuperDelight: SuperDelightManager.syncOverridesLanguageModels():687 SuperDelightManager#syncOverridesLanguageModels(): Superpack delight_overrides not found or negative version provided
+02-12 12:45:34.996  1524  7189 I SuperpacksManagerBase: SuperpacksManagerBase.registerSuperpackManifest():134 registerSuperpackManifest(): current 2025082201, required 2025082201
+02-12 12:45:35.002  1524  7262 E MDDSuperpacks: MDDSuperpacks.parseManifest():476 cannot find metadata for delight_overrides
+02-12 12:45:35.005  1524  7114 I AbstractSyncResultCallback: AbstractSyncResultCallback.onFailure():38 onFailure(): handwriting_recognition.sync cancelled; expected if new request supersedes pending one.
+02-12 12:45:35.006  1524  7669 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.006  1524  7115 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.028  1524  7407 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:35.029  1524  7407 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:35.049  1524  7247 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:35.101  1524  7454 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:35.101  1524  7247 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:35.120  1524  7116 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.121  1524  7407 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.123   556  1159 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+02-12 12:45:35.127  1524  7410 W MDDSuperpacks: MDDSuperpacks.constructPackSet():578 file group is empty
+02-12 12:45:35.127  1524  7248 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [7a635888cb828dfa2fc744b7b9b50f04, c5c37e938eec559132ebd6c6245d763a] got for superpack: emoticon_content_description
+02-12 12:45:35.133  1524  7248 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [] got for superpack: delight_overrides
+02-12 12:45:35.133  1524  7195 I SuperDelight: SuperDelightManager$2.onSuccess():635 delight_overrides sync success, adding to data file manager
+02-12 12:45:35.150  1524  7247 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.164  1524  7407 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:35.164  1524  7407 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:35.168  1524  7665 E MDDSuperpacks: MDDSuperpacks.parseManifest():476 cannot find metadata for delight_overrides
+02-12 12:45:35.178  1524  7667 I DownloadManager: DownloadManager.downloadInternal():412 Download for __SP_MANIFEST_hmmdictionary scheduled with params DownloadParams{allowMetered=true, requireCharging=false, foreground=false, immediately=true, priority=0}
+02-12 12:45:35.178  1524  7667 I DownloadManager: DownloadManager.startDownload():495 start download of __SP_MANIFEST_hmmdictionary
+02-12 12:45:35.179  1524  7667 I DownloadManager: DownloadManager$4.onSuccess():564 download for __SP_MANIFEST_hmmdictionary is finished with files # mxp@5365d94c
+02-12 12:45:35.182  1524  7665 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.217  1524  7407 E MDDSuperpacks: MDDSuperpacks.parseManifest():476 cannot find metadata for delight_overrides
+02-12 12:45:35.251  1524  7196 E MDDSuperpacks: MDDSuperpacks.parseManifest():476 cannot find metadata for delight_overrides
+02-12 12:45:35.294  1524  7453 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [main_en_us_2024102000_2] got for superpack: bundled_delight
+02-12 12:45:35.304  1524  7189 I SuperDelight: SuperDelightManager$2.onSuccess():635 bundled_delight sync success, adding to data file manager
+02-12 12:45:35.305  1524  7189 I DataFileManager: DataFileManager.addDataWithoutNotify():181 data en-US already exists
+02-12 12:45:35.305  1524  7435 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:35.306  1524  7435 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:35.309  1524  7442 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: emoticon_content_description
+02-12 12:45:35.323  1524  7442 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.325  1524  7454 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:35.338  1059  1129 I ndroid.systemui: AssetManager2(0x78c8d32d4bb8) locale list changing from [] to [en-US]
+02-12 12:45:35.394  1524  7666 E MDDSuperpacks: MDDSuperpacks.parseManifest():476 cannot find metadata for delight_overrides
+02-12 12:45:35.396  1524  7442 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [7a635888cb828dfa2fc744b7b9b50f04, c5c37e938eec559132ebd6c6245d763a] got for superpack: emoticon_content_description
+02-12 12:45:35.405  1524  7189 I MDDSuperpacks: MDDSuperpacks.sync():223 sync requested for hmmdictionary
+02-12 12:45:35.412  1524  7116 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition_offline
+02-12 12:45:35.413  1524  7454 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: hmmdictionary
+02-12 12:45:35.423  1059  1129 I ndroid.systemui: AssetManager2(0x78c8d32dc598) locale list changing from [] to [en-US]
+02-12 12:45:35.439   671   756 W IPCThreadState: Sending oneway calls to frozen process.
+02-12 12:45:35.456  1524  7453 W MDDSuperpacks: MDDSuperpacks.constructPackSet():578 file group is empty
+02-12 12:45:35.461   513   530 I RanchuHwc: logCompositionFallbackIfChanged: layer 374 CompositionType fallback from 3 to 1
+02-12 12:45:35.464  1524  7407 I HandwritingSlicingStrategy: HandwritingSlicingStrategy.getSlices():44 getSlices(): handwriting_recognition.86 useForeground=true
+02-12 12:45:35.464  1524  7407 I HandwritingSlicingStrategy: HandwritingSlicingStrategy.getSlices():103 getSlices(): result {slices=[{handwriting_recognition:pack_mapping_v1_lstm_20231127, m:*:*:*, fg}, {handwriting_recognition:transformer_latin_tflite_20231010_zip, m:*:*:*, fg}, {handwriting_recognition:qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, m:*:*:*, fg}, {handwriting_recognition:transformer_latin_conf_tflite_20231010_zip, m:*:*:*, fg}, {handwriting_recognition:transformer_latin_seg_tflite_20231010_zip, m:*:*:*, fg}, {handwriting_recognition:en_us_20230613_compact_fst_zip, m:*:*:*, fg}, {handwriting_recognition:scribe_chinese_20231123_recospec_zip, m:*:*:*, fg}, {handwriting_recognition:scribe_chinese_20231123_tflite_zip, m:*:*:*, fg}, {handwriting_recognition:transformer_chinese_tflite_20231016_zip, m:*:*:*, fg}, {handwriting_recognition:zh_tw_20230706_compact_fst_zip, m:*:*:*, fg}, {handwriting_recognition:transformer_chinese_conf_tflite_20231016_zip, m:*:*:*, fg}, {handwriting_recognition:qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, m:*:*:*, fg}, {handwriting_recognition:transformer_chinese_seg_tflite_20231016_zip, m:*:*:*, fg}, {handwriting_recognition:scribe_latin_20231123_tflite_zip, m:*:*:*, fg}, {handwriting_recognition:scribe_latin_20231123_recospec_zip, m:*:*:*, fg}], last batch=true, sync metadata=false}
+02-12 12:45:35.470  1524  7453 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.484  1524  7666 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [] got for superpack: handwriting_recognition_offline
+02-12 12:45:35.488   556  1250 I BpBinder: onLastStrongRef automatically unlinking death recipients:
+02-12 12:45:35.496  1524  7115 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.497  1524  7196 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.497  1524  7248 I SuperDelight: SuperDelightBundledMetadataParser.addSystemLms():202 system lm dir /system/usr/share/ime/google/d3_lms does not exist or is not readable
+02-12 12:45:35.500  1524  7117 I MDDSuperpacks: MDDSuperpacks$2.onSuccess():274 Sync success for emoticon_content_description with result: {old=[7a635888cb828dfa2fc744b7b9b50f04, c5c37e938eec559132ebd6c6245d763a], new=[7a635888cb828dfa2fc744b7b9b50f04, c5c37e938eec559132ebd6c6245d763a], metadata=false, last batch=true}
+02-12 12:45:35.500   776   814 I ActivityTaskManager: Displayed com.hank.clawlive.test/androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity for user 0: +732ms
+02-12 12:45:35.505  1524  7114 E HandwritingSuperpacksUtil: HandwritingSuperpacksUtil.getPackMappingPackName():40 No pack mapping pack found in []
+02-12 12:45:35.505  1524  7114 I HandwritingSuperpacks: HandwritingSuperpacks.reloadCache():237 updatePackMappingsCache(): pack mapping pack unavailable [OFFLINE]
+02-12 12:45:35.506  1524  7114 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.534  1524  7442 I DictionarySlicingStrategy: DictionarySlicingStrategy.getSlices():79 getSlices(): hmmdictionary.2025082201
+02-12 12:45:35.538  1524  7453 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [zh_TW_2023110702] got for superpack: hmmdictionary
+02-12 12:45:35.539  1524  7248 I SuperDelight: SuperDelightBundledMetadataParser.parse():192 SuperDelightBundledMetadataParser#parse(): manifest parsed with 1 packs
+02-12 12:45:35.539  1524  7247 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.543  1194  1194 D ViewRootImpl: Skipping stats log for color mode
+02-12 12:45:35.549  1524  1542 W putmethod.latin: Suspending all threads took: 6.143ms
+02-12 12:45:35.553  1524  7407 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: bundled_delight
+02-12 12:45:35.561  1524  7442 I DictionarySlicingStrategy: DictionarySlicingStrategy.getSlices():109 getSlices(): result {slices=[hmmdictionary:zh_TW_2023110702], last batch=true, sync metadata=false}
+02-12 12:45:35.570  1194  1194 D StatsLog: LAUNCHER_ONRESUME
+02-12 12:45:35.579  1194  1194 D NexusLauncherModelDelegate: notifySmartspaceEvent: SmartspaceTargetEvent{mSmartspaceTarget=null, mSmartspaceActionId='null', mEventType=6}
+02-12 12:45:35.618  1194  1194 D BaseDepthController: setSurface:
+02-12 12:45:35.618  1194  1194 D BaseDepthController: 	mWaitingOnSurfaceValidity: false
+02-12 12:45:35.618  1194  1194 D BaseDepthController: 	mBaseSurface: Surface(name=com.google.android.apps.nexuslauncher/com.google.android.apps.nexuslauncher.NexusLauncherActivity)/@0x4cd22b4
+02-12 12:45:35.621  1653  1847 I AiAiEcho: Predicting[0]:  [CONTEXT sampling_count=5 ]
+02-12 12:45:35.621  1653  1847 I AiAiEcho: EchoTargets:
+02-12 12:45:35.621  1653  1847 I AiAiEcho: Filtered by AiAi flag check:
+02-12 12:45:35.621  1653  1847 I AiAiEcho: [CONTEXT ratelimit_period="10 SECONDS" ]
+02-12 12:45:35.622  1653  1847 I AiAiEcho: #remoteViewsTwiddler: feature disabled.
+02-12 12:45:35.643  1524  7453 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: hmmdictionary
+02-12 12:45:35.649  1653  1847 I AiAiEcho: #postPredictionTargets: Sending updates to UISurface home with targets# 0 (types=[])
+02-12 12:45:35.678  1524  7114 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.682  1524  7115 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.689  1524  7247 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():41 BundledSlicing#getSlices() : Locale = [en_US, zh_XD]
+02-12 12:45:35.689  1524  7247 I SuperDelight: SuperDelightBundledSlicingStrategy.getSlices():67 BundledSlicing#getSlices(): result {slices=[bundled_delight:main_en_us_2024102000_2], last batch=true, sync metadata=false}
+02-12 12:45:35.694  1524  7407 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: bundled_delight
+02-12 12:45:35.706  1524  7407 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [zh_TW_2023110702] got for superpack: hmmdictionary
+02-12 12:45:35.715  1524  7407 I MDDSuperpacks: MDDSuperpacks$2.onSuccess():274 Sync success for hmmdictionary with result: {old=[zh_TW_2023110702], new=[zh_TW_2023110702], metadata=false, last batch=true}
+02-12 12:45:35.718  1524  7114 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.729  1524  7195 I SuperpacksManagerBase: SuperpacksManagerBase$2.onSyncSuccess():192 sync(): complete {old=[zh_TW_2023110702], new=[zh_TW_2023110702], metadata=false, last batch=true}
+02-12 12:45:35.730  1524  7195 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: hmmdictionary
+02-12 12:45:35.738  1524  7453 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.739  1524  7666 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [main_en_us_2024102000_2] got for superpack: bundled_delight
+02-12 12:45:35.746  1194  1260 D QuickstepModelDelegate: notifyAppTargetEvent action=1 launchLocation=workspace/0/[-1,-1]/[1,1]
+02-12 12:45:35.750  1524  7116 I HandwritingOnlineSuperpacks: HandwritingOnlineSuperpacks.syncInternal():187 syncInternal(): syncing packs
+02-12 12:45:35.751  1524  7116 I HandwritingOnlineSuperpacks: HandwritingOnlineSuperpacks$2.onSyncSuccess():225 syncInternal(): complete {old=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], new=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], metadata=false, last batch=true}
+02-12 12:45:35.752  1524  7116 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: handwriting_recognition
+02-12 12:45:35.766  1524  7454 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.833  1194  1194 I NotificationListener: Handling notification state refresh for com.android.systemui#0
+02-12 12:45:35.833  1194  1194 I NotificationListener: Handling notification state refresh for android#0
+02-12 12:45:35.843  1194  1194 D SsBaseTemplateCard: No text view can be set up
+02-12 12:45:35.843  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:35.843  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:35.843  1194  1194 D SsBaseTemplateCard: Passed-in item info is null
+02-12 12:45:35.843  1194  1194 I SsBaseTemplateCard: Secondary card pane is null
+02-12 12:45:35.861  1524  7248 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.919  1524  7407 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.925  1524  7410 I MDDSuperpacks: MDDSuperpacks$2.onSuccess():274 Sync success for handwriting_recognition with result: {old=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], new=[en_us_20230613_compact_fst_zip, pack_mapping_v1_lstm_20231127, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip, scribe_chinese_20231123_recospec_zip, scribe_chinese_20231123_tflite_zip, scribe_latin_20231123_recospec_zip, scribe_latin_20231123_tflite_zip, transformer_chinese_conf_tflite_20231016_zip, transformer_chinese_seg_tflite_20231016_zip, transformer_chinese_tflite_20231016_zip, transformer_latin_conf_tflite_20231010_zip, transformer_latin_seg_tflite_20231010_zip, transformer_latin_tflite_20231010_zip, zh_tw_20230706_compact_fst_zip], metadata=false, last batch=true}
+02-12 12:45:35.930  1194  1209 I s.nexuslauncher: NativeAlloc concurrent mark compact GC freed 761KB AllocSpace bytes, 8(416KB) LOS objects, 49% free, 7881KB/15MB, paused 2.120ms,1.394ms total 470.498ms
+02-12 12:45:35.940  1194  1211 W System  : A resource failed to call release.
+02-12 12:45:35.940  1194  1211 W System  : A resource failed to call release.
+02-12 12:45:35.976  1524  7196 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [main_en_us_2024102000_2] got for superpack: bundled_delight
+02-12 12:45:35.986  1524  7407 I MDDSuperpacks: MDDSuperpacks$3.onSuccess():558 packs [transformer_latin_tflite_20231010_zip, transformer_chinese_tflite_20231016_zip, zh_tw_20230706_compact_fst_zip, qrnn_en_us_reco_20231010_fst_20230613_recospec_zip, pack_mapping_v1_lstm_20231127, transformer_latin_seg_tflite_20231010_zip, transformer_chinese_conf_tflite_20231016_zip, scribe_latin_20231123_recospec_zip, en_us_20230613_compact_fst_zip, scribe_chinese_20231123_tflite_zip, transformer_chinese_seg_tflite_20231016_zip, scribe_latin_20231123_tflite_zip, transformer_latin_conf_tflite_20231010_zip, scribe_chinese_20231123_recospec_zip, qrnn_zh_tw_reco_20231016_fst_20230706_recospec_zip] got for superpack: handwriting_recognition
+02-12 12:45:35.999  1524  7407 I LmManager: LmManager$1.onSuccess():82 Bundled delight sync success
+02-12 12:45:36.002  1524  7248 I MDDSuperpacks: MDDSuperpacks$2.onSuccess():274 Sync success for bundled_delight with result: {old=[main_en_us_2024102000_2], new=[main_en_us_2024102000_2], metadata=false, last batch=true}
+02-12 12:45:36.016  1524  7189 I MDDSuperpacks: MDDSuperpacks.getPacks():548 getting packs for superpack: bundled_delight
+02-12 12:45:36.020  7341  7341 D VRI[MainActivity]: visibilityChanged oldVisibility=true newVisibility=false
+02-12 12:45:36.083  1194  1194 D StateManager: createAtomicAnimation - fromState: Background, toState: Normal, partial trace:
+02-12 12:45:36.083  1194  1194 D StateManager: 	at com.android.quickstep.util.WorkspaceRevealAnim.prepareToAnimate(go/retraceme 72a59688580715d19f0e415c69e80376c2f062d1648c80db6730905005a27c20:22)
+02-12 12:45:36.083  1194  1194 D StateManager: 	at com.android.quickstep.util.WorkspaceRevealAnim.<init>(go/retraceme 72a59688580715d19f0e415c69e80376c2f062d1648c80db6730905005a27c20:11)
+02-12 12:45:36.083  1194  1194 D StateManager: 	at com.android.launcher3.QuickstepTransitionManager.createWallpaperOpenAnimations(go/retraceme 72a59688580715d19f0e415c69e80376c2f062d1648c80db6730905005a27c20:339)
+02-12 12:45:36.096  1194  1194 D b/311077782: LauncherAnimationRunner.setAnimation
+02-12 12:45:36.106  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d329cad8) locale list changing from [zh-TW] to [en-US]
+02-12 12:45:36.106  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d329a558) locale list changing from [zh-TW] to [en-US]
+02-12 12:45:36.108  7341  7341 I m.hank.clawlive: AssetManager2(0x78c8d32995b8) locale list changing from [zh-TW] to [en-US]
+02-12 12:45:36.127  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: STOPPED
+02-12 12:45:36.128  7341  7341 V ActivityScenario: Update currentActivityStage to STOPPED, currentActivity=com.hank.clawlive.MainActivity@ad6a872
+02-12 12:45:36.154  7341  7341 D LifecycleMonitor: Lifecycle status change: com.hank.clawlive.MainActivity@ad6a872 in: DESTROYED
+02-12 12:45:36.154  7341  7341 V ActivityScenario: Update currentActivityStage to DESTROYED, currentActivity=null
+02-12 12:45:36.155  7341  7341 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=android.view.ViewRootImpl$$ExternalSyntheticLambda13@7ceae8c
+02-12 12:45:36.155  7341  7358 I TestRunner: finished: testSafeInsetsAppliedCorrectly(com.hank.clawlive.MainActivityUiTest)

@@ -4,7 +4,7 @@
             "outputFile": "com.hank.clawlive.app-mergeDebugResources-2:/values-v16/values-v16.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\a91aedfe5d279c9bbeeaa4cceb81a70f\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
+                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\8.13\\transforms\\e5d88ec6e672b899310a85e5c63138d9\\transformed\\appcompat-1.6.1\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
@@ -23,7 +23,7 @@
                     }
                 },
                 {
-                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\transforms-4\\904644a60c5484bdd2efb1e69ad3c0fa\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
+                    "source": "C:\\Users\\z004rx2h\\.gradle\\caches\\8.13\\transforms\\b190653f42c7ee214f6a70ff64cbe4e8\\transformed\\core-1.12.0\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",
