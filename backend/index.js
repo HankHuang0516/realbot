@@ -904,10 +904,7 @@ app.post('/api/client/speak', async (req, res) => {
                 console.warn(`[Push] ✗ Failed to push to Device ${deviceId} Entity ${eId}: ${pushResult.reason}`);
             }
         } else if (entity.isBound) {
-            // No webhook registered - notify device user
-            entity.message = `[SYSTEM:WEBHOOK_ERROR]`;
-            entity.lastUpdated = Date.now();
-            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${eId} - set WEBHOOK_ERROR`);
+            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${eId} - client will show dialog`);
         }
 
         return {
@@ -1013,9 +1010,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
             messageObj.delivered = true;
         }
     } else if (toEntity.isBound) {
-        toEntity.message = `[SYSTEM:WEBHOOK_ERROR]`;
-        toEntity.lastUpdated = Date.now();
-        console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - set WEBHOOK_ERROR`);
+        console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
     }
 
     res.json({
@@ -1120,9 +1115,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 messageObj.delivered = true;
             }
         } else if (toEntity.isBound) {
-            toEntity.message = `[SYSTEM:WEBHOOK_ERROR]`;
-            toEntity.lastUpdated = Date.now();
-            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - set WEBHOOK_ERROR`);
+            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
         }
 
         return {

@@ -106,7 +106,9 @@
     <string name="entities_label">entities</string>
 
     <!-- System Messages -->
+    <string name="webhook_error_title">Push Notification Failed</string>
     <string name="webhook_error_message">Please paste the following message to OpenClaw: \"Webhook binding error or POST /api/bot/register was not called. Please re-read the \'public webhook URL\' (gateway config) and re-read the \'gateway token\', then immediately call /api/bot/register with the deviceId/entityId/botSecret along with webhook_url and gateway token to register push notifications.\"</string>
+    <string name="message_copied">Message copied</string>
 
     <!-- Feedback -->
     <string name="feedback">Feedback</string>

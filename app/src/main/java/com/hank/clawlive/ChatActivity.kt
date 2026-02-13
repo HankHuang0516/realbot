@@ -373,15 +373,11 @@ class ChatActivity : AppCompatActivity() {
                 val totalCount = response.targets.size
 
                 if (pushedCount == 0 && totalCount > 0) {
-                    // No entities received push notification
+                    // No entities received push notification - show alert dialog
                     val pollingEntities = response.targets.filter { it.mode == "polling" }
                     if (pollingEntities.isNotEmpty()) {
                         Timber.w("Push notification unavailable for ${pollingEntities.size} entity(s), using polling mode")
-                        Toast.makeText(
-                            this@ChatActivity,
-                            "Message queued (entities will receive via polling)",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showWebhookErrorDialog()
                     }
                 } else if (pushedCount < totalCount) {
                     // Some but not all entities received push
@@ -395,6 +391,20 @@ class ChatActivity : AppCompatActivity() {
                 Toast.makeText(this@ChatActivity, "Send failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun showWebhookErrorDialog() {
+        val message = getString(R.string.webhook_error_message)
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.webhook_error_title))
+            .setMessage(message)
+            .setPositiveButton(getString(R.string.copy)) { _, _ ->
+                val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("webhook_error", message))
+                Toast.makeText(this, getString(R.string.message_copied), Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
     }
 
     private fun showUpgradeDialog() {

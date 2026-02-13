@@ -1,9 +1,12 @@
 package com.hank.clawlive.ui.chat
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -64,6 +67,12 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             tvMessage.text = message.text
             tvTime.text = formatTime(message.timestamp)
 
+            // Long-press to copy message text
+            itemView.setOnLongClickListener {
+                copyToClipboard(it, message.text)
+                true
+            }
+
             // Show target entities for broadcast messages
             if (message.messageType == MessageType.USER_BROADCAST) {
                 val targets = message.getTargetEntityIdList()
@@ -94,6 +103,12 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         fun bind(message: ChatMessage) {
             tvMessage.text = message.text
             tvTime.text = formatTime(message.timestamp)
+
+            // Long-press to copy message text
+            itemView.setOnLongClickListener {
+                copyToClipboard(it, message.text)
+                true
+            }
 
             // Entity name and avatar (synced from user's chosen avatar)
             val entityId = message.fromEntityId ?: 0
@@ -132,4 +147,14 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
 private fun formatTime(timestamp: Long): String {
     val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
+}
+
+/**
+ * Copy text to clipboard and show toast
+ */
+private fun copyToClipboard(view: View, text: String) {
+    val context = view.context
+    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.setPrimaryClip(ClipData.newPlainText("chat_message", text))
+    Toast.makeText(context, context.getString(R.string.message_copied), Toast.LENGTH_SHORT).show()
 }

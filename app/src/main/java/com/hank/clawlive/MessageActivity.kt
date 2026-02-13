@@ -164,19 +164,16 @@ class MessageActivity : AppCompatActivity() {
             return
         }
 
-        // Fire and Forget: Don't wait for server response
-        // User will see the result on the wallpaper through status polling
-
         // Increment usage immediately (optimistic)
         usageManager.incrementUsage()
 
         // Save to preferences (for widget history - legacy)
         chatPrefs.saveLastMessage(text, selectedIds)
 
-        // Close immediately so user can see wallpaper response
-        finish()
+        // Disable send button while waiting
+        btnSend.isEnabled = false
 
-        // Send message in background (fire and forget)
+        // Send message and check push status before closing
         lifecycleScope.launch {
             // Save to database FIRST (optimistic - before API call)
             val messageId = chatRepository.saveOutgoingMessage(
@@ -207,14 +204,45 @@ class MessageActivity : AppCompatActivity() {
                 val pushedCount = response.targets.count { it.pushed }
                 Timber.d("Message sent to device ${deviceManager.deviceId} entities $selectedIds (push: $pushedCount/${response.targets.size})")
 
-                // Update widget in background
+                // Update widget
                 ChatWidgetProvider.updateWidgets(this@MessageActivity)
+
+                // Check push notification status
+                val totalCount = response.targets.size
+                if (pushedCount == 0 && totalCount > 0) {
+                    val pollingEntities = response.targets.filter { it.mode == "polling" }
+                    if (pollingEntities.isNotEmpty()) {
+                        Timber.w("Push notification unavailable for ${pollingEntities.size} entity(s)")
+                        showWebhookErrorDialog()
+                        return@launch
+                    }
+                }
+
+                finish()
             } catch (e: Exception) {
-                // Log error but don't show to user - they already closed the dialog
-                // Message is still in database (isSynced = false)
-                Timber.e(e, "Background message send failed (user already moved on)")
+                Timber.e(e, "Message send failed")
+                Toast.makeText(this@MessageActivity, getString(R.string.failed_format, e.message), Toast.LENGTH_SHORT).show()
+                btnSend.isEnabled = true
             }
         }
+    }
+
+    private fun showWebhookErrorDialog() {
+        val message = getString(R.string.webhook_error_message)
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.webhook_error_title))
+            .setMessage(message)
+            .setPositiveButton(getString(R.string.copy)) { _, _ ->
+                val clipboard = getSystemService(android.content.ClipboardManager::class.java)
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("webhook_error", message))
+                Toast.makeText(this, getString(R.string.message_copied), Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     /**
