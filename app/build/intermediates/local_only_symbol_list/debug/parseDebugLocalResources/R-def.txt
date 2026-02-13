@@ -76,7 +76,6 @@ id chipGroupFilter
 id chipGroupLanguage
 id chipGroupTargets
 id chipLangEn
-id chipLangSystem
 id chipLangZh
 id chipMyMessages
 id chipTarget0

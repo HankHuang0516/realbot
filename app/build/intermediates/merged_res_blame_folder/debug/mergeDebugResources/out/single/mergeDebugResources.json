@@ -12,12 +12,12 @@
         "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\layout\\layout_header_minimal.xml"
     },
     {
-        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_bg_subscribe_button.xml.flat",
-        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\bg_subscribe_button.xml"
-    },
-    {
         "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_ic_premium.xml.flat",
         "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\ic_premium.xml"
+    },
+    {
+        "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\drawable_bg_subscribe_button.xml.flat",
+        "source": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-main-6:\\drawable\\bg_subscribe_button.xml"
     },
     {
         "merged": "C:\\Users\\z004rx2h\\.gradle\\daemon\\8.13\\com.hank.clawlive.app-debug-4:\\layout_activity_privacy_policy.xml.flat",
