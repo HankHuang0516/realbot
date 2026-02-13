@@ -1,6 +1,7 @@
 package com.hank.clawlive.data.repository
 
 import android.content.Context
+import com.hank.clawlive.R
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.model.AgentStatus
@@ -71,7 +72,8 @@ class StateRepository(
                 // Process entity messages for chat history (with deduplication)
                 filteredEntities.forEach { entity ->
                     try {
-                        chatRepository.processEntityMessage(entity)
+                        val processedEntity = translateSystemMessage(entity)
+                        chatRepository.processEntityMessage(processedEntity)
                     } catch (e: Exception) {
                         Timber.e(e, "Error processing entity message for chat history")
                     }
@@ -124,20 +126,19 @@ class StateRepository(
     }
 
     /**
-     * Report real device battery level to backend.
-     * This replaces the simulated battery decay on the server.
+     * Translate system marker messages to localized user-facing text.
+     * Backend sends markers like [SYSTEM:WEBHOOK_ERROR] which need to be
+     * converted to the device's locale language.
      */
-    suspend fun updateBatteryLevel(batteryLevel: Int) {
-        try {
-            val body = mapOf(
-                "deviceId" to deviceManager.deviceId,
-                "deviceSecret" to deviceManager.deviceSecret,
-                "batteryLevel" to batteryLevel
-            )
-            api.updateBatteryLevel(body)
-            Timber.d("Battery level reported: $batteryLevel%")
-        } catch (e: Exception) {
-            Timber.e(e, "Error reporting battery level")
+    private fun translateSystemMessage(entity: EntityStatus): EntityStatus {
+        if (!entity.message.startsWith("[SYSTEM:")) return entity
+
+        val localizedMessage = when (entity.message) {
+            "[SYSTEM:WEBHOOK_ERROR]" -> context.getString(R.string.webhook_error_message)
+            else -> entity.message
         }
+
+        return entity.copy(message = localizedMessage)
     }
+
 }

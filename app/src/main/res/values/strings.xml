@@ -105,6 +105,9 @@
     <string name="entity_count_format">%1$d/%2$d entities</string>
     <string name="entities_label">entities</string>
 
+    <!-- System Messages -->
+    <string name="webhook_error_message">Please paste the following message to OpenClaw: \"Webhook binding error. Please re-read the \'public webhook URL\' (gateway config) and re-read the \'gateway token\', then immediately call /api/bot/register with the deviceId/entityId/botSecret along with webhook_url and gateway token to re-register push notifications.\"</string>
+
     <!-- Feedback -->
     <string name="feedback">Feedback</string>
     <string name="feedback_hint">Tell us what you think…</string>

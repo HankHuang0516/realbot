@@ -266,10 +266,7 @@ setInterval(() => {
             const entity = device.entities[i];
             if (!entity || !entity.isBound) continue;
 
-            // 1. Battery Decay
-            if (entity.batteryLevel > 0) entity.batteryLevel -= 1;
-
-            // 2. Random State Change (Idle vs Sleep) if no updates for 20s
+            // Random State Change (Idle vs Sleep) if no updates for 20s
             if (now - entity.lastUpdated > 20000) {
                 if (Math.random() > 0.7) {
                     entity.state = "SLEEPING";
@@ -419,58 +416,9 @@ app.post('/api/device/status', (req, res) => {
         state: entity.state,
         message: entity.message,
         parts: entity.parts,
-        batteryLevel: entity.batteryLevel,
         lastUpdated: entity.lastUpdated,
         isBound: entity.isBound,
         versionInfo: getVersionInfo(appVersion || entity.appVersion)
-    });
-});
-
-/**
- * POST /api/device/battery
- * Android app reports real device battery level.
- * Body: { deviceId, deviceSecret, batteryLevel }
- */
-app.post('/api/device/battery', (req, res) => {
-    const { deviceId, deviceSecret, batteryLevel } = req.body;
-
-    if (!deviceId || !deviceSecret) {
-        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
-    }
-
-    const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, message: "Device not found" });
-    }
-
-    // Verify device secret
-    if (device.deviceSecret !== deviceSecret) {
-        return res.status(403).json({ success: false, message: "Unauthorized" });
-    }
-
-    // Validate battery level
-    const level = parseInt(batteryLevel);
-    if (isNaN(level) || level < 0 || level > 100) {
-        return res.status(400).json({ success: false, message: "batteryLevel must be 0-100" });
-    }
-
-    // Update battery level for ALL bound entities on this device
-    let updatedCount = 0;
-    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
-        const entity = device.entities[i];
-        if (entity && entity.isBound) {
-            entity.batteryLevel = level;
-            updatedCount++;
-        }
-    }
-
-    console.log(`[Battery] Device ${deviceId}: ${level}% (updated ${updatedCount} entities)`);
-
-    res.json({
-        success: true,
-        deviceId: deviceId,
-        batteryLevel: level,
-        entitiesUpdated: updatedCount
     });
 });
 
@@ -581,7 +529,6 @@ app.get('/api/entities', (req, res) => {
                     state: entity.state,
                     message: entity.message,
                     parts: entity.parts,
-                    batteryLevel: entity.batteryLevel,
                     lastUpdated: entity.lastUpdated,
                     isBound: true  // Always true since we only return bound entities
                 });
@@ -635,7 +582,6 @@ app.get('/api/status', (req, res) => {
         state: entity.state,
         message: entity.message,
         parts: entity.parts,
-        batteryLevel: entity.batteryLevel,
         lastUpdated: entity.lastUpdated,
         isBound: entity.isBound,
         versionInfo: getVersionInfo(appVersion || entity.appVersion)
@@ -700,7 +646,6 @@ app.post('/api/transform', (req, res) => {
     if (state) entity.state = state;
     if (message !== undefined) entity.message = message;
     if (parts) entity.parts = { ...entity.parts, ...parts };
-    if (entity.batteryLevel < 10) entity.batteryLevel = 100;
 
     entity.lastUpdated = Date.now();
 
@@ -1416,11 +1361,23 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             const errorText = await response.text().catch(() => '');
             console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push failed with status ${response.status}`);
             console.error(`[Push] Error response: ${errorText}`);
+
+            // Notify device about webhook failure via entity message
+            entity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+            entity.lastUpdated = Date.now();
+            console.log(`[Push] Set WEBHOOK_ERROR system message for Device ${deviceId} Entity ${entity.entityId}`);
+
             return { pushed: false, reason: `http_${response.status}`, error: errorText };
         }
     } catch (err) {
         console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push error:`, err.message);
         console.error(`[Push] Full error:`, err);
+
+        // Notify device about webhook failure via entity message
+        entity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+        entity.lastUpdated = Date.now();
+        console.log(`[Push] Set WEBHOOK_ERROR system message for Device ${deviceId} Entity ${entity.entityId}`);
+
         return { pushed: false, reason: err.message };
     }
 }

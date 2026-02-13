@@ -126,9 +126,9 @@ async function saveDeviceData(deviceId, deviceData) {
                 await client.query(
                     `INSERT INTO entities (
                         device_id, entity_id, bot_secret, is_bound, name,
-                        character, state, message, parts, battery_level,
+                        character, state, message, parts,
                         last_updated, message_queue, webhook, app_version
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
                     ON CONFLICT (device_id, entity_id)
                     DO UPDATE SET
                         bot_secret = $3,
@@ -138,11 +138,10 @@ async function saveDeviceData(deviceId, deviceData) {
                         state = $7,
                         message = $8,
                         parts = $9,
-                        battery_level = $10,
-                        last_updated = $11,
-                        message_queue = $12,
-                        webhook = $13,
-                        app_version = $14`,
+                        last_updated = $10,
+                        message_queue = $11,
+                        webhook = $12,
+                        app_version = $13`,
                     [
                         deviceId,
                         i,
@@ -153,7 +152,6 @@ async function saveDeviceData(deviceId, deviceData) {
                         entity.state,
                         entity.message,
                         JSON.stringify(entity.parts),
-                        entity.batteryLevel,
                         entity.lastUpdated,
                         JSON.stringify(entity.messageQueue || []),
                         entity.webhook ? JSON.stringify(entity.webhook) : null,
@@ -250,7 +248,6 @@ async function loadAllDevices() {
                 state: row.state,
                 message: row.message,
                 parts: typeof row.parts === 'string' ? JSON.parse(row.parts) : row.parts,
-                batteryLevel: row.battery_level,
                 lastUpdated: parseInt(row.last_updated),
                 messageQueue: typeof row.message_queue === 'string'
                     ? JSON.parse(row.message_queue)
