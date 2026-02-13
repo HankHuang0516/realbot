@@ -222,8 +222,20 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateEntityCount() {
-        val registeredCount = layoutPrefs.getRegisteredEntityIds().size
-        tvEntityCount.text = "$registeredCount/4"
+        val maxEntities = if (usageManager.isPremium) 8 else 4
+        // Show local count first, then update from API
+        val localCount = layoutPrefs.getRegisteredEntityIds().size
+        tvEntityCount.text = "$localCount/$maxEntities"
+
+        lifecycleScope.launch {
+            try {
+                val response = NetworkModule.api.getAllEntities(deviceId = deviceManager.deviceId)
+                val boundCount = response.entities.size
+                tvEntityCount.text = "$boundCount/$maxEntities"
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to fetch entity count from API")
+            }
+        }
     }
 
     private fun showFeedbackDialog() {
