@@ -108,6 +108,7 @@ class SettingsActivity : AppCompatActivity() {
         tvUsageCount = findViewById(R.id.tvUsageCount)
         progressUsage = findViewById(R.id.progressUsage)
         btnSubscribe = findViewById(R.id.btnSubscribe)
+        chipGroupLanguage = findViewById(R.id.chipGroupLanguage)
         chipLangEn = findViewById(R.id.chipLangEn)
         chipLangZh = findViewById(R.id.chipLangZh)
         btnBack = findViewById(R.id.btnBack)
