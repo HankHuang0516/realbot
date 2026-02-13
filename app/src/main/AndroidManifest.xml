@@ -69,6 +69,12 @@
             android:parentActivityName=".MainActivity" />
 
         <activity
+            android:name=".PrivacyPolicyActivity"
+            android:exported="false"
+            android:label="@string/privacy_policy_title"
+            android:parentActivityName=".SettingsActivity" />
+
+        <activity
             android:name=".WallpaperPreviewActivity"
             android:exported="false"
             android:label="Wallpaper Preview"
@@ -79,6 +85,7 @@
             android:exported="false"
             android:label="@string/chat_history"
             android:theme="@style/Theme.ClawLiveCompanion.FloatingChat"
+            android:windowSoftInputMode="adjustResize"
             android:parentActivityName=".MainActivity"
             android:excludeFromRecents="true" />
 

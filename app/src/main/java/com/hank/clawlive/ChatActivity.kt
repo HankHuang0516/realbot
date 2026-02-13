@@ -289,7 +289,13 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
-        chatAdapter.submitList(filtered)
+        val previousSize = chatAdapter.currentList.size
+        chatAdapter.submitList(filtered) {
+            // Scroll to bottom when new messages arrive
+            if (filtered.size > previousSize && filtered.isNotEmpty()) {
+                recyclerChat.scrollToPosition(filtered.size - 1)
+            }
+        }
 
         // Show/hide empty state
         if (filtered.isEmpty()) {

@@ -48,6 +48,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var progressUsage: ProgressBar
     private lateinit var btnSubscribe: MaterialButton
     private lateinit var btnFeedback: MaterialButton
+    private lateinit var btnPrivacyPolicy: MaterialButton
     private lateinit var chipGroupLanguage: ChipGroup
     private lateinit var chipLangSystem: Chip
     private lateinit var chipLangEn: Chip
@@ -72,6 +73,7 @@ class SettingsActivity : AppCompatActivity() {
         loadCurrentLanguage()
         observeSubscriptionState()
         updateEntityCount()
+        displayAppVersion()
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -115,6 +117,7 @@ class SettingsActivity : AppCompatActivity() {
         topBar = findViewById(R.id.topBar)
         tvEntityCount = findViewById(R.id.tvEntityCount)
         btnFeedback = findViewById(R.id.btnFeedback)
+        btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy)
     }
 
     private fun setupClickListeners() {
@@ -128,6 +131,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnFeedback.setOnClickListener {
             showFeedbackDialog()
+        }
+
+        btnPrivacyPolicy.setOnClickListener {
+            startActivity(android.content.Intent(this, PrivacyPolicyActivity::class.java))
         }
 
         // Language selection
@@ -252,6 +259,17 @@ class SettingsActivity : AppCompatActivity() {
                 Timber.e(e, "Failed to send feedback")
                 Toast.makeText(this@SettingsActivity, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun displayAppVersion() {
+        try {
+            val pInfo = packageManager.getPackageInfo(packageName, 0)
+            val version = pInfo.versionName
+            val tvAppVersion = findViewById<TextView>(R.id.tvAppVersion)
+            tvAppVersion.text = getString(R.string.app_version, version)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
