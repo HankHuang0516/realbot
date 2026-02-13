@@ -124,7 +124,7 @@ The `register_webhook` allows you to receive messages, but the **interaction flo
     *   **Risk**: Without this, the user sees no reaction and may think the Bot is broken or disconnected.
 
 ### ⚠️ IMPORTANT: Webhook Response Ignored
-**When receiving a webhook push message, , rather than just returning text in the webhook response.** The backend ignores the webhook HTTP response body.
+**When receiving a webhook push message, do not return text in the webhook response.** The backend ignores the webhook HTTP response body. Use the `update_claw_status` tool to send responses.
 
 **Recommended Flow:**
 1.  Receive Push message -> **Immediately call `update_claw_status` (State: BUSY)**.
@@ -200,7 +200,7 @@ User: "My binding code is 123456"
 
 **Step 2: Bot calls `/api/bind`**
 ```javascript
-const bindResponse = await fetch('https://realbot-production.up.railway.app/api/bind', {
+const bindResponse = await fetch('https://eclaw.up.railway.app/api/bind', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -216,7 +216,7 @@ const { deviceId, entityId, botSecret } = bindData;
 
 **Step 3: Bot immediately calls `/api/bot/register`**
 ```javascript
-const registerResponse = await fetch('https://realbot-production.up.railway.app/api/bot/register', {
+const registerResponse = await fetch('https://eclaw.up.railway.app/api/bot/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -244,7 +244,7 @@ Bot: "✅ Successfully connected to your device!
 **Step 5: Bot sets initial status**
 ```javascript
 // Optional: Set a friendly greeting message
-await fetch('https://realbot-production.up.railway.app/api/transform', {
+await fetch('https://eclaw.up.railway.app/api/transform', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({

@@ -133,21 +133,42 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setupTargetChips() {
-        val registeredIds = layoutPrefs.getRegisteredEntityIds()
-
+        // Initially hide all target chips, then load from API
         val targetChipMap = mapOf(0 to chipTarget0, 1 to chipTarget1, 2 to chipTarget2, 3 to chipTarget3)
-        targetChipMap.forEach { (id, chip) ->
-            if (id in registeredIds) {
-                chip.visibility = View.VISIBLE
-                chip.isChecked = true
-                chip.text = "${avatarManager.getAvatar(id)} Entity $id"
-            } else {
-                chip.visibility = View.GONE
-            }
-        }
+        targetChipMap.values.forEach { it.visibility = View.GONE }
 
-        if (registeredIds.isEmpty()) {
-            chipGroupTargets.visibility = View.GONE
+        lifecycleScope.launch {
+            try {
+                val response = api.getAllEntities(deviceId = deviceManager.deviceId)
+                val boundIds = response.entities.map { it.entityId }.toSet()
+
+                targetChipMap.forEach { (id, chip) ->
+                    if (id in boundIds) {
+                        chip.visibility = View.VISIBLE
+                        chip.isChecked = true
+                        chip.text = "${avatarManager.getAvatar(id)} Entity $id"
+                    }
+                }
+
+                // Hide chip group if only 1 or no entities (no choice needed)
+                if (boundIds.size <= 1) {
+                    chipGroupTargets.visibility = View.GONE
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load bound entities for target chips")
+                // Fallback to local registered IDs
+                val registeredIds = layoutPrefs.getRegisteredEntityIds()
+                targetChipMap.forEach { (id, chip) ->
+                    if (id in registeredIds) {
+                        chip.visibility = View.VISIBLE
+                        chip.isChecked = true
+                        chip.text = "${avatarManager.getAvatar(id)} Entity $id"
+                    }
+                }
+                if (registeredIds.isEmpty()) {
+                    chipGroupTargets.visibility = View.GONE
+                }
+            }
         }
     }
 
