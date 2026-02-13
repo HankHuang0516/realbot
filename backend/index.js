@@ -145,7 +145,7 @@ setInterval(async () => {
 
 const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
 const TEST_DEVICE_MAX_AGE = 60 * 60 * 1000; // 1 hour for test devices
-const ZOMBIE_DEVICE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days for real devices
+const ZOMBIE_DEVICE_MAX_AGE = 90 * 24 * 60 * 60 * 1000; // 90 days for real devices
 
 const TEST_DEVICE_PATTERNS = ['test-', 'stress-test-', 'webhook-test-'];
 
@@ -903,8 +903,11 @@ app.post('/api/client/speak', async (req, res) => {
             } else {
                 console.warn(`[Push] ✗ Failed to push to Device ${deviceId} Entity ${eId}: ${pushResult.reason}`);
             }
-        } else {
-            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${eId} - message will be queued for polling`);
+        } else if (entity.isBound) {
+            // No webhook registered - notify device user
+            entity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+            entity.lastUpdated = Date.now();
+            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${eId} - set WEBHOOK_ERROR`);
         }
 
         return {
@@ -1009,6 +1012,10 @@ app.post('/api/entity/speak-to', async (req, res) => {
         if (pushResult.pushed) {
             messageObj.delivered = true;
         }
+    } else if (toEntity.isBound) {
+        toEntity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+        toEntity.lastUpdated = Date.now();
+        console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - set WEBHOOK_ERROR`);
     }
 
     res.json({
@@ -1112,6 +1119,10 @@ app.post('/api/entity/broadcast', async (req, res) => {
             if (pushResult.pushed) {
                 messageObj.delivered = true;
             }
+        } else if (toEntity.isBound) {
+            toEntity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+            toEntity.lastUpdated = Date.now();
+            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - set WEBHOOK_ERROR`);
         }
 
         return {
