@@ -5,7 +5,7 @@ Track git commits for each release to enable changelog generation via `git diff`
 ---
 
 ## Latest
-v1.0.4 | b0d267b5b1ed328d94eacad899144af9cb714e60f | 2026-02-08
+v1.0.5 | ebf662c | 2026-02-13
 
 ---
 
@@ -13,6 +13,7 @@ v1.0.4 | b0d267b5b1ed328d94eacad899144af9cb714e60f | 2026-02-08
 
 | Version | Commit | Date | Notes |
 |---------|--------|------|-------|
+| v1.0.5 | ebf662c | 2026-02-13 | Privacy Policy, Crash fixes, UI improvements |
 | v1.0.4 | b0d267b | 2026-02-08 | Battery level reporting, entity broadcast |
 | v1.0.3 | 515327f | 2026-02-07 | Multi-entity architecture, regression tests |
 | v1.0.2 | (unknown) | - | Previous release |
