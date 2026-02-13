@@ -138,6 +138,65 @@ setInterval(async () => {
     }
 }, AUTO_SAVE_INTERVAL);
 
+// ============================================
+// DEVICE CLEANUP (Remove test & zombie devices)
+// Runs every hour to prevent resource waste
+// ============================================
+
+const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
+const TEST_DEVICE_MAX_AGE = 60 * 60 * 1000; // 1 hour for test devices
+const ZOMBIE_DEVICE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days for real devices
+
+const TEST_DEVICE_PATTERNS = ['test-', 'stress-test-', 'webhook-test-'];
+
+function isTestDevice(deviceId) {
+    return TEST_DEVICE_PATTERNS.some(p => deviceId.startsWith(p));
+}
+
+setInterval(async () => {
+    const now = Date.now();
+    let testRemoved = 0;
+    let zombieRemoved = 0;
+
+    for (const deviceId in devices) {
+        const device = devices[deviceId];
+
+        // 1. Remove stale test devices (older than 1 hour)
+        if (isTestDevice(deviceId)) {
+            const age = now - (device.createdAt || 0);
+            if (age > TEST_DEVICE_MAX_AGE) {
+                delete devices[deviceId];
+                if (usePostgreSQL) await db.deleteDevice(deviceId);
+                testRemoved++;
+            }
+            continue;
+        }
+
+        // 2. Remove zombie devices: ALL entities inactive for 7+ days
+        let latestActivity = device.createdAt || 0;
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            const entity = device.entities[i];
+            if (!entity) continue;
+            if (entity.lastUpdated > latestActivity) {
+                latestActivity = entity.lastUpdated;
+            }
+        }
+
+        // Only remove if no bound entities AND inactive for 7+ days,
+        // OR if all entities (bound or not) inactive for 7+ days
+        if (now - latestActivity > ZOMBIE_DEVICE_MAX_AGE) {
+            delete devices[deviceId];
+            if (usePostgreSQL) await db.deleteDevice(deviceId);
+            zombieRemoved++;
+        }
+    }
+
+    if (testRemoved > 0 || zombieRemoved > 0) {
+        console.log(`[Cleanup] Removed ${testRemoved} test device(s), ${zombieRemoved} zombie device(s). Remaining: ${Object.keys(devices).length}`);
+        await saveData();
+    }
+}, CLEANUP_INTERVAL);
+
 // Graceful shutdown - save data before exit
 process.on('SIGINT', async () => {
     console.log('[Persistence] Received SIGINT, saving data before exit...');
