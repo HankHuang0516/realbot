@@ -76,6 +76,23 @@ class StateRepository(
                         chatRepository.processEntityMessage(processedEntity)
                         // Process messageQueue (entity broadcasts)
                         processMessageQueue(processedEntity)
+                        
+                        // Poll bot pending messages for entities with botSecret
+                        entity.botSecret?.let { botSecret ->
+                            chatRepository.pollBotMessages(
+                                deviceId = deviceManager.deviceId,
+                                entityId = entity.entityId,
+                                botSecret = botSecret
+                            ) { devId, entId, secret ->
+                                api.getPendingMessages(
+                                    mapOf(
+                                        "deviceId" to devId,
+                                        "entityId" to entId.toString(),
+                                        "botSecret" to secret
+                                    )
+                                )
+                            }
+                        }
                     } catch (e: Exception) {
                         Timber.e(e, "Error processing entity message for chat history")
                     }

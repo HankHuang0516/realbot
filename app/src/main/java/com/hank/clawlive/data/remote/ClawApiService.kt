@@ -5,6 +5,7 @@ import com.hank.clawlive.data.model.ApiResponse
 import com.hank.clawlive.data.model.ClientMessageResponse
 import com.hank.clawlive.data.model.DeviceStatusRequest
 import com.hank.clawlive.data.model.MultiEntityResponse
+import com.hank.clawlive.data.model.PendingMessagesResponse
 import com.hank.clawlive.data.model.RegisterRequest
 import com.hank.clawlive.data.model.RegisterResponse
 import com.hank.clawlive.data.model.SpawnEntityRequest
@@ -69,4 +70,15 @@ interface ClawApiService {
 
     @POST("api/feedback")
     suspend fun sendFeedback(@Body body: Map<String, String>): ApiResponse
+
+    // ============================================
+    // BOT POLLING ENDPOINTS
+    // ============================================
+
+    /**
+     * Bot polls for pending messages when webhook is not available
+     * Returns messages from messageQueue and clears them after delivery
+     */
+    @POST("api/bot/pending-messages")
+    suspend fun getPendingMessages(@Body body: Map<String, String>): PendingMessagesResponse
 }

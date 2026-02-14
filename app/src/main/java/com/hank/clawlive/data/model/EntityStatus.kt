@@ -14,7 +14,8 @@ data class EntityStatus(
     val lastUpdated: Long = System.currentTimeMillis(),
     val isBound: Boolean = false,
     val usage: UsageInfo? = null,
-    val messageQueue: List<MessageQueueItem>? = null  // Entity broadcast messages
+    val messageQueue: List<MessageQueueItem>? = null,
+    val botSecret: String? = null  // For bot polling API calls
 )
 
 /**
@@ -43,7 +44,9 @@ data class MessageQueueItem(
         message = message,
         parts = parts,
         lastUpdated = lastUpdated,
-        usage = usage
+        usage = usage,
+        messageQueue = messageQueue,
+        botSecret = botSecret
     )
 
     companion object {
@@ -59,7 +62,9 @@ data class MessageQueueItem(
             parts = agentStatus.parts,
             lastUpdated = agentStatus.lastUpdated,
             isBound = agentStatus.isBound,
-            usage = agentStatus.usage
+            usage = agentStatus.usage,
+            messageQueue = agentStatus.messageQueue,
+            botSecret = agentStatus.botSecret
         )
     }
 }

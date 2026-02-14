@@ -9,7 +9,8 @@ data class AgentStatus(
     val lastUpdated: Long = System.currentTimeMillis(),
     val isBound: Boolean = false,
     val usage: UsageInfo? = null,
-    val messageQueue: List<MessageQueueItem>? = null  // Entity broadcast messages
+    val messageQueue: List<MessageQueueItem>? = null,
+    val botSecret: String? = null
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType
