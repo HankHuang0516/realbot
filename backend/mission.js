@@ -1,27 +1,68 @@
 /**
  * Mission Control Dashboard API
+ * PostgreSQL + Optimistic Locking + Trigger Version Control
  * 
  * Endpoints:
- * GET  /api/mission/dashboard          - 取得完整 Dashboard
- * POST /api/mission/dashboard          - 更新完整 Dashboard
- * GET  /api/mission/items              - 取得所有任務
+ * GET  /api/mission/dashboard          - 取得 Dashboard
+ * POST /api/mission/dashboard          - 上傳 Dashboard (含版本檢查)
+ * GET  /api/mission/items              - 取得任務
  * POST /api/mission/items              - 新增任務
  * PUT  /api/mission/items/:id         - 更新任務
  * DELETE /api/mission/items/:id       - 刪除任務
  * GET  /api/mission/notes             - 取得筆記
- * PUT  /api/mission/notes/:id         - 更新筆記
- * GET  /api/mission/rules              - 取得規則
- * PUT  /api/mission/rules/:id          - 更新規則
+ * GET  /api/mission/rules             - 取得規則
  */
 
-const MISSION_COLLECTION = 'mission_dashboard';
+const { Pool } = require('pg');
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
+});
+
+// Initialize database tables
+async function initMissionDatabase() {
+    const fs = require('fs');
+    const path = require('path');
+    
+    try {
+        const schemaPath = path.join(__dirname, 'mission_schema.sql');
+        const schema = fs.readFileSync(schemaPath, 'utf8');
+        
+        // Split by semicolons and execute each statement
+        const statements = schema.split(';').filter(s => s.trim());
+        
+        for (const statement of statements) {
+            if (statement.trim()) {
+                try {
+                    await pool.query(statement);
+                } catch (err) {
+                    // Ignore "already exists" errors
+                    if (!err.message.includes('already exists') && 
+                        !err.message.includes('duplicate key')) {
+                        console.warn('[Mission] Schema warning:', err.message);
+                    }
+                }
+            }
+        }
+        
+        console.log('[Mission] Database initialized');
+    } catch (error) {
+        console.error('[Mission] Failed to init database:', error);
+    }
+}
+
+// Initialize on module load
+initMissionDatabase();
+
+// ============================================
+// Dashboard API
+// ============================================
 
 /**
  * GET /api/mission/dashboard
- * 取得完整 Dashboard 快照
+ * 取得完整 Dashboard
  */
 app.get('/api/mission/dashboard', async (req, res) => {
-    const { deviceId, botSecret } = req.query;
+    const { deviceId, entityId, botSecret } = req.query;
     
     if (!deviceId || !botSecret) {
         return res.status(400).json({ 
@@ -31,7 +72,8 @@ app.get('/api/mission/dashboard', async (req, res) => {
     }
     
     try {
-        const entity = await findEntityByCredentials(deviceId, parseInt(req.query.entityId || 0), botSecret);
+        // Verify credentials
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
         if (!entity) {
             return res.status(401).json({ 
                 success: false, 
@@ -39,26 +81,47 @@ app.get('/api/mission/dashboard', async (req, res) => {
             });
         }
         
-        // 從資料庫取得 Dashboard
-        const snapshot = await db.collection(MISSION_COLLECTION).findOne({ deviceId });
+        // Get dashboard
+        const result = await pool.query(
+            `SELECT * FROM mission_dashboard WHERE device_id = $1`,
+            [deviceId]
+        );
         
-        if (!snapshot) {
-            // 回傳空 Dashboard
+        if (result.rows.length === 0) {
+            // Initialize dashboard if not exists
+            await pool.query('SELECT init_mission_dashboard($1)', [deviceId]);
+            
             return res.json({
                 success: true,
                 dashboard: {
+                    deviceId,
+                    version: 1,
                     todoList: [],
                     missionList: [],
                     doneList: [],
                     notes: [],
                     rules: [],
-                    version: 1,
                     lastSyncedAt: Date.now()
                 }
             });
         }
         
-        res.json({ success: true, dashboard: snapshot });
+        const row = result.rows[0];
+        
+        // Parse JSONB fields
+        const dashboard = {
+            deviceId: row.device_id,
+            version: row.version,
+            lastSyncedAt: new Date(row.last_synced_at).getTime(),
+            todoList: row.todo_list,
+            missionList: row.mission_list,
+            doneList: row.done_list,
+            notes: row.notes,
+            rules: row.rules,
+            lastUpdated: new Date(row.updated_at).getTime()
+        };
+        
+        res.json({ success: true, dashboard });
     } catch (error) {
         console.error('[Mission] Error fetching dashboard:', error);
         res.status(500).json({ success: false, error: error.message });
@@ -67,10 +130,10 @@ app.get('/api/mission/dashboard', async (req, res) => {
 
 /**
  * POST /api/mission/dashboard
- * 更新完整 Dashboard (用戶手動上傳)
+ * 上傳 Dashboard (Optimistic Locking)
  */
 app.post('/api/mission/dashboard', async (req, res) => {
-    const { deviceId, botSecret, dashboard } = req.body;
+    const { deviceId, entityId, botSecret, dashboard, version } = req.body;
     
     if (!deviceId || !botSecret || !dashboard) {
         return res.status(400).json({ 
@@ -79,8 +142,11 @@ app.post('/api/mission/dashboard', async (req, res) => {
         });
     }
     
+    const client = await pool.connect();
+    
     try {
-        const entity = await findEntityByCredentials(deviceId, parseInt(req.body.entityId || 0), botSecret);
+        // Verify credentials
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
         if (!entity) {
             return res.status(401).json({ 
                 success: false, 
@@ -88,98 +154,121 @@ app.post('/api/mission/dashboard', async (req, res) => {
             });
         }
         
-        // 驗證 Dashboard 結構
-        const { error } = validateDashboard(dashboard);
-        if (error) {
-            return res.status(400).json({ 
-                success: false, 
-                error: `Invalid dashboard: ${error}` 
-            });
+        await client.query('BEGIN');
+        
+        // Check version (Optimistic Locking)
+        if (version !== undefined) {
+            const versionCheck = await client.query(
+                `SELECT version FROM mission_dashboard WHERE device_id = $1 FOR UPDATE`,
+                [deviceId]
+            );
+            
+            if (versionCheck.rows.length > 0 && versionCheck.rows[0].version !== version) {
+                // Version conflict!
+                await client.query('ROLLBACK');
+                
+                const currentVersion = versionCheck.rows[0].version;
+                
+                return res.status(409).json({
+                    success: false,
+                    error: 'VERSION_CONFLICT',
+                    message: 'Dashboard has been modified by another client',
+                    currentVersion,
+                    yourVersion: version
+                });
+            }
         }
         
-        // 增加版本控制和時間戳
-        dashboard.lastSyncedAt = Date.now();
-        dashboard.version = (dashboard.version || 0) + 1;
-        
-        // 儲存到資料庫 (upsert)
-        await db.collection(MISSION_COLLECTION).updateOne(
-            { deviceId },
-            { 
-                $set: { 
-                    ...dashboard,
-                    updatedAt: Date.now()
-                },
-                $setOnInsert: {
-                    createdAt: Date.now()
-                }
-            },
-            { upsert: true }
+        // Update dashboard (Trigger will auto-increment version)
+        const result = await client.query(
+            `UPDATE mission_dashboard 
+             SET todo_list = $2, 
+                 mission_list = $3, 
+                 done_list = $4, 
+                 notes = $5, 
+                 rules = $6,
+                 last_synced_at = NOW()
+             WHERE device_id = $1
+             RETURNING version`,
+            [
+                deviceId,
+                JSON.stringify(dashboard.todoList || []),
+                JSON.stringify(dashboard.missionList || []),
+                JSON.stringify(dashboard.doneList || []),
+                JSON.stringify(dashboard.notes || []),
+                JSON.stringify(dashboard.rules || [])
+            ]
         );
         
-        console.log(`[Mission] Dashboard updated for device ${deviceId}, version: ${dashboard.version}`);
+        // Log sync action
+        await client.query(
+            `SELECT record_sync_action($1, 'SYNC', 'DASHBOARD', NULL, $2, $3, $4)`,
+            [deviceId, version || 0, result.rows[0].version, `entity_${entityId}`]
+        );
+        
+        await client.query('COMMIT');
+        
+        console.log(`[Mission] Dashboard updated for ${deviceId}, version: ${result.rows[0].version}`);
         
         res.json({ 
             success: true, 
-            version: dashboard.version,
+            version: result.rows[0].version,
             message: 'Dashboard uploaded successfully' 
         });
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('[Mission] Error updating dashboard:', error);
         res.status(500).json({ success: false, error: error.message });
+    } finally {
+        client.release();
     }
 });
 
-// ============ Mission Items ============
+// ============================================
+// Mission Items API
+// ============================================
 
 /**
  * GET /api/mission/items
- * 取得所有任務 (TODO/Mission/Done)
+ * 取得所有任務
  */
 app.get('/api/mission/items', async (req, res) => {
-    const { deviceId, botSecret, status, priority } = req.query;
+    const { deviceId, entityId, botSecret, status, priority, listType } = req.query;
     
     if (!deviceId || !botSecret) {
         return res.status(400).json({ error: 'Missing deviceId or botSecret' });
     }
     
     try {
-        const entity = await findEntityByCredentials(deviceId, parseInt(req.query.entityId || 0), botSecret);
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
         if (!entity) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const snapshot = await db.collection(MISSION_COLLECTION).findOne({ deviceId });
-        if (!snapshot) {
-            return res.json({ success: true, items: [] });
-        }
+        let query = 'SELECT * FROM mission_items WHERE device_id = $1';
+        const params = [deviceId];
+        let paramIndex = 2;
         
-        // 合併所有列表
-        let allItems = [
-            ...(snapshot.todoList || []),
-            ...(snapshot.missionList || []),
-            ...(snapshot.doneList || [])
-        ];
-        
-        // 篩選
         if (status) {
-            const statuses = status.split(',');
-            allItems = allItems.filter(item => statuses.includes(item.status));
+            query += ` AND status = $${paramIndex++}`;
+            params.push(status);
         }
         if (priority) {
-            const priorities = priority.split(',');
-            allItems = allItems.filter(item => priorities.includes(item.priority));
+            query += ` AND priority >= $${paramIndex++}`;
+            params.push(parseInt(priority));
+        }
+        if (listType) {
+            query += ` AND list_type = $${paramIndex++}`;
+            params.push(listType);
         }
         
-        // 排序：優先權 > 建立時間
-        allItems.sort((a, b) => {
-            if (b.priority.value !== a.priority.value) {
-                return b.priority.value - a.priority.value;
-            }
-            return b.createdAt - a.createdAt;
-        });
+        query += ' ORDER BY priority DESC, created_at DESC';
         
-        res.json({ success: true, items: allItems });
+        const result = await pool.query(query, params);
+        
+        res.json({ success: true, items: result.rows });
     } catch (error) {
+        console.error('[Mission] Error fetching items:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -189,131 +278,241 @@ app.get('/api/mission/items', async (req, res) => {
  * 新增任務
  */
 app.post('/api/mission/items', async (req, res) => {
-    const { deviceId, botSecret, item, list } = req.body; // list: 'todo', 'mission', 'done'
+    const { deviceId, entityId, botSecret, item, listType } = req.body;
     
     if (!deviceId || !botSecret || !item) {
         return res.status(400).json({ error: 'Missing required fields' });
     }
     
     try {
-        const entity = await findEntityByCredentials(deviceId, parseInt(req.body.entityId || 0), botSecret);
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
         if (!entity) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const targetList = list || 'todoList';
-        const updateField = targetList === 'missionList' ? 'missionList' : 
-                           targetList === 'doneList' ? 'doneList' : 'todoList';
-        
-        // 添加時間戳
-        item.createdAt = Date.now();
-        item.updatedAt = Date.now();
-        
-        await db.collection(MISSION_COLLECTION).updateOne(
-            { deviceId },
-            { 
-                $push: { [updateField]: item },
-                $set: { updatedAt: Date.now() }
-            }
+        const result = await pool.query(
+            `INSERT INTO mission_items 
+             (id, device_id, list_type, title, description, priority, status, assigned_bot, eta, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             RETURNING *`,
+            [
+                item.id || require('uuid').v4(),
+                deviceId,
+                listType || 'todo',
+                item.title,
+                item.description || '',
+                item.priority || 2,
+                item.status || 'PENDING',
+                item.assignedBot || null,
+                item.eta || null,
+                item.createdBy || 'user'
+            ]
         );
         
-        res.json({ success: true, item });
+        // Record sync
+        await pool.query(
+            `SELECT record_sync_action($1, 'CREATE', 'ITEM', $2, 0, 1, $3)`,
+            [deviceId, result.rows[0].id, `entity_${entityId}`]
+        );
+        
+        res.json({ success: true, item: result.rows[0] });
     } catch (error) {
+        console.error('[Mission] Error adding item:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ Notes ============
+/**
+ * PUT /api/mission/items/:id
+ * 更新任務
+ */
+app.put('/api/mission/items/:id', async (req, res) => {
+    const { deviceId, entityId, botSecret, item } = req.body;
+    const { id } = req.params;
+    
+    if (!deviceId || !botSecret || !item) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    try {
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
+        if (!entity) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        
+        // Get old version for sync log
+        const oldItem = await pool.query(
+            'SELECT * FROM mission_items WHERE id = $1 AND device_id = $2',
+            [id, deviceId]
+        );
+        
+        if (oldItem.rows.length === 0) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+        
+        const result = await pool.query(
+            `UPDATE mission_items 
+             SET title = $1, description = $2, priority = $3, status = $4,
+                 assigned_bot = $5, eta = $6, updated_at = NOW()
+             WHERE id = $7 AND device_id = $8
+             RETURNING *`,
+            [
+                item.title,
+                item.description || '',
+                item.priority || 2,
+                item.status || 'PENDING',
+                item.assignedBot || null,
+                item.eta || null,
+                id,
+                deviceId
+            ]
+        );
+        
+        // Record sync
+        await pool.query(
+            `SELECT record_sync_action($1, 'UPDATE', 'ITEM', $2, 1, 2, $3)`,
+            [deviceId, id, `entity_${entityId}`]
+        );
+        
+        res.json({ success: true, item: result.rows[0] });
+    } catch (error) {
+        console.error('[Mission] Error updating item:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * DELETE /api/mission/items/:id
+ * 刪除任務
+ */
+app.delete('/api/mission/items/:id', async (req, res) => {
+    const { deviceId, entityId, botSecret } = req.body;
+    const { id } = req.params;
+    
+    if (!deviceId || !botSecret) {
+        return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    try {
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
+        if (!entity) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+        
+        await pool.query(
+            'DELETE FROM mission_items WHERE id = $1 AND device_id = $2',
+            [id, deviceId]
+        );
+        
+        // Record sync
+        await pool.query(
+            `SELECT record_sync_action($1, 'DELETE', 'ITEM', $2, 2, 3, $3)`,
+            [deviceId, id, `entity_${entityId}`]
+        );
+        
+        res.json({ success: true, message: 'Item deleted' });
+    } catch (error) {
+        console.error('[Mission] Error deleting item:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============================================
+// Notes API
+// ============================================
 
 /**
  * GET /api/mission/notes
  * 取得筆記 (Bots 可讀)
  */
 app.get('/api/mission/notes', async (req, res) => {
-    const { deviceId, botSecret, category } = req.query;
+    const { deviceId, entityId, botSecret, category } = req.query;
     
     if (!deviceId || !botSecret) {
         return res.status(400).json({ error: 'Missing deviceId or botSecret' });
     }
     
     try {
-        const entity = await findEntityByCredentials(deviceId, parseInt(req.query.entityId || 0), botSecret);
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
         if (!entity) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const snapshot = await db.collection(MISSION_COLLECTION).findOne({ deviceId });
-        if (!snapshot) {
-            return res.json({ success: true, notes: [] });
-        }
+        let query = 'SELECT * FROM mission_notes WHERE device_id = $1';
+        const params = [deviceId];
         
-        let notes = snapshot.notes || [];
         if (category) {
-            notes = notes.filter(n => n.category === category);
+            query += ' AND category = $2';
+            params.push(category);
         }
         
-        res.json({ success: true, notes });
+        query += ' ORDER BY updated_at DESC';
+        
+        const result = await pool.query(query, params);
+        
+        res.json({ success: true, notes: result.rows });
     } catch (error) {
+        console.error('[Mission] Error fetching notes:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ Rules ============
+// ============================================
+// Rules API
+// ============================================
 
 /**
  * GET /api/mission/rules
  * 取得規則列表
  */
 app.get('/api/mission/rules', async (req, res) => {
-    const { deviceId, botSecret, type } = req.query;
+    const { deviceId, entityId, botSecret, type } = req.query;
     
     if (!deviceId || !botSecret) {
         return res.status(400).json({ error: 'Missing deviceId or botSecret' });
     }
     
     try {
-        const entity = await findEntityByCredentials(deviceId, parseInt(req.query.entityId || 0), botSecret);
+        const entity = await findEntityByCredentials(deviceId, parseInt(entityId || 0), botSecret);
         if (!entity) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        const snapshot = await db.collection(MISSION_COLLECTION).findOne({ deviceId });
-        if (!snapshot) {
-            return res.json({ success: true, rules: [] });
-        }
+        let query = 'SELECT * FROM mission_rules WHERE device_id = $1';
+        const params = [deviceId];
         
-        let rules = snapshot.rules || [];
         if (type) {
-            rules = rules.filter(r => r.ruleType === type);
+            query += ' AND rule_type = $2';
+            params.push(type);
         }
         
-        res.json({ success: true, rules });
+        query += ' ORDER BY priority DESC, created_at DESC';
+        
+        const result = await pool.query(query, params);
+        
+        res.json({ success: true, rules: result.rows });
     } catch (error) {
+        console.error('[Mission] Error fetching rules:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ Helpers ============
-
-function validateDashboard(dashboard) {
-    // 驗證必要欄位
-    if (!dashboard || typeof dashboard !== 'object') {
-        return { error: 'Dashboard must be an object' };
-    }
-    
-    // 可選：驗證各列表結構
-    const validLists = ['todoList', 'missionList', 'doneList', 'notes', 'rules'];
-    
-    return { error: null };
-}
+// ============================================
+// Helper Functions
+// ============================================
 
 async function findEntityByCredentials(deviceId, entityId, botSecret) {
-    // 從資料庫查找 entity
-    const device = await db.collection('devices').findOne({ deviceId });
-    if (!device || !device.entities) return null;
-    
-    const entity = device.entities.find(e => e.entityId === entityId);
-    if (!entity || entity.botSecret !== botSecret) return null;
-    
-    return entity;
+    try {
+        // Use existing entity lookup from main app
+        const device = await req.app.locals.db.collection('devices').findOne({ deviceId });
+        if (!device || !device.entities) return null;
+        
+        const entity = device.entities.find(e => e.entityId === entityId);
+        if (!entity || entity.botSecret !== botSecret) return null;
+        
+        return entity;
+    } catch (error) {
+        console.error('[Mission] Entity lookup error:', error);
+        return null;
+    }
 }
