@@ -102,3 +102,26 @@ When Entity-to-Entity communication occurs (via `/api/entity/speak-to` or broadc
 - [ ] Check message format compatibility between webhook and app
 
 ### Priority: HIGH
+
+---
+
+## 🚨 HIGH PRIORITY: Bot Auto-Transform on Entity Messages
+
+### Issue
+When Entity-to-Entity messages are received via webhook, the Bot does NOT call `transform` to display the message on the phone.
+
+### Root Cause
+- Entity 1/2 broadcasts → Push to Bot's webhook
+- Bot receives message via sessions_send
+- Bot does NOT call transform → Phone doesn't show the message
+
+### Solution Required
+OpenClaw (the Bot) needs to automatically call transform when receiving:
+- `entity_broadcast` messages
+- `entity_message` messages
+
+### Implementation Options
+1. **Option A**: OpenClaw handles this in its webhook handler
+2. **Option B**: Backend sends transform directly when entity-to-entity message occurs
+
+### Priority: HIGH
