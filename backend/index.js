@@ -1578,3 +1578,101 @@ app.listen(port, () => {
 });
 // Force redeploy with PostgreSQL
 // Force redeploy Sat Feb 14 09:53:10 UTC 2026
+
+// ============================================
+// BOT MESSAGE SYNC - Save Bot responses to device
+// ============================================
+
+/**
+ * POST /api/bot/sync-message
+ * Bot calls this to save its response to the device's message queue
+ * This enables the Chat page to show Bot responses
+ */
+app.post('/api/bot/sync-message', async (req, res) => {
+    const { deviceId, entityId, botSecret, message, fromLabel } = req.body;
+    
+    if (!deviceId || entityId === undefined || !botSecret || !message) {
+        return res.status(400).json({ 
+            success: false, 
+            error: "Missing required fields: deviceId, entityId, botSecret, message" 
+        });
+    }
+    
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, error: "Device not found" });
+    }
+    
+    const entity = device.entities[entityId];
+    if (!entity || !entity.isBound) {
+        return res.status(404).json({ success: false, error: "Entity not bound" });
+    }
+    
+    // Verify botSecret
+    if (entity.botSecret !== botSecret) {
+        return res.status(403).json({ success: false, error: "Invalid botSecret" });
+    }
+    
+    // Create message object for the device's message queue
+    const messageObj = {
+        text: message,
+        from: fromLabel || "bot",
+        fromEntityId: entityId,
+        fromCharacter: entity.character,
+        timestamp: Date.now(),
+        read: false,
+        isFromBot: true  // Mark as from Bot for the device
+    };
+    
+    // Add to entity's message queue
+    if (!entity.messageQueue) {
+        entity.messageQueue = [];
+    }
+    entity.messageQueue.push(messageObj);
+    
+    // Also update entity.message for immediate display
+    entity.message = message;
+    entity.lastUpdated = Date.now();
+    
+    console.log(`[Bot Sync] Saved message to device ${deviceId} Entity ${entityId}: "${message.substring(0, 50)}..."`);
+    
+    res.json({ 
+        success: true, 
+        message: "Message synced to device",
+        messageId: messageObj.timestamp
+    });
+});
+
+/**
+ * GET /api/bot/pending-messages
+ * Device polls this to get messages from the Bot
+ */
+app.get('/api/bot/pending-messages', (req, res) => {
+    const { deviceId, entityId } = req.query;
+    
+    if (!deviceId || entityId === undefined) {
+        return res.status(400).json({ success: false, error: "deviceId and entityId required" });
+    }
+    
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, error: "Device not found" });
+    }
+    
+    const entity = device.entities[parseInt(entityId)];
+    if (!entity || !entity.messageQueue) {
+        return res.json({ messages: [], unreadCount: 0 });
+    }
+    
+    // Get unread messages
+    const unreadMessages = entity.messageQueue.filter(m => !m.read);
+    
+    // Mark all as read
+    entity.messageQueue.forEach(m => m.read = true);
+    
+    res.json({
+        messages: unreadMessages,
+        unreadCount: unreadMessages.length,
+        totalCount: entity.messageQueue.length
+    });
+});
