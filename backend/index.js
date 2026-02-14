@@ -999,6 +999,10 @@ app.post('/api/entity/speak-to', async (req, res) => {
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
 
+    // Update entity.message so Android app can display it
+    toEntity.message = `[${fromEntity.character}] ${text}`;
+    toEntity.lastUpdated = Date.now();
+    
     // Push to target bot if webhook is registered
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
@@ -1104,6 +1108,10 @@ app.post('/api/entity/broadcast', async (req, res) => {
         };
         toEntity.messageQueue.push(messageObj);
 
+        // Update entity.message so Android app can display it
+        toEntity.message = `[廣播] ${fromEntity.character}: ${text}`;
+        toEntity.lastUpdated = Date.now();
+        
         // Push to target bot if webhook is registered
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
