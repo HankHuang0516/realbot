@@ -1331,8 +1331,8 @@ app.post('/api/bot/register', (req, res) => {
 
     // Reject placeholder/unresolved token values
     const tokenStr = token.trim();
-    const placeholderPattern = /^\[.*\]$|^\{.*\}$|^\$\{.*\}$|^<.*>$|^process\.env\.|^your[-_]|^xxx|^test$/i;
-    if (placeholderPattern.test(tokenStr) || tokenStr.includes('gateway token') || tokenStr.includes('your-') || tokenStr.includes('TOKEN_HERE')) {
+    const placeholderPattern = /^\[.*\]$|^\{.*\}$|^\$\{.*\}$|^<.*>$|^__.*__$|^process\.env\.|^your[-_]|^xxx|^test$/i;
+    if (placeholderPattern.test(tokenStr) || tokenStr.includes('gateway token') || tokenStr.includes('your-') || tokenStr.includes('TOKEN_HERE') || tokenStr.includes('REDACTED') || tokenStr.includes('PLACEHOLDER')) {
         console.warn(`[Bot Register] Rejected placeholder token: "${tokenStr}"`);
         return res.status(400).json({
             success: false,
