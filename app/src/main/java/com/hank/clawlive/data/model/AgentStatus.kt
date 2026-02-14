@@ -1,13 +1,14 @@
 package com.hank.clawlive.data.model
 
 data class AgentStatus(
-    val name: String? = null, // Optional name set by bot (max 20 chars)
+    val name: String? = null,
     val character: String = "LOBSTER",
     val state: CharacterState = CharacterState.IDLE,
     val message: String = "Loading...",
     val parts: Map<String, Float>? = null,
     val lastUpdated: Long = System.currentTimeMillis(),
-    val isBound: Boolean = false // Server returns this field
+    val isBound: Boolean = false,
+    val usage: UsageInfo? = null  // AI resource usage info for status bar
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType
