@@ -43,7 +43,7 @@ class ChatRepository private constructor(
     /**
      * Get messages in ascending order (oldest first) for chat display
      */
-    fun getMessagesAscending(limit: Int = 100): Flow<List<ChatMessage>> {
+    fun getMessagesAscending(limit: Int = 500): Flow<List<ChatMessage>> {
         return chatDao.getMessagesAscending(limit)
     }
 
@@ -157,6 +157,9 @@ class ChatRepository private constructor(
 
         chatDao.insert(message)
         Timber.d("Saved entity message from Entity ${entity.entityId}: ${cleanedText.take(30)}...")
+
+        // Periodically prune old messages to prevent database bloat
+        pruneOldMessages()
     }
 
     /**

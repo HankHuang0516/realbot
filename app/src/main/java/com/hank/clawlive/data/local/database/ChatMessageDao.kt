@@ -18,10 +18,10 @@ interface ChatMessageDao {
     fun getRecentMessages(limit: Int = 100): Flow<List<ChatMessage>>
 
     /**
-     * Get all messages ordered by timestamp (oldest first for display)
+     * Get the latest N messages ordered by timestamp ascending (for chat display)
      */
-    @Query("SELECT * FROM chat_messages ORDER BY timestamp ASC LIMIT :limit")
-    fun getMessagesAscending(limit: Int = 100): Flow<List<ChatMessage>>
+    @Query("SELECT * FROM (SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT :limit) ORDER BY timestamp ASC")
+    fun getMessagesAscending(limit: Int = 500): Flow<List<ChatMessage>>
 
     /**
      * Get messages for specific entity (both sent to and received from)

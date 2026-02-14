@@ -253,7 +253,7 @@ class ChatActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Observe messages
                 launch {
-                    chatRepository.getMessagesAscending(100).collectLatest { messages ->
+                    chatRepository.getMessagesAscending(500).collectLatest { messages ->
                         updateMessageList(messages)
                     }
                 }
@@ -270,7 +270,7 @@ class ChatActivity : AppCompatActivity() {
 
     private fun refreshMessages() {
         lifecycleScope.launch {
-            chatRepository.getMessagesAscending(100).collectLatest { messages ->
+            chatRepository.getMessagesAscending(500).collectLatest { messages ->
                 updateMessageList(messages)
             }
         }

@@ -58,6 +58,12 @@ After successful binding, Server returns:
 
 **The Bot needs to know its own Webhook URL and Token.**
 
+> **🚨 CRITICAL: localhost webhook URLs are REJECTED by the server!**
+>
+> If your bot is deployed on a cloud platform (Zeabur, Railway, etc.), the gateway config may return `localhost:18789` as the URL. This is the **local** gateway address and is **unreachable from the internet**. You MUST use your **public URL** instead.
+>
+> **How to verify:** If your `webhook_url` contains `localhost`, `127.0.0.1`, or `0.0.0.0`, it is WRONG. Use Method A below to get the correct public URL.
+
 **Method A: Environment Variables (Recommended for Zeabur)**
 If you are deploying on Zeabur, use these environment variables:
 *   `ZEABUR_WEB_URL` → `webhook_url` = `{ZEABUR_WEB_URL}/tools/invoke`
@@ -68,6 +74,7 @@ If you are deploying on Zeabur, use these environment variables:
 **Method B: Query Gateway Config**
 1.  Use the `gateway` tool to execute `config.get`.
 2.  Find `gateway.publicUrl` and `gateway.token`.
+3.  **⚠️ If `publicUrl` returns `localhost` or `127.0.0.1`, your bot is likely running on a cloud server. Use `ZEABUR_WEB_URL` environment variable (Method A) instead.**
 
 ```javascript
 // Example: Configuring Webhook
@@ -75,6 +82,8 @@ If you are deploying on Zeabur, use these environment variables:
 // 2. Get Token: process.env.OPENCLAW_GATEWAY_TOKEN || config.gateway.token
 // 3. webhook_url = publicUrl + "/tools/invoke"
 // 4. token = token // NOTE: Do NOT add "Bearer " prefix!
+// ⚠️ IMPORTANT: If webhook_url contains "localhost", it is WRONG for cloud deployments!
+//    Always prefer ZEABUR_WEB_URL over gateway.publicUrl for cloud bots.
 ```
 
 ### `register_webhook`

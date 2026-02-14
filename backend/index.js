@@ -1309,9 +1309,44 @@ app.post('/api/bot/register', (req, res) => {
         });
     }
 
+    // Reject localhost/127.0.0.1 webhook URLs - these won't work from the cloud
+    try {
+        const urlObj = new URL(webhook_url);
+        if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || urlObj.hostname === '0.0.0.0') {
+            console.warn(`[Bot Register] Rejected localhost webhook: ${webhook_url}`);
+            return res.status(400).json({
+                success: false,
+                message: "webhook_url cannot be localhost. Your bot appears to be deployed on a cloud server, " +
+                    "but the webhook URL points to localhost which is unreachable from the internet. " +
+                    "Please use your public URL instead (e.g. ZEABUR_WEB_URL environment variable).",
+                hint: "If using Zeabur: webhook_url = process.env.ZEABUR_WEB_URL + '/tools/invoke'"
+            });
+        }
+    } catch (e) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid webhook_url format"
+        });
+    }
+
+    // Reject placeholder/unresolved token values
+    const tokenStr = token.trim();
+    const placeholderPattern = /^\[.*\]$|^\{.*\}$|^\$\{.*\}$|^<.*>$|^process\.env\.|^your[-_]|^xxx|^test$/i;
+    if (placeholderPattern.test(tokenStr) || tokenStr.includes('gateway token') || tokenStr.includes('your-') || tokenStr.includes('TOKEN_HERE')) {
+        console.warn(`[Bot Register] Rejected placeholder token: "${tokenStr}"`);
+        return res.status(400).json({
+            success: false,
+            message: "token appears to be a placeholder, not an actual value. " +
+                "Please use the real token from your environment variable (e.g. process.env.OPENCLAW_GATEWAY_TOKEN) " +
+                "or query your gateway config to get the actual token string.",
+            hint: "If using Zeabur: token = process.env.OPENCLAW_GATEWAY_TOKEN",
+            received: tokenStr
+        });
+    }
+
     // Clean token: Remove "Bearer " prefix if present (case-insensitive)
     // This prevents "Bearer Bearer xyz" issue when backend adds Bearer prefix during push
-    let cleanToken = token.trim();
+    let cleanToken = tokenStr;
     if (cleanToken.toLowerCase().startsWith('bearer ')) {
         cleanToken = cleanToken.substring(7).trim(); // Remove "Bearer " (7 chars)
         console.log(`[Bot Register] Cleaned token: removed "Bearer " prefix`);
