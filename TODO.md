@@ -79,3 +79,26 @@ Add a free tier + subscription mechanism to the Claw Live app. (為 Claw Live �
       }
       ```
     - **Logic**: Backend standardizes usage (OpenAI/Subscription/Local). App only reads `percentage` and `label`.
+
+---
+
+## 🚨 High Priority: Push Response Not Visible
+
+### Issue
+When Entity-to-Entity communication occurs (via `/api/entity/speak-to` or broadcast), the receiving Entity's device does not display the push notification/message on the Android app.
+
+### Symptom
+- User can send messages from phone to bot ✓
+- Bot can reply via transform ✓
+- Entity 1/2 can broadcast, but the phone doesn't show the message ❌
+
+### Expected Behavior
+- When Entity 0 broadcasts, all devices should show the broadcast message
+- When Entity 0 speaks to Entity 1, Entity 1's device should display the message
+
+### Root Cause Analysis Needed
+- [ ] Check if webhook push is being sent correctly for entity-to-entity messages
+- [ ] Verify the Android app handles entity-to-entity push notifications
+- [ ] Check message format compatibility between webhook and app
+
+### Priority: HIGH
