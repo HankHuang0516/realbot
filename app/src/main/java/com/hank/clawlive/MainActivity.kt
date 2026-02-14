@@ -451,7 +451,7 @@ class MainActivity : AppCompatActivity() {
     private fun generateOpenClawCommand(code: String): String {
         val appVersion = deviceManager.appVersion
         return """
-Connect my Claw Live wallpaper device (v$appVersion):
+Connect my E-Claw wallpaper device (v$appVersion):
 POST $API_BASE_URL/api/bind
 Body: {"code": "$code"}
 

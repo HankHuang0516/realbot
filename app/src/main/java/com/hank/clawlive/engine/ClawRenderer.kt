@@ -405,7 +405,7 @@ class ClawRenderer(private val context: Context) {
             canvas.drawText("No entities connected", width / 2f, height / 2f - 40f, textPaint)
             textPaint.textSize = 24f
             textPaint.color = Color.GRAY
-            canvas.drawText("Open Claw Live app to bind", width / 2f, height / 2f + 20f, textPaint)
+            canvas.drawText("Open E-Claw app to bind", width / 2f, height / 2f + 20f, textPaint)
             textPaint.textSize = 20f
             canvas.drawText("entities with OpenClaw bot", width / 2f, height / 2f + 60f, textPaint)
             return
