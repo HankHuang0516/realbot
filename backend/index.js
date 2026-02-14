@@ -1577,3 +1577,4 @@ app.listen(port, () => {
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 });
 // Force redeploy with PostgreSQL
+// Force redeploy Sat Feb 14 09:53:10 UTC 2026
