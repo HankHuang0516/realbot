@@ -1370,12 +1370,31 @@ app.post('/api/bot/register', (req, res) => {
     // Save data after webhook registration
     saveData();
 
+    // Build diagnostic warnings for the bot
+    const warnings = [];
+    if (webhook_url !== finalUrl) {
+        warnings.push(`webhook_url was normalized: "${webhook_url}" → "${finalUrl}" (trailing slash removed)`);
+    }
+    if (cleanToken.length < 10) {
+        warnings.push(`token is suspiciously short (${cleanToken.length} chars). Verify it is the correct gateway token.`);
+    }
+    if (!finalUrl.startsWith('https://')) {
+        warnings.push(`webhook_url is not HTTPS. This may cause issues in production.`);
+    }
+
     res.json({
         success: true,
         message: "Webhook registered. You will now receive push notifications.",
         deviceId: deviceId,
         entityId: eId,
-        mode: "push"
+        mode: "push",
+        debug: {
+            webhook_url_registered: finalUrl,
+            token_length: cleanToken.length,
+            token_preview: tokenPreview,
+            session_key: session_key,
+            warnings: warnings.length > 0 ? warnings : undefined
+        }
     });
 });
 
@@ -1465,19 +1484,29 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push failed with status ${response.status}`);
             console.error(`[Push] Error response: ${errorText}`);
 
+            // Build debug hint based on error status
+            let debugHint = '';
+            if (response.status === 401) {
+                debugHint = ' Token may be invalid or a placeholder. Re-register webhook with correct token (process.env.OPENCLAW_GATEWAY_TOKEN).';
+            } else if (response.status === 405) {
+                debugHint = ' URL may be incorrect (double slash?). Re-register webhook with correct URL.';
+            } else if (response.status === 404) {
+                debugHint = ' Webhook endpoint not found. Verify your bot server is running and the URL path is correct.';
+            }
+
             // Notify device about webhook failure via entity message
-            entity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+            entity.message = `[SYSTEM:WEBHOOK_ERROR] Push failed (HTTP ${response.status}).${debugHint}`;
             entity.lastUpdated = Date.now();
             console.log(`[Push] Set WEBHOOK_ERROR system message for Device ${deviceId} Entity ${entity.entityId}`);
 
-            return { pushed: false, reason: `http_${response.status}`, error: errorText };
+            return { pushed: false, reason: `http_${response.status}`, error: errorText, debug: { url, tokenLength: token.length, status: response.status, hint: debugHint.trim() } };
         }
     } catch (err) {
         console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push error:`, err.message);
         console.error(`[Push] Full error:`, err);
 
         // Notify device about webhook failure via entity message
-        entity.message = `[SYSTEM:WEBHOOK_ERROR]`;
+        entity.message = `[SYSTEM:WEBHOOK_ERROR] Push connection failed: ${err.message}`;
         entity.lastUpdated = Date.now();
         console.log(`[Push] Set WEBHOOK_ERROR system message for Device ${deviceId} Entity ${entity.entityId}`);
 
