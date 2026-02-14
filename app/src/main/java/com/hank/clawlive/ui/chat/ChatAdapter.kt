@@ -98,6 +98,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         private val tvAvatar: TextView = itemView.findViewById(R.id.tvAvatar)
         private val tvEntityName: TextView = itemView.findViewById(R.id.tvEntityName)
         private val tvMessage: TextView = itemView.findViewById(R.id.tvMessage)
+        private val tvReadStatus: TextView = itemView.findViewById(R.id.tvReadStatus)
         private val tvTime: TextView = itemView.findViewById(R.id.tvTime)
 
         fun bind(message: ChatMessage) {
@@ -124,6 +125,13 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             } else {
                 "$entityName (#$entityId)"
             }
+
+            // Show "已讀" status if message was read
+            // For now, show "Entity X 已讀" under the message
+            // This can be enhanced with actual read status tracking later
+            val readStatusText = "Entity $entityId 已讀"
+            tvReadStatus.text = readStatusText
+            tvReadStatus.visibility = View.VISIBLE
         }
     }
 

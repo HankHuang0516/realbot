@@ -52,7 +52,10 @@ data class ChatMessage(
     val deduplicationKey: String? = null,
 
     /** true after API confirms message was sent successfully */
-    val isSynced: Boolean = true
+    val isSynced: Boolean = true,
+
+    /** true after user has read this message in chat */
+    val isRead: Boolean = false
 ) {
     /**
      * Get display name for the message sender
