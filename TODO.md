@@ -66,6 +66,13 @@ Add a free tier + subscription mechanism to the Claw Live app. (為 Claw Live �
 
 !!!![Bug]!!!! 極高優先權
 
+### 🔴 Bug: Push Response Not Visible (高優先權)
+- **Issue**: E-Claw App cannot display push response messages from bots
+- **Impact**: Users cannot see bot responses delivered via webhook push
+- **Root Cause**: UI not rendering webhook push messages in chat view
+- **Expected**: Bot push responses should appear in message history
+- **Status**: Needs investigation and fix
+
 ### Phase 9: AI Resource Usage (階段 9: AI 資源用量)
 - [ ] **Status Bar Integration**: Integrate AI remaining usage into the status bar (整合 AI 剩餘用量至狀態列)
     - **JSON Structure**:
