@@ -1248,9 +1248,19 @@ app.get('/api/debug/devices', (req, res) => {
 
 /**
  * POST /api/debug/reset
- * Reset all devices (for testing).
+ * Reset all devices (for testing). Requires admin token.
  */
 app.post('/api/debug/reset', (req, res) => {
+    const adminToken = req.headers['x-admin-token'] || req.body.adminToken;
+    const expectedToken = process.env.ADMIN_SECRET || 'dev-only-localhost';
+    
+    // Only allow from localhost or with correct token
+    const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+    
+    if (!isLocalhost && adminToken !== expectedToken) {
+        return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
+    }
+    
     for (const deviceId in devices) {
         delete devices[deviceId];
     }
