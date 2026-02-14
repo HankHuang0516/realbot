@@ -5,7 +5,7 @@ Track git commits for each release to enable changelog generation via `git diff`
 ---
 
 ## Latest
-v1.0.5 | ebf662c | 2026-02-13
+v1.0.6 | 18f9131 | 2026-02-14
 
 ---
 
@@ -13,6 +13,7 @@ v1.0.5 | ebf662c | 2026-02-13
 
 | Version | Commit | Date | Notes |
 |---------|--------|------|-------|
+| v1.0.6 | 18f9131 | 2026-02-14 | App name fix (E-Claw) |
 | v1.0.5 | ebf662c | 2026-02-13 | Privacy Policy, Crash fixes, UI improvements |
 | v1.0.4 | b0d267b | 2026-02-08 | Battery level reporting, entity broadcast |
 | v1.0.3 | 515327f | 2026-02-07 | Multi-entity architecture, regression tests |
