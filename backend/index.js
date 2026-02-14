@@ -1352,15 +1352,20 @@ app.post('/api/bot/register', (req, res) => {
         console.log(`[Bot Register] Cleaned token: removed "Bearer " prefix`);
     }
 
+    // Normalize webhook URL: remove trailing slashes to prevent double-slash issues
+    const normalizedUrl = webhook_url.replace(/\/+$/, '');
+    const finalUrl = normalizedUrl.endsWith('/tools/invoke') ? normalizedUrl : webhook_url;
+
     // Store webhook info
     entity.webhook = {
-        url: webhook_url,
+        url: finalUrl,
         token: cleanToken,
         sessionKey: session_key,
         registeredAt: Date.now()
     };
 
-    console.log(`[Bot Register] Device ${deviceId} Entity ${eId} webhook registered: ${webhook_url}`);
+    const tokenPreview = cleanToken.length > 8 ? cleanToken.substring(0, 4) + '...' + cleanToken.substring(cleanToken.length - 4) : '***';
+    console.log(`[Bot Register] Device ${deviceId} Entity ${eId} webhook registered: ${finalUrl} (token: ${tokenPreview}, len: ${cleanToken.length})`);
 
     // Save data after webhook registration
     saveData();
