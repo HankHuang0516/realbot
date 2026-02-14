@@ -57,6 +57,12 @@ Add a free tier + subscription mechanism to the Claw Live app. (為 Claw Live �
 - [ ] **Remove Battery Info**: Remove battery information feature (no practical use) (移除電量資訊功能 (沒實際用途))
 - [ ] **Dynamic Entity Slots**: 4 entity slots may not be enough, support dynamic creation (動態 Entity 槽位: 4 個可能不夠，需支援動態建立)
 
+#### 🔴 **BUG - Push Response Visibility** (High Priority)
+- [ ] **Push Response Not Visible**: User cannot see push response messages on phone (使用者看不到推播回應訊息)
+  - **Symptom**: Bot sends response via webhook, but message doesn't appear on phone UI
+  - **Impact**: Poor user experience, user thinks bot is not responding
+  - **Investigation needed**: Check App message rendering logic
+
 #### OpenClaw 端 (Bot Side)
 - [ ] **Auto Webhook Registration**: Automatically register webhook after binding (Webhook 自動註冊: 綁定後自動完成)
 - [ ] **Auto State Management**: Implement standard flow: receive message → BUSY → process → IDLE (狀態自動管理: 收到訊息→BUSY→處理→IDLE 標準流程)
