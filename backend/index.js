@@ -1501,6 +1501,24 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully (status: ${response.status})`);
             if (responseText) {
                 console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
+                
+                // Parse webhook response and extract bot's reply text
+                try {
+                    const parsedResponse = JSON.parse(responseText);
+                    if (parsedResponse.result?.content && Array.isArray(parsedResponse.result.content)) {
+                        // Extract text from first text-type content
+                        const textContent = parsedResponse.result.content.find(c => c.type === 'text');
+                        if (textContent?.text) {
+                            // Update entity.message so App can see the bot's reply via polling
+                            entity.message = textContent.text;
+                            entity.lastUpdated = Date.now();
+                            console.log(`[Push] Updated entity.message with bot reply: "${textContent.text.substring(0, 50)}..."`);
+                        }
+                    }
+                } catch (parseErr) {
+                    // Response may not be JSON, ignore parsing errors
+                    console.log(`[Push] Response is not JSON, skipping message update`);
+                }
             }
             return { pushed: true };
         } else {
