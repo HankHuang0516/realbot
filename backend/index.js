@@ -1352,9 +1352,10 @@ app.post('/api/bot/register', (req, res) => {
         console.log(`[Bot Register] Cleaned token: removed "Bearer " prefix`);
     }
 
-    // Normalize webhook URL: remove trailing slashes to prevent double-slash issues
-    const normalizedUrl = webhook_url.replace(/\/+$/, '');
-    const finalUrl = normalizedUrl.endsWith('/tools/invoke') ? normalizedUrl : webhook_url;
+    // Normalize webhook URL: fix double slashes in path (e.g. https://x.com//tools/invoke)
+    const urlObj2 = new URL(webhook_url);
+    urlObj2.pathname = urlObj2.pathname.replace(/\/\/+/g, '/');
+    const finalUrl = urlObj2.toString().replace(/\/$/, '');
 
     // Store webhook info
     entity.webhook = {
