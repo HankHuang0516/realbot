@@ -13,7 +13,21 @@ data class EntityStatus(
     val parts: Map<String, Float>? = null,
     val lastUpdated: Long = System.currentTimeMillis(),
     val isBound: Boolean = false,
-    val usage: UsageInfo? = null  // AI resource usage info for status bar
+    val usage: UsageInfo? = null,
+    val messageQueue: List<MessageQueueItem>? = null  // Entity broadcast messages
+)
+
+/**
+ * Message queue item from entity broadcasts
+ */
+data class MessageQueueItem(
+    val text: String,
+    val from: String,
+    val fromEntityId: Int,
+    val fromCharacter: String,
+    val timestamp: Long,
+    val read: Boolean = false,
+    val delivered: Boolean = false
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType

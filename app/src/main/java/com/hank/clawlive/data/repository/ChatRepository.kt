@@ -224,4 +224,38 @@ class ChatRepository private constructor(
         chatDao.clearAll()
         Timber.d("Cleared all chat messages")
     }
+
+    /**
+     * Add message queue item (entity broadcast) to chat history
+     */
+    suspend fun addMessageQueueItem(
+        text: String,
+        fromEntityId: Int,
+        fromCharacter: String,
+        timestamp: Long
+    ) {
+        // Create deduplication key
+        val deduplicationKey = "mq_${fromEntityId}_${timestamp}"
+        
+        // Check if already exists
+        if (chatDao.existsByDeduplicationKey(deduplicationKey)) {
+            return
+        }
+
+        val message = ChatMessage(
+            text = text,
+            timestamp = timestamp,
+            isFromUser = false,
+            messageType = MessageType.ENTITY_BROADCAST,
+            fromEntityId = fromEntityId,
+            fromEntityCharacter = fromCharacter,
+            deduplicationKey = deduplicationKey,
+            isSynced = true
+        )
+
+        chatDao.insert(message)
+        Timber.d("Saved messageQueue item from Entity $fromEntityId: ${text.take(30)}...")
+        
+        pruneOldMessages()
+    }
 }
