@@ -894,6 +894,8 @@ app.post('/api/client/speak', async (req, res) => {
         if (entity.webhook) {
             console.log(`[Push] Attempting push to Device ${deviceId} Entity ${eId} (webhook: ${entity.webhook.url})`);
             pushResult = await pushToBot(entity, deviceId, "new_message", {
+                entityId: eId,
+                read: true,
                 message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`
             });
 
@@ -1003,6 +1005,8 @@ app.post('/api/entity/speak-to', async (req, res) => {
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
         pushResult = await pushToBot(toEntity, deviceId, "entity_message", {
+            entityId: toId,
+            read: true,
             message: `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`
         });
 
@@ -1108,6 +1112,8 @@ app.post('/api/entity/broadcast', async (req, res) => {
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
             pushResult = await pushToBot(toEntity, deviceId, "entity_broadcast", {
+                entityId: toId,
+                read: true,
                 message: `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`
             });
 
@@ -1550,6 +1556,14 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         if (response.ok) {
             const responseText = await response.text().catch(() => '');
             console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully (status: ${response.status})`);
+            
+            // Update entity.message with read receipt
+            if (payload.entityId !== undefined) {
+                entity.message = `Entity ${payload.entityId} 已讀`;
+                entity.lastUpdated = Date.now();
+                console.log(`[Push] Updated entity.message to "Entity ${payload.entityId} 已讀"`);
+            }
+            
             if (responseText) {
                 console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
                 
