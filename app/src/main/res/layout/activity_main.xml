@@ -322,11 +322,23 @@
             android:layout_marginBottom="8dp"
             android:visibility="gone" />
 
+        <!-- Mission Control Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnMission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/mission_control"
+            android:textColor="#000000"
+            app:backgroundTint="#FFFFFF"
+            app:cornerRadius="8dp"
+            style="@style/Widget.Material3.Button" />
+
         <!-- Chat Button (white bg, black text) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnChat"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:text="@string/chat_history"
             android:textColor="#000000"
             app:backgroundTint="#FFFFFF"

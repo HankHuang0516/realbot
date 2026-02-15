@@ -14,6 +14,7 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/mission', express.static(path.join(__dirname, 'public')));
 
 // ============================================
 // MATRIX ARCHITECTURE: devices[deviceId].entities[0-3]
@@ -216,6 +217,13 @@ process.on('SIGTERM', async () => {
 initPersistence().catch(err => {
     console.error('[Persistence] Initialization failed:', err.message);
 });
+
+// ============================================
+// MISSION CONTROL DASHBOARD (PostgreSQL)
+// ============================================
+const missionModule = require('./mission')(devices);
+app.use('/api/mission', missionModule.router);
+missionModule.initMissionDatabase();
 
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {

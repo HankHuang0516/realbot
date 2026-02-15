@@ -89,6 +89,12 @@
             android:parentActivityName=".MainActivity"
             android:excludeFromRecents="true" />
 
+        <activity
+            android:name=".MissionControlActivity"
+            android:exported="false"
+            android:label="@string/mission_control"
+            android:parentActivityName=".MainActivity" />
+
         <receiver
             android:name=".widget.ChatWidgetProvider"
             android:exported="true">

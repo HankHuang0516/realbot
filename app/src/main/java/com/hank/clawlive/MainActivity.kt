@@ -176,6 +176,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, ChatActivity::class.java))
         }
 
+        findViewById<MaterialButton>(R.id.btnMission).setOnClickListener {
+            startActivity(Intent(this, MissionControlActivity::class.java))
+        }
+
         // Add Entity expandable section
         addEntityHeader.setOnClickListener {
             toggleAddEntitySection()

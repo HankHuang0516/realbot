@@ -67,50 +67,25 @@ interface ClawApiService {
 
     // ============================================
     // MISSION CONTROL DASHBOARD
+    // Auth: deviceId + deviceSecret in query/body
     // ============================================
 
     /**
      * 取得完整 Dashboard
      */
     @GET("api/mission/dashboard")
-    suspend fun getMissionDashboard(@QueryMap params: Map<String, String>): MissionDashboardResponse
-
-    /**
-     * 上傳完整 Dashboard (用戶手動)
-     */
-    @POST("api/mission/dashboard")
-    suspend fun uploadMissionDashboard(
-        @QueryMap params: Map<String, String>,
-        @Body dashboard: MissionDashboardSnapshot
+    suspend fun getMissionDashboard(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
     ): MissionDashboardResponse
 
     /**
-     * 取得所有任務
+     * 上傳完整 Dashboard (full snapshot with optimistic locking)
      */
-    @GET("api/mission/items")
-    suspend fun getMissionItems(@QueryMap params: Map<String, String>): MissionItemsResponse
-
-    /**
-     * 新增任務
-     */
-    @POST("api/mission/items")
-    suspend fun addMissionItem(
-        @QueryMap params: Map<String, String>,
-        @Body item: MissionItem,
-        @Query("list") list: String
-    ): MissionItemResponse
-
-    /**
-     * 取得筆記 (Bots 可讀)
-     */
-    @GET("api/mission/notes")
-    suspend fun getMissionNotes(@QueryMap params: Map<String, String>): MissionNotesResponse
-
-    /**
-     * 取得規則
-     */
-    @GET("api/mission/rules")
-    suspend fun getMissionRules(@QueryMap params: Map<String, String>): MissionRulesResponse
+    @POST("api/mission/dashboard")
+    suspend fun uploadMissionDashboard(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): MissionDashboardResponse
 }
 
 // ============ Mission Control Response Models ============

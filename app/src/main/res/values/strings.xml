@@ -94,6 +94,20 @@
     <string name="to_entities">To: %s</string>
     <string name="entity_read_receipt">Entity %d 已讀</string>
 
+    <!-- Mission Control -->
+    <string name="mission_control">Mission Control</string>
+    <string name="upload">Upload</string>
+    <string name="uploading">Uploading…</string>
+    <string name="add_todo">+ 新增 TODO</string>
+    <string name="add_note">+ 新增筆記</string>
+    <string name="add_rule">+ 新增規則</string>
+    <string name="no_items">尚無 TODO 項目</string>
+    <string name="no_missions">尚無進行中的任務</string>
+    <string name="no_done_items">尚無已完成項目</string>
+    <string name="no_notes">尚無筆記</string>
+    <string name="no_rules">尚無規則</string>
+    <string name="edit">編輯</string>
+
     <!-- Bot Avatar -->
     <string name="bot_avatar">Bot Avatar</string>
     <string name="avatar_subtitle">Entity %d</string>
