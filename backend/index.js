@@ -894,6 +894,8 @@ app.post('/api/client/speak', async (req, res) => {
         if (entity.webhook) {
             console.log(`[Push] Attempting push to Device ${deviceId} Entity ${eId} (webhook: ${entity.webhook.url})`);
             pushResult = await pushToBot(entity, deviceId, "new_message", {
+                entityId: eId,
+                read: true,
                 message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`
             });
 
@@ -1003,6 +1005,8 @@ app.post('/api/entity/speak-to', async (req, res) => {
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
         pushResult = await pushToBot(toEntity, deviceId, "entity_message", {
+            entityId: toId,
+            read: true,
             message: `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`
         });
 
@@ -1108,6 +1112,8 @@ app.post('/api/entity/broadcast', async (req, res) => {
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
             pushResult = await pushToBot(toEntity, deviceId, "entity_broadcast", {
+                entityId: toId,
+                read: true,
                 message: `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`
             });
 
@@ -1249,8 +1255,31 @@ app.get('/api/debug/devices', (req, res) => {
 /**
  * POST /api/debug/reset
  * Reset all devices (for testing).
+ * REQUIRES: deviceSecret for authentication
  */
 app.post('/api/debug/reset', (req, res) => {
+    const { deviceSecret } = req.body;
+    
+    // Authentication required
+    if (!deviceSecret) {
+        return res.status(401).json({ 
+            success: false, 
+            message: "deviceSecret required for debug reset" 
+        });
+    }
+    
+    // Verify deviceSecret (use master secret or first device's secret)
+    const masterSecret = process.env.DEBUG_RESET_SECRET || "secure_debug_secret_2026";
+    const firstDevice = Object.values(devices)[0];
+    const validSecret = firstDevice?.deviceSecret;
+    
+    if (deviceSecret !== masterSecret && deviceSecret !== validSecret) {
+        return res.status(403).json({ 
+            success: false, 
+            message: "Invalid deviceSecret" 
+        });
+    }
+    
     for (const deviceId in devices) {
         delete devices[deviceId];
     }
@@ -1441,6 +1470,57 @@ app.delete('/api/bot/register', (req, res) => {
 });
 
 /**
+ * GET /api/bot/pending-messages
+ * Bot polls for pending messages (alternative to webhook push).
+ * Body: { deviceId, entityId, botSecret }
+ * 
+ * Returns messages from messageQueue and clears them after delivery.
+ * Supports both push and polling modes.
+ */
+app.post('/api/bot/pending-messages', async (req, res) => {
+    const { deviceId, entityId, botSecret } = req.body;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    const eId = parseInt(entityId) ?? 0;
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
+
+    // botSecret required for authentication
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({ success: false, message: "Invalid botSecret" });
+    }
+
+    // Get messages from messageQueue
+    const messages = entity.messageQueue || [];
+
+    // Clear messageQueue after delivery (bot acknowledges receipt)
+    entity.messageQueue = [];
+
+    // Update entity status
+    entity.lastUpdated = Date.now();
+
+    res.json({
+        success: true,
+        deviceId: deviceId,
+        entityId: eId,
+        messages: messages,
+        messageCount: messages.length,
+        mode: entity.webhook ? "push" : "polling"
+    });
+});
+
+/**
  * Helper: Push notification to bot webhook
  * Supports OpenClaw format: POST to /tools/invoke with tool invocation payload
  */
@@ -1476,8 +1556,34 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         if (response.ok) {
             const responseText = await response.text().catch(() => '');
             console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully (status: ${response.status})`);
+            
+            // Update entity.message with read receipt
+            if (payload.entityId !== undefined) {
+                entity.message = `Entity ${payload.entityId} 已讀`;
+                entity.lastUpdated = Date.now();
+                console.log(`[Push] Updated entity.message to "Entity ${payload.entityId} 已讀"`);
+            }
+            
             if (responseText) {
                 console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
+                
+                // Parse webhook response and extract bot's reply text
+                try {
+                    const parsedResponse = JSON.parse(responseText);
+                    if (parsedResponse.result?.content && Array.isArray(parsedResponse.result.content)) {
+                        // Extract text from first text-type content
+                        const textContent = parsedResponse.result.content.find(c => c.type === 'text');
+                        if (textContent?.text) {
+                            // Update entity.message so App can see the bot's reply via polling
+                            entity.message = textContent.text;
+                            entity.lastUpdated = Date.now();
+                            console.log(`[Push] Updated entity.message with bot reply: "${textContent.text.substring(0, 50)}..."`);
+                        }
+                    }
+                } catch (parseErr) {
+                    // Response may not be JSON, ignore parsing errors
+                    console.log(`[Push] Response is not JSON, skipping message update`);
+                }
             }
             return { pushed: true };
         } else {

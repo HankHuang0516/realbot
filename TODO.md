@@ -66,6 +66,17 @@ Add a free tier + subscription mechanism to the Claw Live app. (為 Claw Live �
 
 !!!![Bug]!!!! 極高優先權
 
+### 🔴 Bug: Push Response Not Visible (高優先權)
+- **Issue**: E-Claw App displays raw JSON webhook response instead of parsed message
+- **Root Cause**: App shows `[Push] Response: {"ok":true,"result":{"content":[...]}}` raw JSON
+- **Expected**: Extract and display `text` field from sessions_send response
+- **Example of current behavior**:
+  ```
+  [Push] Response: {"ok":true,"result":{"content":[{"type":"text","text":"🌊 廣播回報..."}]}}
+  ```
+- **Expected behavior**: Display just the message text
+- **Status**: Backend sends correct format, App needs to parse webhook response
+
 ### Phase 9: AI Resource Usage (階段 9: AI 資源用量)
 - [ ] **Status Bar Integration**: Integrate AI remaining usage into the status bar (整合 AI 剩餘用量至狀態列)
     - **JSON Structure**:

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="1dp">
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+        
+        <!-- Title & Priority -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <TextView
+                android:id="@+id/tvPriority"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🟡"
+                android:textSize="14sp"
+                android:layout_marginEnd="8dp"/>
+            
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="任務標題"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end"/>
+            
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="待處理"
+                android:textSize="12sp"
+                android:background="@drawable/bg_status_chip"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"/>
+            
+        </LinearLayout>
+        
+        <!-- Details -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+            
+            <TextView
+                android:id="@+id/tvBot"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🤖 Bot: -"
+                android:textSize="12sp"
+                android:textColor="#666666"/>
+            
+            <TextView
+                android:id="@+id/tvEta"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⏰ ETA: -"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:gravity="end"/>
+            
+        </LinearLayout>
+        
+        <!-- Updated At -->
+        <TextView
+            android:id="@+id/tvUpdatedAt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="更新: -"
+            android:textSize="10sp"
+            android:textColor="#999999"
+            android:layout_marginTop="4dp"
+            android:layout_gravity="end"/>
+        
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
