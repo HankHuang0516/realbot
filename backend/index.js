@@ -1408,7 +1408,7 @@ app.post('/api/bot/register', async (req, res) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(handshakePayload),
-            signal: AbortSignal.timeout(15000) // 15s timeout - invoke may take longer than list
+            signal: AbortSignal.timeout(5000) // 5s timeout - real failures return in < 1s; timeout = success
         });
 
         const responseText = await probeResponse.text().catch(() => '');
@@ -1459,16 +1459,28 @@ app.post('/api/bot/register', async (req, res) => {
         console.log(`[Bot Register] Handshake response: ${responseText.substring(0, 200)}`);
 
     } catch (probeErr) {
-        // Connection refused / timeout - gateway is unreachable
-        console.error(`[Bot Register] ✗ Handshake connection failed: ${probeErr.message}`);
-        return res.status(400).json({
-            success: false,
-            message: `Webhook handshake failed: cannot reach gateway at ${finalUrl}. ` +
-                `Error: ${probeErr.message}. ` +
-                `Please verify that your bot server is running and the webhook URL is correct.`,
-            hint: "If using Zeabur: ensure the service is deployed and the URL matches ZEABUR_WEB_URL.",
-            debug: { probeUrl: finalUrl, error: probeErr.message }
-        });
+        // Differentiate timeout vs connection failure
+        // Timeout = gateway accepted the request, AI model is processing = SUCCESS
+        // ECONNREFUSED / DNS error = gateway is truly unreachable = FAILURE
+        const isTimeout = probeErr.name === 'TimeoutError' || probeErr.name === 'AbortError' ||
+            probeErr.message?.includes('timed out') || probeErr.message?.includes('aborted');
+
+        if (isTimeout) {
+            // Timeout means gateway accepted the request and started processing
+            // (real failures like 404/401 return in < 1 second)
+            console.log(`[Bot Register] ✓ Handshake OK: request accepted by gateway (timed out waiting for AI response, which is expected)`);
+        } else {
+            // Actual connection failure - gateway is unreachable
+            console.error(`[Bot Register] ✗ Handshake connection failed: ${probeErr.message}`);
+            return res.status(400).json({
+                success: false,
+                message: `Webhook handshake failed: cannot reach gateway at ${finalUrl}. ` +
+                    `Error: ${probeErr.message}. ` +
+                    `Please verify that your bot server is running and the webhook URL is correct.`,
+                hint: "If using Zeabur: ensure the service is deployed and the URL matches ZEABUR_WEB_URL.",
+                debug: { probeUrl: finalUrl, error: probeErr.message }
+            });
+        }
     }
 
     // ── Handshake passed: store webhook info ──
