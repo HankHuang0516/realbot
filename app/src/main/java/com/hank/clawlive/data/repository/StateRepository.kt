@@ -74,6 +74,25 @@ class StateRepository(
                     try {
                         val processedEntity = translateSystemMessage(entity)
                         chatRepository.processEntityMessage(processedEntity)
+                        // Process messageQueue (entity broadcasts)
+                        processMessageQueue(processedEntity)
+                        
+                        // Poll bot pending messages for entities with botSecret
+                        entity.botSecret?.let { botSecret ->
+                            chatRepository.pollBotMessages(
+                                deviceId = deviceManager.deviceId,
+                                entityId = entity.entityId,
+                                botSecret = botSecret
+                            ) { devId, entId, secret ->
+                                api.getPendingMessages(
+                                    mapOf(
+                                        "deviceId" to devId,
+                                        "entityId" to entId.toString(),
+                                        "botSecret" to secret
+                                    )
+                                )
+                            }
+                        }
                     } catch (e: Exception) {
                         Timber.e(e, "Error processing entity message for chat history")
                     }
@@ -139,6 +158,28 @@ class StateRepository(
         }
 
         return entity.copy(message = localizedMessage)
+    }
+
+    /**
+     * Process messageQueue items (entity broadcasts)
+     * Add broadcast messages to chat history
+     */
+    private suspend fun processMessageQueue(entity: EntityStatus) {
+        entity.messageQueue?.forEach { queueItem ->
+            try {
+                // Add to chat repository
+                chatRepository.addMessageQueueItem(
+                    text = queueItem.text,
+                    fromEntityId = queueItem.fromEntityId,
+                    fromCharacter = queueItem.fromCharacter,
+                    timestamp = queueItem.timestamp
+                )
+                
+                Timber.d("Processed entity broadcast: ${queueItem.text}")
+            } catch (e: Exception) {
+                Timber.e(e, "Error processing message queue item")
+            }
+        }
     }
 
 }

@@ -1,18 +1,7 @@
 package com.hank.clawlive.data.remote
 
-import com.hank.clawlive.data.model.AgentStatus
-import com.hank.clawlive.data.model.ApiResponse
-import com.hank.clawlive.data.model.ClientMessageResponse
-import com.hank.clawlive.data.model.DeviceStatusRequest
-import com.hank.clawlive.data.model.MultiEntityResponse
-import com.hank.clawlive.data.model.RegisterRequest
-import com.hank.clawlive.data.model.RegisterResponse
-import com.hank.clawlive.data.model.SpawnEntityRequest
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.HTTP
-import retrofit2.http.POST
-import retrofit2.http.Query
+import com.hank.clawlive.data.model.*
+import retrofit2.http.*
 
 interface ClawApiService {
 
@@ -55,7 +44,6 @@ interface ClawApiService {
     suspend fun getAllEntities(@Query("deviceId") deviceId: String? = null): MultiEntityResponse
 
     // Remove entity by bot (requires botSecret)
-    // Use @HTTP instead of @DELETE to allow request body
     @HTTP(method = "DELETE", path = "api/entity", hasBody = true)
     suspend fun removeEntity(@Body body: Map<String, String>): ApiResponse
 
@@ -69,4 +57,92 @@ interface ClawApiService {
 
     @POST("api/feedback")
     suspend fun sendFeedback(@Body body: Map<String, String>): ApiResponse
+
+    // ============================================
+    // BOT POLLING ENDPOINTS
+    // ============================================
+
+    @POST("api/bot/pending-messages")
+    suspend fun getPendingMessages(@Body body: Map<String, String>): PendingMessagesResponse
+
+    // ============================================
+    // MISSION CONTROL DASHBOARD
+    // ============================================
+
+    /**
+     * 取得完整 Dashboard
+     */
+    @GET("api/mission/dashboard")
+    suspend fun getMissionDashboard(@QueryMap params: Map<String, String>): MissionDashboardResponse
+
+    /**
+     * 上傳完整 Dashboard (用戶手動)
+     */
+    @POST("api/mission/dashboard")
+    suspend fun uploadMissionDashboard(
+        @QueryMap params: Map<String, String>,
+        @Body dashboard: MissionDashboardSnapshot
+    ): MissionDashboardResponse
+
+    /**
+     * 取得所有任務
+     */
+    @GET("api/mission/items")
+    suspend fun getMissionItems(@QueryMap params: Map<String, String>): MissionItemsResponse
+
+    /**
+     * 新增任務
+     */
+    @POST("api/mission/items")
+    suspend fun addMissionItem(
+        @QueryMap params: Map<String, String>,
+        @Body item: MissionItem,
+        @Query("list") list: String
+    ): MissionItemResponse
+
+    /**
+     * 取得筆記 (Bots 可讀)
+     */
+    @GET("api/mission/notes")
+    suspend fun getMissionNotes(@QueryMap params: Map<String, String>): MissionNotesResponse
+
+    /**
+     * 取得規則
+     */
+    @GET("api/mission/rules")
+    suspend fun getMissionRules(@QueryMap params: Map<String, String>): MissionRulesResponse
 }
+
+// ============ Mission Control Response Models ============
+
+data class MissionDashboardResponse(
+    val success: Boolean,
+    val dashboard: MissionDashboardSnapshot?,
+    val version: Int? = null,
+    val message: String? = null,
+    val error: String? = null
+)
+
+data class MissionItemsResponse(
+    val success: Boolean,
+    val items: List<MissionItem>,
+    val error: String? = null
+)
+
+data class MissionItemResponse(
+    val success: Boolean,
+    val item: MissionItem?,
+    val error: String? = null
+)
+
+data class MissionNotesResponse(
+    val success: Boolean,
+    val notes: List<MissionNote>,
+    val error: String? = null
+)
+
+data class MissionRulesResponse(
+    val success: Boolean,
+    val rules: List<MissionRule>,
+    val error: String? = null
+)

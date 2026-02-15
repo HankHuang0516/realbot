@@ -35,6 +35,8 @@ import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
+import com.hank.clawlive.data.model.UsageInfo
+import com.hank.clawlive.data.model.UsageStatus
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.repository.StateRepository
 import com.hank.clawlive.ui.MainViewModel
@@ -81,6 +83,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var topBar: LinearLayout
     private lateinit var bottomActions: LinearLayout
     private lateinit var tvEntityCount: TextView
+    // Phase 9: AI Usage Status Bar
+    private lateinit var usageStatusBar: LinearLayout
+    private lateinit var tvUsageLabel: TextView
+    private lateinit var progressUsage: ProgressBar
+    private lateinit var tvUsageStatus: TextView
 
     private var boundEntities: List<EntityStatus> = emptyList()
     private var isAddEntityExpanded = false
@@ -123,6 +130,11 @@ class MainActivity : AppCompatActivity() {
         topBar = findViewById(R.id.topBar)
         bottomActions = findViewById(R.id.bottomActions)
         tvEntityCount = findViewById(R.id.tvEntityCount)
+        // Phase 9: AI Usage Status Bar
+        usageStatusBar = findViewById(R.id.usageStatusBar)
+        tvUsageLabel = findViewById(R.id.tvUsageLabel)
+        progressUsage = findViewById(R.id.progressUsage)
+        tvUsageStatus = findViewById(R.id.tvUsageStatus)
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -209,6 +221,7 @@ class MainActivity : AppCompatActivity() {
                 boundEntities = response.entities.filter { it.isBound }
                 updateAgentCards()
                 updateEntityCount()
+                updateUsageStatusBar()  // Phase 9: Update usage bar
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load entities")
             }
@@ -219,6 +232,48 @@ class MainActivity : AppCompatActivity() {
         val maxEntities = if (usageManager.isPremium) PREMIUM_ENTITY_LIMIT else FREE_ENTITY_LIMIT
         tvEntityCount.text = getString(R.string.entity_count_format, boundEntities.size, maxEntities)
         tvEntityCount.visibility = View.VISIBLE
+    }
+
+    /**
+     * Phase 9: Update AI Usage Status Bar
+     * Shows the AI resource usage from the bound entities
+     */
+    private fun updateUsageStatusBar() {
+        // Find the first entity with usage data (prefer selected entity)
+        val selectedEntityId = getSelectedEntityId()
+        val selectedEntity = boundEntities.find { it.entityId == selectedEntityId }
+        val usage = selectedEntity?.usage ?: boundEntities.firstOrNull { it.usage != null }?.usage
+
+        if (usage != null) {
+            usageStatusBar.visibility = View.VISIBLE
+            tvUsageLabel.text = usage.label
+            progressUsage.progress = usage.percentage
+            tvUsageStatus.text = usage.status.name
+
+            // Set color based on status
+            val (progressColor, statusColor) = when (usage.status) {
+                com.hank.clawlive.data.model.UsageStatus.NORMAL -> 
+                    Pair("#4CAF50", "#4CAF50")  // Green
+                com.hank.clawlive.data.model.UsageStatus.WARNING -> 
+                    Pair("#FFC107", "#FFC107")  // Yellow
+                com.hank.clawlive.data.model.UsageStatus.CRITICAL -> 
+                    Pair("#F44336", "#F44336")  // Red
+            }
+            
+            tvUsageStatus.setTextColor(Color.parseColor(statusColor))
+        } else {
+            usageStatusBar.visibility = View.GONE
+        }
+    }
+
+    private fun getSelectedEntityId(): Int {
+        return when (chipGroupEntity.checkedChipId) {
+            R.id.chipEntity0 -> 0
+            R.id.chipEntity1 -> 1
+            R.id.chipEntity2 -> 2
+            R.id.chipEntity3 -> 3
+            else -> 0
+        }
     }
 
     private fun updateAgentCards() {

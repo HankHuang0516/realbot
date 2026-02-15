@@ -19,6 +19,7 @@
     <color name="status_in_progress">#2196F3</color>
     <color name="status_blocked">#F44336</color>
     <color name="status_done">#4CAF50</color>
+<<<<<<< HEAD
 
     <!-- Note Category Colors -->
     <color name="category_important">#F44336</color>
@@ -39,4 +40,6 @@
     <color name="type_communication">#9C27B0</color>
     <color name="type_deployment">#4CAF50</color>
     <color name="type_sync">#607D8B</color>
+=======
+>>>>>>> main
 </resources>

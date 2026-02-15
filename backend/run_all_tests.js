@@ -6,9 +6,13 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 
 // Test directory
 const TEST_DIR = path.join(__dirname, 'tests');
+
+// API Base URL
+const API_BASE = process.env.API_BASE_URL || 'http://localhost:3000';
 
 // Test files to run (in order of importance)
 // Note: Tests must be v5 compatible (deviceId + entityId based)
@@ -28,6 +32,51 @@ const TEST_FILES = [
 // - test_name_feature.js         - Manual device UI testing
 
 const TEST_TIMEOUT = 60000; // 60 seconds per test (entity_delete needs more time)
+
+/**
+ * Clean up test environment before/after tests
+ * Calls /api/debug/reset with deviceSecret
+ */
+async function cleanupTestEnvironment() {
+    return new Promise((resolve) => {
+        const debugSecret = process.env.DEBUG_RESET_SECRET || 'test_debug_secret';
+        
+        const postData = JSON.stringify({ deviceSecret: debugSecret });
+        
+        const options = {
+            hostname: new URL(API_BASE).hostname,
+            port: new URL(API_BASE).port || 3000,
+            path: '/api/debug/reset',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        const req = http.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => data += chunk);
+            res.on('end', () => {
+                if (res.statusCode === 200) {
+                    console.log('🧹 Test environment cleaned up');
+                    resolve(true);
+                } else {
+                    console.log(`⚠️  Cleanup returned status ${res.statusCode}: ${data}`);
+                    resolve(false);
+                }
+            });
+        });
+
+        req.on('error', (err) => {
+            console.log(`⚠️  Cleanup failed (server may not be running): ${err.message}`);
+            resolve(false);
+        });
+
+        req.write(postData);
+        req.end();
+    });
+}
 
 async function runTest(testFile) {
     return new Promise((resolve) => {
@@ -111,10 +160,18 @@ async function main() {
 
     const results = [];
 
+    // Pre-test cleanup
+    console.log('\n🧹 Pre-test cleanup...');
+    await cleanupTestEnvironment();
+
     for (const testFile of TEST_FILES) {
         const result = await runTest(testFile);
         results.push(result);
     }
+
+    // Post-test cleanup
+    console.log('\n🧹 Post-test cleanup...');
+    await cleanupTestEnvironment();
 
     // Summary
     console.log('\n' + '='.repeat(60));
