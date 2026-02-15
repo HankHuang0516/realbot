@@ -246,6 +246,7 @@ function createDefaultEntity(entityId) {
         character: "LOBSTER",
         state: "IDLE",
         message: `Entity #${entityId} waiting...`,
+        transfer: null, // MCP transfer payload (for entity-to-entity communication)
         parts: {},
         lastUpdated: Date.now(),
         messageQueue: [],
@@ -474,6 +475,7 @@ app.post('/api/device/status', (req, res) => {
         character: entity.character,
         state: entity.state,
         message: entity.message,
+        transfer: entity.transfer,
         parts: entity.parts,
         lastUpdated: entity.lastUpdated,
         isBound: entity.isBound,
@@ -587,6 +589,7 @@ app.get('/api/entities', (req, res) => {
                     character: entity.character,
                     state: entity.state,
                     message: entity.message,
+                    transfer: entity.transfer,
                     parts: entity.parts,
                     lastUpdated: entity.lastUpdated,
                     isBound: true  // Always true since we only return bound entities
@@ -640,6 +643,7 @@ app.get('/api/status', (req, res) => {
         character: entity.character,
         state: entity.state,
         message: entity.message,
+        transfer: entity.transfer,
         parts: entity.parts,
         lastUpdated: entity.lastUpdated,
         isBound: entity.isBound,
@@ -986,7 +990,15 @@ app.post('/api/entity/speak-to', async (req, res) => {
     // Create message source identifier
     const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
 
-    toEntity.message = `From Entity ${fromId}: "${text}"`;
+    // Use MCP transfer instead of overriding message
+    toEntity.transfer = {
+        type: "entity_message",
+        from: sourceLabel,
+        fromEntityId: fromId,
+        fromCharacter: fromEntity.character,
+        text: text,
+        timestamp: Date.now()
+    };
     toEntity.lastUpdated = Date.now();
 
     const messageObj = {
@@ -999,15 +1011,14 @@ app.post('/api/entity/speak-to', async (req, res) => {
     };
     toEntity.messageQueue.push(messageObj);
 
-    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
+    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}" (transfer)`);
 
-    // Push to target bot if webhook is registered
+    // Push transfer to target bot if webhook is registered
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
-        pushResult = await pushToBot(toEntity, deviceId, "entity_message", {
+        pushResult = await pushToBot(toEntity, deviceId, "entity_transfer", {
             entityId: toId,
-            read: true,
-            message: `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`
+            transfer: toEntity.transfer
         });
 
         if (pushResult.pushed) {
@@ -1070,6 +1081,14 @@ app.post('/api/entity/broadcast', async (req, res) => {
 
     // Create message source identifier
     const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
+    const transferPayload = {
+        type: "entity_broadcast",
+        from: sourceLabel,
+        fromEntityId: fromId,
+        fromCharacter: fromEntity.character,
+        text: text,
+        timestamp: Date.now()
+    };
 
     // Find all other bound entities and send in parallel
     const targetIds = [];
@@ -1089,13 +1108,14 @@ app.post('/api/entity/broadcast', async (req, res) => {
         });
     }
 
-    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}"`);
+    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}" (transfer)`);
 
     // Parallel processing - send to all entities simultaneously
     const pushPromises = targetIds.map(async (toId) => {
         const toEntity = device.entities[toId];
 
-        toEntity.message = `From Entity ${fromId}: "${text}"`;
+        // Use MCP transfer instead of overriding message
+        toEntity.transfer = { ...transferPayload };
         toEntity.lastUpdated = Date.now();
 
         const messageObj = {
@@ -1108,13 +1128,12 @@ app.post('/api/entity/broadcast', async (req, res) => {
         };
         toEntity.messageQueue.push(messageObj);
 
-        // Push to target bot if webhook is registered
+        // Push transfer to target bot if webhook is registered
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
-            pushResult = await pushToBot(toEntity, deviceId, "entity_broadcast", {
+            pushResult = await pushToBot(toEntity, deviceId, "entity_transfer", {
                 entityId: toId,
-                read: true,
-                message: `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`
+                transfer: toEntity.transfer
             });
 
             if (pushResult.pushed) {
