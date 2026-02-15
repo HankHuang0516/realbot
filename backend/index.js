@@ -1387,77 +1387,87 @@ app.post('/api/bot/register', async (req, res) => {
 
     const tokenPreview = cleanToken.length > 8 ? cleanToken.substring(0, 4) + '...' + cleanToken.substring(cleanToken.length - 4) : '***';
 
-    // ── Handshake: verify gateway has sessions_send tool ──
-    // Derive /tools/list URL from webhook URL (e.g. .../tools/invoke → .../tools/list)
-    const listUrl = finalUrl.replace(/\/tools\/invoke\/?$/, '/tools/list');
-    console.log(`[Bot Register] Handshake: probing ${listUrl} for sessions_send tool...`);
+    // ── Handshake: dry-run test of sessions_send via /tools/invoke ──
+    // Instead of checking /tools/list (unreliable), actually invoke sessions_send
+    // with a harmless test message to verify the full push pipeline works.
+    const handshakePayload = {
+        tool: "sessions_send",
+        args: {
+            sessionKey: session_key,
+            message: `[SYSTEM:HANDSHAKE_TEST] Webhook 綁定驗證中... (Device ${deviceId} Entity ${eId})`
+        }
+    };
+
+    console.log(`[Bot Register] Handshake: dry-run invoking sessions_send at ${finalUrl}...`);
 
     try {
-        const probeResponse = await fetch(listUrl, {
-            method: 'GET',
+        const probeResponse = await fetch(finalUrl, {
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${cleanToken}`,
                 'Content-Type': 'application/json'
             },
-            signal: AbortSignal.timeout(8000) // 8s timeout for handshake
+            body: JSON.stringify(handshakePayload),
+            signal: AbortSignal.timeout(15000) // 15s timeout - invoke may take longer than list
         });
 
-        if (!probeResponse.ok) {
-            const errText = await probeResponse.text().catch(() => '');
-            console.error(`[Bot Register] Handshake failed: ${listUrl} returned HTTP ${probeResponse.status}`);
-            console.error(`[Bot Register] Response: ${errText}`);
+        const responseText = await probeResponse.text().catch(() => '');
 
-            // If 401, token is wrong
+        if (!probeResponse.ok) {
+            console.error(`[Bot Register] ✗ Handshake FAILED: ${finalUrl} returned HTTP ${probeResponse.status}`);
+            console.error(`[Bot Register] Response: ${responseText}`);
+
+            // Parse error for specific failure reasons
+            let parsedError = null;
+            try { parsedError = JSON.parse(responseText); } catch (e) { }
+            const errorMessage = parsedError?.error?.message || responseText;
+
             if (probeResponse.status === 401) {
                 return res.status(400).json({
                     success: false,
                     message: "Webhook handshake failed: gateway rejected the token (HTTP 401). " +
                         "Please verify that the token matches your OPENCLAW_GATEWAY_TOKEN.",
                     hint: "Re-read gateway config and use the correct token.",
-                    debug: { probeUrl: listUrl, httpStatus: probeResponse.status, tokenPreview }
+                    debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, tokenPreview }
                 });
             }
 
-            // Other HTTP errors - warn but allow registration (gateway may not support /tools/list)
-            console.warn(`[Bot Register] Handshake warning: ${listUrl} returned ${probeResponse.status}, proceeding with registration`);
-        } else {
-            // Parse tool list and check for sessions_send
-            const toolListData = await probeResponse.json().catch(() => null);
-
-            if (toolListData) {
-                // OpenClaw /tools/list returns { tools: [...] } where each tool has { name: "..." }
-                const tools = toolListData.tools || toolListData;
-                const toolNames = Array.isArray(tools)
-                    ? tools.map(t => t.name || t.tool || t).filter(Boolean)
-                    : [];
-
-                console.log(`[Bot Register] Gateway tools available: [${toolNames.join(', ')}]`);
-
-                if (toolNames.length > 0 && !toolNames.includes('sessions_send')) {
-                    console.error(`[Bot Register] ✗ Handshake REJECTED: sessions_send not in tool list`);
-                    return res.status(400).json({
-                        success: false,
-                        message: "Webhook handshake failed: gateway does not have 'sessions_send' tool. " +
-                            "This tool is required for push notifications. " +
-                            "Please check your OpenClaw gateway version and ensure sessions_send is enabled.",
-                        hint: "Your gateway might be outdated or misconfigured. Available tools: " + toolNames.join(', '),
-                        debug: { probeUrl: listUrl, availableTools: toolNames }
-                    });
-                }
-
-                console.log(`[Bot Register] ✓ Handshake OK: sessions_send confirmed available`);
+            if (probeResponse.status === 404 || errorMessage.includes('not available') || errorMessage.includes('not found')) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Webhook handshake failed: gateway cannot execute 'sessions_send' tool. " +
+                        `Server responded: "${errorMessage}". ` +
+                        "This tool is required for push notifications. " +
+                        "Please update your OpenClaw gateway or check its configuration.",
+                    hint: "Your gateway might be outdated or sessions plugin is not enabled.",
+                    debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
+                });
             }
+
+            // Other errors - reject registration
+            return res.status(400).json({
+                success: false,
+                message: `Webhook handshake failed: gateway returned HTTP ${probeResponse.status}. ` +
+                    `Server responded: "${errorMessage}".`,
+                hint: "Check your gateway logs for more details.",
+                debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
+            });
         }
+
+        // Success - sessions_send actually works
+        console.log(`[Bot Register] ✓ Handshake OK: sessions_send dry-run succeeded (HTTP ${probeResponse.status})`);
+        console.log(`[Bot Register] Handshake response: ${responseText.substring(0, 200)}`);
+
     } catch (probeErr) {
         // Connection refused / timeout - gateway is unreachable
-        console.error(`[Bot Register] Handshake connection failed: ${probeErr.message}`);
+        console.error(`[Bot Register] ✗ Handshake connection failed: ${probeErr.message}`);
         return res.status(400).json({
             success: false,
-            message: `Webhook handshake failed: cannot reach gateway at ${listUrl}. ` +
+            message: `Webhook handshake failed: cannot reach gateway at ${finalUrl}. ` +
                 `Error: ${probeErr.message}. ` +
                 `Please verify that your bot server is running and the webhook URL is correct.`,
             hint: "If using Zeabur: ensure the service is deployed and the URL matches ZEABUR_WEB_URL.",
-            debug: { probeUrl: listUrl, error: probeErr.message }
+            debug: { probeUrl: finalUrl, error: probeErr.message }
         });
     }
 
