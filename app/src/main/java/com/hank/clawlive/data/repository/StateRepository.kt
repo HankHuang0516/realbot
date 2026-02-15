@@ -152,8 +152,8 @@ class StateRepository(
     private fun translateSystemMessage(entity: EntityStatus): EntityStatus {
         if (!entity.message.startsWith("[SYSTEM:")) return entity
 
-        val localizedMessage = when (entity.message) {
-            "[SYSTEM:WEBHOOK_ERROR]" -> context.getString(R.string.webhook_error_message)
+        val localizedMessage = when {
+            entity.message.startsWith("[SYSTEM:WEBHOOK_ERROR]") -> context.getString(R.string.webhook_error_message)
             else -> entity.message
         }
 

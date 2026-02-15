@@ -210,12 +210,9 @@ class MessageActivity : AppCompatActivity() {
                 // Check push notification status
                 val totalCount = response.targets.size
                 if (pushedCount == 0 && totalCount > 0) {
-                    val pollingEntities = response.targets.filter { it.mode == "polling" }
-                    if (pollingEntities.isNotEmpty()) {
-                        Timber.w("Push notification unavailable for ${pollingEntities.size} entity(s)")
-                        showWebhookErrorDialog()
-                        return@launch
-                    }
+                    Timber.w("Push notification failed for all $totalCount entity(s)")
+                    showWebhookErrorDialog()
+                    return@launch
                 }
 
                 finish()

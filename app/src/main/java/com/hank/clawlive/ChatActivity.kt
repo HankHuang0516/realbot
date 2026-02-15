@@ -409,11 +409,8 @@ class ChatActivity : AppCompatActivity() {
 
                 if (pushedCount == 0 && totalCount > 0) {
                     // No entities received push notification - show alert dialog
-                    val pollingEntities = response.targets.filter { it.mode == "polling" }
-                    if (pollingEntities.isNotEmpty()) {
-                        Timber.w("Push notification unavailable for ${pollingEntities.size} entity(s), using polling mode")
-                        showWebhookErrorDialog()
-                    }
+                    Timber.w("Push notification failed for all $totalCount entity(s)")
+                    showWebhookErrorDialog()
                 } else if (pushedCount < totalCount) {
                     // Some but not all entities received push
                     Timber.w("Push notification partial: $pushedCount/$totalCount entities")

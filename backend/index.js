@@ -1121,7 +1121,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
         // Format must match Android's parseEntityMessage regex: "entity:{ID}:{CHARACTER}: {message}"
         toEntity.message = `entity:${fromId}:${fromEntity.character}: [廣播] ${text}`;
         toEntity.lastUpdated = Date.now();
-        
+
         // Push to target bot if webhook is registered
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
@@ -1278,7 +1278,7 @@ app.post('/api/debug/reset', (req, res) => {
     if (!isLocalhost && adminToken !== expectedToken) {
         return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
     }
-    
+
     for (const deviceId in devices) {
         delete devices[deviceId];
     }
@@ -1298,7 +1298,7 @@ app.post('/api/debug/reset', (req, res) => {
  * Bot registers its webhook URL to receive push notifications.
  * Body: { deviceId, entityId, botSecret, webhook_url, token, session_key }
  */
-app.post('/api/bot/register', (req, res) => {
+app.post('/api/bot/register', async (req, res) => {
     const { deviceId, entityId, botSecret, webhook_url, token, session_key } = req.body;
 
     if (!deviceId) {
@@ -1385,7 +1385,83 @@ app.post('/api/bot/register', (req, res) => {
     urlObj2.pathname = urlObj2.pathname.replace(/\/\/+/g, '/');
     const finalUrl = urlObj2.toString().replace(/\/$/, '');
 
-    // Store webhook info
+    const tokenPreview = cleanToken.length > 8 ? cleanToken.substring(0, 4) + '...' + cleanToken.substring(cleanToken.length - 4) : '***';
+
+    // ── Handshake: verify gateway has sessions_send tool ──
+    // Derive /tools/list URL from webhook URL (e.g. .../tools/invoke → .../tools/list)
+    const listUrl = finalUrl.replace(/\/tools\/invoke\/?$/, '/tools/list');
+    console.log(`[Bot Register] Handshake: probing ${listUrl} for sessions_send tool...`);
+
+    try {
+        const probeResponse = await fetch(listUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${cleanToken}`,
+                'Content-Type': 'application/json'
+            },
+            signal: AbortSignal.timeout(8000) // 8s timeout for handshake
+        });
+
+        if (!probeResponse.ok) {
+            const errText = await probeResponse.text().catch(() => '');
+            console.error(`[Bot Register] Handshake failed: ${listUrl} returned HTTP ${probeResponse.status}`);
+            console.error(`[Bot Register] Response: ${errText}`);
+
+            // If 401, token is wrong
+            if (probeResponse.status === 401) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Webhook handshake failed: gateway rejected the token (HTTP 401). " +
+                        "Please verify that the token matches your OPENCLAW_GATEWAY_TOKEN.",
+                    hint: "Re-read gateway config and use the correct token.",
+                    debug: { probeUrl: listUrl, httpStatus: probeResponse.status, tokenPreview }
+                });
+            }
+
+            // Other HTTP errors - warn but allow registration (gateway may not support /tools/list)
+            console.warn(`[Bot Register] Handshake warning: ${listUrl} returned ${probeResponse.status}, proceeding with registration`);
+        } else {
+            // Parse tool list and check for sessions_send
+            const toolListData = await probeResponse.json().catch(() => null);
+
+            if (toolListData) {
+                // OpenClaw /tools/list returns { tools: [...] } where each tool has { name: "..." }
+                const tools = toolListData.tools || toolListData;
+                const toolNames = Array.isArray(tools)
+                    ? tools.map(t => t.name || t.tool || t).filter(Boolean)
+                    : [];
+
+                console.log(`[Bot Register] Gateway tools available: [${toolNames.join(', ')}]`);
+
+                if (toolNames.length > 0 && !toolNames.includes('sessions_send')) {
+                    console.error(`[Bot Register] ✗ Handshake REJECTED: sessions_send not in tool list`);
+                    return res.status(400).json({
+                        success: false,
+                        message: "Webhook handshake failed: gateway does not have 'sessions_send' tool. " +
+                            "This tool is required for push notifications. " +
+                            "Please check your OpenClaw gateway version and ensure sessions_send is enabled.",
+                        hint: "Your gateway might be outdated or misconfigured. Available tools: " + toolNames.join(', '),
+                        debug: { probeUrl: listUrl, availableTools: toolNames }
+                    });
+                }
+
+                console.log(`[Bot Register] ✓ Handshake OK: sessions_send confirmed available`);
+            }
+        }
+    } catch (probeErr) {
+        // Connection refused / timeout - gateway is unreachable
+        console.error(`[Bot Register] Handshake connection failed: ${probeErr.message}`);
+        return res.status(400).json({
+            success: false,
+            message: `Webhook handshake failed: cannot reach gateway at ${listUrl}. ` +
+                `Error: ${probeErr.message}. ` +
+                `Please verify that your bot server is running and the webhook URL is correct.`,
+            hint: "If using Zeabur: ensure the service is deployed and the URL matches ZEABUR_WEB_URL.",
+            debug: { probeUrl: listUrl, error: probeErr.message }
+        });
+    }
+
+    // ── Handshake passed: store webhook info ──
     entity.webhook = {
         url: finalUrl,
         token: cleanToken,
@@ -1393,7 +1469,6 @@ app.post('/api/bot/register', (req, res) => {
         registeredAt: Date.now()
     };
 
-    const tokenPreview = cleanToken.length > 8 ? cleanToken.substring(0, 4) + '...' + cleanToken.substring(cleanToken.length - 4) : '***';
     console.log(`[Bot Register] Device ${deviceId} Entity ${eId} webhook registered: ${finalUrl} (token: ${tokenPreview}, len: ${cleanToken.length})`);
 
     // Save data after webhook registration
@@ -1422,6 +1497,7 @@ app.post('/api/bot/register', (req, res) => {
             token_length: cleanToken.length,
             token_preview: tokenPreview,
             session_key: session_key,
+            handshake: "sessions_send verified",
             warnings: warnings.length > 0 ? warnings : undefined
         }
     });
@@ -1651,29 +1727,29 @@ app.listen(port, () => {
  */
 app.post('/api/bot/sync-message', async (req, res) => {
     const { deviceId, entityId, botSecret, message, fromLabel } = req.body;
-    
+
     if (!deviceId || entityId === undefined || !botSecret || !message) {
-        return res.status(400).json({ 
-            success: false, 
-            error: "Missing required fields: deviceId, entityId, botSecret, message" 
+        return res.status(400).json({
+            success: false,
+            error: "Missing required fields: deviceId, entityId, botSecret, message"
         });
     }
-    
+
     const device = devices[deviceId];
     if (!device) {
         return res.status(404).json({ success: false, error: "Device not found" });
     }
-    
+
     const entity = device.entities[entityId];
     if (!entity || !entity.isBound) {
         return res.status(404).json({ success: false, error: "Entity not bound" });
     }
-    
+
     // Verify botSecret
     if (entity.botSecret !== botSecret) {
         return res.status(403).json({ success: false, error: "Invalid botSecret" });
     }
-    
+
     // Create message object for the device's message queue
     const messageObj = {
         text: message,
@@ -1684,21 +1760,21 @@ app.post('/api/bot/sync-message', async (req, res) => {
         read: false,
         isFromBot: true  // Mark as from Bot for the device
     };
-    
+
     // Add to entity's message queue
     if (!entity.messageQueue) {
         entity.messageQueue = [];
     }
     entity.messageQueue.push(messageObj);
-    
+
     // Also update entity.message for immediate display
     entity.message = message;
     entity.lastUpdated = Date.now();
-    
+
     console.log(`[Bot Sync] Saved message to device ${deviceId} Entity ${entityId}: "${message.substring(0, 50)}..."`);
-    
-    res.json({ 
-        success: true, 
+
+    res.json({
+        success: true,
         message: "Message synced to device",
         messageId: messageObj.timestamp
     });
@@ -1710,27 +1786,27 @@ app.post('/api/bot/sync-message', async (req, res) => {
  */
 app.get('/api/bot/pending-messages', (req, res) => {
     const { deviceId, entityId } = req.query;
-    
+
     if (!deviceId || entityId === undefined) {
         return res.status(400).json({ success: false, error: "deviceId and entityId required" });
     }
-    
+
     const device = devices[deviceId];
     if (!device) {
         return res.status(404).json({ success: false, error: "Device not found" });
     }
-    
+
     const entity = device.entities[parseInt(entityId)];
     if (!entity || !entity.messageQueue) {
         return res.json({ messages: [], unreadCount: 0 });
     }
-    
+
     // Get unread messages
     const unreadMessages = entity.messageQueue.filter(m => !m.read);
-    
+
     // Mark all as read
     entity.messageQueue.forEach(m => m.read = true);
-    
+
     res.json({
         messages: unreadMessages,
         unreadCount: unreadMessages.length,
