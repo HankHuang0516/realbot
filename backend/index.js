@@ -1262,32 +1262,6 @@ app.get('/api/debug/devices', (req, res) => {
 
 /**
  * POST /api/debug/reset
-<<<<<<< HEAD
- * Reset all devices (for testing).
- * REQUIRES: deviceSecret for authentication
- */
-app.post('/api/debug/reset', (req, res) => {
-    const { deviceSecret } = req.body;
-    
-    // Authentication required
-    if (!deviceSecret) {
-        return res.status(401).json({ 
-            success: false, 
-            message: "deviceSecret required for debug reset" 
-        });
-    }
-    
-    // Verify deviceSecret (use master secret or first device's secret)
-    const masterSecret = process.env.DEBUG_RESET_SECRET || "secure_debug_secret_2026";
-    const firstDevice = Object.values(devices)[0];
-    const validSecret = firstDevice?.deviceSecret;
-    
-    if (deviceSecret !== masterSecret && deviceSecret !== validSecret) {
-        return res.status(403).json({ 
-            success: false, 
-            message: "Invalid deviceSecret" 
-        });
-=======
  * Reset all devices (for testing). Requires admin token.
  */
 app.post('/api/debug/reset', (req, res) => {
@@ -1299,7 +1273,6 @@ app.post('/api/debug/reset', (req, res) => {
     
     if (!isLocalhost && adminToken !== expectedToken) {
         return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
->>>>>>> origin/main
     }
     
     for (const deviceId in devices) {
