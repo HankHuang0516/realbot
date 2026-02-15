@@ -16,19 +16,6 @@ data class EntityStatus(
     val usage: UsageInfo? = null,
     val messageQueue: List<MessageQueueItem>? = null,
     val botSecret: String? = null  // For bot polling API calls
-)
-
-/**
- * Message queue item from entity broadcasts
- */
-data class MessageQueueItem(
-    val text: String,
-    val from: String,
-    val fromEntityId: Int,
-    val fromCharacter: String,
-    val timestamp: Long,
-    val read: Boolean = false,
-    val delivered: Boolean = false
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType
@@ -68,3 +55,16 @@ data class MessageQueueItem(
         )
     }
 }
+
+/**
+ * Message queue item from entity broadcasts
+ */
+data class MessageQueueItem(
+    val text: String,
+    val from: String,
+    val fromEntityId: Int,
+    val fromCharacter: String,
+    val timestamp: Long,
+    val read: Boolean = false,
+    val delivered: Boolean = false
+)
