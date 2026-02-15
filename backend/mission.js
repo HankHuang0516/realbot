@@ -33,19 +33,42 @@ async function initMissionDatabase() {
         const schemaPath = path.join(__dirname, 'mission_schema.sql');
         const schema = fs.readFileSync(schemaPath, 'utf8');
 
-        // Split by semicolons and execute each statement
-        const statements = schema.split(';').filter(s => s.trim());
+        // Split SQL respecting $$ function bodies (don't split inside $$ blocks)
+        const statements = [];
+        let current = '';
+        let inDollarBlock = false;
+        const lines = schema.split('\n');
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('--')) {
+                continue; // skip comments
+            }
+            current += line + '\n';
+            // Track $$ blocks
+            const dollarCount = (line.match(/\$\$/g) || []).length;
+            if (dollarCount % 2 === 1) {
+                inDollarBlock = !inDollarBlock;
+            }
+            // Only split on ; when outside $$ blocks
+            if (!inDollarBlock && trimmed.endsWith(';')) {
+                const stmt = current.trim();
+                if (stmt && stmt !== ';') {
+                    statements.push(stmt);
+                }
+                current = '';
+            }
+        }
+        if (current.trim()) {
+            statements.push(current.trim());
+        }
 
         for (const statement of statements) {
-            if (statement.trim()) {
-                try {
-                    await pool.query(statement);
-                } catch (err) {
-                    // Ignore "already exists" errors
-                    if (!err.message.includes('already exists') &&
-                        !err.message.includes('duplicate key')) {
-                        console.warn('[Mission] Schema warning:', err.message);
-                    }
+            try {
+                await pool.query(statement);
+            } catch (err) {
+                if (!err.message.includes('already exists') &&
+                    !err.message.includes('duplicate key')) {
+                    console.warn('[Mission] Schema warning:', err.message);
                 }
             }
         }
