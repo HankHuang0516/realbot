@@ -1263,10 +1263,10 @@ app.get('/api/debug/devices', (req, res) => {
 app.post('/api/debug/reset', (req, res) => {
     const adminToken = req.headers['x-admin-token'] || req.body.adminToken;
     const expectedToken = process.env.ADMIN_SECRET || 'dev-only-localhost';
-    
+
     // Only allow from localhost or with correct token
     const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
-    
+
     if (!isLocalhost && adminToken !== expectedToken) {
         return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
     }
@@ -1457,6 +1457,57 @@ app.delete('/api/bot/register', (req, res) => {
         deviceId: deviceId,
         entityId: eId,
         mode: "polling"
+    });
+});
+
+/**
+ * GET /api/bot/pending-messages
+ * Bot polls for pending messages (alternative to webhook push).
+ * Body: { deviceId, entityId, botSecret }
+ * 
+ * Returns messages from messageQueue and clears them after delivery.
+ * Supports both push and polling modes.
+ */
+app.post('/api/bot/pending-messages', async (req, res) => {
+    const { deviceId, entityId, botSecret } = req.body;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, message: "deviceId required" });
+    }
+
+    const eId = parseInt(entityId) ?? 0;
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    const entity = device.entities[eId];
+
+    // botSecret required for authentication
+    if (!botSecret || botSecret !== entity.botSecret) {
+        return res.status(403).json({ success: false, message: "Invalid botSecret" });
+    }
+
+    // Get messages from messageQueue
+    const messages = entity.messageQueue || [];
+
+    // Clear messageQueue after delivery (bot acknowledges receipt)
+    entity.messageQueue = [];
+
+    // Update entity status
+    entity.lastUpdated = Date.now();
+
+    res.json({
+        success: true,
+        deviceId: deviceId,
+        entityId: eId,
+        messages: messages,
+        messageCount: messages.length,
+        mode: entity.webhook ? "push" : "polling"
     });
 });
 

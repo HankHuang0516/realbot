@@ -233,4 +233,93 @@ class ChatRepository private constructor(
         chatDao.clearAll()
         Timber.d("Cleared all chat messages")
     }
+
+    /**
+     * Add message queue item (entity broadcast) to chat history
+     */
+    suspend fun addMessageQueueItem(
+        text: String,
+        fromEntityId: Int,
+        fromCharacter: String,
+        timestamp: Long
+    ) {
+        // Create deduplication key
+        val deduplicationKey = "mq_${fromEntityId}_${timestamp}"
+        
+        // Check if already exists
+        if (chatDao.existsByDeduplicationKey(deduplicationKey)) {
+            return
+        }
+
+        val message = ChatMessage(
+            text = text,
+            timestamp = timestamp,
+            isFromUser = false,
+            messageType = MessageType.ENTITY_BROADCAST,
+            fromEntityId = fromEntityId,
+            fromEntityCharacter = fromCharacter,
+            deduplicationKey = deduplicationKey,
+            isSynced = true
+        )
+
+        chatDao.insert(message)
+        Timber.d("Saved messageQueue item from Entity $fromEntityId: ${text.take(30)}...")
+        
+        pruneOldMessages()
+    }
+
+    // ============================================
+    // BOT POLLING
+    // ============================================
+
+    /**
+     * Poll bot pending messages and add to chat history
+     * Called by StateRepository during multi-entity polling
+     */
+    suspend fun pollBotMessages(
+        deviceId: String,
+        entityId: Int,
+        botSecret: String,
+        getPendingMessages: suspend (deviceId: String, entityId: Int, botSecret: String) -> com.hank.clawlive.data.model.PendingMessagesResponse
+    ): Int {
+        return try {
+            val response = getPendingMessages(deviceId, entityId, botSecret)
+            
+            if (!response.success || response.messages.isEmpty()) {
+                0
+            } else {
+                var addedCount = 0
+                response.messages.forEach { msg ->
+                    // Create deduplication key
+                    val deduplicationKey = "bot_${entityId}_${msg.timestamp}"
+                    
+                    if (!chatDao.existsByDeduplicationKey(deduplicationKey)) {
+                        val message = ChatMessage(
+                            text = msg.text,
+                            timestamp = msg.timestamp,
+                            isFromUser = false,
+                            messageType = MessageType.ENTITY_RESPONSE,
+                            fromEntityId = entityId,
+                            fromEntityCharacter = msg.fromCharacter,
+                            deduplicationKey = deduplicationKey,
+                            isSynced = true
+                        )
+                        chatDao.insert(message)
+                        addedCount++
+                        Timber.d("Saved bot message from Entity $entityId: ${msg.text.take(30)}...")
+                    }
+                }
+                
+                if (addedCount > 0) {
+                    pruneOldMessages()
+                }
+                
+                Timber.d("Polled ${response.messages.size} bot messages, added $addedCount new messages")
+                addedCount
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error polling bot messages")
+            0
+        }
+    }
 }

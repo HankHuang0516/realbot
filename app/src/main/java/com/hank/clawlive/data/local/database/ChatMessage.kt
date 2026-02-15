@@ -9,8 +9,9 @@ import androidx.room.PrimaryKey
 enum class MessageType {
     USER_TO_ENTITY,      // User sends to single entity (RIGHT side)
     USER_BROADCAST,      // User sends to multiple entities (RIGHT side)
-    ENTITY_RESPONSE,     // Entity's message from /api/status (LEFT side)
-    ENTITY_TO_ENTITY     // source = "entity:{ID}:{CHARACTER}" (LEFT side)
+    ENTITY_RESPONSE,      // Entity's message from /api/status (LEFT side)
+    ENTITY_TO_ENTITY,    // source = "entity:{ID}:{CHARACTER}" (LEFT side)
+    ENTITY_BROADCAST     // Entity broadcast via messageQueue (LEFT side)
 }
 
 /**
