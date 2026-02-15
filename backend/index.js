@@ -1394,7 +1394,7 @@ app.post('/api/bot/register', async (req, res) => {
         tool: "sessions_send",
         args: {
             sessionKey: session_key,
-            message: `[SYSTEM:HANDSHAKE_TEST] Webhook 綁定驗證中... (Device ${deviceId} Entity ${eId})`
+            message: `[SYSTEM:HANDSHAKE_TEST] Webhook 如果收到此訊息則綁定成功! (Device ${deviceId} Entity ${eId})`
         }
     };
 
