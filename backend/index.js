@@ -282,6 +282,30 @@ function compareVersions(v1, v2) {
     return 0;
 }
 
+/**
+ * Helper: Transfer entity message via MCP Transfer API
+ * This is the correct MCP pattern: POST /api/transform to set entity.transfer
+ */
+async function transferEntityMessage(deviceId, toEntityId, transferPayload) {
+    const toEntity = devices[deviceId].entities[toEntityId];
+    
+    toEntity.transfer = transferPayload;
+    toEntity.lastUpdated = Date.now();
+    
+    console.log(`[Transfer] Device ${deviceId} Entity ${toEntityId}: ${transferPayload.type}`);
+    
+    // Push transfer to target bot if webhook is registered
+    if (toEntity.webhook) {
+        const pushResult = await pushToBot(toEntity, deviceId, "entity_transfer", {
+            entityId: toEntityId,
+            transfer: transferPayload
+        });
+        return pushResult;
+    }
+    
+    return { pushed: false, reason: "no_webhook" };
+}
+
 // Helper: Get or create device
 function getOrCreateDevice(deviceId, deviceSecret = null) {
     if (!devices[deviceId]) {
@@ -658,7 +682,7 @@ app.get('/api/status', (req, res) => {
  * REQUIRES botSecret for authentication!
  */
 app.post('/api/transform', (req, res) => {
-    const { deviceId, entityId, botSecret, name, character, state, message, parts } = req.body;
+    const { deviceId, entityId, botSecret, name, character, state, message, transfer, parts } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -708,6 +732,7 @@ app.post('/api/transform', (req, res) => {
     if (character) entity.character = character;
     if (state) entity.state = state;
     if (message !== undefined) entity.message = message;
+    if (transfer !== undefined) entity.transfer = transfer;
     if (parts) entity.parts = { ...entity.parts, ...parts };
 
     entity.lastUpdated = Date.now();
@@ -723,6 +748,7 @@ app.post('/api/transform', (req, res) => {
             character: entity.character,
             state: entity.state,
             message: entity.message,
+            transfer: entity.transfer,
             parts: entity.parts
         },
         versionInfo: getVersionInfo(entity.appVersion)
@@ -990,8 +1016,8 @@ app.post('/api/entity/speak-to', async (req, res) => {
     // Create message source identifier
     const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
 
-    // Use MCP transfer instead of overriding message
-    toEntity.transfer = {
+    // Use MCP Transfer API (POST /api/transform pattern)
+    const transferPayload = {
         type: "entity_message",
         from: sourceLabel,
         fromEntityId: fromId,
@@ -999,7 +1025,6 @@ app.post('/api/entity/speak-to', async (req, res) => {
         text: text,
         timestamp: Date.now()
     };
-    toEntity.lastUpdated = Date.now();
 
     const messageObj = {
         text: text,
@@ -1013,19 +1038,11 @@ app.post('/api/entity/speak-to', async (req, res) => {
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}" (transfer)`);
 
-    // Push transfer to target bot if webhook is registered
-    let pushResult = { pushed: false, reason: "no_webhook" };
-    if (toEntity.webhook) {
-        pushResult = await pushToBot(toEntity, deviceId, "entity_transfer", {
-            entityId: toId,
-            transfer: toEntity.transfer
-        });
-
-        if (pushResult.pushed) {
-            messageObj.delivered = true;
-        }
-    } else if (toEntity.isBound) {
-        console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
+    // Use helper function for MCP transfer
+    const pushResult = await transferEntityMessage(deviceId, toId, transferPayload);
+    
+    if (pushResult.pushed) {
+        messageObj.delivered = true;
     }
 
     res.json({
@@ -1114,10 +1131,6 @@ app.post('/api/entity/broadcast', async (req, res) => {
     const pushPromises = targetIds.map(async (toId) => {
         const toEntity = device.entities[toId];
 
-        // Use MCP transfer instead of overriding message
-        toEntity.transfer = { ...transferPayload };
-        toEntity.lastUpdated = Date.now();
-
         const messageObj = {
             text: text,
             from: sourceLabel,
@@ -1128,19 +1141,11 @@ app.post('/api/entity/broadcast', async (req, res) => {
         };
         toEntity.messageQueue.push(messageObj);
 
-        // Push transfer to target bot if webhook is registered
-        let pushResult = { pushed: false, reason: "no_webhook" };
-        if (toEntity.webhook) {
-            pushResult = await pushToBot(toEntity, deviceId, "entity_transfer", {
-                entityId: toId,
-                transfer: toEntity.transfer
-            });
+        // Use helper function for MCP transfer
+        const pushResult = await transferEntityMessage(deviceId, toId, transferPayload);
 
-            if (pushResult.pushed) {
-                messageObj.delivered = true;
-            }
-        } else if (toEntity.isBound) {
-            console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
+        if (pushResult.pushed) {
+            messageObj.delivered = true;
         }
 
         return {
