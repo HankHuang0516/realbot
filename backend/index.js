@@ -876,7 +876,7 @@ app.post('/api/client/speak', async (req, res) => {
         const entity = device.entities[eId];
         if (!entity) return null;
 
-        entity.message = `Received: "${text}"`;
+        entity.message = `entity:${fromId}:${fromEntity.character}: ${text}`;
         entity.lastUpdated = Date.now();
 
         const messageObj = {
@@ -1558,11 +1558,12 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully (status: ${response.status})`);
             
             // Update entity.message with read receipt
-            if (payload.entityId !== undefined) {
-                entity.message = `Entity ${payload.entityId} 已讀`;
-                entity.lastUpdated = Date.now();
-                console.log(`[Push] Updated entity.message to "Entity ${payload.entityId} 已讀"`);
-            }
+            // NOTE: Removed to prevent overriding entity.message
+            // if (payload.entityId !== undefined) {
+            //     entity.message = `Entity ${payload.entityId} 已讀`;
+            //     entity.lastUpdated = Date.now();
+            //     console.log(`[Push] Updated entity.message to "Entity ${payload.entityId} 已讀"`);
+            // }
             
             if (responseText) {
                 console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
@@ -1573,12 +1574,12 @@ async function pushToBot(entity, deviceId, eventType, payload) {
                     if (parsedResponse.result?.content && Array.isArray(parsedResponse.result.content)) {
                         // Extract text from first text-type content
                         const textContent = parsedResponse.result.content.find(c => c.type === 'text');
-                        if (textContent?.text) {
-                            // Update entity.message so App can see the bot's reply via polling
-                            entity.message = textContent.text;
-                            entity.lastUpdated = Date.now();
-                            console.log(`[Push] Updated entity.message with bot reply: "${textContent.text.substring(0, 50)}..."`);
-                        }
+                        // NOTE: Removed to prevent overriding entity.message
+                    // if (textContent?.text) {
+                    //     entity.message = textContent.text;
+                    //     entity.lastUpdated = Date.now();
+                    //     console.log(`[Push] Updated entity.message with bot reply: "${textContent.text.substring(0, 50)}..."`);
+                    // }
                     }
                 } catch (parseErr) {
                     // Response may not be JSON, ignore parsing errors
