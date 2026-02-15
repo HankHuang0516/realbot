@@ -136,19 +136,8 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 "$entityName (#$entityId)"
             }
 
-            // Show read receipt: "Entity X 已讀"
-            // Check if message contains "已讀" pattern or is from entity response
-            val isReadReceipt = message.text.contains("已讀") || 
-                              message.messageType == MessageType.ENTITY_RESPONSE
-            if (isReadReceipt && message.fromEntityId != null) {
-                tvReadReceipt.text = itemView.context.getString(
-                    R.string.entity_read_receipt,
-                    message.fromEntityId
-                )
-                tvReadReceipt.visibility = View.VISIBLE
-            } else {
-                tvReadReceipt.visibility = View.GONE
-            }
+            // Hide read receipt - read receipts only apply to user-sent messages
+            tvReadReceipt.visibility = View.GONE
         }
     }
 

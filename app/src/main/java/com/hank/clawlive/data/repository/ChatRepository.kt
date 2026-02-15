@@ -123,7 +123,7 @@ class ChatRepository private constructor(
      * Uses deduplication to avoid storing the same message twice
      */
     suspend fun processEntityMessage(entity: EntityStatus) {
-        // Skip if message is empty, default, or passive state
+        // Skip if message is empty, default, passive state, or system echo
         val passiveMessages = listOf(
             "Loading...",
             "No message",
@@ -135,7 +135,9 @@ class ChatRepository private constructor(
         )
 
         if (entity.message.isBlank() ||
-            passiveMessages.any { entity.message.contains(it, ignoreCase = true) }) {
+            passiveMessages.any { entity.message.contains(it, ignoreCase = true) } ||
+            entity.message.startsWith("Received:") ||       // Backend echo of client message
+            entity.message.startsWith("[SYSTEM:")) {         // System markers (WEBHOOK_ERROR, HANDSHAKE_TEST, etc.)
             return
         }
 
