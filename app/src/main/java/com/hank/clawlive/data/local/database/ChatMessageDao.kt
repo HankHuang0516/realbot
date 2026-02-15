@@ -99,6 +99,12 @@ interface ChatMessageDao {
     suspend fun markSynced(messageId: Long)
 
     /**
+     * Mark message as delivered with entity IDs that confirmed receipt
+     */
+    @Query("UPDATE chat_messages SET isDelivered = 1, deliveredTo = :deliveredTo WHERE id = :messageId")
+    suspend fun markDelivered(messageId: Long, deliveredTo: String)
+
+    /**
      * Get total message count
      */
     @Query("SELECT COUNT(*) FROM chat_messages")

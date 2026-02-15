@@ -1,5 +1,5 @@
 [versions]
-agp = "8.3.0"
+agp = "8.13.2"
 kotlin = "1.9.22"
 coreKtx = "1.12.0"
 lifecycle = "2.7.0"
@@ -12,8 +12,11 @@ appcompat = "1.6.1"
 material = "1.11.0"
 securityCrypto = "1.1.0-alpha06"
 activityKtx = "1.8.2"
+billing = "7.0.0"
+room = "2.6.1"
 
 [libraries]
+billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycle" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
@@ -34,6 +37,12 @@ okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor",
 socket-io-client = { group = "io.socket", name = "socket.io-client", version.ref = "socketIo" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
+# Room Database
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlinKapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }

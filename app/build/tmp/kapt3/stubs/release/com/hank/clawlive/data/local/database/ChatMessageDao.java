@@ -13,9 +13,9 @@ public abstract interface ChatMessageDao {
     public abstract kotlinx.coroutines.flow.Flow<java.util.List<com.hank.clawlive.data.local.database.ChatMessage>> getRecentMessages(int limit);
     
     /**
-     * Get all messages ordered by timestamp (oldest first for display)
+     * Get the latest N messages ordered by timestamp ascending (for chat display)
      */
-    @androidx.room.Query(value = "SELECT * FROM chat_messages ORDER BY timestamp ASC LIMIT :limit")
+    @androidx.room.Query(value = "SELECT * FROM (SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT :limit) ORDER BY timestamp ASC")
     @org.jetbrains.annotations.NotNull()
     public abstract kotlinx.coroutines.flow.Flow<java.util.List<com.hank.clawlive.data.local.database.ChatMessage>> getMessagesAscending(int limit);
     

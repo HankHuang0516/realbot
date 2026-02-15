@@ -399,6 +399,14 @@ class ChatActivity : AppCompatActivity() {
                 val pushedCount = response.targets.count { it.pushed }
                 val totalCount = response.targets.size
 
+                // Mark message as delivered if any entity confirmed receipt
+                val deliveredEntityIds = response.targets
+                    .filter { it.pushed }
+                    .map { it.entityId }
+                if (deliveredEntityIds.isNotEmpty()) {
+                    chatRepository.markMessageDelivered(messageId, deliveredEntityIds)
+                }
+
                 if (pushedCount == 0 && totalCount > 0) {
                     // No entities received push notification - show alert dialog
                     val pollingEntities = response.targets.filter { it.mode == "polling" }

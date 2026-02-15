@@ -107,6 +107,15 @@ class ChatRepository private constructor(
         Timber.d("Message $messageId marked as synced")
     }
 
+    /**
+     * Mark message as delivered with entity IDs that confirmed receipt
+     */
+    suspend fun markMessageDelivered(messageId: Long, entityIds: List<Int>) {
+        val deliveredTo = entityIds.joinToString(",")
+        chatDao.markDelivered(messageId, deliveredTo)
+        Timber.d("Message $messageId delivered to entities: $deliveredTo")
+    }
+
     // ===== Incoming Messages (Entity -> User) =====
 
     /**

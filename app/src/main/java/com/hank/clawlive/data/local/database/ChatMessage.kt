@@ -52,7 +52,13 @@ data class ChatMessage(
     val deduplicationKey: String? = null,
 
     /** true after API confirms message was sent successfully */
-    val isSynced: Boolean = true
+    val isSynced: Boolean = true,
+
+    /** true when push notification was delivered to bot(s) */
+    val isDelivered: Boolean = false,
+
+    /** Which entity IDs confirmed delivery (comma-separated, e.g., "0,1") */
+    val deliveredTo: String? = null
 ) {
     /**
      * Get display name for the message sender

@@ -351,7 +351,7 @@ public final class ChatMessageDao_Impl implements ChatMessageDao {
 
   @Override
   public Flow<List<ChatMessage>> getMessagesAscending(final int limit) {
-    final String _sql = "SELECT * FROM chat_messages ORDER BY timestamp ASC LIMIT ?";
+    final String _sql = "SELECT * FROM (SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT ?) ORDER BY timestamp ASC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
     int _argIndex = 1;
     _statement.bindLong(_argIndex, limit);

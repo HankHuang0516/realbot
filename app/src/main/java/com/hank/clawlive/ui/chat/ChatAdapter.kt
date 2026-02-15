@@ -62,6 +62,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         private val tvMessage: TextView = itemView.findViewById(R.id.tvMessage)
         private val tvTime: TextView = itemView.findViewById(R.id.tvTime)
         private val tvTargets: TextView = itemView.findViewById(R.id.tvTargets)
+        private val tvDeliveryStatus: TextView = itemView.findViewById(R.id.tvDeliveryStatus)
 
         fun bind(message: ChatMessage) {
             tvMessage.text = message.text
@@ -87,6 +88,15 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 }
             } else {
                 tvTargets.visibility = View.GONE
+            }
+
+            // Show delivery status
+            if (message.isDelivered && !message.deliveredTo.isNullOrEmpty()) {
+                val entityIds = message.deliveredTo.split(",").mapNotNull { it.trim().toIntOrNull() }
+                tvDeliveryStatus.text = entityIds.joinToString(", ") { "Entity $it" } + " 已讀"
+                tvDeliveryStatus.visibility = View.VISIBLE
+            } else {
+                tvDeliveryStatus.visibility = View.GONE
             }
         }
     }
