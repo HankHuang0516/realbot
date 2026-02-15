@@ -225,7 +225,131 @@ class MissionRepository(
             Result.Error(e)
         }
     }
-    
+
+    /**
+     * 新增筆記
+     */
+    suspend fun addNote(
+        deviceId: String,
+        entityId: Int,
+        botSecret: String,
+        note: MissionNote
+    ): Result<MissionNote> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.addMissionNote(
+                mapOf(
+                    "deviceId" to deviceId,
+                    "entityId" to entityId.toString(),
+                    "botSecret" to botSecret
+                ),
+                note
+            )
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.Success(note)
+            } else {
+                Result.Error(Exception("Failed to add note: ${response.body()?.error}"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error adding note")
+            Result.Error(e)
+        }
+    }
+
+    /**
+     * 更新筆記
+     */
+    suspend fun updateNote(
+        deviceId: String,
+        entityId: Int,
+        botSecret: String,
+        noteId: String,
+        note: MissionNote
+    ): Result<MissionNote> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.updateMissionNote(
+                mapOf(
+                    "deviceId" to deviceId,
+                    "entityId" to entityId.toString(),
+                    "botSecret" to botSecret
+                ),
+                noteId,
+                note
+            )
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.Success(note)
+            } else {
+                Result.Error(Exception("Failed to update note: ${response.body()?.error}"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error updating note")
+            Result.Error(e)
+        }
+    }
+
+    /**
+     * 刪除筆記
+     */
+    suspend fun deleteNote(
+        deviceId: String,
+        entityId: Int,
+        botSecret: String,
+        noteId: String
+    ): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.deleteMissionNote(
+                mapOf(
+                    "deviceId" to deviceId,
+                    "entityId" to entityId.toString(),
+                    "botSecret" to botSecret
+                ),
+                mapOf("noteId" to noteId)
+            )
+
+            if (response.isSuccessful) {
+                Result.Success(true)
+            } else {
+                Result.Error(Exception("Failed to delete note"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error deleting note")
+            Result.Error(e)
+        }
+    }
+
+    /**
+     * 更新規則 (toggle 或編輯)
+     */
+    suspend fun updateRule(
+        deviceId: String,
+        entityId: Int,
+        botSecret: String,
+        ruleId: String,
+        rule: MissionRule
+    ): Result<MissionRule> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.updateMissionRule(
+                mapOf(
+                    "deviceId" to deviceId,
+                    "entityId" to entityId.toString(),
+                    "botSecret" to botSecret
+                ),
+                ruleId,
+                rule
+            )
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.Success(rule)
+            } else {
+                Result.Error(Exception("Failed to update rule: ${response.body()?.error}"))
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error updating rule")
+            Result.Error(e)
+        }
+    }
+
     // ============ Local Storage ============
     
     private suspend fun saveDashboard(dashboard: MissionDashboardSnapshot) {

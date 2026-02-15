@@ -107,10 +107,48 @@ interface ClawApiService {
     suspend fun getMissionNotes(@QueryMap params: Map<String, String>): MissionNotesResponse
 
     /**
+     * 新增筆記
+     */
+    @POST("api/mission/notes")
+    suspend fun addMissionNote(
+        @QueryMap params: Map<String, String>,
+        @Body note: MissionNote
+    ): MissionNoteResponse
+
+    /**
+     * 更新筆記
+     */
+    @PUT("api/mission/notes/{id}")
+    suspend fun updateMissionNote(
+        @QueryMap params: Map<String, String>,
+        @retrofit2.http.Path("id") noteId: String,
+        @Body note: MissionNote
+    ): MissionNoteResponse
+
+    /**
+     * 刪除筆記
+     */
+    @HTTP(method = "DELETE", path = "api/mission/notes", hasBody = true)
+    suspend fun deleteMissionNote(
+        @QueryMap params: Map<String, String>,
+        @Body body: Map<String, String>
+    ): ApiResponse
+
+    /**
      * 取得規則
      */
     @GET("api/mission/rules")
     suspend fun getMissionRules(@QueryMap params: Map<String, String>): MissionRulesResponse
+
+    /**
+     * 更新規則 (toggle 或編輯)
+     */
+    @PUT("api/mission/rules/{id}")
+    suspend fun updateMissionRule(
+        @QueryMap params: Map<String, String>,
+        @retrofit2.http.Path("id") ruleId: String,
+        @Body rule: MissionRule
+    ): MissionRuleResponse
 }
 
 // ============ Mission Control Response Models ============
@@ -141,8 +179,20 @@ data class MissionNotesResponse(
     val error: String? = null
 )
 
+data class MissionNoteResponse(
+    val success: Boolean,
+    val note: MissionNote?,
+    val error: String? = null
+)
+
 data class MissionRulesResponse(
     val success: Boolean,
     val rules: List<MissionRule>,
+    val error: String? = null
+)
+
+data class MissionRuleResponse(
+    val success: Boolean,
+    val rule: MissionRule?,
     val error: String? = null
 )
