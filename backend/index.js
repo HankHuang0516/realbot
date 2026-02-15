@@ -1531,92 +1531,53 @@ async function pushToBot(entity, deviceId, eventType, payload) {
 
     const { url, token, sessionKey } = entity.webhook;
 
-    const requestPayload = {
+    // MCP Transfer API format - fire and forget
+    const requestBody = JSON.stringify({
         tool: "sessions_send",
         args: {
             sessionKey: sessionKey,
             message: payload.message || JSON.stringify(payload)
         }
-    };
+    });
 
     try {
-        console.log(`[Push] Sending to ${url} with sessionKey: ${sessionKey.substring(0, 8)}...`);
-        console.log(`[Push] Payload:`, JSON.stringify(requestPayload, null, 2));
+        console.log(`[Push] Device ${deviceId} Entity ${entity.entityId}: ${eventType} -> ${sessionKey.substring(0, 8)}...`);
 
-        // OpenClaw /tools/invoke format
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestPayload)
+            body: requestBody
         });
 
         if (response.ok) {
-            const responseText = await response.text().catch(() => '');
-            console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} pushed successfully (status: ${response.status})`);
-            
-            // Update entity.message with read receipt
-            // NOTE: Removed to prevent overriding entity.message
-            // if (payload.entityId !== undefined) {
-            //     entity.message = `Entity ${payload.entityId} 已讀`;
-            //     entity.lastUpdated = Date.now();
-            //     console.log(`[Push] Updated entity.message to "Entity ${payload.entityId} 已讀"`);
-            // }
-            
-            if (responseText) {
-                console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
-                
-                // Parse webhook response and extract bot's reply text
-                try {
-                    const parsedResponse = JSON.parse(responseText);
-                    if (parsedResponse.result?.content && Array.isArray(parsedResponse.result.content)) {
-                        // Extract text from first text-type content
-                        const textContent = parsedResponse.result.content.find(c => c.type === 'text');
-                        // NOTE: Removed to prevent overriding entity.message
-                    // if (textContent?.text) {
-                    //     entity.message = textContent.text;
-                    //     entity.lastUpdated = Date.now();
-                    //     console.log(`[Push] Updated entity.message with bot reply: "${textContent.text.substring(0, 50)}..."`);
-                    // }
-                    }
-                } catch (parseErr) {
-                    // Response may not be JSON, ignore parsing errors
-                    console.log(`[Push] Response is not JSON, skipping message update`);
-                }
-            }
+            console.log(`[Push] ✓ Device ${deviceId} Entity ${entity.entityId}: ${eventType} transferred`);
             return { pushed: true };
         } else {
             const errorText = await response.text().catch(() => '');
-            console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push failed with status ${response.status}`);
-            console.error(`[Push] Error response: ${errorText}`);
-
-            // Build debug hint based on error status
+            console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: HTTP ${response.status}`);
+            
             let debugHint = '';
             if (response.status === 401) {
-                debugHint = ' Token may be invalid or a placeholder. Re-register webhook with correct token (process.env.OPENCLAW_GATEWAY_TOKEN).';
+                debugHint = ' Token invalid. Re-register webhook with correct OPENCLAW_GATEWAY_TOKEN.';
             } else if (response.status === 405) {
-                debugHint = ' URL may be incorrect (double slash?). Re-register webhook with correct URL.';
+                debugHint = ' URL incorrect (double slash?).';
             } else if (response.status === 404) {
-                debugHint = ' Webhook endpoint not found. Verify your bot server is running and the URL path is correct.';
+                debugHint = ' Endpoint not found.';
             }
 
-            // Notify device about webhook failure via entity message
-            entity.message = `[SYSTEM:WEBHOOK_ERROR] Push failed (HTTP ${response.status}).${debugHint}`;
+            entity.message = `[SYSTEM:WEBHOOK_ERROR] Transfer failed (HTTP ${response.status}).${debugHint}`;
             entity.lastUpdated = Date.now();
-            console.log(`[Push] Set WEBHOOK_ERROR system message for Device ${deviceId} Entity ${entity.entityId}`);
 
-            return { pushed: false, reason: `http_${response.status}`, error: errorText, debug: { url, tokenLength: token.length, status: response.status, hint: debugHint.trim() } };
+            return { pushed: false, reason: `http_${response.status}`, error: errorText };
         }
     } catch (err) {
-        console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Push error:`, err.message);
-        console.error(`[Push] Full error:`, err);
+        console.error(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: ${err.message}`);
 
-        // Notify device about webhook failure via entity message
-        entity.message = `[SYSTEM:WEBHOOK_ERROR] Push connection failed: ${err.message}`;
+        entity.message = `[SYSTEM:WEBHOOK_ERROR] Transfer failed: ${err.message}`;
         entity.lastUpdated = Date.now();
-        console.log(`[Push] Set WEBHOOK_ERROR system message for Device ${deviceId} Entity ${entity.entityId}`);
 
         return { pushed: false, reason: err.message };
     }
