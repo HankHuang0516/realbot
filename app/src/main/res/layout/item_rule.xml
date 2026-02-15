@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/rule_card_stroke"
+    app:strokeWidth="1dp">
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+        
+        <!-- Name & Type & Toggle -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <ImageView
+                android:id="@+id/ivRuleIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_rule"
+                android:layout_marginEnd="8dp"
+                app:tint="?attr/colorPrimary"/>
+            
+            <TextView
+                android:id="@+id/tvRuleName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="規則名稱"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+            
+            <TextView
+                android:id="@+id/tvRuleType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="工作流程"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="12dp"/>
+            
+            <ToggleButton
+                android:id="@+id/toggleRuleEnabled"
+                android:layout_width="48dp"
+                android:layout_height="24dp"
+                android:textOn=""
+                android:textOff=""
+                android:background="@drawable/toggle_rule_selector"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:padding="0dp"/>
+            
+        </LinearLayout>
+        
+        <!-- Description -->
+        <TextView
+            android:id="@+id/tvRuleDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="規則說明..."
+            android:textSize="13sp"
+            android:textColor="#666666"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="32dp"/>
+        
+        <!-- Footer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:layout_marginStart="32dp">
+            
+            <TextView
+                android:id="@+id/tvRulePriority"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="優先權: 0"
+                android:textSize="11sp"
+                android:textColor="#999999"/>
+            
+            <TextView
+                android:id="@+id/tvRuleUpdatedAt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="更新: 01/15 14:30"
+                android:textSize="11sp"
+                android:textColor="#999999"/>
+            
+        </LinearLayout>
+        
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

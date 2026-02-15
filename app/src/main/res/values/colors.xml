@@ -7,4 +7,36 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="lobster_orange">#FFFF9800</color>
+    
+    <!-- Priority Colors -->
+    <color name="priority_critical">#F44336</color>
+    <color name="priority_high">#FF9800</color>
+    <color name="priority_medium">#FFC107</color>
+    <color name="priority_low">#4CAF50</color>
+    
+    <!-- Status Colors -->
+    <color name="status_pending">#9E9E9E</color>
+    <color name="status_in_progress">#2196F3</color>
+    <color name="status_blocked">#F44336</color>
+    <color name="status_done">#4CAF50</color>
+
+    <!-- Note Category Colors -->
+    <color name="category_important">#F44336</color>
+    <color name="category_todo">#FF9800</color>
+    <color name="category_idea">#9C27B0</color>
+    <color name="category_bug">#F44336</color>
+    <color name="category_general">#607D8B</color>
+    <color name="note_card_stroke">#BBDEFB</color>
+
+    <!-- Rule Colors -->
+    <color name="rule_enabled">#4CAF50</color>
+    <color name="rule_disabled">#BDBDBD</color>
+    <color name="rule_card_stroke">#C8E6C9</color>
+
+    <!-- Rule Type Colors -->
+    <color name="type_workflow">#2196F3</color>
+    <color name="type_code_review">#FF9800</color>
+    <color name="type_communication">#9C27B0</color>
+    <color name="type_deployment">#4CAF50</color>
+    <color name="type_sync">#607D8B</color>
 </resources>
