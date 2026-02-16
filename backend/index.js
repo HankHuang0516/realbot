@@ -779,6 +779,11 @@ app.post('/api/transform', (req, res) => {
 
     entity.lastUpdated = Date.now();
 
+    // Save bot message to chat history so it appears in Chat page
+    if (message) {
+        saveChatMessage(deviceId, eId, message, entity.name || `Entity ${eId}`, false, true);
+    }
+
     console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${message || entity.message}"`);
 
     res.json({
@@ -1110,6 +1115,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         read: false
     };
     toEntity.messageQueue.push(messageObj);
+    saveChatMessage(deviceId, toId, text, sourceLabel, false, true);
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
 
@@ -1121,8 +1127,13 @@ app.post('/api/entity/speak-to', async (req, res) => {
     // Push to target bot if webhook is registered
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
+        let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
+        const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
+        if (officialBind && toEntity.botSecret) {
+            pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
+        }
         pushResult = await pushToBot(toEntity, deviceId, "entity_message", {
-            message: `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`
+            message: pushMsg
         });
 
         if (pushResult.pushed) {
@@ -1222,6 +1233,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
             read: false
         };
         toEntity.messageQueue.push(messageObj);
+        saveChatMessage(deviceId, toId, text, sourceLabel, false, true);
 
         // Update entity.message so Android app can display it
         // Format must match Android's parseEntityMessage regex: "entity:{ID}:{CHARACTER}: {message}"
@@ -1231,8 +1243,13 @@ app.post('/api/entity/broadcast', async (req, res) => {
         // Push to target bot if webhook is registered
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
+            let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
+            const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
+            if (officialBind && toEntity.botSecret) {
+                pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
+            }
             pushResult = await pushToBot(toEntity, deviceId, "entity_broadcast", {
-                message: `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`
+                message: pushMsg
             });
 
             if (pushResult.pushed) {
