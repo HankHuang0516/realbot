@@ -37,6 +37,18 @@
             android:textColor="@android:color/white"
             android:layout_marginStart="8dp" />
 
+        <!-- Web sync info button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWebSync"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Web"
+            android:textSize="13sp"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            app:icon="@android:drawable/ic_menu_share"
+            app:iconSize="16dp"
+            android:layout_marginEnd="4dp" />
+
         <!-- Upload button with dirty indicator -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUpload"
