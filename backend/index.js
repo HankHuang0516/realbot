@@ -851,7 +851,7 @@ app.delete('/api/entity', (req, res) => {
  *
  * This allows the device owner to remove entities without needing bot credentials.
  */
-app.delete('/api/device/entity', (req, res) => {
+app.delete('/api/device/entity', async (req, res) => {
     const { deviceId, deviceSecret, entityId } = req.body;
 
     if (!deviceId || !deviceSecret) {
@@ -889,11 +889,12 @@ app.delete('/api/device/entity', (req, res) => {
             bot.assigned_device_id = null;
             bot.assigned_entity_id = null;
             bot.assigned_at = null;
-            if (usePostgreSQL) db.saveOfficialBot(bot);
+            if (usePostgreSQL) await db.saveOfficialBot(bot);
             console.log(`[Device Remove] Personal bot ${bot.bot_id} released back to pool`);
         }
         delete officialBindingsCache[bindCacheKey];
-        if (usePostgreSQL) db.removeOfficialBinding(deviceId, eId);
+        if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+        console.log(`[Device Remove] Official binding cleaned up for device ${deviceId} entity ${eId}`);
     }
 
     // Reset entity to unbound state
@@ -902,7 +903,7 @@ app.delete('/api/device/entity', (req, res) => {
     console.log(`[Device Remove] Device ${deviceId} Entity ${eId} unbound by device owner`);
 
     // Save data immediately after unbinding (critical operation)
-    saveData();
+    await saveData();
 
     res.json({ success: true, message: `Entity ${eId} removed by device` });
 });
@@ -1553,15 +1554,43 @@ app.get('/api/official-borrow/status', async (req, res) => {
             .filter(b => b.device_id === deviceId)
             .map(b => {
                 const bot = officialBots[b.bot_id];
-                return { entityId: b.entity_id, botType: bot ? bot.bot_type : 'unknown', botId: b.bot_id };
+                return { entity_id: b.entity_id, bot_type: bot ? bot.bot_type : 'unknown', bot_id: b.bot_id };
             });
+    }
+
+    // Smart cleanup: remove stale bindings where entity is no longer bound
+    const device = devices[deviceId];
+    const validBindings = [];
+    for (const b of bindings) {
+        const eId = b.entity_id ?? b.entityId;
+        const entity = device?.entities?.[eId];
+        if (entity && entity.isBound) {
+            validBindings.push(b);
+        } else {
+            // Stale binding - clean it up
+            console.log(`[Borrow Status] Cleaning stale binding: device ${deviceId} entity ${eId}`);
+            const cacheKey = getBindingCacheKey(deviceId, eId);
+            const staleBinding = officialBindingsCache[cacheKey];
+            if (staleBinding) {
+                const bot = officialBots[staleBinding.bot_id];
+                if (bot && bot.bot_type === 'personal') {
+                    bot.status = 'available';
+                    bot.assigned_device_id = null;
+                    bot.assigned_entity_id = null;
+                    bot.assigned_at = null;
+                    if (usePostgreSQL) await db.saveOfficialBot(bot);
+                }
+                delete officialBindingsCache[cacheKey];
+            }
+            if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+        }
     }
 
     res.json({
         success: true,
         free: { available: freeAvailable },
         personal: { available: personalAvailable, total: personalTotal },
-        bindings: bindings.map(b => ({
+        bindings: validBindings.map(b => ({
             entityId: b.entity_id ?? b.entityId,
             botType: b.bot_type ?? b.botType,
             botId: b.bot_id ?? b.botId
@@ -1601,10 +1630,21 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     }
 
     // Each device can only have one free bot binding
+    // Smart check: only count bindings where the entity is actually still bound
     const existingFreeBinding = Object.values(officialBindingsCache).find(b => {
         if (b.device_id !== deviceId) return false;
         const bot = officialBots[b.bot_id];
-        return bot && bot.bot_type === 'free';
+        if (!bot || bot.bot_type !== 'free') return false;
+        // Verify the entity still exists and is bound
+        const boundEntity = device.entities[b.entity_id];
+        if (!boundEntity || !boundEntity.isBound) {
+            // Stale binding - clean it up
+            console.log(`[Borrow] Cleaning stale free binding: device ${deviceId} entity ${b.entity_id}`);
+            delete officialBindingsCache[getBindingCacheKey(deviceId, b.entity_id)];
+            if (usePostgreSQL) db.removeOfficialBinding(deviceId, b.entity_id);
+            return false;
+        }
+        return true;
     });
     if (existingFreeBinding) {
         return res.status(400).json({ success: false, error: `每個裝置僅限借用一個免費版 (已綁定 Entity #${existingFreeBinding.entity_id})` });
