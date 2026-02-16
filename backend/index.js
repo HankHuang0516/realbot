@@ -12,9 +12,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+const cookieParser = require('cookie-parser');
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use('/mission', express.static(path.join(__dirname, 'public')));
+app.use('/portal', express.static(path.join(__dirname, 'public/portal')));
 
 // ============================================
 // MATRIX ARCHITECTURE: devices[deviceId].entities[0-3]
@@ -269,6 +272,21 @@ initPersistence().catch(err => {
 const missionModule = require('./mission')(devices);
 app.use('/api/mission', missionModule.router);
 missionModule.initMissionDatabase();
+
+// ============================================
+// USER AUTHENTICATION (PostgreSQL)
+// ============================================
+const authModule = require('./auth')(devices, getOrCreateDevice);
+app.use('/api/auth', authModule.router);
+authModule.initAuthDatabase();
+
+// ============================================
+// SUBSCRIPTION & TAPPAY (PostgreSQL)
+// ============================================
+const subscriptionModule = require('./subscription')(devices, authModule.authMiddleware);
+app.use('/api/subscription', subscriptionModule.router);
+// Load premium status after persistence is ready
+setTimeout(() => subscriptionModule.loadPremiumStatus(), 5000);
 
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
@@ -917,6 +935,22 @@ app.post('/api/client/speak', async (req, res) => {
         return res.status(404).json({ success: false, message: "Device not found" });
     }
 
+    // Usage enforcement
+    try {
+        const usage = await subscriptionModule.enforceUsageLimit(deviceId);
+        if (!usage.allowed) {
+            return res.status(429).json({
+                success: false,
+                message: "Daily message limit reached",
+                error: "USAGE_LIMIT_EXCEEDED",
+                remaining: 0,
+                limit: usage.limit
+            });
+        }
+    } catch (usageErr) {
+        console.warn('[Usage] Enforcement check failed, allowing:', usageErr.message);
+    }
+
     // Determine target entity IDs
     let targetIds = [];
     if (entityId === "all") {
@@ -956,6 +990,7 @@ app.post('/api/client/speak', async (req, res) => {
             read: false
         };
         entity.messageQueue.push(messageObj);
+        saveChatMessage(deviceId, eId, text, source, true, false);
 
         console.log(`[Client] Device ${deviceId} -> Entity ${eId}: "${text}" (source: ${source})`);
 
@@ -2256,12 +2291,86 @@ app.use((err, req, res, next) => {
     next();
 });
 
+// ============================================
+// CHAT HISTORY (PostgreSQL)
+// ============================================
+const { Pool } = require('pg');
+const chatPool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
+});
+
+// Save chat message to database
+async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot) {
+    try {
+        await chatPool.query(
+            `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [deviceId, entityId, text, source, isFromUser || false, isFromBot || false]
+        );
+    } catch (err) {
+        // Silently fail - chat history is non-critical
+        if (!err.message.includes('does not exist')) {
+            console.warn('[Chat] Failed to save message:', err.message);
+        }
+    }
+}
+
+// GET /api/chat/history
+app.get('/api/chat/history', async (req, res) => {
+    const { deviceId, deviceSecret, limit = 100, before } = req.query;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'Missing credentials' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        // Also check JWT cookie
+        const jwt = require('jsonwebtoken');
+        const token = req.cookies && req.cookies.eclaw_session;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-change-in-production');
+                if (decoded.deviceId !== deviceId) {
+                    return res.status(401).json({ success: false, error: 'Invalid credentials' });
+                }
+            } catch {
+                return res.status(401).json({ success: false, error: 'Invalid credentials' });
+            }
+        } else {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+    }
+
+    try {
+        let query = 'SELECT * FROM chat_messages WHERE device_id = $1';
+        const params = [deviceId];
+
+        if (before) {
+            query += ' AND created_at < $2';
+            params.push(new Date(parseInt(before)));
+        }
+
+        query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1);
+        params.push(parseInt(limit) || 100);
+
+        const result = await chatPool.query(query, params);
+
+        res.json({
+            success: true,
+            messages: result.rows.reverse() // Return in chronological order
+        });
+    } catch (error) {
+        console.error('[Chat] History error:', error);
+        res.status(500).json({ success: false, error: 'Failed to get chat history' });
+    }
+});
+
 app.listen(port, () => {
-    console.log(`Claw Backend v5.2 (PostgreSQL) running on port ${port}`);
+    console.log(`Claw Backend v5.3 (PostgreSQL + Auth + Portal) running on port ${port}`);
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 });
-// Force redeploy with PostgreSQL
 // Force redeploy Sat Feb 14 09:53:10 UTC 2026
 
 // ============================================
@@ -2314,6 +2423,7 @@ app.post('/api/bot/sync-message', async (req, res) => {
         entity.messageQueue = [];
     }
     entity.messageQueue.push(messageObj);
+    saveChatMessage(deviceId, entityId, message, fromLabel || "bot", false, true);
 
     // Also update entity.message for immediate display
     entity.message = message;
