@@ -88,6 +88,35 @@ async function createTables() {
             WHERE is_bound = TRUE
         `);
 
+        // Official bot pool table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS official_bots (
+                bot_id TEXT PRIMARY KEY,
+                bot_type TEXT NOT NULL,
+                webhook_url TEXT NOT NULL,
+                token TEXT NOT NULL,
+                session_key_template TEXT,
+                status TEXT DEFAULT 'available',
+                assigned_device_id TEXT,
+                assigned_entity_id INTEGER,
+                assigned_at BIGINT,
+                created_at BIGINT NOT NULL
+            )
+        `);
+
+        // Official bot bindings (free bot multi-device tracking)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS official_bot_bindings (
+                bot_id TEXT NOT NULL,
+                device_id TEXT NOT NULL,
+                entity_id INTEGER NOT NULL,
+                session_key TEXT NOT NULL,
+                bound_at BIGINT NOT NULL,
+                subscription_verified_at BIGINT,
+                PRIMARY KEY (device_id, entity_id)
+            )
+        `);
+
         console.log('[DB] Database tables ready');
         client.release();
     } catch (err) {
@@ -317,6 +346,200 @@ async function getStats() {
     }
 }
 
+// ============================================
+// Official Bot Pool Functions
+// ============================================
+
+async function saveOfficialBot(bot) {
+    if (!pool) return false;
+    try {
+        const client = await pool.connect();
+        await client.query(
+            `INSERT INTO official_bots (bot_id, bot_type, webhook_url, token, session_key_template, status, assigned_device_id, assigned_entity_id, assigned_at, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             ON CONFLICT (bot_id)
+             DO UPDATE SET webhook_url = $3, token = $4, session_key_template = $5, status = $6, assigned_device_id = $7, assigned_entity_id = $8, assigned_at = $9`,
+            [bot.bot_id, bot.bot_type, bot.webhook_url, bot.token, bot.session_key_template || null, bot.status || 'available', bot.assigned_device_id || null, bot.assigned_entity_id ?? null, bot.assigned_at || null, bot.created_at || Date.now()]
+        );
+        client.release();
+        return true;
+    } catch (err) {
+        console.error(`[DB] Failed to save official bot ${bot.bot_id}:`, err.message);
+        return false;
+    }
+}
+
+async function loadOfficialBots() {
+    if (!pool) return {};
+    try {
+        const client = await pool.connect();
+        const result = await client.query('SELECT * FROM official_bots ORDER BY created_at ASC');
+        client.release();
+        const bots = {};
+        for (const row of result.rows) {
+            bots[row.bot_id] = {
+                bot_id: row.bot_id,
+                bot_type: row.bot_type,
+                webhook_url: row.webhook_url,
+                token: row.token,
+                session_key_template: row.session_key_template,
+                status: row.status,
+                assigned_device_id: row.assigned_device_id,
+                assigned_entity_id: row.assigned_entity_id != null ? parseInt(row.assigned_entity_id) : null,
+                assigned_at: row.assigned_at ? parseInt(row.assigned_at) : null,
+                created_at: parseInt(row.created_at)
+            };
+        }
+        console.log(`[DB] Loaded ${Object.keys(bots).length} official bots`);
+        return bots;
+    } catch (err) {
+        console.error('[DB] Failed to load official bots:', err.message);
+        return {};
+    }
+}
+
+async function deleteOfficialBot(botId) {
+    if (!pool) return false;
+    try {
+        const client = await pool.connect();
+        await client.query('DELETE FROM official_bot_bindings WHERE bot_id = $1', [botId]);
+        await client.query('DELETE FROM official_bots WHERE bot_id = $1', [botId]);
+        client.release();
+        return true;
+    } catch (err) {
+        console.error(`[DB] Failed to delete official bot ${botId}:`, err.message);
+        return false;
+    }
+}
+
+async function saveOfficialBinding(binding) {
+    if (!pool) return false;
+    try {
+        const client = await pool.connect();
+        await client.query(
+            `INSERT INTO official_bot_bindings (bot_id, device_id, entity_id, session_key, bound_at, subscription_verified_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (device_id, entity_id)
+             DO UPDATE SET bot_id = $1, session_key = $4, bound_at = $5, subscription_verified_at = $6`,
+            [binding.bot_id, binding.device_id, binding.entity_id, binding.session_key, binding.bound_at || Date.now(), binding.subscription_verified_at || Date.now()]
+        );
+        client.release();
+        return true;
+    } catch (err) {
+        console.error(`[DB] Failed to save official binding:`, err.message);
+        return false;
+    }
+}
+
+async function removeOfficialBinding(deviceId, entityId) {
+    if (!pool) return false;
+    try {
+        const client = await pool.connect();
+        const result = await client.query(
+            'DELETE FROM official_bot_bindings WHERE device_id = $1 AND entity_id = $2 RETURNING bot_id',
+            [deviceId, entityId]
+        );
+        client.release();
+        return result.rows.length > 0 ? result.rows[0].bot_id : null;
+    } catch (err) {
+        console.error(`[DB] Failed to remove official binding:`, err.message);
+        return null;
+    }
+}
+
+async function getOfficialBinding(deviceId, entityId) {
+    if (!pool) return null;
+    try {
+        const client = await pool.connect();
+        const result = await client.query(
+            'SELECT * FROM official_bot_bindings WHERE device_id = $1 AND entity_id = $2',
+            [deviceId, entityId]
+        );
+        client.release();
+        if (result.rows.length === 0) return null;
+        const row = result.rows[0];
+        return {
+            bot_id: row.bot_id,
+            device_id: row.device_id,
+            entity_id: parseInt(row.entity_id),
+            session_key: row.session_key,
+            bound_at: parseInt(row.bound_at),
+            subscription_verified_at: row.subscription_verified_at ? parseInt(row.subscription_verified_at) : null
+        };
+    } catch (err) {
+        console.error(`[DB] Failed to get official binding:`, err.message);
+        return null;
+    }
+}
+
+async function getDeviceOfficialBindings(deviceId) {
+    if (!pool) return [];
+    try {
+        const client = await pool.connect();
+        const result = await client.query(
+            `SELECT b.*, o.bot_type FROM official_bot_bindings b
+             JOIN official_bots o ON b.bot_id = o.bot_id
+             WHERE b.device_id = $1`,
+            [deviceId]
+        );
+        client.release();
+        return result.rows.map(row => ({
+            bot_id: row.bot_id,
+            device_id: row.device_id,
+            entity_id: parseInt(row.entity_id),
+            session_key: row.session_key,
+            bound_at: parseInt(row.bound_at),
+            bot_type: row.bot_type
+        }));
+    } catch (err) {
+        console.error(`[DB] Failed to get device bindings:`, err.message);
+        return [];
+    }
+}
+
+async function updateSubscriptionVerified(deviceId, entityId) {
+    if (!pool) return false;
+    try {
+        const client = await pool.connect();
+        await client.query(
+            'UPDATE official_bot_bindings SET subscription_verified_at = $1 WHERE device_id = $2 AND entity_id = $3',
+            [Date.now(), deviceId, entityId]
+        );
+        client.release();
+        return true;
+    } catch (err) {
+        console.error(`[DB] Failed to update subscription verified:`, err.message);
+        return false;
+    }
+}
+
+async function getExpiredPersonalBindings(maxAgeMs) {
+    if (!pool) return [];
+    try {
+        const client = await pool.connect();
+        const cutoff = Date.now() - maxAgeMs;
+        const result = await client.query(
+            `SELECT b.*, o.bot_type FROM official_bot_bindings b
+             JOIN official_bots o ON b.bot_id = o.bot_id
+             WHERE o.bot_type = 'personal'
+             AND (b.subscription_verified_at IS NULL OR b.subscription_verified_at < $1)`,
+            [cutoff]
+        );
+        client.release();
+        return result.rows.map(row => ({
+            bot_id: row.bot_id,
+            device_id: row.device_id,
+            entity_id: parseInt(row.entity_id),
+            session_key: row.session_key,
+            bound_at: parseInt(row.bound_at),
+            subscription_verified_at: row.subscription_verified_at ? parseInt(row.subscription_verified_at) : null
+        }));
+    } catch (err) {
+        console.error(`[DB] Failed to get expired bindings:`, err.message);
+        return [];
+    }
+}
+
 // Close database connection
 async function closeDatabase() {
     if (pool) {
@@ -332,5 +555,15 @@ module.exports = {
     loadAllDevices,
     deleteDevice,
     getStats,
-    closeDatabase
+    closeDatabase,
+    // Official bot pool
+    saveOfficialBot,
+    loadOfficialBots,
+    deleteOfficialBot,
+    saveOfficialBinding,
+    removeOfficialBinding,
+    getOfficialBinding,
+    getDeviceOfficialBindings,
+    updateSubscriptionVerified,
+    getExpiredPersonalBindings
 };
