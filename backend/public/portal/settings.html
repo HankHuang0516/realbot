@@ -434,7 +434,7 @@
             const limit = data.usageLimit || 15;
 
             if (isPremium) {
-                usageCount.textContent = used + ' ' + i18n.t('settings_usage_unlimited');
+                usageCount.textContent = i18n.t('settings_usage_unlimited', { used });
                 usageProgress.style.width = '0%';
                 usageProgress.style.background = 'var(--warning)';
             } else {
