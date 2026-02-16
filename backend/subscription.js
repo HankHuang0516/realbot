@@ -144,26 +144,32 @@ module.exports = function (devices, authMiddleware) {
             });
 
             const tappayData = await tappayResponse.json();
+            console.log(`[TapPay] Response status: ${tappayData.status}, msg: ${tappayData.msg}`);
 
-            // Log transaction
-            await pool.query(
-                `INSERT INTO tappay_transactions (user_account_id, rec_trade_id, amount, currency, status, tappay_response)
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
-                [
-                    user.id,
-                    tappayData.rec_trade_id || null,
-                    amount,
-                    SUBSCRIPTION_CURRENCY,
-                    tappayData.status === 0 ? 'success' : 'failed',
-                    JSON.stringify(tappayData)
-                ]
-            );
+            // Log transaction (non-blocking, don't let DB errors break payment)
+            try {
+                await pool.query(
+                    `INSERT INTO tappay_transactions (user_account_id, rec_trade_id, amount, currency, status, tappay_response)
+                     VALUES ($1, $2, $3, $4, $5, $6)`,
+                    [
+                        user.id,
+                        tappayData.rec_trade_id || null,
+                        amount,
+                        SUBSCRIPTION_CURRENCY,
+                        tappayData.status === 0 ? 'success' : 'failed',
+                        JSON.stringify(tappayData)
+                    ]
+                );
+            } catch (dbErr) {
+                console.error('[TapPay] Failed to log transaction (non-fatal):', dbErr.message);
+            }
 
             if (tappayData.status !== 0) {
+                const errMsg = tappayData.msg || 'Unknown error';
+                console.error(`[TapPay] Payment failed: status=${tappayData.status}, msg=${errMsg}`);
                 return res.status(400).json({
                     success: false,
-                    error: 'Payment failed',
-                    message: tappayData.msg || 'Unknown error'
+                    error: `Payment failed: ${errMsg} (code: ${tappayData.status})`
                 });
             }
 
@@ -200,8 +206,8 @@ module.exports = function (devices, authMiddleware) {
                 expiresAt: expiresAt
             });
         } catch (error) {
-            console.error('[Subscription] TapPay payment error:', error);
-            res.status(500).json({ success: false, error: 'Payment processing failed' });
+            console.error('[Subscription] TapPay payment error:', error.message, error.stack);
+            res.status(500).json({ success: false, error: `Payment processing failed: ${error.message}` });
         }
     });
 
