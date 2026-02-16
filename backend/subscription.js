@@ -167,6 +167,16 @@ module.exports = function (devices, authMiddleware) {
             if (tappayData.status !== 0) {
                 const errMsg = tappayData.msg || 'Unknown error';
                 console.error(`[TapPay] Payment failed: status=${tappayData.status}, msg=${errMsg}`);
+
+                // IP mismatch (code 4) - include server IP for easy whitelist update
+                if (tappayData.status === 4 && global.serverOutboundIP) {
+                    console.error(`[TapPay] IP mismatch! Server IP: ${global.serverOutboundIP} - add this to TapPay portal`);
+                    return res.status(400).json({
+                        success: false,
+                        error: `IP mismatch - please add ${global.serverOutboundIP}/32 to TapPay IP whitelist`
+                    });
+                }
+
                 return res.status(400).json({
                     success: false,
                     error: `Payment failed: ${errMsg} (code: ${tappayData.status})`

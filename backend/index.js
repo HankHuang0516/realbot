@@ -3128,10 +3128,26 @@ app.get('/api/chat/history', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
     console.log(`Claw Backend v5.3 (PostgreSQL + Auth + Portal) running on port ${port}`);
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
+
+    // Detect outbound IP on startup (for TapPay IP whitelist)
+    try {
+        const https = require('https');
+        const ip = await new Promise((resolve, reject) => {
+            https.get('https://api.ipify.org?format=json', (resp) => {
+                let data = '';
+                resp.on('data', chunk => data += chunk);
+                resp.on('end', () => resolve(JSON.parse(data).ip));
+            }).on('error', reject);
+        });
+        global.serverOutboundIP = ip;
+        console.log(`[IP] Outbound IP: ${ip} (add to TapPay whitelist if needed)`);
+    } catch (e) {
+        console.log('[IP] Could not detect outbound IP:', e.message);
+    }
 });
 // Force redeploy Sat Feb 14 09:53:10 UTC 2026
 
