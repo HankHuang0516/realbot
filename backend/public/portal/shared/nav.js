@@ -2,10 +2,10 @@
 
 function renderNav(activePage) {
     const pages = [
-        { id: 'dashboard', label: 'Dashboard', href: 'dashboard.html' },
-        { id: 'chat', label: 'Chat', href: 'chat.html' },
-        { id: 'mission', label: 'Mission', href: 'mission.html' },
-        { id: 'settings', label: 'Settings', href: 'settings.html' }
+        { id: 'dashboard', i18nKey: 'nav_dashboard', label: 'Dashboard', href: 'dashboard.html' },
+        { id: 'chat', i18nKey: 'nav_chat', label: 'Chat', href: 'chat.html' },
+        { id: 'mission', i18nKey: 'nav_mission', label: 'Mission', href: 'mission.html' },
+        { id: 'settings', i18nKey: 'nav_settings', label: 'Settings', href: 'settings.html' }
     ];
 
     const nav = document.createElement('nav');
@@ -14,12 +14,13 @@ function renderNav(activePage) {
         <span class="nav-brand">E-Claw</span>
         <div class="nav-links">
             ${pages.map(p => `
-                <a href="${p.href}" class="nav-link ${p.id === activePage ? 'active' : ''}">${p.label}</a>
+                <a href="${p.href}" class="nav-link ${p.id === activePage ? 'active' : ''}"
+                   data-i18n="${p.i18nKey}">${typeof i18n !== 'undefined' ? i18n.t(p.i18nKey) : p.label}</a>
             `).join('')}
         </div>
         <div class="nav-user">
             <span class="email" id="navEmail"></span>
-            <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+            <button class="btn btn-outline btn-sm" onclick="logout()" data-i18n="nav_logout">${typeof i18n !== 'undefined' ? i18n.t('nav_logout') : 'Logout'}</button>
         </div>
     `;
 
@@ -32,3 +33,6 @@ async function logout() {
     } catch (e) {}
     window.location.href = 'index.html';
 }
+
+// Alias for pages that call doLogout()
+function doLogout() { logout(); }
