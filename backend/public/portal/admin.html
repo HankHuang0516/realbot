@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="admin_title">E-Claw - Admin Dashboard</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .admin-header h1 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-badge {
+            background: var(--danger);
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--card-border);
+        }
+
+        /* Stat Cards Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-value.success {
+            color: var(--success);
+        }
+
+        .stat-value.warning {
+            color: var(--warning);
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Section Cards */
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 8px 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--card-border);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(51, 51, 85, 0.3);
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(108, 99, 255, 0.05);
+        }
+
+        .data-table .mono {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Badges */
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .type-free {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .type-personal {
+            background: rgba(255, 210, 63, 0.2);
+            color: #FFD23F;
+        }
+
+        .type-premium {
+            background: rgba(255, 210, 63, 0.2);
+            color: #FFD23F;
+        }
+
+        .type-active {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .type-expired {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+        }
+
+        .type-admin {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+        }
+
+        /* Signup Chart */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+            padding: 10px 0;
+        }
+
+        .chart-bar-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .chart-bar {
+            width: 100%;
+            max-width: 40px;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            position: relative;
+        }
+
+        .chart-bar-count {
+            font-size: 11px;
+            color: var(--text);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .chart-bar-date {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Scrollable table wrapper */
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Loading */
+        .admin-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Create Bot Dialog */
+        .create-bot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .create-bot-dialog {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 90%;
+            max-width: 460px;
+        }
+
+        .create-bot-dialog h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-create {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-create:hover {
+            opacity: 0.9;
+        }
+
+        .btn-create:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-cancel:hover {
+            background: var(--card-border);
+        }
+
+        .add-bot-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .add-bot-btn:hover {
+            opacity: 0.9;
+        }
+
+        .bot-secret-result {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .bot-secret-result .mono {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 6px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <h1>
+                <span data-i18n="admin_title">Admin Dashboard</span>
+                <span class="admin-badge" data-i18n="admin_badge">ADMIN</span>
+            </h1>
+            <button class="refresh-btn" onclick="loadAll()" data-i18n="admin_refresh">Refresh</button>
+        </div>
+
+        <div id="adminContent">
+            <div class="admin-loading">
+                <div class="spinner"></div>
+                <p style="margin-top:10px;" data-i18n="admin_loading">Loading admin data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
+    <script>
+        let statsData = null;
+        let bindingsData = null;
+        let usersData = null;
+        let botsData = null;
+
+        async function init() {
+            renderNav('admin');
+            if (typeof i18n !== 'undefined') {
+                i18n.apply();
+                i18n.onLanguageChange(() => {
+                    if (statsData) render(); // Re-render content on language change
+                });
+            }
+
+            const user = await checkAuth();
+            if (!user) return;
+
+            if (!user.isAdmin) {
+                document.getElementById('adminContent').innerHTML =
+                    '<div class="section-card" style="text-align:center;padding:40px;">' +
+                    '<p style="font-size:18px;margin-bottom:10px;" data-i18n="admin_access_denied">Access Denied</p>' +
+                    '<p style="color:var(--text-secondary);" data-i18n="admin_no_privilege">You do not have admin privileges.</p>' +
+                    '<a href="dashboard.html" class="btn btn-primary" style="margin-top:16px;display:inline-block;" data-i18n="admin_back_dashboard">Back to Dashboard</a>' +
+                    '</div>';
+                i18n.apply(); // Re-apply for injected HTML
+                return;
+            }
+
+            await loadAll();
+        }
+
+        async function loadAll() {
+            try {
+                const [stats, bindings, users, bots] = await Promise.all([
+                    apiCall('GET', '/api/admin/stats'),
+                    apiCall('GET', '/api/admin/bindings'),
+                    apiCall('GET', '/api/admin/users'),
+                    apiCall('GET', '/api/admin/bots')
+                ]);
+                statsData = stats;
+                bindingsData = bindings;
+                usersData = users;
+                botsData = bots;
+                render();
+            } catch (e) {
+                document.getElementById('adminContent').innerHTML =
+                    '<div class="section-card" style="text-align:center;color:var(--danger);">' + i18n.t('admin_error_load') + escapeHtml(e.message) + '</div>';
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '-';
+            const d = new Date(typeof ts === 'number' ? ts : ts);
+            return d.toLocaleDateString(i18n.lang === 'zh' ? 'zh-TW' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' +
+                d.toLocaleTimeString(i18n.lang === 'zh' ? 'zh-TW' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function render() {
+            const s = statsData;
+            const content = document.getElementById('adminContent');
+
+            let html = '';
+
+            // === Stat Cards ===
+            html += '<div class="stats-grid">';
+            html += statCard(s.users.total, i18n.t('admin_stat_users'), '');
+            html += statCard(s.users.premium, i18n.t('admin_stat_premium'), 'warning');
+            html += statCard(s.users.verified, i18n.t('admin_stat_verified'), 'success');
+            html += statCard(s.devices.total, i18n.t('admin_stat_devices'), '');
+            html += statCard(s.devices.boundEntities + '/' + s.devices.entities, i18n.t('admin_stat_bound'), 'success');
+            html += statCard(s.bindings.total, i18n.t('admin_stat_bindings'), '');
+            html += statCard(s.bindings.free, i18n.t('admin_stat_free'), 'success');
+            html += statCard(s.bindings.personal, i18n.t('admin_stat_personal'), 'warning');
+            html += statCard(s.messagesToday, i18n.t('admin_stat_messages'), '');
+            html += '</div>';
+
+            // === Signup Chart ===
+            if (s.recentSignups && s.recentSignups.length > 0) {
+                html += '<div class="section-card">';
+                html += '<div class="section-title">' + i18n.t('admin_sec_signups') + '</div>';
+                html += renderChart(s.recentSignups);
+                html += '</div>';
+            }
+
+            // === Official Bots ===
+            html += '<div class="section-card">';
+            html += '<div class="section-title" style="justify-content:space-between;">' + i18n.t('admin_sec_bots') + ' (' + (botsData.bots || []).length + ') <button class="add-bot-btn" onclick="showCreateBotDialog()">' + i18n.t('admin_btn_add_bot') + '</button></div>';
+            html += '<div class="table-scroll">';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>' + i18n.t('admin_col_bot_id') + '</th><th>' + i18n.t('admin_col_type') + '</th><th>' + i18n.t('admin_col_status') + '</th><th>' + i18n.t('admin_col_assigned') + '</th><th>' + i18n.t('admin_col_user') + '</th><th>' + i18n.t('admin_col_assigned_at') + '</th></tr></thead>';
+            html += '<tbody>';
+            if (botsData.bots && botsData.bots.length > 0) {
+                for (const b of botsData.bots) {
+                    const typeCls = b.botType === 'free' ? 'type-free' : 'type-personal';
+                    const statusCls = b.status === 'assigned' ? 'type-active' : '';
+                    html += '<tr>' +
+                        '<td class="mono">' + escapeHtml(b.botId).substring(0, 12) + '...</td>' +
+                        '<td><span class="type-badge ' + typeCls + '">' + escapeHtml(b.botType) + '</span></td>' +
+                        '<td><span class="type-badge ' + statusCls + '">' + escapeHtml(b.status) + '</span></td>' +
+                        '<td class="mono">' + (b.assignedDeviceId ? escapeHtml(b.assignedDeviceId).substring(0, 8) + '...' : '-') + ' ' + (b.assignedEntityId !== null ? 'E' + b.assignedEntityId : '') + '</td>' +
+                        '<td>' + escapeHtml(b.assignedUserEmail || '-') + '</td>' +
+                        '<td>' + formatDate(b.assignedAt) + '</td>' +
+                        '</tr>';
+                }
+            } else {
+                html += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">' + i18n.t('admin_no_bots') + '</td></tr>';
+            }
+            html += '</tbody></table></div></div>';
+
+            // === Active Bindings ===
+            html += '<div class="section-card">';
+            html += '<div class="section-title">' + i18n.t('admin_sec_bindings') + ' (' + (bindingsData.bindings || []).length + ')</div>';
+            html += '<div class="table-scroll">';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>' + i18n.t('admin_col_bot_id') + '</th><th>' + i18n.t('admin_col_type') + '</th><th>' + i18n.t('admin_col_device') + '</th><th>' + i18n.t('admin_col_entity') + '</th><th>' + i18n.t('admin_col_user') + '</th><th>' + i18n.t('admin_col_bound_at') + '</th><th>' + i18n.t('admin_col_sub_verified') + '</th></tr></thead>';
+            html += '<tbody>';
+            if (bindingsData.bindings && bindingsData.bindings.length > 0) {
+                for (const b of bindingsData.bindings) {
+                    const typeCls = b.botType === 'free' ? 'type-free' : 'type-personal';
+                    html += '<tr>' +
+                        '<td class="mono">' + escapeHtml(b.botId).substring(0, 12) + '...</td>' +
+                        '<td><span class="type-badge ' + typeCls + '">' + escapeHtml(b.botType) + '</span></td>' +
+                        '<td class="mono">' + escapeHtml(b.deviceId).substring(0, 8) + '...</td>' +
+                        '<td>Entity ' + b.entityId + '</td>' +
+                        '<td>' + escapeHtml(b.userEmail) + '</td>' +
+                        '<td>' + formatDate(b.boundAt) + '</td>' +
+                        '<td>' + formatDate(b.subscriptionVerifiedAt) + '</td>' +
+                        '</tr>';
+                }
+            } else {
+                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">' + i18n.t('admin_no_bindings') + '</td></tr>';
+            }
+            html += '</tbody></table></div></div>';
+
+            // === Users ===
+            html += '<div class="section-card">';
+            html += '<div class="section-title">' + i18n.t('admin_sec_users') + ' (' + (usersData.users || []).length + ')</div>';
+            html += '<div class="table-scroll">';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>' + i18n.t('admin_col_email') + '</th><th>' + i18n.t('admin_col_verified') + '</th><th>' + i18n.t('admin_col_sub') + '</th><th>' + i18n.t('admin_col_role') + '</th><th>' + i18n.t('admin_col_device') + '</th><th>' + i18n.t('admin_col_registered') + '</th><th>' + i18n.t('admin_col_last_login') + '</th></tr></thead>';
+            html += '<tbody>';
+            if (usersData.users && usersData.users.length > 0) {
+                for (const u of usersData.users) {
+                    const subCls = u.subscriptionStatus === 'premium' ? 'type-premium' :
+                        u.subscriptionStatus === 'expired' ? 'type-expired' : '';
+                    html += '<tr>' +
+                        '<td>' + escapeHtml(u.email) + '</td>' +
+                        '<td>' + (u.emailVerified ? '<span style="color:var(--success)">Yes</span>' : '<span style="color:var(--text-muted)">No</span>') + '</td>' +
+                        '<td><span class="type-badge ' + subCls + '">' + escapeHtml(u.subscriptionStatus) + '</span></td>' +
+                        '<td>' + (u.isAdmin ? '<span class="type-badge type-admin">Admin</span>' : 'User') + '</td>' +
+                        '<td class="mono">' + escapeHtml(u.deviceId).substring(0, 8) + '...</td>' +
+                        '<td>' + formatDate(u.createdAt) + '</td>' +
+                        '<td>' + formatDate(u.lastLoginAt) + '</td>' +
+                        '</tr>';
+                }
+            } else {
+                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">' + i18n.t('admin_no_users') + '</td></tr>';
+            }
+            html += '</tbody></table></div></div>';
+
+            content.innerHTML = html;
+        }
+
+        function statCard(value, label, colorClass) {
+            return '<div class="stat-card">' +
+                '<div class="stat-value ' + colorClass + '">' + value + '</div>' +
+                '<div class="stat-label">' + label + '</div>' +
+                '</div>';
+        }
+
+        function renderChart(signups) {
+            if (!signups || signups.length === 0) return '';
+            const maxCount = Math.max(...signups.map(s => parseInt(s.count)), 1);
+            let html = '<div class="chart-container">';
+            for (const s of signups) {
+                const count = parseInt(s.count);
+                const height = Math.max(4, (count / maxCount) * 90);
+                const dateStr = new Date(s.date).toLocaleDateString(i18n.lang === 'zh' ? 'zh-TW' : 'en-US', { month: 'numeric', day: 'numeric' });
+                html += '<div class="chart-bar-wrapper">' +
+                    '<span class="chart-bar-count">' + count + '</span>' +
+                    '<div class="chart-bar" style="height:' + height + 'px;"></div>' +
+                    '<span class="chart-bar-date">' + dateStr + '</span>' +
+                    '</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        function showCreateBotDialog() {
+            const overlay = document.createElement('div');
+            overlay.className = 'create-bot-overlay';
+            overlay.innerHTML =
+                '<div class="create-bot-dialog">' +
+                '<h3>' + i18n.t('admin_dlg_add_bot') + '</h3>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_bot_id') + '</label>' +
+                '<input type="text" id="newBotId" placeholder="e.g. my-personal-bot-01">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_type') + '</label>' +
+                '<select id="newBotType">' +
+                '<option value="personal">Personal (NT$99/month)</option>' +
+                '<option value="free">Free (shared)</option>' +
+                '</select>' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_webhook') + '</label>' +
+                '<input type="text" id="newBotWebhook" placeholder="https://...">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_token') + '</label>' +
+                '<input type="text" id="newBotToken" placeholder="Bot webhook token">' +
+                '</div>' +
+                '<div id="createBotResult"></div>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn-cancel" onclick="closeCreateBotDialog()">' + i18n.t('admin_dlg_cancel') + '</button>' +
+                '<button class="btn-create" id="btnCreateBot" onclick="createBot()">' + i18n.t('admin_dlg_create') + '</button>' +
+                '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeCreateBotDialog();
+            });
+        }
+
+        function closeCreateBotDialog() {
+            const overlay = document.querySelector('.create-bot-overlay');
+            if (overlay) overlay.remove();
+        }
+
+        async function createBot() {
+            const botId = document.getElementById('newBotId').value.trim();
+            const botType = document.getElementById('newBotType').value;
+            const webhookUrl = document.getElementById('newBotWebhook').value.trim();
+            const token = document.getElementById('newBotToken').value.trim();
+            const resultDiv = document.getElementById('createBotResult');
+            const btn = document.getElementById('btnCreateBot');
+
+            if (!botId || !webhookUrl || !token) {
+                resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">' + i18n.t('admin_msg_required') + '</p>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = i18n.t('admin_dlg_creating');
+            resultDiv.innerHTML = '';
+
+            try {
+                const result = await apiCall('POST', '/api/admin/bots/create', {
+                    botId, botType, webhookUrl, token
+                });
+
+                resultDiv.innerHTML =
+                    '<div class="bot-secret-result">' +
+                    '<p style="margin:0 0 6px 0;color:var(--success);font-weight:600;">' + i18n.t('admin_msg_success') + '</p>' +
+                    '<p style="margin:0 0 4px 0;font-size:12px;color:var(--text-secondary);">' + i18n.t('admin_msg_secret') + '</p>' +
+                    '<p class="mono" style="margin:0;">' + escapeHtml(result.bot.botSecret) + '</p>' +
+                    '</div>';
+
+                btn.textContent = i18n.t('admin_dlg_create'); // Reset button text even on success for next action
+
+                // Refresh the bots table after a short delay
+                setTimeout(async () => {
+                    botsData = await apiCall('GET', '/api/admin/bots');
+                    render();
+                }, 1500);
+            } catch (e) {
+                resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">' + escapeHtml(e.message) + '</p>';
+                btn.disabled = false;
+                btn.textContent = i18n.t('admin_dlg_create');
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

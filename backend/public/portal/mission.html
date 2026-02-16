@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="mc_title">E-Claw Mission Control</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Card sections */
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .card-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* List items */
+        .mc-item {
+            background: var(--input-bg);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .mc-item:hover {
+            background: #2E2E50;
+        }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-priority {
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .item-title {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--card-border);
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .item-detail {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-done {
+            color: var(--success);
+            font-size: 11px;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .mc-empty {
+            color: var(--text-muted);
+            font-size: 13px;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Sync bar */
+        .sync-bar {
+            text-align: right;
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 8px 0;
+        }
+
+        /* Context menu */
+        .context-menu {
+            position: fixed;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 4px 0;
+            z-index: 300;
+            min-width: 160px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            transition: background 0.1s;
+        }
+
+        .context-menu-item:hover {
+            background: var(--card-border);
+        }
+
+        /* Toggle switch for rules */
+        .switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch .slider {
+            position: absolute;
+            inset: 0;
+            background: var(--card-border);
+            border-radius: 11px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .switch .slider::before {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            left: 2px;
+            bottom: 2px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .switch input:checked+.slider {
+            background: var(--primary);
+        }
+
+        .switch input:checked+.slider::before {
+            transform: translateX(18px);
+            background: #fff;
+        }
+
+        /* Dialog form inputs (scoped to dialog) */
+        .dialog input,
+        .dialog textarea,
+        .dialog select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .dialog input:focus,
+        .dialog textarea:focus,
+        .dialog select:focus {
+            border-color: var(--primary);
+        }
+
+        .dialog input::placeholder,
+        .dialog textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .dialog textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .dialog select {
+            cursor: pointer;
+        }
+
+        .dialog select option {
+            background: var(--input-bg);
+            color: var(--text);
+        }
+
+        .dialog-field-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        /* Loading state */
+        .loading-center {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .loading-center .spinner {
+            margin: 0 auto 12px;
+        }
+
+        @media (max-width: 640px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title" data-i18n="mc_title">Mission Control</h1>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="downloadDashboard()" data-i18n="mc_refresh">Refresh</button>
+                <button class="btn btn-primary" id="btnSave" onclick="uploadDashboard()" data-i18n="mc_save">Save to Cloud</button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-center" id="loadingState">
+            <div class="spinner"></div>
+            <div style="color:var(--text-secondary);">Loading...</div>
+        </div>
+
+        <!-- Dashboard Content (hidden until loaded) -->
+        <div id="dashboardContent" style="display:none;">
+            <!-- TODO -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 data-i18n="mc_todo_title">TODO List</h2>
+                    <button class="btn btn-outline btn-sm" onclick="showAddItem('todo')" data-i18n="mc_btn_add">+ Add</button>
+                </div>
+                <div id="todoList"></div>
+            </div>
+
+            <!-- Mission -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 data-i18n="mc_mission_title">Mission List</h2>
+                </div>
+                <div id="missionList"></div>
+            </div>
+
+            <!-- Done -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 data-i18n="mc_done_title">Done List</h2>
+                </div>
+                <div id="doneList"></div>
+            </div>
+
+            <!-- Notes -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 data-i18n="mc_notes_title">Notes (Bot Read-only)</h2>
+                    <button class="btn btn-outline btn-sm" onclick="showAddNote()" data-i18n="mc_btn_add">+ Add</button>
+                </div>
+                <div id="notesList"></div>
+            </div>
+
+            <!-- Rules -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 data-i18n="mc_rules_title">Rules (Workflow)</h2>
+                    <button class="btn btn-outline btn-sm" onclick="showAddRule()" data-i18n="mc_btn_add">+ Add</button>
+                </div>
+                <div id="rulesList"></div>
+            </div>
+
+            <!-- Sync Bar -->
+            <div class="sync-bar" id="syncBar">-</div>
+        </div>
+    </div>
+
+    <!-- Dialog container -->
+    <div id="dialogContainer"></div>
+    <!-- Context menu container -->
+    <div id="contextMenu" class="context-menu" style="display:none"></div>
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
+    <script>
+        // --- State ---
+        let dashboard = { todoList: [], missionList: [], doneList: [], notes: [], rules: [] };
+        let version = 1;
+        let hasChanges = false;
+        let refreshTimer = null;
+
+        // --- Helpers ---
+        const getPriorityLabel = (p) => {
+            const map = {
+                1: i18n.t('mc_priority_low'),
+                2: i18n.t('mc_priority_medium'),
+                3: i18n.t('mc_priority_high'),
+                4: i18n.t('mc_priority_urgent')
+            };
+            return map[p] || i18n.t('mc_priority_medium');
+        };
+
+        const getStatusLabel = (s) => {
+            const map = {
+                PENDING: i18n.t('mc_status_pending'),
+                IN_PROGRESS: i18n.t('mc_status_inprogress'),
+                BLOCKED: i18n.t('mc_status_blocked'),
+                DONE: i18n.t('mc_status_done'),
+                CANCELLED: i18n.t('mc_status_cancelled')
+            };
+            return map[s] || s || i18n.t('mc_status_pending');
+        };
+
+        function genId() {
+            return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+        }
+
+        function fmtDate(ts) {
+            if (!ts) return '-';
+            const d = new Date(ts);
+            return `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function esc(s) {
+            const d = document.createElement('div');
+            d.textContent = s || '';
+            return d.innerHTML;
+        }
+
+        function markChanged() {
+            hasChanges = true;
+            renderSyncBar();
+        }
+
+        // --- Init ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('mission');
+            const user = await checkAuth();
+            if (!user) return;
+
+            await downloadDashboard();
+
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = '';
+
+            // Auto-refresh every 30s
+            refreshTimer = setInterval(downloadDashboard, 30000);
+
+            // Re-render on language change
+            i18n.onLanguageChange(() => {
+                renderAll();
+            });
+        });
+
+        // --- API ---
+        async function downloadDashboard() {
+            try {
+                const data = await apiCall('GET',
+                    `/api/mission/dashboard?deviceId=${encodeURIComponent(currentUser.deviceId)}&deviceSecret=${encodeURIComponent(currentUser.deviceSecret)}`
+                );
+                if (data.success && data.dashboard) {
+                    applyDashboard(data.dashboard);
+                }
+            } catch (e) {
+                console.error('Refresh failed:', e);
+                // Only show error on first load
+                if (document.getElementById('loadingState').style.display !== 'none') {
+                    showToast('Failed to load dashboard: ' + e.message, 'error');
+                }
+            }
+        }
+
+        async function uploadDashboard() {
+            const btn = document.getElementById('btnSave');
+            btn.disabled = true;
+            btn.textContent = i18n.t('mc_saving');
+
+            try {
+                const data = await apiCall('POST', '/api/mission/dashboard', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    version: version,
+                    dashboard: dashboard
+                });
+
+                if (data.success) {
+                    version = data.version || version + 1;
+                    hasChanges = false;
+                    renderSyncBar();
+                    btn.textContent = i18n.t('mc_save');
+                    showToast(i18n.t('mc_sync_synced'), 'success');
+                } else if (data.error === 'VERSION_CONFLICT') {
+                    if (confirm(i18n.t('mc_confirm_version', { you: version, server: data.currentVersion }))) {
+                        await downloadDashboard();
+                    }
+                } else {
+                    showToast('Upload failed: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+
+            btn.disabled = false;
+            if (btn.textContent === i18n.t('mc_saving')) {
+                btn.textContent = i18n.t('mc_save');
+            }
+        }
+
+        function applyDashboard(d) {
+            dashboard = {
+                todoList: d.todoList || [],
+                missionList: d.missionList || [],
+                doneList: d.doneList || [],
+                notes: d.notes || [],
+                rules: d.rules || []
+            };
+            version = d.version || 1;
+            hasChanges = false;
+            renderAll();
+        }
+
+        // ========== Rendering ==========
+        function renderAll() {
+            renderTodo();
+            renderMission();
+            renderDone();
+            renderNotes();
+            renderRules();
+            renderSyncBar();
+        }
+
+        function renderTodo() {
+            const el = document.getElementById('todoList');
+            if (!dashboard.todoList.length) {
+                el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_todo')}</div>`;
+                return;
+            }
+            el.innerHTML = dashboard.todoList.map(item => `
+                <div class="mc-item" onclick="showEditItem('${item.id}','todo')" oncontextmenu="showItemMenu(event,'${item.id}','todo')">
+                    <div class="item-row">
+                        <span class="item-priority">${(getPriorityLabel(item.priority?.value || item.priority)).slice(0, 2)}</span>
+                        <span class="item-title">${esc(item.title)}</span>
+                        <span class="item-badge">${getStatusLabel(item.status?.name || item.status)}</span>
+                    </div>
+                    ${item.description ? `<div class="item-detail">${esc(item.description)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderMission() {
+            const el = document.getElementById('missionList');
+            if (!dashboard.missionList.length) {
+                el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_mission')}</div>`;
+                return;
+            }
+            el.innerHTML = dashboard.missionList.map(item => `
+                <div class="mc-item" onclick="showEditItem('${item.id}','mission')" oncontextmenu="showItemMenu(event,'${item.id}','mission')">
+                    <div class="item-row">
+                        <span class="item-priority">${(getPriorityLabel(item.priority?.value || item.priority)).slice(0, 2)}</span>
+                        <span class="item-title">${esc(item.title)}</span>
+                        <span class="item-badge">${getStatusLabel(item.status?.name || item.status)}</span>
+                    </div>
+                    <div class="item-detail">${esc(item.assignedBot || '-')} &nbsp; ${item.eta ? fmtDate(item.eta) : '-'}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderDone() {
+            const el = document.getElementById('doneList');
+            if (!dashboard.doneList.length) {
+                el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_done')}</div>`;
+                return;
+            }
+            el.innerHTML = dashboard.doneList.map(item => `
+                <div class="mc-item" oncontextmenu="showItemMenu(event,'${item.id}','done')">
+                    <div class="item-row">
+                        <span class="item-title">${esc(item.title)}</span>
+                    </div>
+                    ${item.completedAt ? `<div class="item-done">${fmtDate(item.completedAt)}</div>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderNotes() {
+            const el = document.getElementById('notesList');
+            if (!dashboard.notes.length) {
+                el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_notes')}</div>`;
+                return;
+            }
+            el.innerHTML = dashboard.notes.map(n => `
+                <div class="mc-item" onclick="showEditNote('${n.id}')" oncontextmenu="showNoteMenu(event,'${n.id}')">
+                    <div class="item-row">
+                        <span class="item-title">${esc(n.title)}</span>
+                        <span class="item-badge">${esc(n.category || 'general')}</span>
+                    </div>
+                    <div class="item-detail">${esc((n.content || '').slice(0, 80))}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderRules() {
+            const el = document.getElementById('rulesList');
+            if (!dashboard.rules.length) {
+                el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_rules')}</div>`;
+                return;
+            }
+            el.innerHTML = dashboard.rules.map(r => `
+                <div class="mc-item" onclick="showEditRule('${r.id}')" oncontextmenu="showRuleMenu(event,'${r.id}')">
+                    <div class="item-row">
+                        <span class="item-title">${esc(r.name)}</span>
+                        <span class="item-badge">${esc(r.ruleType?.name || r.ruleType || '')}</span>
+                        <label class="switch" onclick="event.stopPropagation()">
+                            <input type="checkbox" ${r.isEnabled !== false ? 'checked' : ''} onchange="toggleRule('${r.id}')">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="item-detail">${esc(r.description || '')}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderSyncBar() {
+            const btn = document.getElementById('btnSave');
+            document.getElementById('syncBar').textContent =
+                `v${version} | ${hasChanges ? i18n.t('mc_sync_unsaved') : i18n.t('mc_sync_synced')} | ${fmtDate(Date.now())}`;
+            if (!btn.disabled) {
+                btn.textContent = hasChanges ? i18n.t('mc_save_unsaved') : i18n.t('mc_save');
+            }
+        }
+
+        // ========== Dialogs ==========
+        function showDialog(title, fields, onSave) {
+            const c = document.getElementById('dialogContainer');
+            let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
+                <div class="dialog">
+                    <div class="dialog-title">${title}</div>`;
+
+            fields.forEach(f => {
+                if (f.type === 'textarea') {
+                    html += `<textarea id="dlg_${f.key}" placeholder="${f.label}">${esc(f.value || '')}</textarea>`;
+                } else if (f.type === 'select') {
+                    html += `<select id="dlg_${f.key}">
+                        ${f.options.map(o => `<option value="${o.value}" ${o.value == f.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+                    </select>`;
+                } else {
+                    html += `<input id="dlg_${f.key}" placeholder="${f.label}" value="${esc(f.value || '')}" />`;
+                }
+            });
+
+            html += `<div class="dialog-actions">
+                        <button class="btn btn-outline" onclick="closeDialog()">${i18n.t('mc_dlg_cancel')}</button>
+                        <button class="btn btn-primary" id="dlgSaveBtn">${i18n.t('mc_dlg_save')}</button>
+                    </div>
+                </div>
+            </div>`;
+
+            c.innerHTML = html;
+
+            document.getElementById('dlgSaveBtn').onclick = () => {
+                const vals = {};
+                fields.forEach(f => vals[f.key] = document.getElementById('dlg_' + f.key).value);
+                onSave(vals);
+                closeDialog();
+            };
+
+            // Focus first input
+            const firstInput = c.querySelector('input, textarea');
+            if (firstInput) setTimeout(() => firstInput.focus(), 50);
+        }
+
+        function closeDialog() {
+            document.getElementById('dialogContainer').innerHTML = '';
+        }
+
+        // ========== TODO / Mission / Done Items ==========
+        function showAddItem(list) {
+            const priorityOpts = [
+                { value: 1, label: i18n.t('mc_priority_low') },
+                { value: 2, label: i18n.t('mc_priority_medium') },
+                { value: 3, label: i18n.t('mc_priority_high') },
+                { value: 4, label: i18n.t('mc_priority_urgent') }
+            ];
+            showDialog(i18n.t('mc_dlg_add_todo'), [
+                { key: 'title', label: i18n.t('mc_dlg_title'), value: '' },
+                { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: '' },
+                { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: 2, options: priorityOpts }
+            ], vals => {
+                if (!vals.title.trim()) return;
+                dashboard.todoList.push({
+                    id: genId(),
+                    title: vals.title.trim(),
+                    description: vals.description.trim(),
+                    priority: parseInt(vals.priority),
+                    status: 'PENDING',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    createdBy: 'user'
+                });
+                markChanged();
+                renderTodo();
+            });
+        }
+
+        function showEditItem(id, list) {
+            const arr = list === 'todo' ? dashboard.todoList : list === 'mission' ? dashboard.missionList : dashboard.doneList;
+            const item = arr.find(i => i.id === id);
+            if (!item) return;
+
+            const priorityOpts = [
+                { value: 1, label: i18n.t('mc_priority_low') },
+                { value: 2, label: i18n.t('mc_priority_medium') },
+                { value: 3, label: i18n.t('mc_priority_high') },
+                { value: 4, label: i18n.t('mc_priority_urgent') }
+            ];
+            const pv = item.priority?.value || item.priority || 2;
+
+            showDialog(i18n.t('mc_dlg_edit'), [
+                { key: 'title', label: i18n.t('mc_dlg_title'), value: item.title },
+                { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: item.description },
+                { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: pv, options: priorityOpts }
+            ], vals => {
+                if (!vals.title.trim()) return;
+                item.title = vals.title.trim();
+                item.description = vals.description.trim();
+                item.priority = parseInt(vals.priority);
+                item.updatedAt = Date.now();
+                markChanged();
+                renderAll();
+            });
+        }
+
+        function showItemMenu(e, id, list) {
+            e.preventDefault();
+            const menu = document.getElementById('contextMenu');
+            let items = [];
+
+            if (list === 'todo') {
+                items.push({ label: i18n.t('mc_menu_move_mission'), fn: () => moveItem(id, 'todo', 'mission') });
+                items.push({ label: i18n.t('mc_menu_mark_done'), fn: () => moveItem(id, 'todo', 'done') });
+            }
+            if (list === 'mission') {
+                items.push({ label: i18n.t('mc_menu_mark_done'), fn: () => moveItem(id, 'mission', 'done') });
+            }
+            items.push({ label: i18n.t('mc_menu_delete'), fn: () => deleteItem(id, list) });
+
+            menu.innerHTML = items.map(i => `<div class="context-menu-item">${i.label}</div>`).join('');
+            menu.style.display = 'block';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+            menu.style.top = Math.min(e.clientY, window.innerHeight - (items.length * 40)) + 'px';
+
+            menu.querySelectorAll('.context-menu-item').forEach((el, idx) => {
+                el.onclick = () => {
+                    items[idx].fn();
+                    menu.style.display = 'none';
+                };
+            });
+
+            setTimeout(() => document.addEventListener('click', () => menu.style.display = 'none', { once: true }), 10);
+        }
+
+        function moveItem(id, from, to) {
+            const fromArr = from === 'todo' ? dashboard.todoList : dashboard.missionList;
+            const idx = fromArr.findIndex(i => i.id === id);
+            if (idx < 0) return;
+
+            const item = fromArr.splice(idx, 1)[0];
+            item.updatedAt = Date.now();
+
+            if (to === 'mission') {
+                item.status = 'IN_PROGRESS';
+                dashboard.missionList.push(item);
+            }
+            if (to === 'done') {
+                item.status = 'DONE';
+                item.completedAt = Date.now();
+                dashboard.doneList.unshift(item);
+            }
+
+            markChanged();
+            renderAll();
+        }
+
+        function deleteItem(id, list) {
+            if (!confirm(i18n.t('mc_confirm_delete'))) return;
+
+            if (list === 'todo') dashboard.todoList = dashboard.todoList.filter(i => i.id !== id);
+            else if (list === 'mission') dashboard.missionList = dashboard.missionList.filter(i => i.id !== id);
+            else dashboard.doneList = dashboard.doneList.filter(i => i.id !== id);
+
+            markChanged();
+            renderAll();
+        }
+
+        // ========== Notes ==========
+        function showAddNote() {
+            showDialog(i18n.t('mc_dlg_add_note'), [
+                { key: 'title', label: i18n.t('mc_dlg_title'), value: '' },
+                { key: 'content', label: i18n.t('mc_dlg_content'), type: 'textarea', value: '' },
+                { key: 'category', label: i18n.t('mc_dlg_category'), value: 'general' }
+            ], vals => {
+                if (!vals.title.trim()) return;
+                dashboard.notes.push({
+                    id: genId(),
+                    title: vals.title.trim(),
+                    content: vals.content.trim(),
+                    category: vals.category.trim() || 'general',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    createdBy: 'user'
+                });
+                markChanged();
+                renderNotes();
+            });
+        }
+
+        function showEditNote(id) {
+            const note = dashboard.notes.find(n => n.id === id);
+            if (!note) return;
+
+            showDialog(i18n.t('mc_dlg_edit_note'), [
+                { key: 'title', label: i18n.t('mc_dlg_title'), value: note.title },
+                { key: 'content', label: i18n.t('mc_dlg_content'), type: 'textarea', value: note.content },
+                { key: 'category', label: i18n.t('mc_dlg_category'), value: note.category }
+            ], vals => {
+                if (!vals.title.trim()) return;
+                note.title = vals.title.trim();
+                note.content = vals.content.trim();
+                note.category = vals.category.trim() || 'general';
+                note.updatedAt = Date.now();
+                markChanged();
+                renderNotes();
+            });
+        }
+
+        function showNoteMenu(e, id) {
+            e.preventDefault();
+            const menu = document.getElementById('contextMenu');
+            menu.innerHTML = `<div class="context-menu-item">${i18n.t('mc_menu_delete')}</div>`;
+            menu.style.display = 'block';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+            menu.style.top = e.clientY + 'px';
+
+            menu.querySelector('.context-menu-item').onclick = () => {
+                if (confirm(i18n.t('mc_confirm_delete'))) {
+                    dashboard.notes = dashboard.notes.filter(n => n.id !== id);
+                    markChanged();
+                    renderNotes();
+                }
+                menu.style.display = 'none';
+            };
+
+            setTimeout(() => document.addEventListener('click', () => menu.style.display = 'none', { once: true }), 10);
+        }
+
+        // ========== Rules ==========
+        function showAddRule() {
+            const typeOpts = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC']
+                .map(t => ({ value: t, label: t }));
+
+            showDialog(i18n.t('mc_dlg_add_rule'), [
+                { key: 'name', label: i18n.t('mc_dlg_rule_name'), value: '' },
+                { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: '' },
+                { key: 'ruleType', label: i18n.t('mc_dlg_rule_type'), type: 'select', value: 'WORKFLOW', options: typeOpts }
+            ], vals => {
+                if (!vals.name.trim()) return;
+                dashboard.rules.push({
+                    id: genId(),
+                    name: vals.name.trim(),
+                    description: vals.description.trim(),
+                    ruleType: vals.ruleType,
+                    isEnabled: true,
+                    priority: 0,
+                    config: {},
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                });
+                markChanged();
+                renderRules();
+            });
+        }
+
+        function showEditRule(id) {
+            const rule = dashboard.rules.find(r => r.id === id);
+            if (!rule) return;
+
+            const typeOpts = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC']
+                .map(t => ({ value: t, label: t }));
+            const rt = rule.ruleType?.name || rule.ruleType || 'WORKFLOW';
+
+            showDialog(i18n.t('mc_dlg_edit_rule'), [
+                { key: 'name', label: i18n.t('mc_dlg_rule_name'), value: rule.name },
+                { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: rule.description },
+                { key: 'ruleType', label: i18n.t('mc_dlg_rule_type'), type: 'select', value: rt, options: typeOpts }
+            ], vals => {
+                if (!vals.name.trim()) return;
+                rule.name = vals.name.trim();
+                rule.description = vals.description.trim();
+                rule.ruleType = vals.ruleType;
+                rule.updatedAt = Date.now();
+                markChanged();
+                renderRules();
+            });
+        }
+
+        function toggleRule(id) {
+            const rule = dashboard.rules.find(r => r.id === id);
+            if (!rule) return;
+            rule.isEnabled = !rule.isEnabled;
+            rule.updatedAt = Date.now();
+            markChanged();
+        }
+
+        function showRuleMenu(e, id) {
+            e.preventDefault();
+            const menu = document.getElementById('contextMenu');
+            menu.innerHTML = `<div class="context-menu-item">${i18n.t('mc_menu_delete')}</div>`;
+            menu.style.display = 'block';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+            menu.style.top = e.clientY + 'px';
+
+            menu.querySelector('.context-menu-item').onclick = () => {
+                if (confirm(i18n.t('mc_confirm_delete'))) {
+                    dashboard.rules = dashboard.rules.filter(r => r.id !== id);
+                    markChanged();
+                    renderRules();
+                }
+                menu.style.display = 'none';
+            };
+
+            setTimeout(() => document.addEventListener('click', () => menu.style.display = 'none', { once: true }), 10);
+        }
+
+        // --- Cleanup ---
+        window.addEventListener('beforeunload', (e) => {
+            if (refreshTimer) clearInterval(refreshTimer);
+            // Warn if unsaved changes
+            if (hasChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+
+</html>

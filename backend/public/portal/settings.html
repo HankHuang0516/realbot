@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="settings_title">E-Claw - Settings</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        /* Info rows (label/value pairs) */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+
+        .info-row+.info-row {
+            border-top: 1px solid var(--card-border);
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            word-break: break-all;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .info-value.mono {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Subscription header with badge */
+        .subscription-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .subscription-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Usage bar */
+        .usage-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .usage-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .usage-count {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .expiry-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 10px;
+        }
+
+        /* Price / period */
+        .subscribe-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--warning);
+            margin-bottom: 4px;
+        }
+
+        .subscribe-period {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        /* TapPay card form (dark theme) */
+        .tappay-section {
+            margin-top: 16px;
+            display: none;
+        }
+
+        .tappay-section.visible {
+            display: block;
+        }
+
+        .tappay-field {
+            margin-bottom: 12px;
+        }
+
+        .tappay-field label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .tappay-field-input {
+            height: 40px;
+            padding: 0 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            transition: border-color 0.2s;
+        }
+
+        .tappay-field-input.tappay-field-focus {
+            border-color: var(--primary);
+        }
+
+        .tappay-field-input.tappay-field-error {
+            border-color: var(--danger);
+        }
+
+        .tappay-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .card-error {
+            color: var(--danger);
+            font-size: 12px;
+            margin-top: 8px;
+            min-height: 16px;
+        }
+
+        /* Loading state for card form */
+        .card-loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .card-loading.visible {
+            display: flex;
+        }
+
+        /* Cancel section */
+        .cancel-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        /* Language chips */
+        .language-chips {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        /* Logout button (red outline) */
+        .actions-section {
+            margin-top: 8px;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-sm);
+            color: var(--danger);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: var(--danger);
+            color: var(--text);
+        }
+
+        /* Cancel confirmation dialog */
+        .dialog-overlay .dialog p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .info-value {
+                max-width: 55%;
+            }
+
+            .tappay-row {
+                grid-template-columns: 1fr;
+            }
+
+            .subscribe-price {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" id="pageContent" style="display:none">
+        <h1 class="page-title" data-i18n="settings_title">Settings</h1>
+
+        <!-- Account Info Card -->
+        <div class="card">
+            <div class="card-title" data-i18n="settings_account">Account</div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value" id="accountEmail">--</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Device ID</span>
+                <span class="info-value mono" id="accountDeviceId">--</span>
+            </div>
+        </div>
+
+        <!-- Subscription Card -->
+        <div class="card">
+            <div class="subscription-header">
+                <h3 data-i18n="settings_sub">Subscription</h3>
+                <span class="badge" id="subBadge">--</span>
+            </div>
+
+            <div class="usage-row">
+                <span class="usage-label" data-i18n="settings_usage_today">Messages today</span>
+                <span class="usage-count" id="usageCount">--</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="usageProgress" style="width:0%;background:var(--warning)"></div>
+            </div>
+
+            <div class="expiry-text" id="expiryText" style="display:none"></div>
+
+            <!-- FREE user: Subscribe section -->
+            <div id="freeSection" style="display:none;margin-top:16px;">
+                <div class="subscribe-price" data-i18n="settings_price">NT$99</div>
+                <div class="subscribe-period" data-i18n="settings_period">per month</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;line-height:1.6;">
+                    <div data-i18n="settings_sub_benefit_1">&#10003; Unlimited messages (no 15/day limit)</div>
+                    <div data-i18n="settings_sub_benefit_2">&#10003; Up to 8 entity slots (instead of 4)</div>
+                </div>
+                <button class="btn btn-primary btn-block" id="btnShowCard" onclick="toggleCardForm()"
+                    data-i18n="settings_btn_subscribe">Subscribe</button>
+
+                <!-- TapPay Card Form (collapsible) -->
+                <div class="tappay-section" id="tappaySection">
+                    <div class="tappay-field">
+                        <label data-i18n="settings_label_card">Card Number</label>
+                        <div class="tappay-field-input" id="tappay-card-number"></div>
+                    </div>
+                    <div class="tappay-row">
+                        <div class="tappay-field">
+                            <label data-i18n="settings_label_expiry">Expiry Date</label>
+                            <div class="tappay-field-input" id="tappay-expiration-date"></div>
+                        </div>
+                        <div class="tappay-field">
+                            <label data-i18n="settings_label_ccv">CCV</label>
+                            <div class="tappay-field-input" id="tappay-ccv"></div>
+                        </div>
+                    </div>
+                    <div class="card-error" id="cardError"></div>
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <button class="btn btn-success" style="flex:1" id="btnPay" onclick="processPayment()" disabled
+                            data-i18n="settings_btn_pay">Pay NT$99</button>
+                        <button class="btn btn-outline" onclick="toggleCardForm()"
+                            data-i18n="settings_btn_hide_card">Hide Card Form</button>
+                    </div>
+                    <div class="card-loading" id="cardLoading">
+                        <div class="spinner"></div>
+                        <span data-i18n="settings_processing">Processing payment...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREMIUM user: Cancel section -->
+            <div id="premiumSection" style="display:none">
+                <div class="cancel-section">
+                    <button class="btn btn-outline btn-block" id="btnCancel" onclick="confirmCancel()"
+                        data-i18n="settings_btn_cancel">Cancel Subscription</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Language Card -->
+        <div class="card">
+            <div class="card-title" data-i18n="settings_lang">Language</div>
+            <div class="language-chips">
+                <div class="chip" id="chipEn" onclick="setLanguage('en')">English</div>
+                <div class="chip" id="chipZh" onclick="setLanguage('zh')">&#x4E2D;&#x6587;</div>
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="actions-section">
+            <button class="logout-btn" onclick="doLogout()" data-i18n="nav_logout">Logout</button>
+            <div style="text-align:center;margin-top:20px;">
+                <a href="#" onclick="showPrivacyPolicy()"
+                    style="font-size:13px;color:var(--text-secondary);text-decoration:underline;"
+                    data-i18n="settings_privacy_link">Privacy Policy</a>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">
+                    <span data-i18n="settings_version">Version</span> <span id="appVersion">1.2.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Dialog -->
+    <div class="dialog-overlay" id="cancelDialog" style="display:none">
+        <div class="dialog">
+            <div class="dialog-title" data-i18n="settings_cancel_title">Cancel Subscription</div>
+            <p data-i18n="settings_cancel_desc">
+                Your premium access will remain active until the current billing period ends.
+                After that, you'll revert to the free plan with 15 messages per day.
+            </p>
+            <div class="dialog-actions">
+                <button class="btn btn-outline" onclick="closeCancelDialog()" data-i18n="settings_btn_keep">Keep
+                    Subscription</button>
+                <button class="btn btn-danger" id="btnConfirmCancel" onclick="cancelSubscription()"
+                    data-i18n="settings_btn_cancel">Cancel Subscription</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Dialog -->
+    <div class="dialog-overlay" id="privacyDialog" style="display:none">
+        <div class="dialog" style="max-width:600px;width:90%;">
+            <div class="dialog-title" data-i18n="settings_privacy_title">Privacy Policy</div>
+            <div id="privacyContent"
+                style="font-size:14px;color:var(--text-secondary);line-height:1.6;max-height:60vh;overflow-y:auto;text-align:left;white-space:pre-wrap;">
+            </div>
+            <div class="dialog-actions">
+                <button class="btn btn-primary" onclick="closePrivacyDialog()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TapPay SDK -->
+    <script src="https://js.tappaysdk.com/sdk/tpdirect/v5.17.0"></script>
+
+    <!-- Shared scripts -->
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <!-- i18n is now a class, need to wait for it before use -->
+    <script src="../shared/i18n.js"></script>
+
+    <script>
+        let tappayReady = false;
+        let canGetPrime = false;
+
+        // ============================================
+        // Initialization
+        // ============================================
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('settings');
+
+            // Wait for i18n to load if it's async or just ensure it's applied
+            if (typeof i18n !== 'undefined') {
+                i18n.apply();
+                document.getElementById('appVersion').textContent = PORTAL_VERSION;
+            }
+
+            const user = await checkAuth();
+            if (!user) return;
+
+            populateAccountInfo(user);
+            await loadSubscriptionStatus();
+            loadLanguagePreference();
+
+            document.getElementById('pageContent').style.display = '';
+            initTapPay();
+        });
+
+        // ============================================
+        // Account Info
+        // ============================================
+        function populateAccountInfo(user) {
+            document.getElementById('accountEmail').textContent = user.email || '--';
+            document.getElementById('accountDeviceId').textContent = user.deviceId || '--';
+        }
+
+        // ============================================
+        // Subscription
+        // ============================================
+        async function loadSubscriptionStatus() {
+            try {
+                const data = await apiCall('GET', '/api/subscription/status');
+                updateSubscriptionUI(data);
+            } catch (e) {
+                console.error('Failed to load subscription status:', e);
+            }
+        }
+
+        function updateSubscriptionUI(data) {
+            const badge = document.getElementById('subBadge');
+            const usageCount = document.getElementById('usageCount');
+            const usageProgress = document.getElementById('usageProgress');
+            const expiryText = document.getElementById('expiryText');
+            const freeSection = document.getElementById('freeSection');
+            const premiumSection = document.getElementById('premiumSection');
+
+            const isPremium = data.status === 'premium';
+
+            // Badge
+            if (isPremium) {
+                badge.textContent = i18n.t('settings_sub_premium');
+                badge.className = 'badge badge-premium';
+            } else {
+                badge.textContent = i18n.t('settings_sub_free');
+                badge.className = 'badge badge-free';
+            }
+
+            // Usage
+            const used = data.usageToday || 0;
+            const limit = data.usageLimit || 15;
+
+            if (isPremium) {
+                usageCount.textContent = used + ' ' + i18n.t('settings_usage_unlimited');
+                usageProgress.style.width = '0%';
+                usageProgress.style.background = 'var(--warning)';
+            } else {
+                usageCount.textContent = i18n.t('settings_usage_limit', { used, limit });
+                const pct = Math.min((used / limit) * 100, 100);
+                usageProgress.style.width = pct + '%';
+
+                // Red when near limit (>=80%)
+                if (pct >= 80) {
+                    usageProgress.style.background = 'var(--danger)';
+                } else {
+                    usageProgress.style.background = 'var(--warning)';
+                }
+            }
+
+            // Expiry / renewal
+            if (isPremium && data.expiresAt) {
+                const expiryDate = new Date(Number(data.expiresAt));
+                const dateStr = expiryDate.toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                expiryText.textContent = i18n.t('settings_renews_on', { date: dateStr });
+                expiryText.style.display = '';
+            } else {
+                expiryText.style.display = 'none';
+            }
+
+            // Show/hide sections
+            if (isPremium) {
+                freeSection.style.display = 'none';
+                premiumSection.style.display = '';
+            } else {
+                freeSection.style.display = '';
+                premiumSection.style.display = 'none';
+            }
+        }
+
+        // ============================================
+        // TapPay Integration
+        // ============================================
+        function initTapPay() {
+            try {
+                TPDirect.setupSDK(
+                    11327,
+                    'app_whdEWBH8e8Lzy4N6BnjIdBiWM32JlJmtAyVTLv7L0J0J9J9J0J0J0J0J',
+                    'sandbox'
+                );
+
+                TPDirect.card.setup({
+                    fields: {
+                        number: {
+                            element: '#tappay-card-number',
+                            placeholder: '4242 4242 4242 4242'
+                        },
+                        expirationDate: {
+                            element: '#tappay-expiration-date',
+                            placeholder: 'MM / YY'
+                        },
+                        ccv: {
+                            element: '#tappay-ccv',
+                            placeholder: 'CCV'
+                        }
+                    },
+                    styles: {
+                        'input': {
+                            'color': '#ffffff',
+                            'font-size': '14px',
+                            'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+                        },
+                        'input::placeholder': {
+                            'color': '#555555'
+                        },
+                        'input.ccv': {
+                            'font-size': '14px'
+                        },
+                        ':focus': {
+                            'color': '#ffffff'
+                        },
+                        '.valid': {
+                            'color': '#4CAF50'
+                        },
+                        '.invalid': {
+                            'color': '#F44336'
+                        }
+                    },
+                    isMaskCreditCardNumber: true,
+                    maskCreditCardNumberRange: {
+                        beginIndex: 6,
+                        endIndex: 11
+                    }
+                });
+
+                TPDirect.card.onUpdate(function (update) {
+                    const btnPay = document.getElementById('btnPay');
+                    const cardError = document.getElementById('cardError');
+
+                    canGetPrime = update.canGetPrime;
+                    btnPay.disabled = !canGetPrime;
+
+                    if (update.status.number === 2) {
+                        cardError.textContent = 'Invalid card number';
+                    } else if (update.status.expiry === 2) {
+                        cardError.textContent = 'Invalid expiry date';
+                    } else if (update.status.ccv === 2) {
+                        cardError.textContent = 'Invalid CCV';
+                    } else {
+                        cardError.textContent = '';
+                    }
+                });
+
+                tappayReady = true;
+            } catch (e) {
+                console.error('TapPay init error:', e);
+            }
+        }
+
+        function toggleCardForm() {
+            const section = document.getElementById('tappaySection');
+            const btn = document.getElementById('btnShowCard');
+
+            if (section.classList.contains('visible')) {
+                section.classList.remove('visible');
+                btn.textContent = i18n.t('settings_btn_subscribe');
+            } else {
+                section.classList.add('visible');
+                btn.textContent = i18n.t('settings_btn_hide_card');
+            }
+        }
+
+        async function processPayment() {
+            if (!tappayReady || !canGetPrime) return;
+
+            const btnPay = document.getElementById('btnPay');
+            const cardLoading = document.getElementById('cardLoading');
+            const cardError = document.getElementById('cardError');
+
+            btnPay.disabled = true;
+            btnPay.style.display = 'none';
+            cardLoading.classList.add('visible');
+            cardError.textContent = '';
+
+            TPDirect.card.getPrime(async function (result) {
+                if (result.status !== 0) {
+                    cardError.textContent = 'Failed to process card: ' + (result.msg || 'Unknown error');
+                    btnPay.disabled = false;
+                    btnPay.style.display = '';
+                    cardLoading.classList.remove('visible');
+                    return;
+                }
+
+                try {
+                    await apiCall('POST', '/api/subscription/tappay/pay', {
+                        prime: result.card.prime
+                    });
+
+                    showToast('Premium subscription activated!', 'success');
+
+                    // Reload subscription status to update UI
+                    await loadSubscriptionStatus();
+
+                    // Hide card form
+                    document.getElementById('tappaySection').classList.remove('visible');
+                    document.getElementById('btnShowCard').textContent = i18n.t('settings_btn_subscribe');
+                } catch (e) {
+                    cardError.textContent = e.message || 'Payment failed';
+                    showToast('Payment failed: ' + e.message, 'error');
+                } finally {
+                    btnPay.disabled = !canGetPrime;
+                    btnPay.style.display = '';
+                    cardLoading.classList.remove('visible');
+                }
+            });
+        }
+
+        // ============================================
+        // Cancel Subscription
+        // ============================================
+        function confirmCancel() {
+            document.getElementById('cancelDialog').style.display = '';
+        }
+
+        function closeCancelDialog() {
+            document.getElementById('cancelDialog').style.display = 'none';
+        }
+
+        async function cancelSubscription() {
+            const btn = document.getElementById('btnConfirmCancel');
+            btn.disabled = true;
+            btn.textContent = i18n.t('settings_btn_cancelling');
+
+            try {
+                await apiCall('POST', '/api/subscription/cancel');
+                showToast('Subscription cancelled. Access continues until period end.', 'info');
+                closeCancelDialog();
+                await loadSubscriptionStatus();
+            } catch (e) {
+                showToast('Failed to cancel: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = i18n.t('settings_btn_cancel');
+            }
+        }
+
+        // ============================================
+        // Privacy Policy
+        // ============================================
+        function showPrivacyPolicy() {
+            document.getElementById('privacyContent').innerHTML = i18n.t('settings_privacy_content');
+            document.getElementById('privacyDialog').style.display = '';
+        }
+
+        function closePrivacyDialog() {
+            document.getElementById('privacyDialog').style.display = 'none';
+        }
+
+        // ============================================
+        // Language - CRITICAL: page reload on change
+        // ============================================
+        function loadLanguagePreference() {
+            const lang = localStorage.getItem('eclaw-language') || i18n.lang || 'en';
+            setLanguageChip(lang);
+        }
+
+        function setLanguage(lang) {
+            localStorage.setItem('eclaw-language', lang);
+            window.location.reload(); // RELOAD PAGE to fully apply language
+        }
+
+        function setLanguageChip(lang) {
+            document.getElementById('chipEn').classList.toggle('active', lang === 'en');
+            document.getElementById('chipZh').classList.toggle('active', lang === 'zh');
+        }
+
+        // ============================================
+        // Dialog backdrop close
+        // ============================================
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('dialog-overlay')) {
+                e.target.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+
+</html>

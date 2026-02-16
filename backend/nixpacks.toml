@@ -1,6 +1,7 @@
+providers = ["node"]
+
 [phases.setup]
 nixPkgs = ["nodejs_20"]
-providers = ["node"]
 
 [phases.install]
 cmds = ["npm ci || npm install"]
