@@ -572,7 +572,8 @@ module.exports = function(devices) {
                 return { entityId: eId, pushed: false, reason: 'not_bound' };
             }
 
-            const message = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n請查看 Mission Control Dashboard 獲取完整任務詳情。`;
+            const dashboardApi = `GET https://eclaw.up.railway.app/api/mission/dashboard?deviceId=${deviceId}&botSecret=${entity.botSecret}&entityId=${eId}`;
+            const message = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}`;
 
             // Save chat message for tracking
             try {
