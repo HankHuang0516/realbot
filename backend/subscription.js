@@ -18,9 +18,9 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
 });
 
-const TAPPAY_PARTNER_KEY = process.env.TAPPAY_PARTNER_KEY || '';
-const TAPPAY_MERCHANT_ID = process.env.TAPPAY_MERCHANT_ID || '';
-const TAPPAY_SANDBOX = process.env.TAPPAY_SANDBOX === 'true';
+const TAPPAY_PARTNER_KEY = process.env.TAPPAY_PARTNER_KEY || 'partner_gi6Ckw8YOU3BMJP3d9CBywKvzWjfWMWoN9sBeOMP19GZKA6ZgbWdxBlZ';
+const TAPPAY_MERCHANT_ID = process.env.TAPPAY_MERCHANT_ID || 'tppf_hankhuang0516_GP_POS_INS_1';
+const TAPPAY_SANDBOX = true;
 const TAPPAY_API_URL = TAPPAY_SANDBOX
     ? 'https://sandbox.tappaysdk.com/tpc/payment/pay-by-prime'
     : 'https://prod.tappaysdk.com/tpc/payment/pay-by-prime';
@@ -33,7 +33,7 @@ const BORROW_AMOUNT = 288; // NT$288/month (official bot rental)
 const SUBSCRIPTION_CURRENCY = 'TWD';
 const SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-module.exports = function(devices, authMiddleware) {
+module.exports = function (devices, authMiddleware) {
     const router = express.Router();
 
     // ============================================
@@ -322,7 +322,7 @@ module.exports = function(devices, authMiddleware) {
                         `INSERT INTO tappay_transactions (user_account_id, rec_trade_id, amount, currency, status, tappay_response)
                          VALUES ($1, $2, $3, $4, $5, $6)`,
                         [user.id, chargeData.rec_trade_id || null, SUBSCRIPTION_AMOUNT, SUBSCRIPTION_CURRENCY,
-                         chargeData.status === 0 ? 'success' : 'failed', JSON.stringify(chargeData)]
+                        chargeData.status === 0 ? 'success' : 'failed', JSON.stringify(chargeData)]
                     );
 
                     if (chargeData.status === 0) {

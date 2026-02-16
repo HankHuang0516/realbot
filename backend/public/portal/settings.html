@@ -15,7 +15,7 @@
             padding: 10px 0;
         }
 
-        .info-row + .info-row {
+        .info-row+.info-row {
             border-top: 1px solid var(--card-border);
         }
 
@@ -312,6 +312,14 @@
         <!-- Logout -->
         <div class="actions-section">
             <button class="logout-btn" onclick="doLogout()" data-i18n="nav_logout">Logout</button>
+            <div style="text-align:center;margin-top:20px;">
+                <a href="#" onclick="showPrivacyPolicy()"
+                    style="font-size:13px;color:var(--text-secondary);text-decoration:underline;"
+                    data-i18n="settings_privacy_link">Privacy Policy</a>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:8px;">
+                    <span data-i18n="settings_version">Version</span> <span id="appVersion">1.2.0</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -324,10 +332,23 @@
                 After that, you'll revert to the free plan with 15 messages per day.
             </p>
             <div class="dialog-actions">
-                <button class="btn btn-outline" onclick="closeCancelDialog()"
-                    data-i18n="settings_btn_keep">Keep Subscription</button>
+                <button class="btn btn-outline" onclick="closeCancelDialog()" data-i18n="settings_btn_keep">Keep
+                    Subscription</button>
                 <button class="btn btn-danger" id="btnConfirmCancel" onclick="cancelSubscription()"
                     data-i18n="settings_btn_cancel">Cancel Subscription</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Dialog -->
+    <div class="dialog-overlay" id="privacyDialog" style="display:none">
+        <div class="dialog" style="max-width:600px;width:90%;">
+            <div class="dialog-title" data-i18n="settings_privacy_title">Privacy Policy</div>
+            <div id="privacyContent"
+                style="font-size:14px;color:var(--text-secondary);line-height:1.6;max-height:60vh;overflow-y:auto;text-align:left;white-space:pre-wrap;">
+            </div>
+            <div class="dialog-actions">
+                <button class="btn btn-primary" onclick="closePrivacyDialog()">Close</button>
             </div>
         </div>
     </div>
@@ -339,6 +360,7 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <!-- i18n is now a class, need to wait for it before use -->
     <script src="../shared/i18n.js"></script>
 
     <script>
@@ -350,6 +372,13 @@
         // ============================================
         window.addEventListener('DOMContentLoaded', async () => {
             renderNav('settings');
+
+            // Wait for i18n to load if it's async or just ensure it's applied
+            if (typeof i18n !== 'undefined') {
+                i18n.apply();
+                document.getElementById('appVersion').textContent = PORTAL_VERSION;
+            }
+
             const user = await checkAuth();
             if (!user) return;
 
@@ -449,9 +478,9 @@
         function initTapPay() {
             try {
                 TPDirect.setupSDK(
-                    166632,
-                    'app_eLtyNlnXhUY9PkZoJUw8wjU0o7Ts0iCe14YW6CND4AqYmi5hq8KR4PhKL9DA',
-                    'production'
+                    11327,
+                    'app_whdEWBH8e8Lzy4N6BnjIdBiWM32JlJmtAyVTLv7L0J0J9J9J0J0J0J0J',
+                    'sandbox'
                 );
 
                 TPDirect.card.setup({
@@ -607,6 +636,18 @@
                 btn.disabled = false;
                 btn.textContent = i18n.t('settings_btn_cancel');
             }
+        }
+
+        // ============================================
+        // Privacy Policy
+        // ============================================
+        function showPrivacyPolicy() {
+            document.getElementById('privacyContent').innerHTML = i18n.t('settings_privacy_content');
+            document.getElementById('privacyDialog').style.display = '';
+        }
+
+        function closePrivacyDialog() {
+            document.getElementById('privacyDialog').style.display = 'none';
         }
 
         // ============================================

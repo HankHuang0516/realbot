@@ -116,6 +116,9 @@ const TRANSLATIONS = {
         "dash_no_messages": "No messages yet",
 
         // Official Borrow (dashboard.html)
+        "webhook_error_title": "Push Notification Failed",
+        "webhook_error_message": "Please paste the following message to OpenClaw: \"Webhook binding error or not using POST /api/bot/register. Please reload 'Public Webhook URL' (gateway config) and 'Gateway Token', then immediately call /api/bot/register: Use the newly bound deviceId/entityId/botSecret with webhook_url and gateway token to complete registration.\"",
+        "message_copied": "Message copied",
         "borrow_title": "Official Bot Rental",
         "borrow_desc": "Rent an official bot for your entity. The bot will automatically interact with your live wallpaper.",
         "borrow_select_entity": "Select Entity",
@@ -196,6 +199,9 @@ const TRANSLATIONS = {
         "settings_lang": "Language",
         "settings_lang_changed": "Language changed, reloading...",
         "settings_version": "Version",
+        "settings_privacy_link": "Privacy Policy",
+        "settings_privacy_title": "Privacy Policy",
+        "settings_privacy_content": "<b>1. Commitment to Privacy First</b><br>The E-claw team understands the importance of privacy to you. We hereby solemnly declare: <b>We will never sell, leak, or misuse any of your personal data.</b><br><br><b>2. What Data Do We Collect?</b><br>To provide our service, we only collect the minimum data necessary for operation:<br>- Device ID: Used to distinguish different devices.<br>- App Version: Used for compatibility checks.<br>- Binding Data: Agent name and status.<br><br><b>We do NOT collect:</b><br>- Your name, phone number, or email.<br>- Your GPS location.<br>- Your camera or microphone data.<br><br><b>3. OpenClaw Protocol</b><br>We are firm supporters of the OpenClaw ecosystem. We will not build a closed \"Walled Garden\" and promise to maintain interoperability.<br><br><b>4. AI Conversation Privacy</b><br>Messages are sent via encrypted HTTPS to your bound AI Agent. Data flow is controlled by you.<br><br><b>5. Contact Us</b><br>If you have any questions, please contact us via our official email.",
 
         // Chat (chat.html)
         "chat_title": "Chat",
@@ -378,7 +384,9 @@ const TRANSLATIONS = {
         "dash_remove_desc": "確定要移除 <strong>{name}</strong> (#{id}) 嗎？這將解除該實體與您裝置的綁定。",
         "dash_slot_occupied": "插槽 {id} 已被佔用",
         "dash_entity_bound": "{count} / {max} 已綁定",
-        "dash_avatar_title": "選擇頭像",
+        "webhook_error_title": "推播通知失敗",
+        "webhook_error_message": "請將以下訊息貼給OpenClaw：\"webhook綁定有錯誤或是沒有使用POST /api/bot/register，請重新讀取'公開webhook URL'(gateway config) 以及重新讀取'gateway token'，立即呼叫 /api/bot/register: 用剛綁到的 deviceId/entityId/botSecret 再帶上 webhook_url、gateway token 把推播註冊好。\"",
+        "message_copied": "訊息已複製",
         "dash_avatar_desc": "為此實體選擇一個表情符號頭像",
         "dash_code_copied": "指令已複製到剪貼簿！",
         "dash_code_generated": "已產生綁定代碼！",
@@ -466,6 +474,9 @@ const TRANSLATIONS = {
         "settings_lang": "語言",
         "settings_lang_changed": "語言已變更，重新載入中...",
         "settings_version": "版本",
+        "settings_privacy_link": "隱私權政策",
+        "settings_privacy_title": "隱私權政策",
+        "settings_privacy_content": "<b>1. 隱私權至上承諾</b><br>E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲明：<b>我們絕不會販賣、洩露或濫用您的任何個人資料。</b><br><br><b>2. 我們收集什麼資料？</b><br>為了提供服務，我們僅收集運作所需的最少資料：<br>- 裝置 ID：用於區分不同裝置。<br>- App 版本：用於相容性檢查。<br>- 綁定資料：Agent 名稱與狀態。<br><br><b>我們「不」收集：</b><br>- 您的姓名、電話或 Email。<br>- 您的 GPS 位置。<br>- 您的相機或麥克風資料。<br><br><b>3. OpenClaw 協議</b><br>我們是 OpenClaw 生態系統的堅定支持者。我們不會建立封閉的「圍牆花園」，並承諾保持互通性。<br><br><b>4. AI 對話隱私</b><br>訊息透過加密 HTTPS 傳送至您綁定的 AI Agent。資料流向由您掌控。<br><br><b>5. 聯絡我們</b><br>如有任何疑問，請透過我們的官方 Email 聯繫。",
 
         // Chat (chat.html)
         "chat_title": "聊天",

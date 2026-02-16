@@ -511,7 +511,7 @@
             font-size: 12px;
         }
 
-        .cost-compare-row + .cost-compare-row {
+        .cost-compare-row+.cost-compare-row {
             border-top: 1px solid rgba(51, 51, 85, 0.3);
         }
 
@@ -608,14 +608,32 @@
         }
 
         /* TapPay card fields */
-        .tappay-field { margin-bottom: 10px; }
-        .tappay-field label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
-        .tappay-field-input {
-            background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
-            padding: 10px 12px; height: 40px;
+        .tappay-field {
+            margin-bottom: 10px;
         }
-        .tappay-field-input.tappay-field-focus { border-color: var(--primary); }
-        .tappay-field-input.tappay-field-error { border-color: #F44336; }
+
+        .tappay-field label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .tappay-field-input {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            height: 40px;
+        }
+
+        .tappay-field-input.tappay-field-focus {
+            border-color: var(--primary);
+        }
+
+        .tappay-field-input.tappay-field-error {
+            border-color: #F44336;
+        }
     </style>
 </head>
 
@@ -753,14 +771,15 @@
                             <li data-i18n="borrow_personal_feat_unlimited">Unlimited messages (no daily limit)</li>
                             <li data-i18n="borrow_personal_feat_247">24/7 always online</li>
                         </ul>
-                        <button class="btn btn-warning btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()" disabled
-                            data-i18n="borrow_btn_bind_personal">Subscribe & Bind</button>
+                        <button class="btn btn-warning btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()"
+                            disabled data-i18n="borrow_btn_bind_personal">Subscribe & Bind</button>
                     </div>
                 </div>
 
                 <!-- Cost Comparison -->
                 <div class="cost-compare" id="costCompare">
-                    <div class="cost-compare-title" data-i18n="borrow_cost_title">Why rent? Self-hosting cost comparison</div>
+                    <div class="cost-compare-title" data-i18n="borrow_cost_title">Why rent? Self-hosting cost comparison
+                    </div>
                     <div class="cost-compare-row">
                         <span class="cost-compare-label" data-i18n="borrow_cost_eclaw">E-Claw Official Bot</span>
                         <span class="cost-compare-value highlight">NT$288/mo</span>
@@ -771,7 +790,8 @@
                     </div>
                     <div class="cost-vs">VS</div>
                     <div class="cost-compare-row">
-                        <span class="cost-compare-label" data-i18n="borrow_cost_server">Cloud Server (Railway/AWS)</span>
+                        <span class="cost-compare-label" data-i18n="borrow_cost_server">Cloud Server
+                            (Railway/AWS)</span>
                         <span class="cost-compare-value dim">~NT$300+/mo</span>
                     </div>
                     <div class="cost-compare-row">
@@ -779,7 +799,8 @@
                         <span class="cost-compare-value dim">~NT$300+/mo</span>
                     </div>
                     <div class="cost-compare-row">
-                        <span class="cost-compare-label" data-i18n="borrow_cost_setup">Learning OpenClaw deployment</span>
+                        <span class="cost-compare-label" data-i18n="borrow_cost_setup">Learning OpenClaw
+                            deployment</span>
                         <span class="cost-compare-value dim" data-i18n="borrow_cost_priceless">Priceless time</span>
                     </div>
                 </div>
@@ -800,7 +821,8 @@
         <div class="dialog" style="max-width:400px;">
             <div class="dialog-title" data-i18n="borrow_pay_title">Official Bot Rental - NT$288/month</div>
             <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;" data-i18n="borrow_pay_desc">
-                Enter your credit card to rent a dedicated personal bot (NT$288/month). Includes unlimited messages and 24/7 always online.
+                Enter your credit card to rent a dedicated personal bot (NT$288/month). Includes unlimited messages and
+                24/7 always online.
             </p>
             <div class="tappay-field">
                 <label data-i18n="settings_label_card">Card Number</label>
@@ -823,7 +845,8 @@
             </div>
             <div id="tpLoading" style="display:none;text-align:center;padding:12px 0;">
                 <div class="spinner"></div>
-                <span style="color:var(--text-secondary);font-size:13px;margin-left:8px;" data-i18n="settings_processing">Processing payment...</span>
+                <span style="color:var(--text-secondary);font-size:13px;margin-left:8px;"
+                    data-i18n="settings_processing">Processing payment...</span>
             </div>
         </div>
     </div>
@@ -960,23 +983,23 @@
 
                 return '<div class="entity-card card">' +
                     '<div class="entity-card-body">' +
-                        '<div class="entity-avatar" onclick="openAvatarPicker(' + entity.entityId + ')">' + avatar + '</div>' +
-                        '<div class="entity-info">' +
-                            '<div class="entity-name">' + escapeHtml(displayName) + '</div>' +
-                            '<div class="entity-badges">' +
-                                '<span class="badge-id">#' + entity.entityId + '</span>' +
-                                '<span class="badge ' + stateBadgeClass + '">' + escapeHtml(state) + '</span>' +
-                            '</div>' +
-                            '<div class="entity-message">' + escapeHtml(lastMsg) + '</div>' +
-                        '</div>' +
+                    '<div class="entity-avatar" onclick="openAvatarPicker(' + entity.entityId + ')">' + avatar + '</div>' +
+                    '<div class="entity-info">' +
+                    '<div class="entity-name">' + escapeHtml(displayName) + '</div>' +
+                    '<div class="entity-badges">' +
+                    '<span class="badge-id">#' + entity.entityId + '</span>' +
+                    '<span class="badge ' + stateBadgeClass + '">' + escapeHtml(state) + '</span>' +
+                    '</div>' +
+                    '<div class="entity-message">' + escapeHtml(lastMsg) + '</div>' +
+                    '</div>' +
                     '</div>' +
                     '<div class="entity-card-footer">' +
-                        '<span class="entity-timestamp">' + time + '</span>' +
-                        '<button class="btn btn-danger btn-sm" onclick="confirmRemove(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')">' +
-                            i18n.t('dash_btn_remove') +
-                        '</button>' +
+                    '<span class="entity-timestamp">' + time + '</span>' +
+                    '<button class="btn btn-danger btn-sm" onclick="confirmRemove(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')">' +
+                    i18n.t('dash_btn_remove') +
+                    '</button>' +
                     '</div>' +
-                '</div>';
+                    '</div>';
             }).join('');
         }
 
@@ -996,12 +1019,12 @@
 
             overlay.innerHTML =
                 '<div class="avatar-picker">' +
-                    '<div class="avatar-picker-title" data-i18n="dash_avatar_title">' + i18n.t('dash_avatar_title') + '</div>' +
-                    '<div class="avatar-picker-desc" data-i18n="dash_avatar_desc">' + i18n.t('dash_avatar_desc') + '</div>' +
-                    '<div class="avatar-grid">' + gridHtml + '</div>' +
-                    '<div class="avatar-picker-actions">' +
-                        '<button class="btn btn-outline btn-sm" data-i18n="mc_dlg_cancel">' + i18n.t('mc_dlg_cancel') + '</button>' +
-                    '</div>' +
+                '<div class="avatar-picker-title" data-i18n="dash_avatar_title">' + i18n.t('dash_avatar_title') + '</div>' +
+                '<div class="avatar-picker-desc" data-i18n="dash_avatar_desc">' + i18n.t('dash_avatar_desc') + '</div>' +
+                '<div class="avatar-grid">' + gridHtml + '</div>' +
+                '<div class="avatar-picker-actions">' +
+                '<button class="btn btn-outline btn-sm" data-i18n="mc_dlg_cancel">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '</div>' +
                 '</div>';
 
             document.body.appendChild(overlay);
@@ -1192,14 +1215,14 @@
             overlay.className = 'confirm-overlay';
             overlay.innerHTML =
                 '<div class="dialog">' +
-                    '<div class="dialog-title">' + i18n.t('dash_remove_title') + '</div>' +
-                    '<p style="color:var(--text-secondary);font-size:14px;">' +
-                        i18n.t('dash_remove_desc', { name: escapeHtml(displayName), id: entityId }) +
-                    '</p>' +
-                    '<div class="dialog-actions">' +
-                        '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
-                        '<button class="btn btn-danger" id="btnConfirmRemove" onclick="removeEntity(' + entityId + ', this)">' + i18n.t('dash_btn_remove') + '</button>' +
-                    '</div>' +
+                '<div class="dialog-title">' + i18n.t('dash_remove_title') + '</div>' +
+                '<p style="color:var(--text-secondary);font-size:14px;">' +
+                i18n.t('dash_remove_desc', { name: escapeHtml(displayName), id: entityId }) +
+                '</p>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '<button class="btn btn-danger" id="btnConfirmRemove" onclick="removeEntity(' + entityId + ', this)">' + i18n.t('dash_btn_remove') + '</button>' +
+                '</div>' +
                 '</div>';
             document.body.appendChild(overlay);
 
@@ -1340,13 +1363,13 @@
                     btnFree.disabled = true;
                     btnPersonal.textContent = i18n.t('borrow_btn_unbind');
                     btnPersonal.disabled = false;
-                    btnPersonal.onclick = function() { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
+                    btnPersonal.onclick = function () { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
                 } else {
                     btnPersonal.textContent = i18n.t('borrow_bound_personal');
                     btnPersonal.disabled = true;
                     btnFree.textContent = i18n.t('borrow_btn_unbind');
                     btnFree.disabled = false;
-                    btnFree.onclick = function() { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
+                    btnFree.onclick = function () { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
                 }
                 return;
             }
@@ -1393,16 +1416,16 @@
 
                 return '<div class="binding-item">' +
                     '<div class="binding-info">' +
-                        '<span class="binding-emoji">' + char.emoji + '</span>' +
-                        '<div class="binding-details">' +
-                            '<span class="binding-entity-name">Entity ' + b.entityId + '</span>' +
-                            '<span class="binding-type"><span class="badge ' + typeBadgeClass + '">' + typeText + '</span></span>' +
-                        '</div>' +
+                    '<span class="binding-emoji">' + char.emoji + '</span>' +
+                    '<div class="binding-details">' +
+                    '<span class="binding-entity-name">Entity ' + b.entityId + '</span>' +
+                    '<span class="binding-type"><span class="badge ' + typeBadgeClass + '">' + typeText + '</span></span>' +
+                    '</div>' +
                     '</div>' +
                     '<button class="btn btn-danger btn-sm" onclick="confirmUnbind(' + b.entityId + ', \'' + b.botType + '\')">' +
-                        i18n.t('borrow_btn_unbind') +
+                    i18n.t('borrow_btn_unbind') +
                     '</button>' +
-                '</div>';
+                    '</div>';
             }).join('');
         }
 
@@ -1442,9 +1465,9 @@
         function initTapPay() {
             try {
                 TPDirect.setupSDK(
-                    166632,
-                    'app_eLtyNlnXhUY9PkZoJUw8wjU0o7Ts0iCe14YW6CND4AqYmi5hq8KR4PhKL9DA',
-                    'production'
+                    11327,
+                    'app_whdEWBH8e8Lzy4N6BnjIdBiWM32JlJmtAyVTLv7L0J0J9J9J0J0J0J0J',
+                    'sandbox'
                 );
                 TPDirect.card.setup({
                     fields: {
@@ -1462,7 +1485,7 @@
                     isMaskCreditCardNumber: true,
                     maskCreditCardNumberRange: { beginIndex: 6, endIndex: 11 }
                 });
-                TPDirect.card.onUpdate(function(update) {
+                TPDirect.card.onUpdate(function (update) {
                     canGetPrime = update.canGetPrime;
                     const btnPay = document.getElementById('btnTpPay');
                     const errEl = document.getElementById('tpCardError');
@@ -1490,7 +1513,7 @@
             btnPay.onclick = processTapPayAndBind;
 
             // Click outside to close
-            dialog.onclick = function(e) { if (e.target === dialog) closeTapPayDialog(); };
+            dialog.onclick = function (e) { if (e.target === dialog) closeTapPayDialog(); };
         }
 
         function closeTapPayDialog() {
@@ -1515,7 +1538,7 @@
             loading.style.display = '';
             errEl.textContent = '';
 
-            TPDirect.card.getPrime(async function(result) {
+            TPDirect.card.getPrime(async function (result) {
                 if (result.status !== 0) {
                     errEl.textContent = 'Failed to process card: ' + (result.msg || 'Unknown error');
                     btnPay.disabled = false;
@@ -1617,19 +1640,19 @@
             overlay.className = 'confirm-overlay';
             overlay.innerHTML =
                 '<div class="dialog">' +
-                    '<div class="dialog-title">' + i18n.t('borrow_unbind_title') + '</div>' +
-                    '<p style="color:var(--text-secondary);font-size:14px;">' +
-                        i18n.t('borrow_unbind_desc', { id: entityId }) +
-                    '</p>' +
-                    '<div class="dialog-actions">' +
-                        '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
-                        '<button class="btn btn-danger" id="btnConfirmUnbind">' + i18n.t('borrow_btn_unbind') + '</button>' +
-                    '</div>' +
+                '<div class="dialog-title">' + i18n.t('borrow_unbind_title') + '</div>' +
+                '<p style="color:var(--text-secondary);font-size:14px;">' +
+                i18n.t('borrow_unbind_desc', { id: entityId }) +
+                '</p>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '<button class="btn btn-danger" id="btnConfirmUnbind">' + i18n.t('borrow_btn_unbind') + '</button>' +
+                '</div>' +
                 '</div>';
 
             document.body.appendChild(overlay);
 
-            overlay.querySelector('#btnConfirmUnbind').addEventListener('click', async function() {
+            overlay.querySelector('#btnConfirmUnbind').addEventListener('click', async function () {
                 this.disabled = true;
                 this.textContent = i18n.t('borrow_btn_unbinding');
                 await unbindOfficialBot(entityId, overlay);
