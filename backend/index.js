@@ -694,21 +694,13 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
-// Temporary: Get server's outbound IP (for TapPay IP whitelist)
+// Get server's outbound IP history (for TapPay IP whitelist)
 app.get('/api/server-ip', async (req, res) => {
-    try {
-        const https = require('https');
-        const ip = await new Promise((resolve, reject) => {
-            https.get('https://api.ipify.org?format=json', (resp) => {
-                let data = '';
-                resp.on('data', chunk => data += chunk);
-                resp.on('end', () => resolve(JSON.parse(data).ip));
-            }).on('error', reject);
-        });
-        res.json({ ip });
-    } catch (e) {
-        res.json({ error: e.message });
-    }
+    res.json({
+        current: global.serverOutboundIP || 'unknown',
+        all: global.knownOutboundIPs || [],
+        tappay_whitelist: (global.knownOutboundIPs || []).map(ip => ip + '/32').join('; ')
+    });
 });
 
 // Version sync endpoint - AI Agent can check Web/APP sync status
@@ -3136,7 +3128,7 @@ app.listen(port, async () => {
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 
-    // Detect outbound IP on startup (for TapPay IP whitelist)
+    // Detect outbound IP on startup, persist all known IPs to DB
     try {
         const https = require('https');
         const ip = await new Promise((resolve, reject) => {
@@ -3147,7 +3139,33 @@ app.listen(port, async () => {
             }).on('error', reject);
         });
         global.serverOutboundIP = ip;
-        console.log(`[IP] Outbound IP: ${ip} (add to TapPay whitelist if needed)`);
+
+        // Persist to DB (create table if needed, insert if new)
+        if (usePostgreSQL) {
+            try {
+                await db.query(`CREATE TABLE IF NOT EXISTS known_server_ips (
+                    ip TEXT PRIMARY KEY,
+                    first_seen TIMESTAMPTZ DEFAULT NOW(),
+                    last_seen TIMESTAMPTZ DEFAULT NOW()
+                )`);
+                await db.query(
+                    `INSERT INTO known_server_ips (ip) VALUES ($1)
+                     ON CONFLICT (ip) DO UPDATE SET last_seen = NOW()`,
+                    [ip]
+                );
+                const result = await db.query('SELECT ip, first_seen, last_seen FROM known_server_ips ORDER BY last_seen DESC');
+                global.knownOutboundIPs = result.rows.map(r => r.ip);
+                console.log(`[IP] Current: ${ip} | All known IPs (${result.rows.length}): ${global.knownOutboundIPs.join(', ')}`);
+                console.log(`[IP] TapPay whitelist: ${global.knownOutboundIPs.map(i => i + '/32').join('; ')}`);
+            } catch (dbErr) {
+                console.log('[IP] DB save failed (non-fatal):', dbErr.message);
+                global.knownOutboundIPs = [ip];
+                console.log(`[IP] Outbound IP: ${ip}`);
+            }
+        } else {
+            global.knownOutboundIPs = [ip];
+            console.log(`[IP] Outbound IP: ${ip}`);
+        }
     } catch (e) {
         console.log('[IP] Could not detect outbound IP:', e.message);
     }
