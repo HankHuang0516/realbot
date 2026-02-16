@@ -95,6 +95,7 @@ async function createTables() {
                 bot_type TEXT NOT NULL,
                 webhook_url TEXT NOT NULL,
                 token TEXT NOT NULL,
+                bot_secret TEXT,
                 session_key_template TEXT,
                 status TEXT DEFAULT 'available',
                 assigned_device_id TEXT,
@@ -102,6 +103,11 @@ async function createTables() {
                 assigned_at BIGINT,
                 created_at BIGINT NOT NULL
             )
+        `);
+
+        // Add bot_secret column if it doesn't exist (migration for existing deployments)
+        await client.query(`
+            ALTER TABLE official_bots ADD COLUMN IF NOT EXISTS bot_secret TEXT
         `);
 
         // Official bot bindings (free bot multi-device tracking)
@@ -355,11 +361,11 @@ async function saveOfficialBot(bot) {
     try {
         const client = await pool.connect();
         await client.query(
-            `INSERT INTO official_bots (bot_id, bot_type, webhook_url, token, session_key_template, status, assigned_device_id, assigned_entity_id, assigned_at, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO official_bots (bot_id, bot_type, webhook_url, token, bot_secret, session_key_template, status, assigned_device_id, assigned_entity_id, assigned_at, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
              ON CONFLICT (bot_id)
-             DO UPDATE SET webhook_url = $3, token = $4, session_key_template = $5, status = $6, assigned_device_id = $7, assigned_entity_id = $8, assigned_at = $9`,
-            [bot.bot_id, bot.bot_type, bot.webhook_url, bot.token, bot.session_key_template || null, bot.status || 'available', bot.assigned_device_id || null, bot.assigned_entity_id ?? null, bot.assigned_at || null, bot.created_at || Date.now()]
+             DO UPDATE SET webhook_url = $3, token = $4, bot_secret = $5, session_key_template = $6, status = $7, assigned_device_id = $8, assigned_entity_id = $9, assigned_at = $10`,
+            [bot.bot_id, bot.bot_type, bot.webhook_url, bot.token, bot.bot_secret || null, bot.session_key_template || null, bot.status || 'available', bot.assigned_device_id || null, bot.assigned_entity_id ?? null, bot.assigned_at || null, bot.created_at || Date.now()]
         );
         client.release();
         return true;
@@ -382,6 +388,7 @@ async function loadOfficialBots() {
                 bot_type: row.bot_type,
                 webhook_url: row.webhook_url,
                 token: row.token,
+                bot_secret: row.bot_secret || null,
                 session_key_template: row.session_key_template,
                 status: row.status,
                 assigned_device_id: row.assigned_device_id,

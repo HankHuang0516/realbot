@@ -17,7 +17,7 @@ object NetworkModule {
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)  // Increased for webhook processing
+        .readTimeout(60, TimeUnit.SECONDS)  // Increased for handshake + webhook processing
         .writeTimeout(15, TimeUnit.SECONDS)
         .build()
 

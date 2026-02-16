@@ -737,7 +737,7 @@ class ClawRenderer(private val context: Context) {
 
         // Colors
         // Dynamic color
-        val charString = entity.character.toUpperCase(java.util.Locale.ROOT)
+        val charString = entity.character.uppercase(java.util.Locale.ROOT)
         // Check for overrides in parts
         val customColor = entity.parts?.get("COLOR")?.toInt()
         val metallic = entity.parts?.get("METALLIC") ?: 0f

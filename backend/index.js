@@ -1401,14 +1401,15 @@ function verifyAdmin(req) {
 /**
  * POST /api/admin/official-bot/register
  * Register an official bot into the pool.
- * Body: { botId, botType: "free"|"personal", webhookUrl, token, sessionKeyTemplate? }
+ * Body: { botId, botType: "free"|"personal", webhookUrl, token, botSecret?, sessionKeyTemplate? }
+ * botSecret: the secret the bot uses to authenticate with E-Claw API (must match bot's TOOLS.md)
  */
 app.post('/api/admin/official-bot/register', async (req, res) => {
     if (!verifyAdmin(req)) {
         return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
     }
 
-    const { botId, botType, webhookUrl, token, sessionKeyTemplate } = req.body;
+    const { botId, botType, webhookUrl, token, botSecret, sessionKeyTemplate } = req.body;
 
     if (!botId || !botType || !webhookUrl || !token) {
         return res.status(400).json({ success: false, error: 'botId, botType, webhookUrl, and token are required' });
@@ -1418,11 +1419,16 @@ app.post('/api/admin/official-bot/register', async (req, res) => {
         return res.status(400).json({ success: false, error: 'botType must be "free" or "personal"' });
     }
 
+    // Generate botSecret if not provided
+    const crypto = require('crypto');
+    const effectiveBotSecret = botSecret || crypto.randomBytes(16).toString('hex');
+
     const bot = {
         bot_id: botId,
         bot_type: botType,
         webhook_url: webhookUrl,
         token: token,
+        bot_secret: effectiveBotSecret,
         session_key_template: sessionKeyTemplate || null,
         status: 'available',
         assigned_device_id: null,
@@ -1434,8 +1440,8 @@ app.post('/api/admin/official-bot/register', async (req, res) => {
     officialBots[botId] = bot;
     if (usePostgreSQL) await db.saveOfficialBot(bot);
 
-    console.log(`[Admin] Registered official bot: ${botId} (${botType})`);
-    res.json({ success: true, bot: { bot_id: botId, bot_type: botType, status: 'available' } });
+    console.log(`[Admin] Registered official bot: ${botId} (${botType}), botSecret: ${effectiveBotSecret.substring(0, 8)}...`);
+    res.json({ success: true, bot: { bot_id: botId, bot_type: botType, status: 'available', botSecret: effectiveBotSecret } });
 });
 
 /**
@@ -1669,11 +1675,9 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     }
 
     const sessionKey = handshake.sessionKey;
-    const welcomeMsg = handshake.botResponse || 'Connected via Official Free Bot!';
 
-    // Generate botSecret for this binding
-    const crypto = require('crypto');
-    const botSecret = crypto.randomBytes(16).toString('hex');
+    // Use bot's stored botSecret so the bot can authenticate with E-Claw API
+    const botSecret = freeBot.bot_secret || (() => { const crypto = require('crypto'); return crypto.randomBytes(16).toString('hex'); })();
 
     // Set up entity with official bot's webhook
     device.entities[eId] = {
@@ -1682,7 +1686,7 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         isBound: true,
         name: '免費版',
         state: 'IDLE',
-        message: welcomeMsg,
+        message: 'Connected!',
         lastUpdated: Date.now(),
         webhook: {
             url: freeBot.webhook_url,
@@ -1769,11 +1773,9 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
     }
 
     const sessionKey = handshake.sessionKey;
-    const welcomeMsg = handshake.botResponse || 'Connected via Personal Bot!';
 
-    // Generate botSecret
-    const crypto = require('crypto');
-    const botSecret = crypto.randomBytes(16).toString('hex');
+    // Use bot's stored botSecret so the bot can authenticate with E-Claw API
+    const botSecret = personalBot.bot_secret || (() => { const crypto = require('crypto'); return crypto.randomBytes(16).toString('hex'); })();
 
     // Set up entity
     device.entities[eId] = {
@@ -1782,7 +1784,7 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         isBound: true,
         name: '月租版',
         state: 'IDLE',
-        message: welcomeMsg,
+        message: 'Connected!',
         lastUpdated: Date.now(),
         webhook: {
             url: personalBot.webhook_url,
@@ -2300,7 +2302,7 @@ async function discoverSessions(url, token) {
  * 4. Return working session key and bot's response
  */
 async function handshakeWithBot(url, token, preferredSessionKey, deviceId, entityId, botType) {
-    const bindMsg = `[SYSTEM:NEW_BIND] 新用戶綁定成功。Device: ${deviceId}, Entity: ${entityId}, Type: ${botType}。請回覆一則簡短的歡迎訊息。`;
+    const bindMsg = `[SYSTEM:BIND_HANDSHAKE] New binding: Device ${deviceId}, Entity ${entityId}, Type: ${botType}. Reply OK to confirm.`;
 
     // Step 1: Try preferred session key
     console.log(`[Handshake] Trying preferred session key: ${preferredSessionKey}...`);
