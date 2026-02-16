@@ -1179,17 +1179,36 @@ app.delete('/api/device/entity', async (req, res) => {
     const officialBinding = officialBindingsCache[bindCacheKey];
     if (officialBinding) {
         const bot = officialBots[officialBinding.bot_id];
-        if (bot && bot.bot_type === 'personal') {
-            bot.status = 'available';
-            bot.assigned_device_id = null;
-            bot.assigned_entity_id = null;
-            bot.assigned_at = null;
-            if (usePostgreSQL) await db.saveOfficialBot(bot);
-            console.log(`[Device Remove] Personal bot ${bot.bot_id} released back to pool`);
+        if (bot) {
+            if (bot.bot_type === 'personal') {
+                bot.status = 'available';
+                bot.assigned_device_id = null;
+                bot.assigned_entity_id = null;
+                bot.assigned_at = null;
+                if (usePostgreSQL) await db.saveOfficialBot(bot);
+                console.log(`[Device Remove] Personal bot ${bot.bot_id} released back to pool`);
+            } else if (bot.bot_type === 'free') {
+                // Check if any other bindings still use this free bot
+                delete officialBindingsCache[bindCacheKey]; // remove first before counting
+                const remainingBindings = Object.values(officialBindingsCache).filter(b => b.bot_id === bot.bot_id);
+                if (remainingBindings.length === 0) {
+                    bot.status = 'available';
+                    bot.assigned_device_id = null;
+                    bot.assigned_entity_id = null;
+                    bot.assigned_at = null;
+                    if (usePostgreSQL) await db.saveOfficialBot(bot);
+                    console.log(`[Device Remove] Free bot ${bot.bot_id} released (no remaining bindings)`);
+                }
+                if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+                console.log(`[Device Remove] Official binding cleaned up for device ${deviceId} entity ${eId}`);
+            }
         }
-        delete officialBindingsCache[bindCacheKey];
-        if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
-        console.log(`[Device Remove] Official binding cleaned up for device ${deviceId} entity ${eId}`);
+        // For non-free bots, delete cache was already handled above for free; do it here for personal
+        if (!bot || bot.bot_type !== 'free') {
+            delete officialBindingsCache[bindCacheKey];
+            if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+            console.log(`[Device Remove] Official binding cleaned up for device ${deviceId} entity ${eId}`);
+        }
     }
 
     // Reset entity to unbound state
@@ -1406,7 +1425,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         read: false
     };
     toEntity.messageQueue.push(messageObj);
-    saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true);
+    const chatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true);
     markMessagesAsRead(deviceId, toId);
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
@@ -1431,6 +1450,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
 
         if (pushResult.pushed) {
             messageObj.delivered = true;
+            markChatMessageDelivered(chatMsgId, String(toId));
         }
     } else if (toEntity.isBound) {
         console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
@@ -1511,7 +1531,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
     console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}"`);
 
     // Save ONE chat message for the broadcast (sender's perspective, all targets)
-    saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true);
+    const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true);
 
     // Parallel processing - send to all entities simultaneously
     const pushPromises = targetIds.map(async (toId) => {
@@ -1567,6 +1587,12 @@ app.post('/api/entity/broadcast', async (req, res) => {
     // Wait for all push operations to complete in parallel
     const results = await Promise.all(pushPromises);
     const pushedCount = results.filter(r => r.pushed).length;
+
+    // Mark chat message as delivered with successfully pushed entity IDs
+    const deliveredIds = results.filter(r => r.pushed).map(r => r.entityId);
+    if (deliveredIds.length > 0) {
+        markChatMessageDelivered(broadcastChatMsgId, deliveredIds.join(','));
+    }
 
     res.json({
         success: true,
@@ -2194,17 +2220,33 @@ app.post('/api/official-borrow/unbind', async (req, res) => {
 
     // Release the bot back to pool
     const bot = officialBots[binding.bot_id];
-    if (bot && bot.bot_type === 'personal') {
-        bot.status = 'available';
-        bot.assigned_device_id = null;
-        bot.assigned_entity_id = null;
-        bot.assigned_at = null;
-        if (usePostgreSQL) await db.saveOfficialBot(bot);
-        console.log(`[Borrow] Personal bot ${bot.bot_id} released back to pool`);
+    if (bot) {
+        if (bot.bot_type === 'personal') {
+            bot.status = 'available';
+            bot.assigned_device_id = null;
+            bot.assigned_entity_id = null;
+            bot.assigned_at = null;
+            if (usePostgreSQL) await db.saveOfficialBot(bot);
+            console.log(`[Borrow] Personal bot ${bot.bot_id} released back to pool`);
+        } else if (bot.bot_type === 'free') {
+            // Check if any other bindings still use this free bot
+            delete officialBindingsCache[cacheKey]; // remove first before counting
+            const remainingBindings = Object.values(officialBindingsCache).filter(b => b.bot_id === bot.bot_id);
+            if (remainingBindings.length === 0) {
+                bot.status = 'available';
+                bot.assigned_device_id = null;
+                bot.assigned_entity_id = null;
+                bot.assigned_at = null;
+                if (usePostgreSQL) await db.saveOfficialBot(bot);
+                console.log(`[Borrow] Free bot ${bot.bot_id} released (no remaining bindings)`);
+            }
+        }
     }
 
-    // Remove binding
-    delete officialBindingsCache[cacheKey];
+    // Remove binding (for personal type - free already deleted above)
+    if (!bot || bot.bot_type !== 'free') {
+        delete officialBindingsCache[cacheKey];
+    }
     if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
 
     // Reset entity
@@ -2882,19 +2924,40 @@ const chatPool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
 });
 
-// Save chat message to database
+// Auto-migrate: add delivery tracking columns
+chatPool.query(`
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_delivered BOOLEAN DEFAULT FALSE;
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS delivered_to TEXT DEFAULT NULL;
+`).catch(() => {});
+
+// Save chat message to database, returns row ID (UUID) or null
 async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot) {
     try {
-        await chatPool.query(
+        const result = await chatPool.query(
             `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
             [deviceId, entityId, text, source, isFromUser || false, isFromBot || false]
         );
+        return result.rows[0]?.id || null;
     } catch (err) {
         // Silently fail - chat history is non-critical
         if (!err.message.includes('does not exist')) {
             console.warn('[Chat] Failed to save message:', err.message);
         }
+        return null;
+    }
+}
+
+// Mark a chat message as delivered with target entity IDs
+async function markChatMessageDelivered(chatMsgId, deliveredTo) {
+    if (!chatMsgId) return;
+    try {
+        await chatPool.query(
+            `UPDATE chat_messages SET is_delivered = true, delivered_to = $2 WHERE id = $1`,
+            [chatMsgId, deliveredTo]
+        );
+    } catch (err) {
+        // Silently fail
     }
 }
 

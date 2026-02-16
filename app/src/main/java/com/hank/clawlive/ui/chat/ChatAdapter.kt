@@ -140,7 +140,14 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             val targets = message.getTargetEntityIdList()
             if (targets.isNotEmpty()) {
                 val avatarManager = EntityAvatarManager.getInstance(itemView.context)
-                tvReadReceipt.text = "發送至: " + targets.joinToString(", ") { "${avatarManager.getAvatar(it)} Entity $it" }
+                val deliveredIds = message.deliveredTo?.split(",")
+                    ?.mapNotNull { it.trim().toIntOrNull() }?.toSet() ?: emptySet()
+
+                val footer = "發送至: " + targets.joinToString(", ") { id ->
+                    val avatar = avatarManager.getAvatar(id)
+                    if (id in deliveredIds) "$avatar Entity $id 已讀" else "$avatar Entity $id"
+                }
+                tvReadReceipt.text = footer
                 tvReadReceipt.visibility = View.VISIBLE
             } else {
                 tvReadReceipt.visibility = View.GONE

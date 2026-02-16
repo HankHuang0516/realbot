@@ -321,7 +321,9 @@ class ChatRepository private constructor(
                     fromEntityCharacter = senderCharacter,
                     targetEntityIds = targets,
                     deduplicationKey = deduplicationKey,
-                    isSynced = true
+                    isSynced = true,
+                    isDelivered = msg.is_delivered,
+                    deliveredTo = msg.delivered_to
                 )
             } else {
                 ChatMessage(

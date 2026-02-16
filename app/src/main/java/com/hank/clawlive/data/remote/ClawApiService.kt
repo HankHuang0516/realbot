@@ -171,5 +171,7 @@ data class ChatHistoryMessage(
     val source: String,
     val is_from_user: Boolean,
     val is_from_bot: Boolean,
+    val is_delivered: Boolean = false,
+    val delivered_to: String? = null,
     val created_at: String // ISO timestamp from PostgreSQL
 )

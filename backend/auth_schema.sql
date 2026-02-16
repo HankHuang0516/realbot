@@ -83,6 +83,10 @@ CREATE INDEX IF NOT EXISTS idx_chat_device ON chat_messages(device_id, created_a
 -- Migration: add read_at column to existing chat_messages tables
 ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
 
+-- Migration: add delivery tracking for bot-to-bot messages
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_delivered BOOLEAN DEFAULT FALSE;
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS delivered_to TEXT DEFAULT NULL;
+
 -- Migration: add is_admin column to existing user_accounts tables
 ALTER TABLE user_accounts ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
 
