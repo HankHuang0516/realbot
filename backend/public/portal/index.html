@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Claw - Login</title>
+    <link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-logo">
+            <h1>E-Claw</h1>
+            <p>Live Wallpaper Companion</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="auth-tabs">
+            <div class="auth-tab active" onclick="showTab('login')">Login</div>
+            <div class="auth-tab" onclick="showTab('register')">Register</div>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="loginEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+            </div>
+            <div id="loginError" class="error-text" style="display:none"></div>
+            <button class="btn btn-primary btn-block" onclick="doLogin()" id="loginBtn" style="margin-top:16px">Login</button>
+            <p style="text-align:center;margin-top:16px;font-size:13px;">
+                <a href="#" onclick="showTab('forgot');return false;">Forgot password?</a>
+            </p>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm" style="display:none">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="regEmail" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="regPassword" placeholder="At least 6 characters">
+                <div class="password-hint">Must contain both letters and numbers</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-input" id="regPasswordConfirm" placeholder="Confirm password" onkeydown="if(event.key==='Enter')doRegister()">
+            </div>
+            <div id="regError" class="error-text" style="display:none"></div>
+            <div id="regSuccess" class="success-text" style="display:none"></div>
+            <button class="btn btn-primary btn-block" onclick="doRegister()" id="regBtn" style="margin-top:16px">Create Account</button>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div id="forgotForm" style="display:none">
+            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+                Enter your email and we'll send you a reset link.
+            </p>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="forgotEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doForgot()">
+            </div>
+            <div id="forgotMsg" style="display:none"></div>
+            <button class="btn btn-primary btn-block" onclick="doForgot()" id="forgotBtn" style="margin-top:16px">Send Reset Link</button>
+            <p style="text-align:center;margin-top:16px;font-size:13px;">
+                <a href="#" onclick="showTab('login');return false;">Back to login</a>
+            </p>
+        </div>
+
+        <!-- Reset Password Form -->
+        <div id="resetForm" style="display:none">
+            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+                Enter your new password.
+            </p>
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-input" id="resetPassword" placeholder="At least 6 characters">
+                <div class="password-hint">Must contain both letters and numbers</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-input" id="resetPasswordConfirm" placeholder="Confirm password" onkeydown="if(event.key==='Enter')doReset()">
+            </div>
+            <div id="resetMsg" style="display:none"></div>
+            <button class="btn btn-primary btn-block" onclick="doReset()" id="resetBtn" style="margin-top:16px">Reset Password</button>
+        </div>
+    </div>
+
+    <script src="shared/api.js"></script>
+    <script>
+        let resetToken = null;
+
+        // Check URL params
+        window.addEventListener('DOMContentLoaded', async () => {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.get('verified') === 'true') {
+                showTab('login');
+                showMsg('loginError', 'Email verified! You can now log in.', 'success');
+            }
+
+            if (params.get('reset')) {
+                resetToken = params.get('reset');
+                showTab('reset');
+            }
+
+            // Check if already logged in
+            try {
+                const data = await apiCall('GET', '/api/auth/me');
+                if (data.success) {
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (e) {}
+        });
+
+        function showTab(tab) {
+            document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
+            document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+            document.getElementById('forgotForm').style.display = tab === 'forgot' ? '' : 'none';
+            document.getElementById('resetForm').style.display = tab === 'reset' ? '' : 'none';
+
+            document.querySelectorAll('.auth-tab').forEach((t, i) => {
+                t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+            });
+
+            // Show tabs only for login/register
+            document.querySelector('.auth-tabs').style.display =
+                (tab === 'forgot' || tab === 'reset') ? 'none' : '';
+        }
+
+        function showMsg(id, msg, type = 'error') {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = type === 'success' ? 'success-text' : 'error-text';
+            el.style.display = '';
+        }
+
+        function hideMsg(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function validatePassword(pw) {
+            if (pw.length < 6) return 'Password must be at least 6 characters';
+            if (!/[a-zA-Z]/.test(pw)) return 'Password must contain letters';
+            if (!/[0-9]/.test(pw)) return 'Password must contain numbers';
+            return null;
+        }
+
+        async function doLogin() {
+            hideMsg('loginError');
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                return showMsg('loginError', 'Please fill in all fields');
+            }
+
+            const btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                const data = await apiCall('POST', '/api/auth/login', { email, password });
+                window.location.href = 'dashboard.html';
+            } catch (e) {
+                showMsg('loginError', e.message);
+                if (e.message.includes('not verified')) {
+                    document.getElementById('loginError').innerHTML +=
+                        ' <a href="#" onclick="resendVerification(\'' + email + '\');return false;">Resend</a>';
+                }
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Login';
+            }
+        }
+
+        async function doRegister() {
+            hideMsg('regError');
+            hideMsg('regSuccess');
+            const email = document.getElementById('regEmail').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regPasswordConfirm').value;
+
+            if (!email || !password || !confirm) {
+                return showMsg('regError', 'Please fill in all fields');
+            }
+
+            const pwErr = validatePassword(password);
+            if (pwErr) return showMsg('regError', pwErr);
+
+            if (password !== confirm) {
+                return showMsg('regError', 'Passwords do not match');
+            }
+
+            const btn = document.getElementById('regBtn');
+            btn.disabled = true;
+            btn.textContent = 'Creating account...';
+
+            try {
+                await apiCall('POST', '/api/auth/register', { email, password });
+                showMsg('regSuccess', 'Account created! Check your email for verification link.', 'success');
+                document.getElementById('regEmail').value = '';
+                document.getElementById('regPassword').value = '';
+                document.getElementById('regPasswordConfirm').value = '';
+            } catch (e) {
+                showMsg('regError', e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
+        }
+
+        async function doForgot() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            if (!email) return showMsg('forgotMsg', 'Please enter your email');
+
+            const btn = document.getElementById('forgotBtn');
+            btn.disabled = true;
+
+            try {
+                await apiCall('POST', '/api/auth/forgot-password', { email });
+                showMsg('forgotMsg', 'If the email exists, a reset link has been sent. Check your inbox.', 'success');
+            } catch (e) {
+                showMsg('forgotMsg', e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function doReset() {
+            hideMsg('resetMsg');
+            const password = document.getElementById('resetPassword').value;
+            const confirm = document.getElementById('resetPasswordConfirm').value;
+
+            const pwErr = validatePassword(password);
+            if (pwErr) return showMsg('resetMsg', pwErr);
+            if (password !== confirm) return showMsg('resetMsg', 'Passwords do not match');
+
+            const btn = document.getElementById('resetBtn');
+            btn.disabled = true;
+
+            try {
+                await apiCall('POST', '/api/auth/reset-password', { token: resetToken, newPassword: password });
+                showMsg('resetMsg', 'Password reset! You can now log in.', 'success');
+                setTimeout(() => { showTab('login'); }, 2000);
+            } catch (e) {
+                showMsg('resetMsg', e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function resendVerification(email) {
+            try {
+                await apiCall('POST', '/api/auth/resend-verification', { email });
+                showMsg('loginError', 'Verification email sent! Check your inbox.', 'success');
+            } catch (e) {
+                showMsg('loginError', e.message);
+            }
+        }
+    </script>
+</body>
+</html>

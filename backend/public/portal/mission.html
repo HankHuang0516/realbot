@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Claw - Mission Control</title>
+    <link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+    <div class="container" id="content" style="display:none">
+        <div style="text-align:center; margin-top:40px;">
+            <div class="spinner"></div>
+            <p style="margin-top:16px; color:var(--text-secondary);">Loading Mission Control...</p>
+        </div>
+    </div>
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('mission');
+            const user = await checkAuth();
+            if (!user) return;
+
+            // Set credentials in localStorage for the mission.html page
+            localStorage.setItem('eclaw_deviceId', user.deviceId);
+            localStorage.setItem('eclaw_deviceSecret', user.deviceSecret);
+
+            // Redirect to the existing mission control page with auto-login
+            window.location.href = '/mission/mission.html?autoLogin=true';
+        });
+    </script>
+</body>
+</html>

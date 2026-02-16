@@ -138,8 +138,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 <script>
 const API_BASE = window.location.origin;
-let deviceId = localStorage.getItem('mc_deviceId') || '';
-let deviceSecret = localStorage.getItem('mc_deviceSecret') || '';
+let deviceId = localStorage.getItem('mc_deviceId') || localStorage.getItem('eclaw_deviceId') || '';
+let deviceSecret = localStorage.getItem('mc_deviceSecret') || localStorage.getItem('eclaw_deviceSecret') || '';
 let dashboard = { todoList: [], missionList: [], doneList: [], notes: [], rules: [] };
 let version = 1;
 let hasChanges = false;
@@ -149,7 +149,7 @@ let refreshTimer = null;
 const PRIORITY_MAP = { 1: '🟢 低', 2: '🟡 中', 3: '🟠 高', 4: '🔴 緊急' };
 const STATUS_MAP = { PENDING: '待處理', IN_PROGRESS: '執行中', BLOCKED: '阻塞中', DONE: '完成', CANCELLED: '已取消' };
 
-// Auto-login if credentials exist
+// Auto-login if credentials exist (from portal or manual entry)
 if (deviceId && deviceSecret) {
     document.getElementById('inputDeviceId').value = deviceId;
     document.getElementById('inputDeviceSecret').value = deviceSecret;

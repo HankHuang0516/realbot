@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Claw - Dashboard</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .entity-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--input-bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .entity-count strong {
+            color: var(--primary);
+        }
+
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .entity-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+        }
+
+        .entity-card-body {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+        }
+
+        .entity-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .entity-timestamp {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .entity-badges {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-top: 4px;
+        }
+
+        .badge-id {
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Collapsible add entity section */
+        .add-entity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .add-entity-header:hover {
+            opacity: 0.8;
+        }
+
+        .expand-arrow {
+            transition: transform 0.2s;
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .expand-arrow.expanded {
+            transform: rotate(180deg);
+        }
+
+        .add-entity-content {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .add-entity-content.visible {
+            display: block;
+        }
+
+        /* Slot selector */
+        .slot-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .slot-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 8px;
+            background: var(--input-bg);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .slot-btn:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .slot-btn.active {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--text);
+        }
+
+        .slot-btn.occupied {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .slot-emoji {
+            font-size: 24px;
+        }
+
+        /* Binding code display */
+        .code-display {
+            text-align: center;
+            padding: 20px;
+            margin: 16px 0;
+            background: var(--input-bg);
+            border-radius: var(--radius);
+            border: 1px dashed var(--card-border);
+        }
+
+        .binding-code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .code-countdown {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .code-countdown.expiring {
+            color: var(--warning);
+        }
+
+        .code-countdown.expired {
+            color: var(--danger);
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        /* Confirm dialog */
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(13, 13, 26, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <span class="entity-count" id="entityCount">
+                <span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;"></span>
+            </span>
+        </div>
+
+        <!-- Entity Cards Grid -->
+        <div class="entity-grid" id="entityGrid">
+            <div class="empty-state" id="loadingState">
+                <div class="spinner" style="margin: 0 auto 12px;"></div>
+                <div>Loading entities...</div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div style="font-size:48px;margin-bottom:12px;">🦞</div>
+            <div style="font-size:16px;color:var(--text-secondary);margin-bottom:4px;">No entities bound yet</div>
+            <div>Add your first entity below to get started!</div>
+        </div>
+
+        <!-- Add Entity Section -->
+        <div class="card" id="addEntityCard">
+            <div class="add-entity-header" onclick="toggleAddEntity()">
+                <div class="card-title" style="margin-bottom:0;">
+                    Add Entity
+                </div>
+                <span class="expand-arrow" id="expandArrow">&#9662;</span>
+            </div>
+
+            <div class="add-entity-content" id="addEntityContent">
+                <!-- Slot Selector -->
+                <label class="form-label">Select Entity Slot</label>
+                <div class="slot-selector" id="slotSelector">
+                    <button class="slot-btn active" data-slot="0" onclick="selectSlot(0)">
+                        <span class="slot-emoji">🦞</span>
+                        <span>Slot 0</span>
+                    </button>
+                    <button class="slot-btn" data-slot="1" onclick="selectSlot(1)">
+                        <span class="slot-emoji">🐷</span>
+                        <span>Slot 1</span>
+                    </button>
+                    <button class="slot-btn" data-slot="2" onclick="selectSlot(2)">
+                        <span class="slot-emoji">🦞</span>
+                        <span>Slot 2</span>
+                    </button>
+                    <button class="slot-btn" data-slot="3" onclick="selectSlot(3)">
+                        <span class="slot-emoji">🐷</span>
+                        <span>Slot 3</span>
+                    </button>
+                </div>
+
+                <!-- Generate Code Button -->
+                <button class="btn btn-primary btn-block" id="btnGenerate" onclick="generateCode()">
+                    Generate Code
+                </button>
+
+                <!-- Code Display (hidden until generated) -->
+                <div class="code-display" id="codeDisplay" style="display:none;">
+                    <div class="binding-code" id="bindingCode">--- ---</div>
+                    <div class="code-countdown" id="codeCountdown">Tap Generate to get a code</div>
+                    <div class="code-actions">
+                        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="copyCommand()">
+                            Copy Command
+                        </button>
+                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="generateCode()">
+                            Regenerate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Remove Dialog (created dynamically) -->
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script>
+        // --- State ---
+        let entities = [];
+        let selectedSlot = 0;
+        let currentCode = null;
+        let codeExpiry = null;
+        let countdownInterval = null;
+        let refreshInterval = null;
+        let isAddExpanded = false;
+
+        const ENTITY_CHARS = {
+            0: { name: 'Lobster', emoji: '🦞' },
+            1: { name: 'Pig', emoji: '🐷' },
+            2: { name: 'Lobster', emoji: '🦞' },
+            3: { name: 'Pig', emoji: '🐷' }
+        };
+
+        // --- Init ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('dashboard');
+            const user = await checkAuth();
+            if (!user) return;
+
+            await loadEntities();
+
+            // Auto-refresh every 10 seconds
+            refreshInterval = setInterval(loadEntities, 10000);
+        });
+
+        // --- Entity Loading ---
+        async function loadEntities() {
+            try {
+                const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
+                entities = (data.entities || []).filter(e => e.isBound);
+                renderEntities();
+                updateEntityCount();
+                updateSlotAvailability();
+            } catch (e) {
+                // Only show error on first load
+                const grid = document.getElementById('entityGrid');
+                if (grid.querySelector('#loadingState')) {
+                    grid.innerHTML = '<div class="empty-state">Failed to load entities</div>';
+                }
+            }
+        }
+
+        function updateEntityCount() {
+            const max = 4;
+            document.getElementById('entityCount').innerHTML =
+                `<strong>${entities.length}</strong> / ${max}`;
+        }
+
+        function updateSlotAvailability() {
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            document.querySelectorAll('.slot-btn').forEach(btn => {
+                const slot = parseInt(btn.dataset.slot);
+                const isOccupied = occupiedSlots.has(slot);
+                btn.classList.toggle('occupied', isOccupied);
+                if (isOccupied && btn.classList.contains('active')) {
+                    // Auto-select first available slot
+                    const firstAvailable = [0, 1, 2, 3].find(s => !occupiedSlots.has(s));
+                    if (firstAvailable !== undefined) {
+                        selectSlot(firstAvailable);
+                    }
+                }
+            });
+        }
+
+        // --- Rendering ---
+        function renderEntities() {
+            const grid = document.getElementById('entityGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (entities.length === 0) {
+                grid.innerHTML = '';
+                emptyState.style.display = '';
+                // Auto-expand add entity when empty
+                if (!isAddExpanded) {
+                    toggleAddEntity();
+                }
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            grid.innerHTML = entities.map(entity => {
+                const char = ENTITY_CHARS[entity.entityId] || ENTITY_CHARS[0];
+                const displayName = entity.name || `${char.name} #${entity.entityId}`;
+                const state = entity.state || 'idle';
+                const stateBadgeClass = getStateBadgeClass(state);
+                const lastMsg = entity.message || 'No messages yet';
+                const time = formatTime(entity.lastUpdated);
+
+                return `
+                    <div class="entity-card card">
+                        <div class="entity-card-body">
+                            <div class="entity-avatar">${char.emoji}</div>
+                            <div class="entity-info">
+                                <div class="entity-name">${escapeHtml(displayName)}</div>
+                                <div class="entity-badges">
+                                    <span class="badge-id">#${entity.entityId}</span>
+                                    <span class="badge ${stateBadgeClass}">${escapeHtml(state)}</span>
+                                </div>
+                                <div class="entity-message">${escapeHtml(lastMsg)}</div>
+                            </div>
+                        </div>
+                        <div class="entity-card-footer">
+                            <span class="entity-timestamp">${time}</span>
+                            <button class="btn btn-danger btn-sm" onclick="confirmRemove(${entity.entityId}, '${escapeHtml(displayName)}')">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- Add Entity ---
+        function toggleAddEntity() {
+            isAddExpanded = !isAddExpanded;
+            const content = document.getElementById('addEntityContent');
+            const arrow = document.getElementById('expandArrow');
+            content.classList.toggle('visible', isAddExpanded);
+            arrow.classList.toggle('expanded', isAddExpanded);
+        }
+
+        function selectSlot(slot) {
+            const btn = document.querySelector(`.slot-btn[data-slot="${slot}"]`);
+            if (btn && btn.classList.contains('occupied')) {
+                showToast('This slot is already occupied', 'error');
+                return;
+            }
+
+            selectedSlot = slot;
+            document.querySelectorAll('.slot-btn').forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.slot) === slot);
+            });
+        }
+
+        async function generateCode() {
+            const btn = document.getElementById('btnGenerate');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+
+            // Check if slot is occupied
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            if (occupiedSlots.has(selectedSlot)) {
+                showToast('Slot ' + selectedSlot + ' is already occupied', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Generate Code';
+                return;
+            }
+
+            try {
+                const data = await apiCall('POST', '/api/device/register', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedSlot,
+                    appVersion: 'web'
+                });
+
+                currentCode = data.bindingCode || data.code;
+                if (!currentCode) {
+                    throw new Error('No binding code returned');
+                }
+
+                // Show code display
+                const codeDisplay = document.getElementById('codeDisplay');
+                codeDisplay.style.display = '';
+
+                // Format code with space in middle
+                const formatted = currentCode.length === 6
+                    ? currentCode.substring(0, 3) + ' ' + currentCode.substring(3)
+                    : currentCode;
+                document.getElementById('bindingCode').textContent = formatted;
+
+                // Start countdown (60 seconds)
+                startCountdown(60);
+
+                btn.textContent = 'Regenerate';
+                showToast('Binding code generated!', 'success');
+            } catch (e) {
+                showToast(e.message, 'error');
+                btn.textContent = 'Generate Code';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function startCountdown(seconds) {
+            // Clear existing countdown
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            let remaining = seconds;
+            const countdownEl = document.getElementById('codeCountdown');
+
+            function updateCountdown() {
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    countdownEl.textContent = 'Code expired - generate a new one';
+                    countdownEl.className = 'code-countdown expired';
+                    currentCode = null;
+                    return;
+                }
+
+                countdownEl.textContent = `Expires in ${remaining}s`;
+
+                if (remaining <= 10) {
+                    countdownEl.className = 'code-countdown expiring';
+                } else {
+                    countdownEl.className = 'code-countdown';
+                }
+
+                remaining--;
+            }
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        function copyCommand() {
+            if (!currentCode) {
+                showToast('No active code to copy', 'error');
+                return;
+            }
+
+            const command = `/bind code:${currentCode} server:https://eclaw.up.railway.app`;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(command).then(() => {
+                    showToast('Command copied to clipboard!', 'success');
+                }).catch(() => {
+                    fallbackCopy(command);
+                });
+            } else {
+                fallbackCopy(command);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('Command copied to clipboard!', 'success');
+            } catch (e) {
+                showToast('Failed to copy - please copy manually', 'error');
+            }
+            document.body.removeChild(ta);
+        }
+
+        // --- Remove Entity ---
+        function confirmRemove(entityId, displayName) {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML = `
+                <div class="dialog">
+                    <div class="dialog-title">Remove Entity</div>
+                    <p style="color:var(--text-secondary);font-size:14px;">
+                        Are you sure you want to remove <strong>${escapeHtml(displayName)}</strong> (#${entityId})?
+                        This will unbind the entity from your device.
+                    </p>
+                    <div class="dialog-actions">
+                        <button class="btn btn-outline" onclick="this.closest('.confirm-overlay').remove()">Cancel</button>
+                        <button class="btn btn-danger" id="btnConfirmRemove" onclick="removeEntity(${entityId}, this)">Remove</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            // Close on background click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        async function removeEntity(entityId, btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = 'Removing...';
+
+            try {
+                await apiCall('DELETE', '/api/device/entity', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: entityId
+                });
+
+                // Close dialog
+                const overlay = btnEl.closest('.confirm-overlay');
+                if (overlay) overlay.remove();
+
+                showToast('Entity removed successfully', 'success');
+
+                // Refresh entities
+                await loadEntities();
+            } catch (e) {
+                showToast('Failed to remove: ' + e.message, 'error');
+                btnEl.disabled = false;
+                btnEl.textContent = 'Remove';
+            }
+        }
+
+        // --- Utilities ---
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', () => {
+            if (countdownInterval) clearInterval(countdownInterval);
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+</html>
