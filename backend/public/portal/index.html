@@ -17,6 +17,7 @@
         <div class="auth-tabs">
             <div class="auth-tab active" onclick="showTab('login')">Login</div>
             <div class="auth-tab" onclick="showTab('register')">Register</div>
+            <div class="auth-tab" onclick="showTab('device')">Device</div>
         </div>
 
         <!-- Login Form -->
@@ -54,6 +55,23 @@
             <div id="regError" class="error-text" style="display:none"></div>
             <div id="regSuccess" class="success-text" style="display:none"></div>
             <button class="btn btn-primary btn-block" onclick="doRegister()" id="regBtn" style="margin-top:16px">Create Account</button>
+        </div>
+
+        <!-- Device Login Form -->
+        <div id="deviceForm" style="display:none">
+            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
+                Already have the Android app? Enter your device credentials from Settings > Web Portal.
+            </p>
+            <div class="form-group">
+                <label class="form-label">Device ID</label>
+                <input type="text" class="form-input" id="deviceId" placeholder="e.g. abc12345-...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Device Secret</label>
+                <input type="password" class="form-input" id="deviceSecret" placeholder="Enter device secret" onkeydown="if(event.key==='Enter')doDeviceLogin()">
+            </div>
+            <div id="deviceError" class="error-text" style="display:none"></div>
+            <button class="btn btn-primary btn-block" onclick="doDeviceLogin()" id="deviceBtn" style="margin-top:16px">Login with Device</button>
         </div>
 
         <!-- Forgot Password Form -->
@@ -121,14 +139,18 @@
         function showTab(tab) {
             document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
             document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+            document.getElementById('deviceForm').style.display = tab === 'device' ? '' : 'none';
             document.getElementById('forgotForm').style.display = tab === 'forgot' ? '' : 'none';
             document.getElementById('resetForm').style.display = tab === 'reset' ? '' : 'none';
 
             document.querySelectorAll('.auth-tab').forEach((t, i) => {
-                t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+                t.classList.toggle('active',
+                    (i === 0 && tab === 'login') ||
+                    (i === 1 && tab === 'register') ||
+                    (i === 2 && tab === 'device'));
             });
 
-            // Show tabs only for login/register
+            // Show tabs only for login/register/device
             document.querySelector('.auth-tabs').style.display =
                 (tab === 'forgot' || tab === 'reset') ? 'none' : '';
         }
@@ -252,6 +274,30 @@
                 showMsg('resetMsg', e.message);
             } finally {
                 btn.disabled = false;
+            }
+        }
+
+        async function doDeviceLogin() {
+            hideMsg('deviceError');
+            const deviceId = document.getElementById('deviceId').value.trim();
+            const deviceSecret = document.getElementById('deviceSecret').value.trim();
+
+            if (!deviceId || !deviceSecret) {
+                return showMsg('deviceError', 'Please fill in both fields');
+            }
+
+            const btn = document.getElementById('deviceBtn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+
+            try {
+                await apiCall('POST', '/api/auth/device-login', { deviceId, deviceSecret });
+                window.location.href = 'dashboard.html';
+            } catch (e) {
+                showMsg('deviceError', e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Login with Device';
             }
         }
 

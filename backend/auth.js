@@ -297,6 +297,69 @@ module.exports = function(devices, getOrCreateDevice) {
     });
 
     // ============================================
+    // POST /device-login (for Android users with device credentials)
+    // ============================================
+    router.post('/device-login', async (req, res) => {
+        try {
+            const { deviceId, deviceSecret } = req.body;
+
+            if (!deviceId || !deviceSecret) {
+                return res.status(400).json({ success: false, error: 'Device ID and Secret required' });
+            }
+
+            // Verify device credentials
+            const device = devices[deviceId];
+            if (!device || device.deviceSecret !== deviceSecret) {
+                return res.status(401).json({ success: false, error: 'Invalid device credentials' });
+            }
+
+            // Check if there's a user account linked to this device
+            const result = await pool.query(
+                'SELECT * FROM user_accounts WHERE device_id = $1',
+                [deviceId]
+            );
+
+            let tokenPayload;
+            let userInfo;
+
+            if (result.rows.length > 0) {
+                // Existing user account
+                const user = result.rows[0];
+                tokenPayload = { userId: user.id, deviceId: user.device_id, deviceSecret: user.device_secret };
+                userInfo = {
+                    id: user.id,
+                    email: user.email,
+                    deviceId: user.device_id,
+                    subscriptionStatus: user.subscription_status
+                };
+            } else {
+                // No user account — create a session with device credentials only
+                tokenPayload = { userId: null, deviceId, deviceSecret };
+                userInfo = {
+                    id: null,
+                    email: null,
+                    deviceId: deviceId,
+                    subscriptionStatus: 'free'
+                };
+            }
+
+            const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+            res.cookie('eclaw_session', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+                path: '/'
+            });
+
+            res.json({ success: true, user: userInfo });
+        } catch (error) {
+            console.error('[Auth] Device login error:', error);
+            res.status(500).json({ success: false, error: 'Device login failed' });
+        }
+    });
+
+    // ============================================
     // POST /logout
     // ============================================
     router.post('/logout', (req, res) => {
@@ -453,6 +516,35 @@ module.exports = function(devices, getOrCreateDevice) {
     // ============================================
     router.get('/me', authMiddleware, async (req, res) => {
         try {
+            // Device-only login (no user account)
+            if (!req.user.userId) {
+                const deviceId = req.user.deviceId;
+                const usageResult = await pool.query(
+                    'SELECT message_count FROM usage_tracking WHERE device_id = $1 AND date = CURRENT_DATE',
+                    [deviceId]
+                );
+                const usageToday = usageResult.rows.length > 0 ? usageResult.rows[0].message_count : 0;
+                const device = devices[deviceId];
+                const isPremium = device && device.isPremium;
+
+                return res.json({
+                    success: true,
+                    user: {
+                        id: null,
+                        email: null,
+                        deviceId: deviceId,
+                        deviceSecret: req.user.deviceSecret,
+                        subscriptionStatus: isPremium ? 'premium' : 'free',
+                        subscriptionExpiresAt: null,
+                        language: 'en',
+                        emailVerified: false,
+                        createdAt: null,
+                        usageToday: usageToday,
+                        usageLimit: isPremium ? null : 15
+                    }
+                });
+            }
+
             const result = await pool.query(
                 'SELECT id, email, device_id, device_secret, subscription_status, subscription_expires_at, language, email_verified, created_at FROM user_accounts WHERE id = $1',
                 [req.user.userId]
