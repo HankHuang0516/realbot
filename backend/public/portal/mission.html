@@ -175,8 +175,8 @@
             background: #fff;
         }
 
-        /* Dialog form inputs (scoped to dialog) */
-        .dialog input,
+        /* Dialog form inputs (scoped to dialog, exclude checkboxes/radios) */
+        .dialog input:not([type="checkbox"]):not([type="radio"]),
         .dialog textarea,
         .dialog select {
             width: 100%;
@@ -192,10 +192,67 @@
             transition: border-color 0.2s;
         }
 
-        .dialog input:focus,
+        .dialog input:not([type="checkbox"]):not([type="radio"]):focus,
         .dialog textarea:focus,
         .dialog select:focus {
             border-color: var(--primary);
+        }
+
+        /* Entity checkbox grid */
+        .entity-checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px 16px;
+        }
+
+        .entity-checkbox-grid label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.15s;
+        }
+
+        .entity-checkbox-grid label:hover {
+            background: var(--input-bg);
+        }
+
+        .entity-checkbox-grid input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            accent-color: var(--primary);
+        }
+
+        /* Inline delete button on sub-items */
+        .item-delete {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            opacity: 0;
+        }
+
+        .mc-item:hover .item-delete {
+            opacity: 1;
+        }
+
+        .item-delete:hover {
+            background: var(--danger);
+            color: #fff;
+            opacity: 1;
         }
 
         .dialog input::placeholder,
@@ -702,6 +759,7 @@
                     <div class="item-row">
                         <span class="item-title">${esc(n.title)}</span>
                         <span class="item-badge">${esc(n.category || 'general')}</span>
+                        <button class="item-delete" onclick="event.stopPropagation();deleteNote('${n.id}')" title="刪除">&times;</button>
                     </div>
                     <div class="item-detail">${esc((n.content || '').slice(0, 80))}</div>
                 </div>
@@ -726,6 +784,7 @@
                             <input type="checkbox" ${r.isEnabled !== false ? 'checked' : ''} onchange="toggleRule('${r.id}')">
                             <span class="slider"></span>
                         </label>
+                        <button class="item-delete" onclick="event.stopPropagation();deleteRule('${r.id}')" title="刪除">&times;</button>
                     </div>
                     ${r.description ? `<div class="item-detail">${esc(r.description)}</div>` : ''}
                 </div>`;
@@ -749,6 +808,7 @@
                     <div class="dialog-title">${title}</div>`;
 
             fields.forEach(f => {
+                html += `<div class="dialog-field-label">${f.label}</div>`;
                 if (f.type === 'textarea') {
                     html += `<textarea id="dlg_${f.key}" placeholder="${f.label}">${esc(f.value || '')}</textarea>`;
                 } else if (f.type === 'select') {
@@ -952,6 +1012,14 @@
             });
         }
 
+        function deleteNote(id) {
+            if (confirm(i18n.t('mc_confirm_delete'))) {
+                dashboard.notes = dashboard.notes.filter(n => n.id !== id);
+                markChanged();
+                renderNotes();
+            }
+        }
+
         function showNoteMenu(e, id) {
             e.preventDefault();
             const menu = document.getElementById('contextMenu');
@@ -986,6 +1054,7 @@
                     <div class="item-row">
                         <span class="item-title">${esc(s.title)}</span>
                         ${entities ? `<span class="item-badge">${entities}</span>` : ''}
+                        <button class="item-delete" onclick="event.stopPropagation();deleteSkill('${s.id}')" title="刪除">&times;</button>
                     </div>
                     ${s.url ? `<div class="item-detail">${esc(s.url)}</div>` : ''}
                 </div>`;
@@ -1010,7 +1079,7 @@
                 const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
                 const name = e.name || char.name;
                 const checked = isEdit && (skill.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
-                return `<label style="display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;">
+                return `<label>
                     <input type="checkbox" class="skill-entity-cb" value="${e.entityId}" ${checked}>
                     ${char.emoji} ${esc(name)} (#${e.entityId})
                 </label>`;
@@ -1021,10 +1090,12 @@
             let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
                 <div class="dialog">
                     <div class="dialog-title">${isEdit ? '編輯技能' : '新增技能'}</div>
-                    <input id="dlg_skill_title" placeholder="標題" value="${esc(skill?.title || '')}" />
-                    <input id="dlg_skill_url" placeholder="網址 (選填)" value="${esc(skill?.url || '')}" />
+                    <div class="dialog-field-label">技能名稱</div>
+                    <input id="dlg_skill_title" placeholder="例：Google 搜尋" value="${esc(skill?.title || '')}" />
+                    <div class="dialog-field-label">相關網址 (選填)</div>
+                    <input id="dlg_skill_url" placeholder="https://..." value="${esc(skill?.url || '')}" />
                     <div class="dialog-field-label">指派實體 (可多選)</div>
-                    <div id="dlg_skill_entities" style="margin-bottom:10px;">${entityCheckboxes}</div>
+                    <div class="entity-checkbox-grid" id="dlg_skill_entities">${entityCheckboxes}</div>
                     <div class="dialog-actions">
                         <button class="btn btn-outline" onclick="closeDialog()">${i18n.t('mc_dlg_cancel')}</button>
                         <button class="btn btn-primary" id="dlgSaveBtn">${i18n.t('mc_dlg_save')}</button>
@@ -1062,6 +1133,14 @@
             };
 
             setTimeout(() => document.getElementById('dlg_skill_title').focus(), 50);
+        }
+
+        function deleteSkill(id) {
+            if (confirm(i18n.t('mc_confirm_delete'))) {
+                dashboard.skills = dashboard.skills.filter(s => s.id !== id);
+                markChanged();
+                renderSkills();
+            }
         }
 
         function showSkillMenu(e, id) {
@@ -1109,7 +1188,7 @@
                 const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
                 const name = e.name || char.name;
                 const checked = isEdit && (rule.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
-                return `<label style="display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;">
+                return `<label>
                     <input type="checkbox" class="rule-entity-cb" value="${e.entityId}" ${checked}>
                     ${char.emoji} ${esc(name)} (#${e.entityId})
                 </label>`;
@@ -1120,11 +1199,14 @@
             let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
                 <div class="dialog">
                     <div class="dialog-title">${isEdit ? i18n.t('mc_dlg_edit_rule') : i18n.t('mc_dlg_add_rule')}</div>
+                    <div class="dialog-field-label">規則名稱</div>
                     <input id="dlg_rule_name" placeholder="${i18n.t('mc_dlg_rule_name')}" value="${esc(rule?.name || '')}" />
+                    <div class="dialog-field-label">說明</div>
                     <textarea id="dlg_rule_desc" placeholder="${i18n.t('mc_dlg_desc')}">${esc(rule?.description || '')}</textarea>
+                    <div class="dialog-field-label">規則類型</div>
                     <select id="dlg_rule_type">${typeOptions}</select>
                     <div class="dialog-field-label">指派實體 (可多選)</div>
-                    <div id="dlg_rule_entities" style="margin-bottom:10px;">${entityCheckboxes}</div>
+                    <div class="entity-checkbox-grid" id="dlg_rule_entities">${entityCheckboxes}</div>
                     <div class="dialog-actions">
                         <button class="btn btn-outline" onclick="closeDialog()">${i18n.t('mc_dlg_cancel')}</button>
                         <button class="btn btn-primary" id="dlgSaveBtn">${i18n.t('mc_dlg_save')}</button>
@@ -1175,6 +1257,14 @@
             rule.isEnabled = !rule.isEnabled;
             rule.updatedAt = Date.now();
             markChanged();
+        }
+
+        function deleteRule(id) {
+            if (confirm(i18n.t('mc_confirm_delete'))) {
+                dashboard.rules = dashboard.rules.filter(r => r.id !== id);
+                markChanged();
+                renderRules();
+            }
         }
 
         function showRuleMenu(e, id) {
