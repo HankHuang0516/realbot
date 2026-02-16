@@ -1650,6 +1650,12 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
 
     await saveData();
 
+    // Create the session on the gateway so sessions_send will work
+    const sessionResult = await createGatewaySession(freeBot.webhook_url, freeBot.token, sessionKey);
+    if (!sessionResult.success) {
+        console.warn(`[Borrow] Warning: Could not create session on gateway for free bot. Push may fail until session is created. Error: ${sessionResult.error}`);
+    }
+
     console.log(`[Borrow] Free bot ${freeBot.bot_id} bound to device ${deviceId} entity ${eId}`);
     res.json({
         success: true,
@@ -1742,6 +1748,12 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
     if (usePostgreSQL) await db.saveOfficialBinding(binding);
 
     await saveData();
+
+    // Create the session on the gateway so sessions_send will work
+    const sessionResult = await createGatewaySession(personalBot.webhook_url, personalBot.token, sessionKey);
+    if (!sessionResult.success) {
+        console.warn(`[Borrow] Warning: Could not create session on gateway for personal bot. Error: ${sessionResult.error}`);
+    }
 
     console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId}`);
     res.json({
@@ -2171,6 +2183,44 @@ app.post('/api/bot/pending-messages', async (req, res) => {
 });
 
 /**
+ * Helper: Create a session on the OpenClaw gateway.
+ * Must be called before sessions_send to ensure the session exists.
+ */
+async function createGatewaySession(url, token, sessionKey) {
+    try {
+        console.log(`[Session] Creating session '${sessionKey.substring(0, 20)}...' on gateway ${url}`);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                tool: "sessions_create",
+                args: { sessionKey }
+            })
+        });
+
+        const responseText = await response.text().catch(() => '');
+        if (response.ok) {
+            console.log(`[Session] ✓ Session created: ${sessionKey.substring(0, 20)}... (status: ${response.status})`);
+            return { success: true, response: responseText };
+        } else {
+            // Session might already exist - that's OK
+            if (responseText.includes('already exists') || responseText.includes('duplicate')) {
+                console.log(`[Session] Session already exists: ${sessionKey.substring(0, 20)}...`);
+                return { success: true, alreadyExists: true };
+            }
+            console.error(`[Session] ✗ Failed to create session (status: ${response.status}): ${responseText}`);
+            return { success: false, error: responseText, status: response.status };
+        }
+    } catch (err) {
+        console.error(`[Session] ✗ Error creating session:`, err.message);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
  * Helper: Push notification to bot webhook
  * Supports OpenClaw format: POST to /tools/invoke with tool invocation payload
  */
@@ -2198,7 +2248,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
     };
 
     try {
-        console.log(`[Push] Sending to ${url} with sessionKey: ${sessionKey.substring(0, 8)}...`);
+        console.log(`[Push] Sending to ${url} with sessionKey: ${effectiveSessionKey.substring(0, 20)}...`);
         console.log(`[Push] Payload:`, JSON.stringify(requestPayload, null, 2));
 
         // OpenClaw /tools/invoke format
@@ -2217,6 +2267,37 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             if (responseText) {
                 console.log(`[Push] Response: ${responseText.substring(0, 200)}`);
             }
+
+            // Check if response body contains "No session found" error
+            // Gateway returns 200 but with error in body when session doesn't exist
+            if (responseText && responseText.includes('No session found')) {
+                console.warn(`[Push] Session not found, attempting to create session and retry...`);
+                const createResult = await createGatewaySession(url, token, effectiveSessionKey);
+                if (createResult.success) {
+                    // Retry the push after creating session
+                    console.log(`[Push] Session created, retrying push...`);
+                    const retryResponse = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestPayload)
+                    });
+                    const retryText = await retryResponse.text().catch(() => '');
+                    if (retryResponse.ok && !retryText.includes('No session found')) {
+                        console.log(`[Push] ✓ Retry successful after session creation`);
+                        return { pushed: true };
+                    } else {
+                        console.error(`[Push] ✗ Retry still failed: ${retryText.substring(0, 200)}`);
+                        return { pushed: false, reason: 'session_create_retry_failed', error: retryText };
+                    }
+                } else {
+                    console.error(`[Push] ✗ Could not create session: ${createResult.error}`);
+                    return { pushed: false, reason: 'session_not_found', error: responseText };
+                }
+            }
+
             return { pushed: true };
         } else {
             const errorText = await response.text().catch(() => '');
