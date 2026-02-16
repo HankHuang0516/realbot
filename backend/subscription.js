@@ -19,7 +19,7 @@ const pool = new Pool({
 });
 
 const TAPPAY_PARTNER_KEY = process.env.TAPPAY_PARTNER_KEY || 'partner_gi6Ckw8YOU3BMJP3d9CBywKvzWjfWMWoN9sBeOMP19GZKA6ZgbWdxBlZ';
-const TAPPAY_MERCHANT_ID = process.env.TAPPAY_MERCHANT_ID || 'tppf_hankhuang0516_GP_POS_INS_1';
+const TAPPAY_MERCHANT_ID = process.env.TAPPAY_MERCHANT_ID || 'tppf_hankhuang0516_GP_POS_1';
 const TAPPAY_SANDBOX = true;
 const TAPPAY_API_URL = TAPPAY_SANDBOX
     ? 'https://sandbox.tappaysdk.com/tpc/payment/pay-by-prime'
@@ -139,7 +139,6 @@ module.exports = function (devices, authMiddleware) {
                         name: user.email.split('@')[0],
                         phone_number: ''
                     },
-                    instalment: 0, // 0 = one-time payment (required for INS merchant)
                     remember: true // Store card for recurring
                 })
             });
@@ -320,8 +319,7 @@ module.exports = function (devices, authMiddleware) {
                             merchant_id: TAPPAY_MERCHANT_ID,
                             amount: SUBSCRIPTION_AMOUNT,
                             currency: SUBSCRIPTION_CURRENCY,
-                            details: 'E-Claw Premium Renewal',
-                            instalment: 0
+                            details: 'E-Claw Premium Renewal'
                         })
                     });
 
