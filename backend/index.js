@@ -1656,10 +1656,20 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         return res.status(404).json({ success: false, error: 'No free bot available' });
     }
 
-    // Generate per-user session key
-    const sessionKey = freeBot.session_key_template
-        ? `${freeBot.session_key_template}_${deviceId}_${eId}`
-        : `free_${deviceId}_${eId}`;
+    // Handshake with bot to discover a working session key and get welcome message
+    const preferredKey = freeBot.session_key_template || 'default';
+    const handshake = await handshakeWithBot(freeBot.webhook_url, freeBot.token, preferredKey, deviceId, eId, 'free');
+
+    if (!handshake.success) {
+        return res.status(502).json({
+            success: false,
+            error: `無法與免費版機器人建立連線。${handshake.error || ''}`,
+            hint: 'Bot gateway may not have active sessions. Check bot configuration.'
+        });
+    }
+
+    const sessionKey = handshake.sessionKey;
+    const welcomeMsg = handshake.botResponse || 'Connected via Official Free Bot!';
 
     // Generate botSecret for this binding
     const crypto = require('crypto');
@@ -1672,7 +1682,7 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         isBound: true,
         name: '免費版',
         state: 'IDLE',
-        message: 'Connected via Official Free Bot!',
+        message: welcomeMsg,
         lastUpdated: Date.now(),
         webhook: {
             url: freeBot.webhook_url,
@@ -1700,13 +1710,7 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
 
     await saveData();
 
-    // Create the session on the gateway so sessions_send will work
-    const sessionResult = await createGatewaySession(freeBot.webhook_url, freeBot.token, sessionKey);
-    if (!sessionResult.success) {
-        console.warn(`[Borrow] Warning: Could not create session on gateway for free bot. Push may fail until session is created. Error: ${sessionResult.error}`);
-    }
-
-    console.log(`[Borrow] Free bot ${freeBot.bot_id} bound to device ${deviceId} entity ${eId}`);
+    console.log(`[Borrow] Free bot ${freeBot.bot_id} bound to device ${deviceId} entity ${eId} (session: ${sessionKey})`);
     res.json({
         success: true,
         entityId: eId,
@@ -1752,10 +1756,20 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         return res.status(404).json({ success: false, error: 'sold_out', message: 'No personal bots available' });
     }
 
-    // Generate session key
-    const sessionKey = personalBot.session_key_template
-        ? `${personalBot.session_key_template}_${deviceId}_${eId}`
-        : `personal_${personalBot.bot_id}_${deviceId}_${eId}`;
+    // Handshake with bot to discover a working session key and get welcome message
+    const preferredKey = personalBot.session_key_template || 'default';
+    const handshake = await handshakeWithBot(personalBot.webhook_url, personalBot.token, preferredKey, deviceId, eId, 'personal');
+
+    if (!handshake.success) {
+        return res.status(502).json({
+            success: false,
+            error: `無法與月租版機器人建立連線。${handshake.error || ''}`,
+            hint: 'Bot gateway may not have active sessions. Check bot configuration.'
+        });
+    }
+
+    const sessionKey = handshake.sessionKey;
+    const welcomeMsg = handshake.botResponse || 'Connected via Personal Bot!';
 
     // Generate botSecret
     const crypto = require('crypto');
@@ -1768,7 +1782,7 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         isBound: true,
         name: '月租版',
         state: 'IDLE',
-        message: 'Connected via Personal Bot!',
+        message: welcomeMsg,
         lastUpdated: Date.now(),
         webhook: {
             url: personalBot.webhook_url,
@@ -1799,13 +1813,7 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
 
     await saveData();
 
-    // Create the session on the gateway so sessions_send will work
-    const sessionResult = await createGatewaySession(personalBot.webhook_url, personalBot.token, sessionKey);
-    if (!sessionResult.success) {
-        console.warn(`[Borrow] Warning: Could not create session on gateway for personal bot. Error: ${sessionResult.error}`);
-    }
-
-    console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId}`);
+    console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId} (session: ${sessionKey})`);
     res.json({
         success: true,
         entityId: eId,
@@ -2233,12 +2241,101 @@ app.post('/api/bot/pending-messages', async (req, res) => {
 });
 
 /**
- * Helper: Create a session on the OpenClaw gateway.
- * Must be called before sessions_send to ensure the session exists.
+ * Helper: Discover existing sessions on the OpenClaw gateway via sessions_list.
+ * Returns array of session key strings, or empty array on failure.
  */
-async function createGatewaySession(url, token, sessionKey) {
+async function discoverSessions(url, token) {
     try {
-        console.log(`[Session] Creating session '${sessionKey.substring(0, 20)}...' on gateway ${url}`);
+        console.log(`[Session] Discovering sessions on gateway ${url}`);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tool: "sessions_list", args: {} })
+        });
+
+        const text = await response.text().catch(() => '');
+        console.log(`[Session] sessions_list response (${response.status}): ${text.substring(0, 500)}`);
+
+        if (!response.ok) {
+            console.warn(`[Session] sessions_list not available (${response.status})`);
+            return [];
+        }
+
+        // Parse response - OpenClaw returns { ok: true, result: { content: [{ text: "..." }] } }
+        try {
+            const json = JSON.parse(text);
+            const content = json?.result?.content?.[0]?.text || json?.result?.text || text;
+            // content might be JSON string of sessions array or object
+            const parsed = typeof content === 'string' ? JSON.parse(content) : content;
+
+            // Extract session keys - could be array of strings or objects with key/sessionKey field
+            if (Array.isArray(parsed)) {
+                return parsed.map(s => typeof s === 'string' ? s : (s.sessionKey || s.key || s.id || '')).filter(Boolean);
+            } else if (parsed.sessions && Array.isArray(parsed.sessions)) {
+                return parsed.sessions.map(s => typeof s === 'string' ? s : (s.sessionKey || s.key || s.id || '')).filter(Boolean);
+            }
+        } catch (parseErr) {
+            // Try regex fallback - look for session key patterns in raw text
+            const matches = text.match(/"(sessionKey|key|id)"\s*:\s*"([^"]+)"/g);
+            if (matches) {
+                return matches.map(m => m.match(/"([^"]+)"$/)?.[1]).filter(Boolean);
+            }
+        }
+
+        return [];
+    } catch (err) {
+        console.error(`[Session] Error discovering sessions:`, err.message);
+        return [];
+    }
+}
+
+/**
+ * Helper: Handshake with bot during binding.
+ * 1. Try sessions_send with bot's configured session key
+ * 2. If "No session found", discover existing sessions via sessions_list
+ * 3. Use first available session, send binding notification
+ * 4. Return working session key and bot's response
+ */
+async function handshakeWithBot(url, token, preferredSessionKey, deviceId, entityId, botType) {
+    const bindMsg = `[SYSTEM:NEW_BIND] 新用戶綁定成功。Device: ${deviceId}, Entity: ${entityId}, Type: ${botType}。請回覆一則簡短的歡迎訊息。`;
+
+    // Step 1: Try preferred session key
+    console.log(`[Handshake] Trying preferred session key: ${preferredSessionKey}...`);
+    let result = await sendToSession(url, token, preferredSessionKey, bindMsg);
+
+    if (result.success) {
+        console.log(`[Handshake] ✓ Handshake OK with preferred key`);
+        return { success: true, sessionKey: preferredSessionKey, botResponse: result.botResponse };
+    }
+
+    // Step 2: If session not found, discover existing sessions
+    if (result.sessionNotFound) {
+        console.log(`[Handshake] Preferred session not found, discovering sessions...`);
+        const sessions = await discoverSessions(url, token);
+        console.log(`[Handshake] Discovered ${sessions.length} sessions: ${JSON.stringify(sessions)}`);
+
+        for (const sk of sessions) {
+            console.log(`[Handshake] Trying discovered session: ${sk}...`);
+            result = await sendToSession(url, token, sk, bindMsg);
+            if (result.success) {
+                console.log(`[Handshake] ✓ Handshake OK with discovered key: ${sk}`);
+                return { success: true, sessionKey: sk, botResponse: result.botResponse };
+            }
+        }
+    }
+
+    console.error(`[Handshake] ✗ All session attempts failed. Bot gateway may not have active sessions.`);
+    return { success: false, error: result.error || 'No working session found on gateway' };
+}
+
+/**
+ * Helper: Send a message to a specific session and parse the response.
+ */
+async function sendToSession(url, token, sessionKey, message) {
+    try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
@@ -2246,26 +2343,40 @@ async function createGatewaySession(url, token, sessionKey) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                tool: "sessions_create",
-                args: { sessionKey }
+                tool: "sessions_send",
+                args: { sessionKey, message }
             })
         });
 
-        const responseText = await response.text().catch(() => '');
-        if (response.ok) {
-            console.log(`[Session] ✓ Session created: ${sessionKey.substring(0, 20)}... (status: ${response.status})`);
-            return { success: true, response: responseText };
-        } else {
-            // Session might already exist - that's OK
-            if (responseText.includes('already exists') || responseText.includes('duplicate')) {
-                console.log(`[Session] Session already exists: ${sessionKey.substring(0, 20)}...`);
-                return { success: true, alreadyExists: true };
-            }
-            console.error(`[Session] ✗ Failed to create session (status: ${response.status}): ${responseText}`);
-            return { success: false, error: responseText, status: response.status };
+        const text = await response.text().catch(() => '');
+
+        if (!response.ok) {
+            return { success: false, error: `HTTP ${response.status}: ${text}` };
         }
+
+        // Check for "No session found" in response body (gateway returns 200 but with error)
+        if (text.includes('No session found')) {
+            return { success: false, sessionNotFound: true, error: text };
+        }
+
+        // Try to extract bot's response text
+        let botResponse = '';
+        try {
+            const json = JSON.parse(text);
+            const content = json?.result?.content?.[0]?.text || '';
+            // The content might be a JSON string with runId/result
+            try {
+                const inner = JSON.parse(content);
+                botResponse = inner?.result || inner?.response || inner?.message || content;
+            } catch {
+                botResponse = content;
+            }
+        } catch {
+            botResponse = text;
+        }
+
+        return { success: true, botResponse };
     } catch (err) {
-        console.error(`[Session] ✗ Error creating session:`, err.message);
         return { success: false, error: err.message };
     }
 }
@@ -2321,30 +2432,39 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             // Check if response body contains "No session found" error
             // Gateway returns 200 but with error in body when session doesn't exist
             if (responseText && responseText.includes('No session found')) {
-                console.warn(`[Push] Session not found, attempting to create session and retry...`);
-                const createResult = await createGatewaySession(url, token, effectiveSessionKey);
-                if (createResult.success) {
-                    // Retry the push after creating session
-                    console.log(`[Push] Session created, retrying push...`);
+                console.warn(`[Push] Session "${effectiveSessionKey}" not found, discovering available sessions...`);
+                const sessions = await discoverSessions(url, token);
+                if (sessions.length > 0) {
+                    console.log(`[Push] Found ${sessions.length} sessions, trying first: ${sessions[0]}`);
+                    // Try sending with the first discovered session
+                    const retryPayload = {
+                        ...requestPayload,
+                        args: { ...requestPayload.args, sessionKey: sessions[0] }
+                    };
                     const retryResponse = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(requestPayload)
+                        body: JSON.stringify(retryPayload)
                     });
                     const retryText = await retryResponse.text().catch(() => '');
                     if (retryResponse.ok && !retryText.includes('No session found')) {
-                        console.log(`[Push] ✓ Retry successful after session creation`);
+                        console.log(`[Push] ✓ Retry successful with discovered session: ${sessions[0]}`);
+                        // Update entity webhook sessionKey so future pushes use the correct one
+                        if (entity.webhook) {
+                            entity.webhook.sessionKey = sessions[0];
+                            console.log(`[Push] Updated entity sessionKey to: ${sessions[0]}`);
+                        }
                         return { pushed: true };
                     } else {
-                        console.error(`[Push] ✗ Retry still failed: ${retryText.substring(0, 200)}`);
-                        return { pushed: false, reason: 'session_create_retry_failed', error: retryText };
+                        console.error(`[Push] ✗ Retry with discovered session failed: ${retryText.substring(0, 200)}`);
+                        return { pushed: false, reason: 'session_discovery_retry_failed', error: retryText };
                     }
                 } else {
-                    console.error(`[Push] ✗ Could not create session: ${createResult.error}`);
-                    return { pushed: false, reason: 'session_not_found', error: responseText };
+                    console.error(`[Push] ✗ No sessions discovered on gateway`);
+                    return { pushed: false, reason: 'no_sessions_available', error: responseText };
                 }
             }
 
