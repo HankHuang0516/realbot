@@ -18,6 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/mission', express.static(path.join(__dirname, 'public')));
 app.use('/portal', express.static(path.join(__dirname, 'public/portal')));
+app.use('/shared', express.static(path.join(__dirname, 'public/shared')));
 
 // ============================================
 // MATRIX ARCHITECTURE: devices[deviceId].entities[0-3]
