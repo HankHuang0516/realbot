@@ -176,6 +176,7 @@ module.exports = function(devices) {
                         doneList: [],
                         notes: [],
                         rules: [],
+                        skills: [],
                         lastSyncedAt: Date.now()
                     }
                 });
@@ -191,6 +192,7 @@ module.exports = function(devices) {
                 doneList: row.done_list,
                 notes: row.notes,
                 rules: row.rules,
+                skills: row.skills || [],
                 lastUpdated: new Date(row.updated_at).getTime()
             };
 
@@ -244,7 +246,7 @@ module.exports = function(devices) {
             const result = await client.query(
                 `UPDATE mission_dashboard
                  SET todo_list = $2, mission_list = $3, done_list = $4,
-                     notes = $5, rules = $6, last_synced_at = NOW()
+                     notes = $5, rules = $6, skills = $7, last_synced_at = NOW()
                  WHERE device_id = $1
                  RETURNING version`,
                 [
@@ -253,7 +255,8 @@ module.exports = function(devices) {
                     JSON.stringify(dashboard.missionList || []),
                     JSON.stringify(dashboard.doneList || []),
                     JSON.stringify(dashboard.notes || []),
-                    JSON.stringify(dashboard.rules || [])
+                    JSON.stringify(dashboard.rules || []),
+                    JSON.stringify(dashboard.skills || [])
                 ]
             );
 
@@ -507,6 +510,152 @@ module.exports = function(devices) {
             console.error('[Mission] Error fetching rules:', error);
             res.status(500).json({ success: false, error: error.message });
         }
+    });
+
+    // ============================================
+    // Mission Notify API
+    // ============================================
+
+    /**
+     * POST /notify
+     * Push mission updates to assigned entities via webhook
+     * Body: { deviceId, deviceSecret, notifications: [{ type, title, priority, entityIds, url }] }
+     *
+     * type: 'TODO' | 'SKILL' | 'RULE'
+     * TODO with HIGH/CRITICAL = 立刻執行
+     * SKILL = 必須安裝
+     * RULE = 必須遵守
+     */
+    router.post('/notify', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, notifications } = req.body;
+
+        if (!notifications || !Array.isArray(notifications) || notifications.length === 0) {
+            return res.status(400).json({ success: false, error: 'Missing notifications' });
+        }
+
+        const device = devices[deviceId];
+        if (!device) {
+            return res.status(404).json({ success: false, error: 'Device not found' });
+        }
+
+        const results = [];
+
+        // Group notifications by target entity
+        const entityMessages = {};
+        for (const n of notifications) {
+            const entityIds = n.entityIds || [];
+            let line = '';
+            if (n.type === 'TODO') {
+                const urgency = (n.priority >= 3) ? '⚠️ 立刻執行' : '📋 待處理';
+                line = `[TODO ${urgency}] ${n.title}`;
+            } else if (n.type === 'SKILL') {
+                line = `[SKILL 必須安裝] ${n.title}${n.url ? ' - ' + n.url : ''}`;
+            } else if (n.type === 'RULE') {
+                line = `[RULE 必須遵守] ${n.title}`;
+            } else {
+                line = `[${n.type}] ${n.title}`;
+            }
+
+            for (const eId of entityIds) {
+                const id = parseInt(eId);
+                if (!entityMessages[id]) entityMessages[id] = [];
+                entityMessages[id].push(line);
+            }
+        }
+
+        // Push to each entity
+        const pushPromises = Object.entries(entityMessages).map(async ([eIdStr, lines]) => {
+            const eId = parseInt(eIdStr);
+            const entity = device.entities[eId];
+            if (!entity || !entity.isBound) {
+                return { entityId: eId, pushed: false, reason: 'not_bound' };
+            }
+
+            const message = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n請查看 Mission Control Dashboard 獲取完整任務詳情。`;
+
+            // Save chat message for tracking
+            try {
+                const saveChatMessage = require('./index.js').saveChatMessage;
+                if (typeof saveChatMessage === 'function') {
+                    saveChatMessage(deviceId, eId, message, 'mission_control', true, false);
+                }
+            } catch (e) {
+                // saveChatMessage may not be directly importable, use pool instead
+                try {
+                    await pool.query(
+                        `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
+                         VALUES ($1, $2, $3, $4, $5, $6)`,
+                        [deviceId, eId, message, 'mission_control', true, false]
+                    );
+                } catch (dbErr) {
+                    console.warn('[Mission] Failed to save chat message:', dbErr.message);
+                }
+            }
+
+            // Push via webhook
+            if (!entity.webhook) {
+                return { entityId: eId, pushed: false, reason: 'no_webhook' };
+            }
+
+            const { url, token, sessionKey } = entity.webhook;
+            let effectiveSessionKey = sessionKey;
+
+            const requestPayload = {
+                tool: "sessions_send",
+                args: {
+                    sessionKey: effectiveSessionKey,
+                    message: `[Device ${deviceId} Entity ${eId} - Mission Control 更新]\n${message}\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                if (response.ok) {
+                    const responseText = await response.text().catch(() => '');
+                    if (responseText && responseText.includes('No session found')) {
+                        return { entityId: eId, pushed: false, reason: 'session_not_found' };
+                    }
+                    // Mark chat message as delivered
+                    try {
+                        await pool.query(
+                            `UPDATE chat_messages SET is_delivered = true, delivered_to = $3
+                             WHERE device_id = $1 AND entity_id = $2 AND source = 'mission_control'
+                             AND is_delivered = false
+                             ORDER BY created_at DESC LIMIT 1`,
+                            [deviceId, eId, `entity_${eId}`]
+                        );
+                    } catch (e) { /* ignore */ }
+                    console.log(`[Mission] ✓ Notify pushed to Device ${deviceId} Entity ${eId}`);
+                    return { entityId: eId, pushed: true };
+                } else {
+                    const errorText = await response.text().catch(() => '');
+                    console.error(`[Mission] ✗ Notify push failed for Entity ${eId}: ${response.status}`);
+                    return { entityId: eId, pushed: false, reason: `http_${response.status}` };
+                }
+            } catch (err) {
+                console.error(`[Mission] ✗ Notify push error for Entity ${eId}:`, err.message);
+                return { entityId: eId, pushed: false, reason: err.message };
+            }
+        });
+
+        const pushResults = await Promise.all(pushPromises);
+        const delivered = pushResults.filter(r => r.pushed).length;
+
+        res.json({
+            success: true,
+            results: pushResults,
+            delivered,
+            total: pushResults.length
+        });
     });
 
     return { router, initMissionDatabase };

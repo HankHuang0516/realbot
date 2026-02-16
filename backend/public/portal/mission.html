@@ -305,6 +305,15 @@
                 <div id="notesList"></div>
             </div>
 
+            <!-- Skills -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔧 Skills</h2>
+                    <button class="btn btn-outline btn-sm" onclick="showAddSkill()">+ Add</button>
+                </div>
+                <div id="skillsList"></div>
+            </div>
+
             <!-- Rules -->
             <div class="card">
                 <div class="card-header">
@@ -330,7 +339,7 @@
     <script src="../shared/i18n.js"></script>
     <script>
         // --- State ---
-        let dashboard = { todoList: [], missionList: [], doneList: [], notes: [], rules: [] };
+        let dashboard = { todoList: [], missionList: [], doneList: [], notes: [], rules: [], skills: [] };
         let version = 1;
         let hasChanges = false;
         let refreshTimer = null;
@@ -429,8 +438,11 @@
             document.getElementById('loadingState').style.display = 'none';
             document.getElementById('dashboardContent').style.display = '';
 
-            // Auto-refresh every 30s
-            refreshTimer = setInterval(downloadDashboard, 30000);
+            // Auto-refresh every 30s (skip if editing or unsaved)
+            refreshTimer = setInterval(() => {
+                const dialogOpen = document.getElementById('dialogContainer').innerHTML.trim() !== '';
+                if (!hasChanges && !dialogOpen) downloadDashboard();
+            }, 30000);
 
             // Re-render on language change
             i18n.onLanguageChange(() => {
@@ -475,6 +487,8 @@
                     renderSyncBar();
                     btn.textContent = i18n.t('mc_save');
                     showToast(i18n.t('mc_sync_synced'), 'success');
+                    // After save, check if there are notifiable items
+                    showNotifyPrompt();
                 } else if (data.error === 'VERSION_CONFLICT') {
                     if (confirm(i18n.t('mc_confirm_version', { you: version, server: data.currentVersion }))) {
                         await downloadDashboard();
@@ -492,13 +506,122 @@
             }
         }
 
+        // ========== Notification Prompt ==========
+        function getNotifiableItems() {
+            const items = [];
+            // TODO items with HIGH/CRITICAL priority + assigned entity
+            dashboard.todoList.forEach(item => {
+                const p = item.priority?.value || item.priority || 2;
+                if (p >= 3 && item.assignedBot) {
+                    items.push({
+                        type: 'TODO',
+                        title: item.title,
+                        priority: p,
+                        entityIds: [item.assignedBot],
+                        label: `📋 ${esc(item.title)} → ${getEntityLabel(parseInt(item.assignedBot))}`
+                    });
+                }
+            });
+            // SKILL items with assigned entities
+            dashboard.skills.forEach(skill => {
+                if (skill.assignedEntities && skill.assignedEntities.length > 0) {
+                    const entLabels = skill.assignedEntities.map(id => getEntityLabel(parseInt(id))).join(', ');
+                    items.push({
+                        type: 'SKILL',
+                        title: skill.title,
+                        url: skill.url || '',
+                        priority: 0,
+                        entityIds: skill.assignedEntities,
+                        label: `🔧 ${esc(skill.title)} → ${entLabels}`
+                    });
+                }
+            });
+            // RULE items with assigned entities
+            dashboard.rules.forEach(rule => {
+                if (rule.assignedEntities && rule.assignedEntities.length > 0 && rule.isEnabled !== false) {
+                    const entLabels = rule.assignedEntities.map(id => getEntityLabel(parseInt(id))).join(', ');
+                    items.push({
+                        type: 'RULE',
+                        title: rule.name,
+                        priority: 0,
+                        entityIds: rule.assignedEntities,
+                        label: `📏 ${esc(rule.name)} → ${entLabels}`
+                    });
+                }
+            });
+            return items;
+        }
+
+        function showNotifyPrompt() {
+            const items = getNotifiableItems();
+            if (items.length === 0) return;
+
+            const c = document.getElementById('dialogContainer');
+            const checkboxes = items.map((item, idx) =>
+                `<label style="display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer;">
+                    <input type="checkbox" class="notify-cb" data-idx="${idx}" checked>
+                    <span style="font-size:13px;">${item.label}</span>
+                </label>`
+            ).join('');
+
+            let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
+                <div class="dialog">
+                    <div class="dialog-title">📢 發布任務更新通知</div>
+                    <div style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">
+                        選擇要通知的項目，將透過 Webhook 推送給對應的實體：
+                    </div>
+                    <div style="margin-bottom:12px;">${checkboxes}</div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-outline" onclick="closeDialog()">跳過</button>
+                        <button class="btn btn-primary" id="dlgNotifyBtn">發送通知</button>
+                    </div>
+                </div>
+            </div>`;
+
+            c.innerHTML = html;
+
+            document.getElementById('dlgNotifyBtn').onclick = async () => {
+                const selectedIdxs = Array.from(document.querySelectorAll('.notify-cb:checked')).map(cb => parseInt(cb.dataset.idx));
+                if (selectedIdxs.length === 0) { closeDialog(); return; }
+
+                const notifications = selectedIdxs.map(idx => ({
+                    type: items[idx].type,
+                    title: items[idx].title,
+                    priority: items[idx].priority,
+                    entityIds: items[idx].entityIds,
+                    url: items[idx].url || ''
+                }));
+
+                const notifyBtn = document.getElementById('dlgNotifyBtn');
+                notifyBtn.disabled = true;
+                notifyBtn.textContent = '發送中...';
+
+                try {
+                    const data = await apiCall('POST', '/api/mission/notify', {
+                        deviceId: currentUser.deviceId,
+                        deviceSecret: currentUser.deviceSecret,
+                        notifications
+                    });
+                    if (data.success) {
+                        showToast(`通知已發送 (${data.delivered}/${data.total} 已送達)`, data.delivered > 0 ? 'success' : 'warning');
+                    } else {
+                        showToast('通知發送失敗: ' + (data.error || ''), 'error');
+                    }
+                } catch (e) {
+                    showToast('通知錯誤: ' + e.message, 'error');
+                }
+                closeDialog();
+            };
+        }
+
         function applyDashboard(d) {
             dashboard = {
                 todoList: d.todoList || [],
                 missionList: d.missionList || [],
                 doneList: d.doneList || [],
                 notes: d.notes || [],
-                rules: d.rules || []
+                rules: d.rules || [],
+                skills: d.skills || []
             };
             version = d.version || 1;
             hasChanges = false;
@@ -511,6 +634,7 @@
             renderMission();
             renderDone();
             renderNotes();
+            renderSkills();
             renderRules();
             renderSyncBar();
         }
@@ -599,19 +723,22 @@
                 el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_rules')}</div>`;
                 return;
             }
-            el.innerHTML = dashboard.rules.map(r => `
+            el.innerHTML = dashboard.rules.map(r => {
+                const entities = (r.assignedEntities || []).map(id => getEntityLabel(parseInt(id))).join(', ');
+                return `
                 <div class="mc-item" onclick="showEditRule('${r.id}')" oncontextmenu="showRuleMenu(event,'${r.id}')">
                     <div class="item-row">
                         <span class="item-title">${esc(r.name)}</span>
                         <span class="item-badge">${esc(r.ruleType?.name || r.ruleType || '')}</span>
+                        ${entities ? `<span class="item-badge">${entities}</span>` : ''}
                         <label class="switch" onclick="event.stopPropagation()">
                             <input type="checkbox" ${r.isEnabled !== false ? 'checked' : ''} onchange="toggleRule('${r.id}')">
                             <span class="slider"></span>
                         </label>
                     </div>
                     <div class="item-detail">${esc(r.description || '')}</div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         function renderSyncBar() {
@@ -854,54 +981,201 @@
             setTimeout(() => document.addEventListener('click', () => menu.style.display = 'none', { once: true }), 10);
         }
 
+        // ========== Skills ==========
+        function renderSkills() {
+            const el = document.getElementById('skillsList');
+            if (!dashboard.skills.length) {
+                el.innerHTML = `<div class="mc-empty">No skills</div>`;
+                return;
+            }
+            el.innerHTML = dashboard.skills.map(s => {
+                const entities = (s.assignedEntities || []).map(id => getEntityLabel(parseInt(id))).join(', ');
+                return `
+                <div class="mc-item" onclick="showEditSkill('${s.id}')" oncontextmenu="showSkillMenu(event,'${s.id}')">
+                    <div class="item-row">
+                        <span class="item-title">${esc(s.title)}</span>
+                        ${entities ? `<span class="item-badge">${entities}</span>` : ''}
+                    </div>
+                    ${s.url ? `<div class="item-detail">${esc(s.url)}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function showAddSkill() {
+            showSkillDialog(null, null);
+        }
+
+        function showEditSkill(id) {
+            const skill = dashboard.skills.find(s => s.id === id);
+            if (!skill) return;
+            showSkillDialog(id, skill);
+        }
+
+        function showSkillDialog(id, skill) {
+            const isEdit = skill !== null;
+            const c = document.getElementById('dialogContainer');
+
+            let entityCheckboxes = boundEntities.map(e => {
+                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
+                const name = e.name || char.name;
+                const checked = isEdit && (skill.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
+                return `<label style="display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;">
+                    <input type="checkbox" class="skill-entity-cb" value="${e.entityId}" ${checked}>
+                    ${char.emoji} ${esc(name)} (#${e.entityId})
+                </label>`;
+            }).join('');
+
+            if (!entityCheckboxes) entityCheckboxes = '<div style="color:var(--text-muted);font-size:12px;">No bound entities</div>';
+
+            let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
+                <div class="dialog">
+                    <div class="dialog-title">${isEdit ? '編輯技能' : '新增技能'}</div>
+                    <input id="dlg_skill_title" placeholder="標題" value="${esc(skill?.title || '')}" />
+                    <input id="dlg_skill_url" placeholder="網址 (選填)" value="${esc(skill?.url || '')}" />
+                    <div class="dialog-field-label">指派實體 (可多選)</div>
+                    <div id="dlg_skill_entities" style="margin-bottom:10px;">${entityCheckboxes}</div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-outline" onclick="closeDialog()">${i18n.t('mc_dlg_cancel')}</button>
+                        <button class="btn btn-primary" id="dlgSaveBtn">${i18n.t('mc_dlg_save')}</button>
+                    </div>
+                </div>
+            </div>`;
+
+            c.innerHTML = html;
+
+            document.getElementById('dlgSaveBtn').onclick = () => {
+                const title = document.getElementById('dlg_skill_title').value.trim();
+                if (!title) return;
+                const url = document.getElementById('dlg_skill_url').value.trim();
+                const selectedEntities = Array.from(document.querySelectorAll('.skill-entity-cb:checked')).map(cb => cb.value);
+
+                if (isEdit) {
+                    skill.title = title;
+                    skill.url = url;
+                    skill.assignedEntities = selectedEntities;
+                    skill.updatedAt = Date.now();
+                } else {
+                    dashboard.skills.push({
+                        id: genId(),
+                        title,
+                        url,
+                        assignedEntities: selectedEntities,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now(),
+                        createdBy: 'user'
+                    });
+                }
+                markChanged();
+                renderSkills();
+                closeDialog();
+            };
+
+            setTimeout(() => document.getElementById('dlg_skill_title').focus(), 50);
+        }
+
+        function showSkillMenu(e, id) {
+            e.preventDefault();
+            const menu = document.getElementById('contextMenu');
+            menu.innerHTML = `<div class="context-menu-item">${i18n.t('mc_menu_delete')}</div>`;
+            menu.style.display = 'block';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+            menu.style.top = e.clientY + 'px';
+
+            menu.querySelector('.context-menu-item').onclick = () => {
+                if (confirm(i18n.t('mc_confirm_delete'))) {
+                    dashboard.skills = dashboard.skills.filter(s => s.id !== id);
+                    markChanged();
+                    renderSkills();
+                }
+                menu.style.display = 'none';
+            };
+
+            setTimeout(() => document.addEventListener('click', () => menu.style.display = 'none', { once: true }), 10);
+        }
+
         // ========== Rules ==========
         function showAddRule() {
-            const typeOpts = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC']
-                .map(t => ({ value: t, label: t }));
-
-            showDialog(i18n.t('mc_dlg_add_rule'), [
-                { key: 'name', label: i18n.t('mc_dlg_rule_name'), value: '' },
-                { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: '' },
-                { key: 'ruleType', label: i18n.t('mc_dlg_rule_type'), type: 'select', value: 'WORKFLOW', options: typeOpts }
-            ], vals => {
-                if (!vals.name.trim()) return;
-                dashboard.rules.push({
-                    id: genId(),
-                    name: vals.name.trim(),
-                    description: vals.description.trim(),
-                    ruleType: vals.ruleType,
-                    isEnabled: true,
-                    priority: 0,
-                    config: {},
-                    createdAt: Date.now(),
-                    updatedAt: Date.now()
-                });
-                markChanged();
-                renderRules();
-            });
+            showRuleDialog(null, null);
         }
 
         function showEditRule(id) {
             const rule = dashboard.rules.find(r => r.id === id);
             if (!rule) return;
+            showRuleDialog(id, rule);
+        }
 
-            const typeOpts = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC']
-                .map(t => ({ value: t, label: t }));
-            const rt = rule.ruleType?.name || rule.ruleType || 'WORKFLOW';
+        function showRuleDialog(id, rule) {
+            const isEdit = rule !== null;
+            const c = document.getElementById('dialogContainer');
+            const types = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC'];
+            const rt = isEdit ? (rule.ruleType?.name || rule.ruleType || 'WORKFLOW') : 'WORKFLOW';
 
-            showDialog(i18n.t('mc_dlg_edit_rule'), [
-                { key: 'name', label: i18n.t('mc_dlg_rule_name'), value: rule.name },
-                { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: rule.description },
-                { key: 'ruleType', label: i18n.t('mc_dlg_rule_type'), type: 'select', value: rt, options: typeOpts }
-            ], vals => {
-                if (!vals.name.trim()) return;
-                rule.name = vals.name.trim();
-                rule.description = vals.description.trim();
-                rule.ruleType = vals.ruleType;
-                rule.updatedAt = Date.now();
+            const typeOptions = types.map(t =>
+                `<option value="${t}" ${t === rt ? 'selected' : ''}>${t}</option>`
+            ).join('');
+
+            let entityCheckboxes = boundEntities.map(e => {
+                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
+                const name = e.name || char.name;
+                const checked = isEdit && (rule.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
+                return `<label style="display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;">
+                    <input type="checkbox" class="rule-entity-cb" value="${e.entityId}" ${checked}>
+                    ${char.emoji} ${esc(name)} (#${e.entityId})
+                </label>`;
+            }).join('');
+
+            if (!entityCheckboxes) entityCheckboxes = '<div style="color:var(--text-muted);font-size:12px;">No bound entities</div>';
+
+            let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
+                <div class="dialog">
+                    <div class="dialog-title">${isEdit ? i18n.t('mc_dlg_edit_rule') : i18n.t('mc_dlg_add_rule')}</div>
+                    <input id="dlg_rule_name" placeholder="${i18n.t('mc_dlg_rule_name')}" value="${esc(rule?.name || '')}" />
+                    <textarea id="dlg_rule_desc" placeholder="${i18n.t('mc_dlg_desc')}">${esc(rule?.description || '')}</textarea>
+                    <select id="dlg_rule_type">${typeOptions}</select>
+                    <div class="dialog-field-label">指派實體 (可多選)</div>
+                    <div id="dlg_rule_entities" style="margin-bottom:10px;">${entityCheckboxes}</div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-outline" onclick="closeDialog()">${i18n.t('mc_dlg_cancel')}</button>
+                        <button class="btn btn-primary" id="dlgSaveBtn">${i18n.t('mc_dlg_save')}</button>
+                    </div>
+                </div>
+            </div>`;
+
+            c.innerHTML = html;
+
+            document.getElementById('dlgSaveBtn').onclick = () => {
+                const name = document.getElementById('dlg_rule_name').value.trim();
+                if (!name) return;
+                const description = document.getElementById('dlg_rule_desc').value.trim();
+                const ruleType = document.getElementById('dlg_rule_type').value;
+                const selectedEntities = Array.from(document.querySelectorAll('.rule-entity-cb:checked')).map(cb => cb.value);
+
+                if (isEdit) {
+                    rule.name = name;
+                    rule.description = description;
+                    rule.ruleType = ruleType;
+                    rule.assignedEntities = selectedEntities;
+                    rule.updatedAt = Date.now();
+                } else {
+                    dashboard.rules.push({
+                        id: genId(),
+                        name,
+                        description,
+                        ruleType,
+                        assignedEntities: selectedEntities,
+                        isEnabled: true,
+                        priority: 0,
+                        config: {},
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
+                    });
+                }
                 markChanged();
                 renderRules();
-            });
+                closeDialog();
+            };
+
+            setTimeout(() => document.getElementById('dlg_rule_name').focus(), 50);
         }
 
         function toggleRule(id) {
