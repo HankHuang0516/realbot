@@ -2653,7 +2653,7 @@ async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isF
 
 // GET /api/chat/history
 app.get('/api/chat/history', async (req, res) => {
-    const { deviceId, deviceSecret, limit = 100, before } = req.query;
+    const { deviceId, deviceSecret, limit = 100, before, since } = req.query;
 
     if (!deviceId || !deviceSecret) {
         return res.status(400).json({ success: false, error: 'Missing credentials' });
@@ -2682,19 +2682,22 @@ app.get('/api/chat/history', async (req, res) => {
         let query = 'SELECT * FROM chat_messages WHERE device_id = $1';
         const params = [deviceId];
 
-        if (before) {
-            query += ' AND created_at < $2';
+        if (since) {
+            query += ' AND created_at > $' + (params.length + 1);
+            params.push(new Date(parseInt(since)));
+        } else if (before) {
+            query += ' AND created_at < $' + (params.length + 1);
             params.push(new Date(parseInt(before)));
         }
 
-        query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1);
+        query += ' ORDER BY created_at ASC LIMIT $' + (params.length + 1);
         params.push(parseInt(limit) || 100);
 
         const result = await chatPool.query(query, params);
 
         res.json({
             success: true,
-            messages: result.rows.reverse() // Return in chronological order
+            messages: result.rows
         });
     } catch (error) {
         console.error('[Chat] History error:', error);

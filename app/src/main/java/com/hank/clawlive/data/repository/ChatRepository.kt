@@ -6,8 +6,12 @@ import com.hank.clawlive.data.local.database.ChatMessage
 import com.hank.clawlive.data.local.database.ChatMessageDao
 import com.hank.clawlive.data.local.database.MessageType
 import com.hank.clawlive.data.model.EntityStatus
+import com.hank.clawlive.data.remote.ChatHistoryMessage
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Repository for managing chat message history
@@ -268,6 +272,75 @@ class ChatRepository private constructor(
         Timber.d("Saved messageQueue item from Entity $fromEntityId: ${text.take(30)}...")
         
         pruneOldMessages()
+    }
+
+    // ============================================
+    // BACKEND CHAT HISTORY SYNC
+    // ============================================
+
+    /**
+     * Sync messages from backend PostgreSQL chat_messages table into Room DB.
+     * This ensures bot responses appear in Chat regardless of wallpaper state.
+     * Returns the number of new messages added.
+     */
+    suspend fun syncFromBackend(messages: List<ChatHistoryMessage>): Int {
+        var addedCount = 0
+
+        for (msg in messages) {
+            // Generate deduplication key from backend message ID
+            val deduplicationKey = "backend_${msg.id}"
+
+            if (chatDao.existsByDeduplicationKey(deduplicationKey)) {
+                continue
+            }
+
+            // Skip user messages - we already save those locally when sent
+            if (msg.is_from_user) {
+                continue
+            }
+
+            // Parse timestamp from ISO string
+            val timestamp = parseIsoTimestamp(msg.created_at)
+
+            val message = ChatMessage(
+                text = msg.text,
+                timestamp = timestamp,
+                isFromUser = false,
+                messageType = MessageType.ENTITY_RESPONSE,
+                fromEntityId = msg.entity_id,
+                fromEntityName = msg.source,
+                deduplicationKey = deduplicationKey,
+                isSynced = true
+            )
+
+            chatDao.insert(message)
+            addedCount++
+            Timber.d("Synced backend message from entity ${msg.entity_id}: ${msg.text.take(30)}...")
+        }
+
+        if (addedCount > 0) {
+            pruneOldMessages()
+            Timber.d("Synced $addedCount new messages from backend")
+        }
+
+        return addedCount
+    }
+
+    private fun parseIsoTimestamp(isoString: String): Long {
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+            format.timeZone = TimeZone.getTimeZone("UTC")
+            format.parse(isoString)?.time ?: System.currentTimeMillis()
+        } catch (e: Exception) {
+            try {
+                val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                format.timeZone = TimeZone.getTimeZone("UTC")
+                format.parse(isoString)?.time ?: System.currentTimeMillis()
+            } catch (e2: Exception) {
+                Timber.w("Failed to parse timestamp: $isoString")
+                System.currentTimeMillis()
+            }
+        }
     }
 
     // ============================================

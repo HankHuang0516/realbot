@@ -66,6 +66,39 @@ interface ClawApiService {
     suspend fun getPendingMessages(@Body body: Map<String, String>): PendingMessagesResponse
 
     // ============================================
+    // OFFICIAL BORROW
+    // ============================================
+
+    @GET("api/official-borrow/status")
+    suspend fun getOfficialBorrowStatus(
+        @Query("deviceId") deviceId: String
+    ): OfficialBorrowStatusResponse
+
+    @POST("api/official-borrow/bind-free")
+    suspend fun bindFreeBorrow(@Body body: Map<String, @JvmSuppressWildcards Any>): OfficialBindResponse
+
+    @POST("api/official-borrow/bind-personal")
+    suspend fun bindPersonalBorrow(@Body body: Map<String, @JvmSuppressWildcards Any>): OfficialBindResponse
+
+    @POST("api/official-borrow/unbind")
+    suspend fun unbindBorrow(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
+    @POST("api/official-borrow/verify-subscription")
+    suspend fun verifyBorrowSubscription(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
+    // ============================================
+    // CHAT HISTORY (Backend PostgreSQL)
+    // ============================================
+
+    @GET("api/chat/history")
+    suspend fun getChatHistory(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String,
+        @Query("since") since: Long? = null,
+        @Query("limit") limit: Int = 100
+    ): ChatHistoryResponse
+
+    // ============================================
     // MISSION CONTROL DASHBOARD
     // Auth: deviceId + deviceSecret in query/body
     // ============================================
@@ -120,4 +153,23 @@ data class MissionRulesResponse(
     val success: Boolean,
     val rules: List<MissionRule>,
     val error: String? = null
+)
+
+// ============ Chat History Response Models ============
+
+data class ChatHistoryResponse(
+    val success: Boolean,
+    val messages: List<ChatHistoryMessage> = emptyList(),
+    val error: String? = null
+)
+
+data class ChatHistoryMessage(
+    val id: String,
+    val device_id: String,
+    val entity_id: Int?,
+    val text: String,
+    val source: String,
+    val is_from_user: Boolean,
+    val is_from_bot: Boolean,
+    val created_at: String // ISO timestamp from PostgreSQL
 )

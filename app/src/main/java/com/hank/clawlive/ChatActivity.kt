@@ -24,7 +24,6 @@ import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.local.database.ChatMessage
-import com.hank.clawlive.data.model.EntityStatus
 import com.hank.clawlive.data.remote.ClawApiService
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.repository.ChatRepository
@@ -276,26 +275,32 @@ class ChatActivity : AppCompatActivity() {
     }
 
     /**
-     * Periodically poll entity status and save messages to Room DB.
-     * This ensures bot responses (via Transform/update_claw_status) appear in Chat
-     * even if the wallpaper service polling hasn't processed them yet.
+     * Periodically poll backend chat history and sync new messages to Room DB.
+     * This ensures bot responses appear in Chat regardless of wallpaper state.
      */
     private suspend fun pollEntityMessages() {
+        // Track the last synced timestamp to only fetch new messages
+        var lastSyncTimestamp = System.currentTimeMillis() - 60_000 // Start from 1 minute ago
+
         while (true) {
             try {
-                val response = api.getAllEntities(deviceId = deviceManager.deviceId)
-                val registeredIds = layoutPrefs.getRegisteredEntityIds()
-                val entities = if (registeredIds.isEmpty()) {
-                    response.entities
-                } else {
-                    response.entities.filter { it.entityId in registeredIds }
-                }
+                val response = api.getChatHistory(
+                    deviceId = deviceManager.deviceId,
+                    deviceSecret = deviceManager.deviceSecret,
+                    since = lastSyncTimestamp,
+                    limit = 50
+                )
 
-                entities.forEach { entity ->
-                    chatRepository.processEntityMessage(entity)
+                if (response.success && response.messages.isNotEmpty()) {
+                    val addedCount = chatRepository.syncFromBackend(response.messages)
+                    if (addedCount > 0) {
+                        Timber.d("ChatActivity: Synced $addedCount new messages from backend")
+                    }
+                    // Update timestamp to the latest message's time
+                    lastSyncTimestamp = System.currentTimeMillis()
                 }
             } catch (e: Exception) {
-                Timber.e(e, "ChatActivity: Error polling entity messages")
+                Timber.e(e, "ChatActivity: Error polling backend chat history")
             }
             delay(5_000)
         }
