@@ -464,6 +464,51 @@ app.get('/api/admin/bots', adminAuth, adminCheck, async (req, res) => {
     }
 });
 
+// POST /api/admin/bots/create - Create new official bot (cookie-based admin auth)
+app.post('/api/admin/bots/create', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const { botId, botType, webhookUrl, token } = req.body;
+
+        if (!botId || !botType || !webhookUrl || !token) {
+            return res.status(400).json({ success: false, error: 'botId, botType, webhookUrl, and token are required' });
+        }
+
+        if (!['free', 'personal'].includes(botType)) {
+            return res.status(400).json({ success: false, error: 'botType must be "free" or "personal"' });
+        }
+
+        if (officialBots[botId]) {
+            return res.status(409).json({ success: false, error: 'Bot with this ID already exists' });
+        }
+
+        const crypto = require('crypto');
+        const botSecret = crypto.randomBytes(16).toString('hex');
+
+        const bot = {
+            bot_id: botId,
+            bot_type: botType,
+            webhook_url: webhookUrl,
+            token: token,
+            bot_secret: botSecret,
+            session_key_template: null,
+            status: 'available',
+            assigned_device_id: null,
+            assigned_entity_id: null,
+            assigned_at: null,
+            created_at: Date.now()
+        };
+
+        officialBots[botId] = bot;
+        if (usePostgreSQL) await db.saveOfficialBot(bot);
+
+        console.log(`[Admin Portal] Created official bot: ${botId} (${botType})`);
+        res.json({ success: true, bot: { botId, botType, status: 'available', botSecret } });
+    } catch (err) {
+        console.error('[Admin] Create bot error:', err);
+        res.status(500).json({ success: false, error: 'Failed to create bot' });
+    }
+});
+
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
     let code;

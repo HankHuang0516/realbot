@@ -234,6 +234,136 @@
             padding: 20px;
         }
 
+        /* Create Bot Dialog */
+        .create-bot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .create-bot-dialog {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 90%;
+            max-width: 460px;
+        }
+
+        .create-bot-dialog h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-create {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .btn-create:hover {
+            opacity: 0.9;
+        }
+
+        .btn-create:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn-cancel:hover {
+            background: var(--card-border);
+        }
+
+        .add-bot-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .add-bot-btn:hover {
+            opacity: 0.9;
+        }
+
+        .bot-secret-result {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .bot-secret-result .mono {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            color: var(--primary);
+        }
+
         @media (max-width: 600px) {
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -357,7 +487,7 @@
 
             // === Official Bots ===
             html += '<div class="section-card">';
-            html += '<div class="section-title">Official Bots (' + (botsData.bots || []).length + ')</div>';
+            html += '<div class="section-title" style="justify-content:space-between;">Official Bots (' + (botsData.bots || []).length + ') <button class="add-bot-btn" onclick="showCreateBotDialog()">+ Add Bot</button></div>';
             html += '<div class="table-scroll">';
             html += '<table class="data-table">';
             html += '<thead><tr><th>Bot ID</th><th>Type</th><th>Status</th><th>Assigned To</th><th>User</th><th>Assigned At</th></tr></thead>';
@@ -457,6 +587,92 @@
             }
             html += '</div>';
             return html;
+        }
+
+        function showCreateBotDialog() {
+            const overlay = document.createElement('div');
+            overlay.className = 'create-bot-overlay';
+            overlay.innerHTML =
+                '<div class="create-bot-dialog">' +
+                    '<h3>Add Official Bot</h3>' +
+                    '<div class="form-group">' +
+                        '<label>Bot ID</label>' +
+                        '<input type="text" id="newBotId" placeholder="e.g. my-personal-bot-01">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Type</label>' +
+                        '<select id="newBotType">' +
+                            '<option value="personal">Personal (NT$99/month)</option>' +
+                            '<option value="free">Free (shared)</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Webhook URL</label>' +
+                        '<input type="text" id="newBotWebhook" placeholder="https://...">' +
+                    '</div>' +
+                    '<div class="form-group">' +
+                        '<label>Token</label>' +
+                        '<input type="text" id="newBotToken" placeholder="Bot webhook token">' +
+                    '</div>' +
+                    '<div id="createBotResult"></div>' +
+                    '<div class="dialog-actions">' +
+                        '<button class="btn-cancel" onclick="closeCreateBotDialog()">Cancel</button>' +
+                        '<button class="btn-create" id="btnCreateBot" onclick="createBot()">Create</button>' +
+                    '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeCreateBotDialog();
+            });
+        }
+
+        function closeCreateBotDialog() {
+            const overlay = document.querySelector('.create-bot-overlay');
+            if (overlay) overlay.remove();
+        }
+
+        async function createBot() {
+            const botId = document.getElementById('newBotId').value.trim();
+            const botType = document.getElementById('newBotType').value;
+            const webhookUrl = document.getElementById('newBotWebhook').value.trim();
+            const token = document.getElementById('newBotToken').value.trim();
+            const resultDiv = document.getElementById('createBotResult');
+            const btn = document.getElementById('btnCreateBot');
+
+            if (!botId || !webhookUrl || !token) {
+                resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">All fields are required.</p>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Creating...';
+            resultDiv.innerHTML = '';
+
+            try {
+                const result = await apiCall('POST', '/api/admin/bots/create', {
+                    botId, botType, webhookUrl, token
+                });
+
+                resultDiv.innerHTML =
+                    '<div class="bot-secret-result">' +
+                        '<p style="margin:0 0 6px 0;color:var(--success);font-weight:600;">Bot created successfully!</p>' +
+                        '<p style="margin:0 0 4px 0;font-size:12px;color:var(--text-secondary);">Bot Secret (save this):</p>' +
+                        '<p class="mono" style="margin:0;">' + escapeHtml(result.bot.botSecret) + '</p>' +
+                    '</div>';
+
+                btn.textContent = 'Done';
+
+                // Refresh the bots table after a short delay
+                setTimeout(async () => {
+                    botsData = await apiCall('GET', '/api/admin/bots');
+                    render();
+                }, 1500);
+            } catch (e) {
+                resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">' + escapeHtml(e.message) + '</p>';
+                btn.disabled = false;
+                btn.textContent = 'Create';
+            }
         }
 
         init();
