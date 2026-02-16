@@ -204,6 +204,8 @@ a:hover { text-decoration: underline; }
 .btn-danger { background: var(--danger); }
 .btn-danger:hover { background: #D32F2F; }
 .btn-success { background: var(--success); }
+.btn-warning { background: var(--warning); color: #000; }
+.btn-warning:hover { background: #F57C00; }
 .btn-outline {
     background: transparent;
     border: 1px solid var(--card-border);

@@ -315,9 +315,183 @@
             justify-content: flex-end;
         }
 
+        /* ── Official Borrow Section ── */
+        .borrow-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .borrow-entity-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .borrow-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            background: var(--input-bg);
+            border: 2px solid var(--card-border);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .borrow-chip:hover:not(.disabled) {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .borrow-chip.active {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--text);
+        }
+
+        .borrow-chip.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .borrow-chip .chip-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .chip-badge.badge-free {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        .chip-badge.badge-personal {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .borrow-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .borrow-option {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .borrow-option-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .borrow-option-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .borrow-availability {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .borrow-availability.available {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--success);
+        }
+
+        .borrow-availability.sold-out {
+            background: rgba(244, 67, 54, 0.15);
+            color: var(--danger);
+        }
+
+        .borrow-option-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Bindings list */
+        .bindings-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .bindings-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .binding-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+
+        .binding-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .binding-emoji {
+            font-size: 24px;
+        }
+
+        .binding-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .binding-entity-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .binding-type {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .no-bindings {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 16px 0;
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
             .entity-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .borrow-options {
                 grid-template-columns: 1fr;
             }
         }
@@ -404,6 +578,58 @@
                 </div>
             </div>
         </div>
+
+        <!-- Official Borrow Section -->
+        <div class="card" id="borrowCard">
+            <div class="add-entity-header" onclick="toggleBorrow()">
+                <div class="card-title" style="margin-bottom:0;" data-i18n="borrow_title">
+                    Official Bot Rental
+                </div>
+                <span class="expand-arrow" id="borrowArrow">&#9662;</span>
+            </div>
+
+            <div class="add-entity-content" id="borrowContent">
+                <div class="borrow-desc" data-i18n="borrow_desc">
+                    Rent an official bot for your entity. The bot will automatically interact with your live wallpaper.
+                </div>
+
+                <!-- Entity Chip Selector -->
+                <label class="form-label" data-i18n="borrow_select_entity">Select Entity</label>
+                <div class="borrow-entity-chips" id="borrowChips">
+                    <!-- Dynamically generated -->
+                </div>
+
+                <!-- Free / Personal Options -->
+                <div class="borrow-options">
+                    <div class="borrow-option">
+                        <div class="borrow-option-header">
+                            <span class="borrow-option-title" data-i18n="borrow_free_title">Free Version</span>
+                            <span class="borrow-availability" id="freeAvailBadge">--</span>
+                        </div>
+                        <div class="borrow-option-desc" data-i18n="borrow_free_desc">One free bot per device</div>
+                        <button class="btn btn-primary btn-block btn-sm" id="btnBindFree" onclick="bindFree()" disabled
+                            data-i18n="borrow_btn_bind_free">Use Free Version</button>
+                    </div>
+                    <div class="borrow-option">
+                        <div class="borrow-option-header">
+                            <span class="borrow-option-title" data-i18n="borrow_personal_title">Monthly Subscription</span>
+                            <span class="borrow-availability" id="personalAvailBadge">--</span>
+                        </div>
+                        <div class="borrow-option-desc" data-i18n="borrow_personal_desc">Dedicated personal bot</div>
+                        <button class="btn btn-warning btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()" disabled
+                            data-i18n="borrow_btn_bind_personal">Subscribe & Bind</button>
+                    </div>
+                </div>
+
+                <!-- Current Bindings -->
+                <div class="bindings-section">
+                    <div class="bindings-title" data-i18n="borrow_current_bindings">Current Bindings</div>
+                    <div id="bindingsList">
+                        <div class="no-bindings" data-i18n="borrow_no_bindings">No official bots bound</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="shared/api.js"></script>
@@ -462,7 +688,10 @@
             await loadEntities();
 
             // Auto-refresh every 10 seconds
-            refreshInterval = setInterval(loadEntities, 10000);
+            refreshInterval = setInterval(async () => {
+                await loadEntities();
+                if (isBorrowExpanded) await loadBorrowStatus();
+            }, 10000);
         });
 
         // --- Entity Loading ---
@@ -804,6 +1033,289 @@
                 showToast('Failed to remove: ' + e.message, 'error');
                 btnEl.disabled = false;
                 btnEl.textContent = i18n.t('dash_btn_remove');
+            }
+        }
+
+        // ============================================
+        // Official Borrow (Entity Rental)
+        // ============================================
+        let borrowStatus = null;
+        let selectedBorrowEntity = 0;
+        let isBorrowExpanded = false;
+
+        function toggleBorrow() {
+            isBorrowExpanded = !isBorrowExpanded;
+            const content = document.getElementById('borrowContent');
+            const arrow = document.getElementById('borrowArrow');
+            content.classList.toggle('visible', isBorrowExpanded);
+            arrow.classList.toggle('expanded', isBorrowExpanded);
+
+            if (isBorrowExpanded && !borrowStatus) {
+                loadBorrowStatus();
+            }
+        }
+
+        async function loadBorrowStatus() {
+            try {
+                borrowStatus = await apiCall('GET', '/api/official-borrow/status?deviceId=' + currentUser.deviceId);
+                renderBorrowChips();
+                updateBorrowButtons();
+                renderBindingsList();
+            } catch (e) {
+                console.warn('Failed to load borrow status:', e.message);
+            }
+        }
+
+        function renderBorrowChips() {
+            const container = document.getElementById('borrowChips');
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            const bindingMap = {};
+            if (borrowStatus && borrowStatus.bindings) {
+                borrowStatus.bindings.forEach(b => { bindingMap[b.entityId] = b; });
+            }
+
+            let html = '';
+            for (let i = 0; i < 4; i++) {
+                const char = ENTITY_CHARS[i] || ENTITY_CHARS[0];
+                const isActive = i === selectedBorrowEntity;
+                const binding = bindingMap[i];
+                const isOccupied = occupiedSlots.has(i) && !binding;
+
+                let badgeHtml = '';
+                if (binding) {
+                    const badgeClass = binding.botType === 'free' ? 'badge-free' : 'badge-personal';
+                    const badgeText = binding.botType === 'free' ? i18n.t('borrow_type_free') : i18n.t('borrow_type_personal');
+                    badgeHtml = '<span class="chip-badge ' + badgeClass + '">' + badgeText + '</span>';
+                }
+
+                html += '<div class="borrow-chip' + (isActive ? ' active' : '') + '" data-slot="' + i + '" onclick="selectBorrowEntity(' + i + ')">' +
+                    char.emoji + ' Entity ' + i + badgeHtml +
+                    '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function selectBorrowEntity(slot) {
+            selectedBorrowEntity = slot;
+            renderBorrowChips();
+            updateBorrowButtons();
+        }
+
+        function updateBorrowButtons() {
+            if (!borrowStatus) return;
+
+            const btnFree = document.getElementById('btnBindFree');
+            const btnPersonal = document.getElementById('btnBindPersonal');
+            const freeAvail = document.getElementById('freeAvailBadge');
+            const personalAvail = document.getElementById('personalAvailBadge');
+
+            // Reset click handlers
+            btnFree.onclick = bindFree;
+            btnPersonal.onclick = bindPersonal;
+
+            // Free availability badge
+            if (borrowStatus.free.available) {
+                freeAvail.textContent = i18n.t('borrow_free_available');
+                freeAvail.className = 'borrow-availability available';
+            } else {
+                freeAvail.textContent = i18n.t('borrow_free_unavailable');
+                freeAvail.className = 'borrow-availability sold-out';
+            }
+
+            // Personal availability badge
+            if (borrowStatus.personal.available > 0) {
+                personalAvail.textContent = i18n.t('borrow_personal_available', { count: borrowStatus.personal.available });
+                personalAvail.className = 'borrow-availability available';
+            } else {
+                personalAvail.textContent = i18n.t('borrow_personal_sold_out');
+                personalAvail.className = 'borrow-availability sold-out';
+            }
+
+            // Check if selected entity already has an official binding
+            const existingBinding = (borrowStatus.bindings || []).find(b => b.entityId === selectedBorrowEntity);
+
+            if (existingBinding) {
+                // Already bound - show unbind option
+                if (existingBinding.botType === 'free') {
+                    btnFree.textContent = i18n.t('borrow_bound_free');
+                    btnFree.disabled = true;
+                    btnPersonal.textContent = i18n.t('borrow_btn_unbind');
+                    btnPersonal.disabled = false;
+                    btnPersonal.onclick = function() { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
+                } else {
+                    btnPersonal.textContent = i18n.t('borrow_bound_personal');
+                    btnPersonal.disabled = true;
+                    btnFree.textContent = i18n.t('borrow_btn_unbind');
+                    btnFree.disabled = false;
+                    btnFree.onclick = function() { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
+                }
+                return;
+            }
+
+            // Not bound - check availability
+            // Free: check if device already has a free binding elsewhere
+            const hasFreeBound = (borrowStatus.bindings || []).find(b => b.botType === 'free');
+            if (hasFreeBound) {
+                btnFree.textContent = i18n.t('borrow_free_bound_other', { id: hasFreeBound.entityId });
+                btnFree.disabled = true;
+            } else {
+                btnFree.textContent = i18n.t('borrow_btn_bind_free');
+                btnFree.disabled = !borrowStatus.free.available;
+            }
+
+            // Personal
+            btnPersonal.textContent = i18n.t('borrow_btn_bind_personal');
+            btnPersonal.disabled = borrowStatus.personal.available <= 0;
+
+            // Check if entity slot is occupied by regular binding (not official)
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            const officialEntityIds = new Set((borrowStatus.bindings || []).map(b => b.entityId));
+            if (occupiedSlots.has(selectedBorrowEntity) && !officialEntityIds.has(selectedBorrowEntity)) {
+                btnFree.disabled = true;
+                btnPersonal.disabled = true;
+                btnFree.textContent = i18n.t('borrow_slot_occupied');
+                btnPersonal.textContent = i18n.t('borrow_slot_occupied');
+            }
+        }
+
+        function renderBindingsList() {
+            const container = document.getElementById('bindingsList');
+            const bindings = (borrowStatus && borrowStatus.bindings) || [];
+
+            if (bindings.length === 0) {
+                container.innerHTML = '<div class="no-bindings">' + i18n.t('borrow_no_bindings') + '</div>';
+                return;
+            }
+
+            container.innerHTML = bindings.map(b => {
+                const char = ENTITY_CHARS[b.entityId] || ENTITY_CHARS[0];
+                const typeBadgeClass = b.botType === 'free' ? 'badge-free' : 'badge-premium';
+                const typeText = b.botType === 'free' ? i18n.t('borrow_type_free') : i18n.t('borrow_type_personal');
+
+                return '<div class="binding-item">' +
+                    '<div class="binding-info">' +
+                        '<span class="binding-emoji">' + char.emoji + '</span>' +
+                        '<div class="binding-details">' +
+                            '<span class="binding-entity-name">Entity ' + b.entityId + '</span>' +
+                            '<span class="binding-type"><span class="badge ' + typeBadgeClass + '">' + typeText + '</span></span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-danger btn-sm" onclick="confirmUnbind(' + b.entityId + ', \'' + b.botType + '\')">' +
+                        i18n.t('borrow_btn_unbind') +
+                    '</button>' +
+                '</div>';
+            }).join('');
+        }
+
+        async function bindFree() {
+            const btn = document.getElementById('btnBindFree');
+            btn.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_binding');
+
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/bind-free', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedBorrowEntity
+                });
+
+                if (result.success) {
+                    showToast(i18n.t('borrow_bind_success'), 'success');
+                    await loadBorrowStatus();
+                    await loadEntities();
+                } else {
+                    showToast(result.error || result.message || 'Bind failed', 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Bind failed', 'error');
+            } finally {
+                btn.disabled = false;
+                updateBorrowButtons();
+            }
+        }
+
+        async function bindPersonal() {
+            const btn = document.getElementById('btnBindPersonal');
+            btn.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_binding');
+
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/bind-personal', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedBorrowEntity
+                });
+
+                if (result.success) {
+                    showToast(i18n.t('borrow_bind_success'), 'success');
+                    // Verify subscription after bind
+                    try {
+                        await apiCall('POST', '/api/official-borrow/verify-subscription', {
+                            deviceId: currentUser.deviceId,
+                            deviceSecret: currentUser.deviceSecret,
+                            entityId: selectedBorrowEntity
+                        });
+                    } catch (_) { }
+                    await loadBorrowStatus();
+                    await loadEntities();
+                } else {
+                    const errorMsg = result.error === 'sold_out' ? i18n.t('borrow_personal_sold_out') : (result.error || result.message || 'Bind failed');
+                    showToast(errorMsg, 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Bind failed', 'error');
+            } finally {
+                btn.disabled = false;
+                updateBorrowButtons();
+            }
+        }
+
+        function confirmUnbind(entityId, botType) {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML =
+                '<div class="dialog">' +
+                    '<div class="dialog-title">' + i18n.t('borrow_unbind_title') + '</div>' +
+                    '<p style="color:var(--text-secondary);font-size:14px;">' +
+                        i18n.t('borrow_unbind_desc', { id: entityId }) +
+                    '</p>' +
+                    '<div class="dialog-actions">' +
+                        '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                        '<button class="btn btn-danger" id="btnConfirmUnbind">' + i18n.t('borrow_btn_unbind') + '</button>' +
+                    '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            overlay.querySelector('#btnConfirmUnbind').addEventListener('click', async function() {
+                this.disabled = true;
+                this.textContent = i18n.t('borrow_btn_unbinding');
+                await unbindOfficialBot(entityId, overlay);
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        async function unbindOfficialBot(entityId, overlay) {
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/unbind', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: entityId
+                });
+
+                if (result.success) {
+                    showToast(i18n.t('borrow_unbind_success'), 'success');
+                    if (overlay) overlay.remove();
+                    await loadBorrowStatus();
+                    await loadEntities();
+                } else {
+                    showToast(result.message || 'Unbind failed', 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Unbind failed', 'error');
             }
         }
 
