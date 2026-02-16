@@ -428,6 +428,117 @@
             color: var(--text-muted);
         }
 
+        .borrow-option-features {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .borrow-option-features li {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .borrow-option-features li::before {
+            content: "✓ ";
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .beta-badge {
+            background: linear-gradient(135deg, #FF6B35, #FF9F1C);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        .price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 8px 0 4px;
+        }
+
+        .price-original {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .price-discount {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--warning);
+        }
+
+        .price-period {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .discount-label {
+            font-size: 11px;
+            color: #FF6B35;
+            font-weight: 600;
+        }
+
+        /* Cost Comparison */
+        .cost-compare {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-top: 12px;
+        }
+
+        .cost-compare-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .cost-compare-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+
+        .cost-compare-row + .cost-compare-row {
+            border-top: 1px solid rgba(51, 51, 85, 0.3);
+        }
+
+        .cost-compare-label {
+            color: var(--text-secondary);
+        }
+
+        .cost-compare-value {
+            font-weight: 600;
+        }
+
+        .cost-compare-value.highlight {
+            color: var(--success);
+        }
+
+        .cost-compare-value.dim {
+            color: var(--text-muted);
+        }
+
+        .cost-vs {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            padding: 6px 0;
+        }
+
         /* Bindings list */
         .bindings-section {
             margin-top: 16px;
@@ -592,8 +703,9 @@
         <!-- Official Borrow Section -->
         <div class="card" id="borrowCard">
             <div class="add-entity-header" onclick="toggleBorrow()">
-                <div class="card-title" style="margin-bottom:0;" data-i18n="borrow_title">
-                    Official Bot Rental
+                <div class="card-title" style="margin-bottom:0;">
+                    <span data-i18n="borrow_title">Official Bot Rental</span>
+                    <span class="beta-badge">BETA</span>
                 </div>
                 <span class="expand-arrow" id="borrowArrow">&#9662;</span>
             </div>
@@ -617,17 +729,58 @@
                             <span class="borrow-availability" id="freeAvailBadge">--</span>
                         </div>
                         <div class="borrow-option-desc" data-i18n="borrow_free_desc">One free bot per device</div>
+                        <ul class="borrow-option-features">
+                            <li data-i18n="borrow_free_feat_shared">Shared memory with all free users</li>
+                            <li data-i18n="borrow_free_feat_limit">15 messages/day limit</li>
+                        </ul>
                         <button class="btn btn-primary btn-block btn-sm" id="btnBindFree" onclick="bindFree()" disabled
                             data-i18n="borrow_btn_bind_free">Use Free Version</button>
                     </div>
-                    <div class="borrow-option">
+                    <div class="borrow-option" style="border-color:var(--warning);">
                         <div class="borrow-option-header">
-                            <span class="borrow-option-title" data-i18n="borrow_personal_title">Monthly Subscription</span>
+                            <span class="borrow-option-title" data-i18n="borrow_personal_title">Monthly Version</span>
                             <span class="borrow-availability" id="personalAvailBadge">--</span>
                         </div>
-                        <div class="borrow-option-desc" data-i18n="borrow_personal_desc">Dedicated personal bot</div>
+                        <div class="price-row">
+                            <span class="price-original">NT$588</span>
+                            <span class="price-discount">NT$288</span>
+                            <span class="price-period" data-i18n="borrow_price_period">/month</span>
+                        </div>
+                        <div class="discount-label" data-i18n="borrow_discount_label">Limited-time Beta discount</div>
+                        <ul class="borrow-option-features">
+                            <li data-i18n="borrow_personal_feat_dedicated">Dedicated cloud environment</li>
+                            <li data-i18n="borrow_personal_feat_memory">Private memory (only yours)</li>
+                            <li data-i18n="borrow_personal_feat_unlimited">Unlimited messages (no daily limit)</li>
+                            <li data-i18n="borrow_personal_feat_247">24/7 always online</li>
+                        </ul>
                         <button class="btn btn-warning btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()" disabled
                             data-i18n="borrow_btn_bind_personal">Subscribe & Bind</button>
+                    </div>
+                </div>
+
+                <!-- Cost Comparison -->
+                <div class="cost-compare" id="costCompare">
+                    <div class="cost-compare-title" data-i18n="borrow_cost_title">Why rent? Self-hosting cost comparison</div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_eclaw">E-Claw Official Bot</span>
+                        <span class="cost-compare-value highlight">NT$288/mo</span>
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_24_7">24/7 stable connection</span>
+                        <span class="cost-compare-value highlight" data-i18n="borrow_cost_included">Included</span>
+                    </div>
+                    <div class="cost-vs">VS</div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_server">Cloud Server (Railway/AWS)</span>
+                        <span class="cost-compare-value dim">~NT$300+/mo</span>
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_llm">LLM API (OpenAI/Claude)</span>
+                        <span class="cost-compare-value dim">~NT$300+/mo</span>
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_setup">Learning OpenClaw deployment</span>
+                        <span class="cost-compare-value dim" data-i18n="borrow_cost_priceless">Priceless time</span>
                     </div>
                 </div>
 
@@ -642,12 +795,12 @@
         </div>
     </div>
 
-    <!-- TapPay Payment Dialog (for personal bot subscription) -->
+    <!-- TapPay Payment Dialog (for personal bot rental) -->
     <div class="dialog-overlay" id="tappayDialog" style="display:none">
         <div class="dialog" style="max-width:400px;">
-            <div class="dialog-title" data-i18n="borrow_pay_title">Subscribe &amp; Bind - NT$99/month</div>
+            <div class="dialog-title" data-i18n="borrow_pay_title">Official Bot Rental - NT$288/month</div>
             <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;" data-i18n="borrow_pay_desc">
-                Enter your credit card to subscribe to a personal bot (NT$99/month).
+                Enter your credit card to rent a dedicated personal bot (NT$288/month). Includes unlimited messages and 24/7 always online.
             </p>
             <div class="tappay-field">
                 <label data-i18n="settings_label_card">Card Number</label>
@@ -666,7 +819,7 @@
             <div class="card-error" id="tpCardError" style="color:#F44336;font-size:12px;min-height:18px;"></div>
             <div class="dialog-actions" style="margin-top:12px;">
                 <button class="btn btn-outline" onclick="closeTapPayDialog()" data-i18n="mc_dlg_cancel">Cancel</button>
-                <button class="btn btn-success" id="btnTpPay" disabled data-i18n="settings_btn_pay">Pay NT$99</button>
+                <button class="btn btn-success" id="btnTpPay" disabled data-i18n="borrow_btn_pay">Pay NT$288</button>
             </div>
             <div id="tpLoading" style="display:none;text-align:center;padding:12px 0;">
                 <div class="spinner"></div>
@@ -1372,8 +1525,8 @@
                 }
 
                 try {
-                    // Step 1: Pay via TapPay
-                    await apiCall('POST', '/api/subscription/tappay/pay', { prime: result.card.prime });
+                    // Step 1: Pay via TapPay (borrow type = NT$288)
+                    await apiCall('POST', '/api/subscription/tappay/pay', { prime: result.card.prime, type: 'borrow' });
 
                     // Step 2: Now bind the personal bot
                     const bindResult = await apiCall('POST', '/api/official-borrow/bind-personal', {

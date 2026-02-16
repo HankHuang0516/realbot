@@ -37,8 +37,8 @@
     <string name="usage_title">Today\'s Usage</string>
     <string name="premium_badge">PREMIUM</string>
     <string name="sends_today">sends today</string>
-    <string name="unlock_unlimited">✨ Unlock Unlimited Chat &amp; More Slots - %s/month</string>
-    <string name="unlock_unlimited_no_price">✨ Unlock Unlimited Chat &amp; More Slots</string>
+    <string name="unlock_unlimited">✨ Unlimited Chat + 8 Entity Slots - %s/month</string>
+    <string name="unlock_unlimited_no_price">✨ Unlimited Chat + 8 Entity Slots</string>
     
     <!-- Layout -->
     <string name="entity_layout">Entity Layout</string>
@@ -92,21 +92,22 @@
     <string name="no_messages_yet">No messages yet</string>
     <string name="you">You</string>
     <string name="to_entities">To: %s</string>
-    <string name="entity_read_receipt">Entity %d 已讀</string>
+    <string name="entity_read_receipt">Entity %d Read</string>
 
+    <!-- Mission Control -->
     <!-- Mission Control -->
     <string name="mission_control">Mission Control</string>
     <string name="upload">Upload</string>
     <string name="uploading">Uploading…</string>
-    <string name="add_todo">+ 新增 TODO</string>
-    <string name="add_note">+ 新增筆記</string>
-    <string name="add_rule">+ 新增規則</string>
-    <string name="no_items">尚無 TODO 項目</string>
-    <string name="no_missions">尚無進行中的任務</string>
-    <string name="no_done_items">尚無已完成項目</string>
-    <string name="no_notes">尚無筆記</string>
-    <string name="no_rules">尚無規則</string>
-    <string name="edit">編輯</string>
+    <string name="add_todo">+ Add TODO</string>
+    <string name="add_note">+ Add Note</string>
+    <string name="add_rule">+ Add Rule</string>
+    <string name="no_items">No TODO items</string>
+    <string name="no_missions">No active missions</string>
+    <string name="no_done_items">No completed items</string>
+    <string name="no_notes">No notes</string>
+    <string name="no_rules">No rules</string>
+    <string name="edit">Edit</string>
 
     <!-- Bot Avatar -->
     <string name="bot_avatar">Bot Avatar</string>
@@ -134,30 +135,46 @@
     <string name="app_version">Version: %s</string>
 
     <!-- Official Borrow -->
-    <string name="official_borrow">官方借用</string>
-    <string name="official_borrow_title">官方借用</string>
-    <string name="free_version">免費版</string>
+    <string name="official_borrow">Official Bot Rental</string>
+    <string name="official_borrow_title">Official Bot Rental</string>
+    <string name="borrow_beta_label">BETA</string>
+    <string name="free_version">Free Version</string>
     <string name="free_version_model">Model: MiniMax 2.1</string>
-    <string name="free_version_desc">共用記憶，與所有免費版用戶共享</string>
-    <string name="free_version_warning">敏感資訊不建議與實體分享</string>
-    <string name="use_free_version">使用免費版</string>
-    <string name="monthly_version">月租版</string>
-    <string name="monthly_version_price">$9.9 USD/月</string>
+    <string name="free_version_desc">Shared memory, shared with all free users\n15 messages/day limit</string>
+    <string name="free_version_warning">Not recommended for sensitive info</string>
+    <string name="use_free_version">Use Free Version</string>
+    <string name="monthly_version">Monthly Version</string>
+    <string name="monthly_version_price_original">NT$588/month</string>
+    <string name="monthly_version_price_discount">NT$288/month</string>
+    <string name="monthly_version_price">$9.9 USD/month</string>
+    <string name="monthly_version_discount_label">Limited-time Beta discount</string>
     <string name="monthly_version_model">Model: MiniMax 2.1</string>
-    <string name="monthly_version_desc">獨立雲端環境、獨立記憶</string>
-    <string name="subscribe_and_bind">訂閱並綁定</string>
-    <string name="remaining_bots">剩餘 %d 個</string>
-    <string name="sold_out">已售罄</string>
-    <string name="already_bound_free">已綁定 (免費版)</string>
-    <string name="already_bound_personal">已綁定 (月租版)</string>
-    <string name="unbind">解除綁定</string>
-    <string name="bind_success">綁定成功！</string>
-    <string name="bind_failed">綁定失敗: %s</string>
-    <string name="unbind_success">已解除綁定</string>
-    <string name="select_entity_to_bind">選擇要綁定的實體欄位</string>
-    <string name="no_free_bot">目前無可用免費版</string>
-    <string name="subscription_required">需要月租訂閱</string>
-    <string name="entity_already_bound">實體 #%d 已被佔用，請先移除</string>
+    <string name="monthly_version_desc">Dedicated cloud environment, private memory\nUnlimited messages \u2022 24/7 always online</string>
+    <string name="subscribe_and_bind">Subscribe &amp; Bind</string>
+    <string name="remaining_bots">%d remaining</string>
+    <string name="sold_out">Sold Out</string>
+    <string name="already_bound_free">Bound (Free)</string>
+    <string name="already_bound_personal">Bound (Monthly)</string>
+    <string name="unbind">Unbind</string>
+    <string name="bind_success">Bind successful!</string>
+    <string name="bind_failed">Bind failed: %s</string>
+    <string name="unbind_success">Unbound successfully</string>
+    <string name="unbind_failed">Unbind failed: %s</string>
+    <string name="unbind_personal_title">Unbind Monthly Version?</string>
+    <string name="unbind_personal_message">This entity\'s monthly bot will be released back to the public pool.\n\nYour subscription remains active and you can re-bind at any time (subject to availability).</string>
+    <string name="unbind_free_title">Unbind Free Version?</string>
+    <string name="unbind_free_message">Are you sure you want to unbind this free bot?</string>
+    <string name="select_entity_to_bind">Select entity slot to bind</string>
+    <string name="no_free_bot">No free bots available</string>
+    <string name="subscription_required">Subscription required</string>
+    <string name="entity_already_bound">Entity #%d is occupied, please remove first</string>
+    <string name="bound_on_entity">Bound to Entity #%d</string>
+    <string name="borrow_cost_title">Why rent? Self-hosting cost comparison</string>
+    <string name="borrow_cost_eclaw">E-Claw Official Bot: NT$288/mo (24/7 stable)</string>
+    <string name="borrow_cost_vs">VS Self-hosting:</string>
+    <string name="borrow_cost_server">Cloud Server: ~NT$300+/mo</string>
+    <string name="borrow_cost_llm">LLM API: ~NT$300+/mo</string>
+    <string name="borrow_cost_setup">Learning OpenClaw: Priceless time</string>
 
     <!-- Privacy Policy -->
     <string name="privacy_policy_title">Privacy Policy</string>
@@ -181,5 +198,18 @@ Messages are sent via encrypted HTTPS to your bound AI Agent. Data flow is contr
 <b>5. Contact Us</b>\n
 If you have any questions, please contact us via our official email.
     </string>
+
+    <!-- New Strings (Extracted from Code) -->
+    <string name="version_conflict_title">Version Conflict</string>
+    <string name="version_conflict_message">Dashboard has been updated by another client (Your version: %1$d, Server: %2$d). Download latest version?</string>
+    <string name="download_latest">Download Latest</string>
+    <string name="action_move_to_mission">➡️ Move to Mission</string>
+    <string name="action_mark_done">✅ Mark Done</string>
+    <string name="action_edit">✏️ Edit</string>
+    <string name="action_delete">🗑️ Delete</string>
+    <string name="delete_confirm_title">Delete Confirmation</string>
+    <string name="delete_confirm_message_format">Are you sure you want to delete "%s"?</string>
+    <string name="delete">Delete</string>
+    <string name="last_synced_format"> | Last synced: %s</string>
 </resources>
 

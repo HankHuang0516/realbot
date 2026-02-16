@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Claw - Admin Dashboard</title>
+    <title data-i18n="admin_title">E-Claw - Admin Dashboard</title>
     <link rel="stylesheet" href="shared/style.css">
     <style>
         .admin-header {
@@ -384,14 +384,17 @@
 <body>
     <div class="container">
         <div class="admin-header">
-            <h1>Admin Dashboard <span class="admin-badge">ADMIN</span></h1>
-            <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+            <h1>
+                <span data-i18n="admin_title">Admin Dashboard</span>
+                <span class="admin-badge" data-i18n="admin_badge">ADMIN</span>
+            </h1>
+            <button class="refresh-btn" onclick="loadAll()" data-i18n="admin_refresh">Refresh</button>
         </div>
 
         <div id="adminContent">
             <div class="admin-loading">
                 <div class="spinner"></div>
-                <p style="margin-top:10px;">Loading admin data...</p>
+                <p style="margin-top:10px;" data-i18n="admin_loading">Loading admin data...</p>
             </div>
         </div>
     </div>
@@ -408,7 +411,12 @@
 
         async function init() {
             renderNav('admin');
-            if (typeof i18n !== 'undefined') i18n.apply();
+            if (typeof i18n !== 'undefined') {
+                i18n.apply();
+                i18n.onLanguageChange(() => {
+                    if (statsData) render(); // Re-render content on language change
+                });
+            }
 
             const user = await checkAuth();
             if (!user) return;
@@ -416,10 +424,11 @@
             if (!user.isAdmin) {
                 document.getElementById('adminContent').innerHTML =
                     '<div class="section-card" style="text-align:center;padding:40px;">' +
-                    '<p style="font-size:18px;margin-bottom:10px;">Access Denied</p>' +
-                    '<p style="color:var(--text-secondary);">You do not have admin privileges.</p>' +
-                    '<a href="dashboard.html" class="btn btn-primary" style="margin-top:16px;display:inline-block;">Back to Dashboard</a>' +
+                    '<p style="font-size:18px;margin-bottom:10px;" data-i18n="admin_access_denied">Access Denied</p>' +
+                    '<p style="color:var(--text-secondary);" data-i18n="admin_no_privilege">You do not have admin privileges.</p>' +
+                    '<a href="dashboard.html" class="btn btn-primary" style="margin-top:16px;display:inline-block;" data-i18n="admin_back_dashboard">Back to Dashboard</a>' +
                     '</div>';
+                i18n.apply(); // Re-apply for injected HTML
                 return;
             }
 
@@ -441,7 +450,7 @@
                 render();
             } catch (e) {
                 document.getElementById('adminContent').innerHTML =
-                    '<div class="section-card" style="text-align:center;color:var(--danger);">Failed to load: ' + escapeHtml(e.message) + '</div>';
+                    '<div class="section-card" style="text-align:center;color:var(--danger);">' + i18n.t('admin_error_load') + escapeHtml(e.message) + '</div>';
             }
         }
 
@@ -454,8 +463,8 @@
         function formatDate(ts) {
             if (!ts) return '-';
             const d = new Date(typeof ts === 'number' ? ts : ts);
-            return d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' +
-                d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+            return d.toLocaleDateString(i18n.lang === 'zh' ? 'zh-TW' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' +
+                d.toLocaleTimeString(i18n.lang === 'zh' ? 'zh-TW' : 'en-US', { hour: '2-digit', minute: '2-digit' });
         }
 
         function render() {
@@ -466,31 +475,31 @@
 
             // === Stat Cards ===
             html += '<div class="stats-grid">';
-            html += statCard(s.users.total, 'Total Users', '');
-            html += statCard(s.users.premium, 'Premium Users', 'warning');
-            html += statCard(s.users.verified, 'Verified Emails', 'success');
-            html += statCard(s.devices.total, 'Devices', '');
-            html += statCard(s.devices.boundEntities + '/' + s.devices.entities, 'Bound Entities', 'success');
-            html += statCard(s.bindings.total, 'Bot Bindings', '');
-            html += statCard(s.bindings.free, 'Free Bindings', 'success');
-            html += statCard(s.bindings.personal, 'Personal Bindings', 'warning');
-            html += statCard(s.messagesToday, 'Messages Today', '');
+            html += statCard(s.users.total, i18n.t('admin_stat_users'), '');
+            html += statCard(s.users.premium, i18n.t('admin_stat_premium'), 'warning');
+            html += statCard(s.users.verified, i18n.t('admin_stat_verified'), 'success');
+            html += statCard(s.devices.total, i18n.t('admin_stat_devices'), '');
+            html += statCard(s.devices.boundEntities + '/' + s.devices.entities, i18n.t('admin_stat_bound'), 'success');
+            html += statCard(s.bindings.total, i18n.t('admin_stat_bindings'), '');
+            html += statCard(s.bindings.free, i18n.t('admin_stat_free'), 'success');
+            html += statCard(s.bindings.personal, i18n.t('admin_stat_personal'), 'warning');
+            html += statCard(s.messagesToday, i18n.t('admin_stat_messages'), '');
             html += '</div>';
 
             // === Signup Chart ===
             if (s.recentSignups && s.recentSignups.length > 0) {
                 html += '<div class="section-card">';
-                html += '<div class="section-title">New Signups (Last 7 Days)</div>';
+                html += '<div class="section-title">' + i18n.t('admin_sec_signups') + '</div>';
                 html += renderChart(s.recentSignups);
                 html += '</div>';
             }
 
             // === Official Bots ===
             html += '<div class="section-card">';
-            html += '<div class="section-title" style="justify-content:space-between;">Official Bots (' + (botsData.bots || []).length + ') <button class="add-bot-btn" onclick="showCreateBotDialog()">+ Add Bot</button></div>';
+            html += '<div class="section-title" style="justify-content:space-between;">' + i18n.t('admin_sec_bots') + ' (' + (botsData.bots || []).length + ') <button class="add-bot-btn" onclick="showCreateBotDialog()">' + i18n.t('admin_btn_add_bot') + '</button></div>';
             html += '<div class="table-scroll">';
             html += '<table class="data-table">';
-            html += '<thead><tr><th>Bot ID</th><th>Type</th><th>Status</th><th>Assigned To</th><th>User</th><th>Assigned At</th></tr></thead>';
+            html += '<thead><tr><th>' + i18n.t('admin_col_bot_id') + '</th><th>' + i18n.t('admin_col_type') + '</th><th>' + i18n.t('admin_col_status') + '</th><th>' + i18n.t('admin_col_assigned') + '</th><th>' + i18n.t('admin_col_user') + '</th><th>' + i18n.t('admin_col_assigned_at') + '</th></tr></thead>';
             html += '<tbody>';
             if (botsData.bots && botsData.bots.length > 0) {
                 for (const b of botsData.bots) {
@@ -506,16 +515,16 @@
                         '</tr>';
                 }
             } else {
-                html += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">No official bots registered</td></tr>';
+                html += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">' + i18n.t('admin_no_bots') + '</td></tr>';
             }
             html += '</tbody></table></div></div>';
 
             // === Active Bindings ===
             html += '<div class="section-card">';
-            html += '<div class="section-title">Active Bindings (' + (bindingsData.bindings || []).length + ')</div>';
+            html += '<div class="section-title">' + i18n.t('admin_sec_bindings') + ' (' + (bindingsData.bindings || []).length + ')</div>';
             html += '<div class="table-scroll">';
             html += '<table class="data-table">';
-            html += '<thead><tr><th>Bot ID</th><th>Type</th><th>Device</th><th>Entity</th><th>User</th><th>Bound At</th><th>Sub Verified</th></tr></thead>';
+            html += '<thead><tr><th>' + i18n.t('admin_col_bot_id') + '</th><th>' + i18n.t('admin_col_type') + '</th><th>' + i18n.t('admin_col_device') + '</th><th>' + i18n.t('admin_col_entity') + '</th><th>' + i18n.t('admin_col_user') + '</th><th>' + i18n.t('admin_col_bound_at') + '</th><th>' + i18n.t('admin_col_sub_verified') + '</th></tr></thead>';
             html += '<tbody>';
             if (bindingsData.bindings && bindingsData.bindings.length > 0) {
                 for (const b of bindingsData.bindings) {
@@ -531,16 +540,16 @@
                         '</tr>';
                 }
             } else {
-                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">No active bindings</td></tr>';
+                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">' + i18n.t('admin_no_bindings') + '</td></tr>';
             }
             html += '</tbody></table></div></div>';
 
             // === Users ===
             html += '<div class="section-card">';
-            html += '<div class="section-title">Users (' + (usersData.users || []).length + ')</div>';
+            html += '<div class="section-title">' + i18n.t('admin_sec_users') + ' (' + (usersData.users || []).length + ')</div>';
             html += '<div class="table-scroll">';
             html += '<table class="data-table">';
-            html += '<thead><tr><th>Email</th><th>Verified</th><th>Subscription</th><th>Role</th><th>Device ID</th><th>Registered</th><th>Last Login</th></tr></thead>';
+            html += '<thead><tr><th>' + i18n.t('admin_col_email') + '</th><th>' + i18n.t('admin_col_verified') + '</th><th>' + i18n.t('admin_col_sub') + '</th><th>' + i18n.t('admin_col_role') + '</th><th>' + i18n.t('admin_col_device') + '</th><th>' + i18n.t('admin_col_registered') + '</th><th>' + i18n.t('admin_col_last_login') + '</th></tr></thead>';
             html += '<tbody>';
             if (usersData.users && usersData.users.length > 0) {
                 for (const u of usersData.users) {
@@ -557,7 +566,7 @@
                         '</tr>';
                 }
             } else {
-                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">No users</td></tr>';
+                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">' + i18n.t('admin_no_users') + '</td></tr>';
             }
             html += '</tbody></table></div></div>';
 
@@ -578,7 +587,7 @@
             for (const s of signups) {
                 const count = parseInt(s.count);
                 const height = Math.max(4, (count / maxCount) * 90);
-                const dateStr = new Date(s.date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+                const dateStr = new Date(s.date).toLocaleDateString(i18n.lang === 'zh' ? 'zh-TW' : 'en-US', { month: 'numeric', day: 'numeric' });
                 html += '<div class="chart-bar-wrapper">' +
                     '<span class="chart-bar-count">' + count + '</span>' +
                     '<div class="chart-bar" style="height:' + height + 'px;"></div>' +
@@ -594,31 +603,31 @@
             overlay.className = 'create-bot-overlay';
             overlay.innerHTML =
                 '<div class="create-bot-dialog">' +
-                    '<h3>Add Official Bot</h3>' +
-                    '<div class="form-group">' +
-                        '<label>Bot ID</label>' +
-                        '<input type="text" id="newBotId" placeholder="e.g. my-personal-bot-01">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label>Type</label>' +
-                        '<select id="newBotType">' +
-                            '<option value="personal">Personal (NT$99/month)</option>' +
-                            '<option value="free">Free (shared)</option>' +
-                        '</select>' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label>Webhook URL</label>' +
-                        '<input type="text" id="newBotWebhook" placeholder="https://...">' +
-                    '</div>' +
-                    '<div class="form-group">' +
-                        '<label>Token</label>' +
-                        '<input type="text" id="newBotToken" placeholder="Bot webhook token">' +
-                    '</div>' +
-                    '<div id="createBotResult"></div>' +
-                    '<div class="dialog-actions">' +
-                        '<button class="btn-cancel" onclick="closeCreateBotDialog()">Cancel</button>' +
-                        '<button class="btn-create" id="btnCreateBot" onclick="createBot()">Create</button>' +
-                    '</div>' +
+                '<h3>' + i18n.t('admin_dlg_add_bot') + '</h3>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_bot_id') + '</label>' +
+                '<input type="text" id="newBotId" placeholder="e.g. my-personal-bot-01">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_type') + '</label>' +
+                '<select id="newBotType">' +
+                '<option value="personal">Personal (NT$99/month)</option>' +
+                '<option value="free">Free (shared)</option>' +
+                '</select>' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_webhook') + '</label>' +
+                '<input type="text" id="newBotWebhook" placeholder="https://...">' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label>' + i18n.t('admin_dlg_token') + '</label>' +
+                '<input type="text" id="newBotToken" placeholder="Bot webhook token">' +
+                '</div>' +
+                '<div id="createBotResult"></div>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn-cancel" onclick="closeCreateBotDialog()">' + i18n.t('admin_dlg_cancel') + '</button>' +
+                '<button class="btn-create" id="btnCreateBot" onclick="createBot()">' + i18n.t('admin_dlg_create') + '</button>' +
+                '</div>' +
                 '</div>';
             document.body.appendChild(overlay);
 
@@ -641,12 +650,12 @@
             const btn = document.getElementById('btnCreateBot');
 
             if (!botId || !webhookUrl || !token) {
-                resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">All fields are required.</p>';
+                resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">' + i18n.t('admin_msg_required') + '</p>';
                 return;
             }
 
             btn.disabled = true;
-            btn.textContent = 'Creating...';
+            btn.textContent = i18n.t('admin_dlg_creating');
             resultDiv.innerHTML = '';
 
             try {
@@ -656,12 +665,12 @@
 
                 resultDiv.innerHTML =
                     '<div class="bot-secret-result">' +
-                        '<p style="margin:0 0 6px 0;color:var(--success);font-weight:600;">Bot created successfully!</p>' +
-                        '<p style="margin:0 0 4px 0;font-size:12px;color:var(--text-secondary);">Bot Secret (save this):</p>' +
-                        '<p class="mono" style="margin:0;">' + escapeHtml(result.bot.botSecret) + '</p>' +
+                    '<p style="margin:0 0 6px 0;color:var(--success);font-weight:600;">' + i18n.t('admin_msg_success') + '</p>' +
+                    '<p style="margin:0 0 4px 0;font-size:12px;color:var(--text-secondary);">' + i18n.t('admin_msg_secret') + '</p>' +
+                    '<p class="mono" style="margin:0;">' + escapeHtml(result.bot.botSecret) + '</p>' +
                     '</div>';
 
-                btn.textContent = 'Done';
+                btn.textContent = i18n.t('admin_dlg_create'); // Reset button text even on success for next action
 
                 // Refresh the bots table after a short delay
                 setTimeout(async () => {
@@ -671,7 +680,7 @@
             } catch (e) {
                 resultDiv.innerHTML = '<p style="color:var(--danger);font-size:13px;">' + escapeHtml(e.message) + '</p>';
                 btn.disabled = false;
-                btn.textContent = 'Create';
+                btn.textContent = i18n.t('admin_dlg_create');
             }
         }
 

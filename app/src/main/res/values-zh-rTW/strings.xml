@@ -38,8 +38,8 @@
     <string name="usage_title">今日用量</string>
     <string name="premium_badge">尊爵會員</string>
     <string name="sends_today">則訊息</string>
-    <string name="unlock_unlimited">✨ 解鎖無限暢聊與更多實體額度 - %s/月</string>
-    <string name="unlock_unlimited_no_price">✨ 解鎖無限暢聊與更多實體額度</string>
+    <string name="unlock_unlimited">✨ 無限暢聊 + 8 個實體上限 - %s/月</string>
+    <string name="unlock_unlimited_no_price">✨ 無限暢聊 + 8 個實體上限</string>
 
     <!-- Layout -->
     <string name="entity_layout">顯示佈局</string>
@@ -141,4 +141,71 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
 <b>5. 聯絡我們</b>\n
 如有任何疑問，請透過我們的官方 Email 聯繫。
     </string>
+    <!-- Official Borrow (Missing in zh-rTW) -->
+    <string name="official_borrow">官方 Bot 租用</string>
+    <string name="official_borrow_title">官方 Bot 租用</string>
+    <string name="borrow_beta_label">BETA</string>
+    <string name="free_version">免費版</string>
+    <string name="free_version_model">Model: MiniMax 2.1</string>
+    <string name="free_version_desc">共用記憶，與所有免費版用戶共享\n每日 15 則訊息限制</string>
+    <string name="free_version_warning">敏感資訊不建議與實體分享</string>
+    <string name="use_free_version">使用免費版</string>
+    <string name="monthly_version">月租版</string>
+    <string name="monthly_version_price_original">NT$588/月</string>
+    <string name="monthly_version_price_discount">NT$288/月</string>
+    <string name="monthly_version_price">$9.9 USD/月</string>
+    <string name="monthly_version_discount_label">Beta 限時折扣</string>
+    <string name="monthly_version_model">Model: MiniMax 2.1</string>
+    <string name="monthly_version_desc">獨立雲端環境、專屬記憶\n無限訊息 \u2022 24/7 全天候在線</string>
+    <string name="subscribe_and_bind">訂閱並綁定</string>
+    <string name="remaining_bots">剩餘 %d 個</string>
+    <string name="sold_out">已售罄</string>
+    <string name="already_bound_free">已綁定 (免費版)</string>
+    <string name="already_bound_personal">已綁定 (月租版)</string>
+    <string name="unbind">解除綁定</string>
+    <string name="bind_success">綁定成功！</string>
+    <string name="bind_failed">綁定失敗: %s</string>
+    <string name="unbind_success">已解除綁定</string>
+    <string name="unbind_failed">解除綁定失敗: %s</string>
+    <string name="unbind_personal_title">解除月租版綁定？</string>
+    <string name="unbind_personal_message">此實體的月租版機器人將釋放回公共池。\n\n您的訂閱仍然有效，可以隨時重新綁定（若仍有可用名額）。</string>
+    <string name="unbind_free_title">解除免費版綁定？</string>
+    <string name="unbind_free_message">確定要解除此實體的免費版機器人嗎？</string>
+    <string name="select_entity_to_bind">選擇要綁定的實體欄位</string>
+    <string name="no_free_bot">目前無可用免費版</string>
+    <string name="subscription_required">需要月租訂閱</string>
+    <string name="entity_already_bound">實體 #%d 已被佔用，請先移除</string>
+    <string name="borrow_cost_title">為什麼租用？自建成本比較</string>
+    <string name="borrow_cost_eclaw">E-Claw 官方 Bot: NT$288/月 (24/7 穩定)</string>
+    <string name="borrow_cost_vs">VS 自建：</string>
+    <string name="borrow_cost_server">雲端伺服器: ~NT$300+/月</string>
+    <string name="borrow_cost_llm">LLM API: ~NT$300+/月</string>
+    <string name="borrow_cost_setup">自行摸索 OpenClaw 部署: 無價的時間</string>
+
+    <!-- New Strings (Extracted from Code) -->
+    <string name="bound_on_entity">已綁定於 Entity #%d</string>
+    <string name="version_conflict_title">版本衝突</string>
+    <string name="version_conflict_message">Dashboard 已被其他客戶端更新 (你的版本: %1$d, 伺服器: %2$d)。要下載最新版本嗎？</string>
+    <string name="download_latest">下載最新</string>
+    <string name="action_move_to_mission">➡️ 移至 Mission</string>
+    <string name="action_mark_done">✅ 標記完成</string>
+    <string name="action_edit">✏️ 編輯</string>
+    <string name="action_delete">🗑️ 刪除</string>
+    <string name="delete_confirm_title">刪除確認</string>
+    <string name="delete_confirm_message_format">確定要刪除「%s」嗎？</string>
+    <string name="delete">刪除</string>
+    <string name="last_synced_format"> | 上次同步: %s</string>
+    <!-- Mission Control (Restored) -->
+    <string name="mission_control">任務控制中心</string>
+    <string name="upload">上傳</string>
+    <string name="uploading">上傳中…</string>
+    <string name="add_todo">+ 新增 TODO</string>
+    <string name="add_note">+ 新增筆記</string>
+    <string name="add_rule">+ 新增規則</string>
+    <string name="no_items">尚無 TODO 項目</string>
+    <string name="no_missions">尚無進行中的任務</string>
+    <string name="no_done_items">尚無已完成項目</string>
+    <string name="no_notes">尚無筆記</string>
+    <string name="no_rules">尚無規則</string>
+    <string name="entity_read_receipt">Entity %d 已讀</string>
 </resources>

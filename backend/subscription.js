@@ -28,7 +28,8 @@ const TAPPAY_CARD_TOKEN_URL = TAPPAY_SANDBOX
     ? 'https://sandbox.tappaysdk.com/tpc/payment/pay-by-card-token'
     : 'https://prod.tappaysdk.com/tpc/payment/pay-by-card-token';
 
-const SUBSCRIPTION_AMOUNT = 99; // NT$99/month
+const SUBSCRIPTION_AMOUNT = 99; // NT$99/month (general premium)
+const BORROW_AMOUNT = 288; // NT$288/month (official bot rental)
 const SUBSCRIPTION_CURRENCY = 'TWD';
 const SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -92,7 +93,7 @@ module.exports = function(devices, authMiddleware) {
     // ============================================
     router.post('/tappay/pay', authMiddleware, async (req, res) => {
         try {
-            const { prime } = req.body;
+            const { prime, type } = req.body;
 
             if (!prime) {
                 return res.status(400).json({ success: false, error: 'Missing prime token' });
@@ -101,6 +102,11 @@ module.exports = function(devices, authMiddleware) {
             if (!TAPPAY_PARTNER_KEY) {
                 return res.status(500).json({ success: false, error: 'TapPay not configured' });
             }
+
+            // Determine amount based on type
+            const isBorrow = type === 'borrow';
+            const amount = isBorrow ? BORROW_AMOUNT : SUBSCRIPTION_AMOUNT;
+            const details = isBorrow ? 'E-Claw Official Bot Rental' : 'E-Claw Premium Subscription';
 
             // Get user info
             const userResult = await pool.query(
@@ -125,9 +131,9 @@ module.exports = function(devices, authMiddleware) {
                     prime: prime,
                     partner_key: TAPPAY_PARTNER_KEY,
                     merchant_id: TAPPAY_MERCHANT_ID,
-                    amount: SUBSCRIPTION_AMOUNT,
+                    amount: amount,
                     currency: SUBSCRIPTION_CURRENCY,
-                    details: 'E-Claw Premium Subscription',
+                    details: details,
                     cardholder: {
                         email: user.email
                     },
@@ -144,7 +150,7 @@ module.exports = function(devices, authMiddleware) {
                 [
                     user.id,
                     tappayData.rec_trade_id || null,
-                    SUBSCRIPTION_AMOUNT,
+                    amount,
                     SUBSCRIPTION_CURRENCY,
                     tappayData.status === 0 ? 'success' : 'failed',
                     JSON.stringify(tappayData)
