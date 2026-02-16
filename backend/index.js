@@ -1600,6 +1600,16 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         return res.status(400).json({ success: false, error: `Entity ${eId} is already bound. Remove it first.` });
     }
 
+    // Each device can only have one free bot binding
+    const existingFreeBinding = Object.values(officialBindingsCache).find(b => {
+        if (b.device_id !== deviceId) return false;
+        const bot = officialBots[b.bot_id];
+        return bot && bot.bot_type === 'free';
+    });
+    if (existingFreeBinding) {
+        return res.status(400).json({ success: false, error: `每個裝置僅限借用一個免費版 (已綁定 Entity #${existingFreeBinding.entity_id})` });
+    }
+
     // Find a free bot
     const freeBot = Object.values(officialBots).find(b => b.bot_type === 'free' && b.status !== 'disabled');
     if (!freeBot) {
