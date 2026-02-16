@@ -135,7 +135,9 @@ module.exports = function (devices, authMiddleware) {
                     currency: SUBSCRIPTION_CURRENCY,
                     details: details,
                     cardholder: {
-                        email: user.email
+                        email: user.email,
+                        name: user.email.split('@')[0],
+                        phone_number: ''
                     },
                     remember: true // Store card for recurring
                 })
