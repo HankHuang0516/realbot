@@ -302,20 +302,43 @@ class ChatRepository private constructor(
             // Parse timestamp from ISO string
             val timestamp = parseIsoTimestamp(msg.created_at)
 
-            val message = ChatMessage(
-                text = msg.text,
-                timestamp = timestamp,
-                isFromUser = false,
-                messageType = MessageType.ENTITY_RESPONSE,
-                fromEntityId = msg.entity_id,
-                fromEntityName = msg.source,
-                deduplicationKey = deduplicationKey,
-                isSynced = true
-            )
+            // Detect entity-to-entity pattern: "entity:0:LOBSTER->1" or "entity:0:LOBSTER->1,2,3"
+            val entityPattern = Regex("^entity:(\\d+):([A-Z]+)->(\\S+)$")
+            val entityMatch = entityPattern.find(msg.source)
+
+            val message = if (entityMatch != null) {
+                val senderEntityId = entityMatch.groupValues[1].toIntOrNull()
+                val senderCharacter = entityMatch.groupValues[2]
+                val targets = entityMatch.groupValues[3] // "1" or "1,2,3"
+                val msgType = if (targets.contains(",")) MessageType.ENTITY_BROADCAST else MessageType.ENTITY_TO_ENTITY
+
+                ChatMessage(
+                    text = msg.text,
+                    timestamp = timestamp,
+                    isFromUser = false,
+                    messageType = msgType,
+                    fromEntityId = senderEntityId,
+                    fromEntityCharacter = senderCharacter,
+                    targetEntityIds = targets,
+                    deduplicationKey = deduplicationKey,
+                    isSynced = true
+                )
+            } else {
+                ChatMessage(
+                    text = msg.text,
+                    timestamp = timestamp,
+                    isFromUser = false,
+                    messageType = MessageType.ENTITY_RESPONSE,
+                    fromEntityId = msg.entity_id,
+                    fromEntityName = msg.source,
+                    deduplicationKey = deduplicationKey,
+                    isSynced = true
+                )
+            }
 
             chatDao.insert(message)
             addedCount++
-            Timber.d("Synced backend message from entity ${msg.entity_id}: ${msg.text.take(30)}...")
+            Timber.d("Synced backend message from entity ${message.fromEntityId}: ${msg.text.take(30)}...")
         }
 
         if (addedCount > 0) {

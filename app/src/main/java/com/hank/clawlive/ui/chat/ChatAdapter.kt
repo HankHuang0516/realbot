@@ -136,8 +136,15 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 "$entityName (#$entityId)"
             }
 
-            // Hide read receipt - read receipts only apply to user-sent messages
-            tvReadReceipt.visibility = View.GONE
+            // Show "發送至" footer for entity-to-entity / broadcast messages
+            val targets = message.getTargetEntityIdList()
+            if (targets.isNotEmpty()) {
+                val avatarManager = EntityAvatarManager.getInstance(itemView.context)
+                tvReadReceipt.text = "發送至: " + targets.joinToString(", ") { "${avatarManager.getAvatar(it)} Entity $it" }
+                tvReadReceipt.visibility = View.VISIBLE
+            } else {
+                tvReadReceipt.visibility = View.GONE
+            }
         }
     }
 

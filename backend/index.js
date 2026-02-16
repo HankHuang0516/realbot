@@ -1406,7 +1406,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         read: false
     };
     toEntity.messageQueue.push(messageObj);
-    saveChatMessage(deviceId, toId, text, sourceLabel, false, true);
+    saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true);
     markMessagesAsRead(deviceId, toId);
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
@@ -1510,6 +1510,9 @@ app.post('/api/entity/broadcast', async (req, res) => {
 
     console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}"`);
 
+    // Save ONE chat message for the broadcast (sender's perspective, all targets)
+    saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true);
+
     // Parallel processing - send to all entities simultaneously
     const pushPromises = targetIds.map(async (toId) => {
         const toEntity = device.entities[toId];
@@ -1526,7 +1529,6 @@ app.post('/api/entity/broadcast', async (req, res) => {
             read: false
         };
         toEntity.messageQueue.push(messageObj);
-        saveChatMessage(deviceId, toId, text, sourceLabel, false, true);
         markMessagesAsRead(deviceId, toId);
 
         // Update entity.message so Android app can display it
