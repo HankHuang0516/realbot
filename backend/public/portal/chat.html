@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="chat_title">E-Claw - Chat</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        /* ── Chat Layout ── */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        /* ── Chat Header ── */
+        .chat-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--input-bg);
+        }
+
+        .chat-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        /* ── Usage Badge ── */
+        .usage-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--card);
+            color: var(--text-secondary);
+        }
+
+        .usage-badge.warning { color: var(--warning); }
+        .usage-badge.danger  { color: var(--danger); }
+        .usage-badge.unlimited { color: var(--success); }
+
+        /* ── Filter Chips ── */
+        .chip-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        /* ── Messages Area ── */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+        .chat-messages::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ── Message Bubbles ── */
+        .chat-msg {
+            max-width: 80%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-msg.sent {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .chat-msg.received {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .chat-source {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .chat-bubble {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .chat-msg.sent .chat-bubble {
+            background: var(--primary);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg.received .chat-bubble {
+            background: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--card-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        /* ── Entity Label Coloring ── */
+        .entity-label { font-weight: 600; }
+        .entity-label[data-entity="0"],
+        .entity-label[data-entity="2"] { color: #FF6B6B; }
+        .entity-label[data-entity="1"],
+        .entity-label[data-entity="3"] { color: #FFB6C1; }
+
+        /* ── Read Receipts ── */
+        .read-receipt {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: 6px;
+        }
+
+        /* ── Target Bar (checkboxes) ── */
+        .target-bar {
+            padding: 8px 16px;
+            background: var(--input-bg);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .target-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .target-check {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .target-check input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+        }
+
+        /* ── Input Bar ── */
+        .chat-input-bar {
+            padding: 12px 16px;
+            background: var(--card);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .limit-warning {
+            color: var(--warning);
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus { border-color: var(--primary); }
+        .chat-input::placeholder { color: var(--text-muted); }
+
+        .btn-send {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ── Empty State ── */
+        .chat-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            color: var(--text-muted);
+            font-size: 14px;
+            gap: 8px;
+            margin: auto;
+        }
+
+        .chat-empty-icon {
+            font-size: 48px;
+            margin-bottom: 4px;
+            opacity: 0.5;
+        }
+
+        /* ── Loading ── */
+        .chat-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin: auto;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 640px) {
+            .chat-header-row {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .chip-group {
+                gap: 4px;
+            }
+
+            .filter-chip {
+                padding: 4px 10px;
+                font-size: 11px;
+            }
+
+            .target-bar {
+                padding: 6px 12px;
+            }
+
+            .chat-input-bar {
+                padding: 8px 12px;
+            }
+
+            .chat-msg {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-row">
+                    <span class="chat-title" data-i18n="chat_title">Chat</span>
+                    <span class="usage-badge" id="usageBadge">
+                        <span class="spinner" style="width:12px;height:12px;border-width:2px;"></span>
+                    </span>
+                </div>
+                <div class="chip-group" id="filterChips">
+                    <span class="filter-chip active" data-filter="all" onclick="setFilter('all')" data-i18n="chat_filter_all">All</span>
+                    <!-- Entity chips injected dynamically -->
+                    <span class="filter-chip" data-filter="my" onclick="setFilter('my')" data-i18n="chat_filter_my">My Messages</span>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-loading" id="chatLoading">
+                    <div class="spinner"></div>
+                    <span>Loading...</span>
+                </div>
+            </div>
+
+            <!-- Target Bar (checkboxes) -->
+            <div class="target-bar" id="targetBar">
+                <span class="target-label" data-i18n="chat_send_to">Send to:</span>
+                <label class="target-check" id="targetAll" style="display:none;">
+                    <input type="checkbox" checked onchange="toggleTargetAll(this)">
+                    <span data-i18n="chat_filter_all">All</span>
+                </label>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="chat-input-bar">
+                <div class="limit-warning" id="limitWarning" data-i18n="chat_limit_reached">
+                    Daily message limit reached. Upgrade to Premium for unlimited messages!
+                </div>
+                <div class="input-row">
+                    <input type="text" class="chat-input" id="messageInput"
+                        data-i18n="chat_input_placeholder" placeholder="Type a message..."
+                        onkeydown="if(event.key==='Enter')sendMessage()">
+                    <button class="btn btn-primary btn-send" id="btnSend" onclick="sendMessage()"
+                        data-i18n="chat_btn_send" title="Send">&#10148;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
+    <script>
+        // ── State ──
+        let allMessages = [];
+        let boundEntities = [];
+        let boundEntityIds = new Set();
+        let currentFilter = 'all';
+        let refreshInterval = null;
+        let isFirstLoad = true;
+
+        const ENTITY_CHARS = {
+            0: { name: 'Lobster', emoji: '\u{1F99E}' },
+            1: { name: 'Pig', emoji: '\u{1F437}' },
+            2: { name: 'Lobster', emoji: '\u{1F99E}' },
+            3: { name: 'Pig', emoji: '\u{1F437}' }
+        };
+
+        // ── Init ──
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('chat');
+            const user = await checkAuth();
+            if (!user) return;
+
+            updateUsageBadge();
+            await loadBoundEntities();
+            await loadMessages();
+            isFirstLoad = false;
+
+            // Poll every 5 seconds
+            refreshInterval = setInterval(async () => {
+                await loadMessages();
+                await refreshUsage();
+            }, 5000);
+        });
+
+        // ── Usage Badge ──
+        function updateUsageBadge() {
+            const badge = document.getElementById('usageBadge');
+            if (!currentUser) return;
+
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+
+            if (limit === null || limit === undefined || isPremium) {
+                badge.textContent = i18n.t('chat_usage_unlimited') || 'Unlimited';
+                badge.className = 'usage-badge unlimited';
+            } else {
+                badge.textContent = `${used}/${limit}`;
+                if (used >= limit) {
+                    badge.className = 'usage-badge danger';
+                } else if (used >= limit * 0.8) {
+                    badge.className = 'usage-badge warning';
+                } else {
+                    badge.className = 'usage-badge';
+                }
+            }
+
+            checkLimit();
+        }
+
+        function checkLimit() {
+            if (!currentUser) return;
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+
+            if (!isPremium && limit !== null && limit !== undefined && used >= limit) {
+                document.getElementById('limitWarning').style.display = 'block';
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('btnSend').disabled = true;
+            } else {
+                document.getElementById('limitWarning').style.display = 'none';
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('btnSend').disabled = false;
+            }
+        }
+
+        async function refreshUsage() {
+            try {
+                const data = await apiCall('GET', '/api/auth/me');
+                if (data.user) {
+                    currentUser.usageToday = data.user.usageToday;
+                    currentUser.usageLimit = data.user.usageLimit;
+                    currentUser.subscriptionStatus = data.user.subscriptionStatus;
+                    updateUsageBadge();
+                }
+            } catch (e) {
+                // Silent - non-critical
+            }
+        }
+
+        // ── Entities ──
+        async function loadBoundEntities() {
+            try {
+                const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
+                boundEntities = (data.entities || []).filter(e => e.isBound);
+                boundEntityIds = new Set(boundEntities.map(e => e.entityId));
+                renderTargetBar();
+            } catch (e) {
+                console.warn('Failed to load entities:', e.message);
+            }
+        }
+
+        function renderTargetBar() {
+            const bar = document.getElementById('targetBar');
+            const allLabel = document.getElementById('targetAll');
+
+            // Remove old dynamic checkboxes
+            bar.querySelectorAll('.target-entity-check').forEach(el => el.remove());
+
+            if (boundEntities.length === 0) {
+                allLabel.style.display = 'none';
+                return;
+            }
+
+            // Show "All" only if more than 1 entity
+            allLabel.style.display = boundEntities.length > 1 ? '' : 'none';
+
+            boundEntities.forEach(e => {
+                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
+                const label = document.createElement('label');
+                label.className = 'target-check target-entity-check';
+                label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" checked onchange="updateTargetAll()">
+                    <span>${char.emoji} ${escapeHtml(e.name || char.name)}</span>`;
+                bar.appendChild(label);
+            });
+        }
+
+        function toggleTargetAll(checkbox) {
+            const checked = checkbox.checked;
+            document.querySelectorAll('.target-entity-check input[type="checkbox"]').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function updateTargetAll() {
+            const allCb = document.querySelector('#targetAll input');
+            const entityCbs = document.querySelectorAll('.target-entity-check input[type="checkbox"]');
+            if (entityCbs.length === 0) return;
+            const allChecked = Array.from(entityCbs).every(cb => cb.checked);
+            allCb.checked = allChecked;
+        }
+
+        function getSelectedTargets() {
+            const targets = [];
+            document.querySelectorAll('.target-entity-check input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    targets.push(parseInt(cb.dataset.entity));
+                }
+            });
+            return targets;
+        }
+
+        // ── Messages ──
+        async function loadMessages() {
+            try {
+                const data = await apiCall('GET',
+                    `/api/chat/history?deviceId=${currentUser.deviceId}&deviceSecret=${currentUser.deviceSecret}&limit=100`
+                );
+
+                if (data.success && data.messages) {
+                    const prevCount = allMessages.length;
+                    allMessages = data.messages;
+                    renderFilterChips();
+                    renderMessages(prevCount < allMessages.length);
+                }
+            } catch (e) {
+                if (isFirstLoad) {
+                    const container = document.getElementById('chatMessages');
+                    container.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">&#x26A0;</div><div>Failed to load messages</div></div>';
+                }
+            }
+        }
+
+        // ── Filtering ──
+        function renderFilterChips() {
+            const group = document.getElementById('filterChips');
+
+            // Remove old entity chips
+            group.querySelectorAll('.filter-chip-entity').forEach(el => el.remove());
+
+            // Determine which entities have messages
+            const entityIdsWithMessages = new Set();
+            allMessages.forEach(m => {
+                if (m.entity_id !== null && m.entity_id !== undefined) {
+                    entityIdsWithMessages.add(m.entity_id);
+                }
+            });
+
+            // Insert entity chips before "My Messages" chip
+            const myChip = group.querySelector('[data-filter="my"]');
+
+            const sortedIds = Array.from(entityIdsWithMessages).sort((a, b) => a - b);
+            sortedIds.forEach(id => {
+                const char = ENTITY_CHARS[id] || ENTITY_CHARS[0];
+                const existing = group.querySelector(`[data-filter="entity-${id}"]`);
+                if (existing) return; // already exists
+
+                const chip = document.createElement('span');
+                chip.className = `filter-chip filter-chip-entity${currentFilter === 'entity-' + id ? ' active' : ''}`;
+                chip.dataset.filter = `entity-${id}`;
+                chip.onclick = () => setFilter(`entity-${id}`);
+                chip.textContent = `${char.emoji} Entity ${id}`;
+                group.insertBefore(chip, myChip);
+            });
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+
+            // Update active state on all chips
+            document.querySelectorAll('#filterChips .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === filter);
+            });
+
+            renderMessages(false);
+        }
+
+        function getFilteredMessages() {
+            if (currentFilter === 'all') return allMessages;
+
+            if (currentFilter === 'my') {
+                return allMessages.filter(m => m.is_from_user);
+            }
+
+            // entity-N filter
+            const entityId = parseInt(currentFilter.split('-')[1]);
+            return allMessages.filter(m => m.entity_id === entityId);
+        }
+
+        // ── Render Messages ──
+        function renderMessages(hasNewMessages) {
+            const container = document.getElementById('chatMessages');
+            const wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
+            const filtered = getFilteredMessages();
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="chat-empty">
+                        <div class="chat-empty-icon">&#x1F4AC;</div>
+                        <div data-i18n="chat_empty">${escapeHtml(i18n.t('chat_empty'))}</div>
+                        <div style="font-size:12px;" data-i18n="chat_empty_sub">${escapeHtml(i18n.t('chat_empty_sub'))}</div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(msg => {
+                const isSent = msg.is_from_user;
+                const msgClass = isSent ? 'sent' : 'received';
+                const text = escapeHtml(msg.text || '');
+                const time = formatTime(msg.created_at);
+                const sourceLabel = buildSourceLabel(msg);
+
+                // Read receipt for sent messages
+                let receipt = '';
+                if (isSent) {
+                    if (msg.read_at) {
+                        receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
+                    } else if (msg.is_delivered) {
+                        receipt = `<span class="read-receipt">\u2713 已讀</span>`;
+                    } else {
+                        receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_sent') || '\u2713 Sent')}</span>`;
+                    }
+                }
+
+                return `
+                    <div class="chat-msg ${msgClass}">
+                        <div class="chat-source">${sourceLabel}</div>
+                        <div class="chat-bubble">${text}</div>
+                        <div class="chat-meta">${time}${receipt}</div>
+                    </div>`;
+            }).join('');
+
+            // Auto-scroll
+            if (isFirstLoad || hasNewMessages || wasAtBottom) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        /**
+         * Parse entity-to-entity source pattern: "entity:0:LOBSTER->1" or "entity:0:LOBSTER->1,2,3"
+         */
+        function parseEntitySource(source) {
+            if (!source) return null;
+            const match = source.match(/^entity:(\d+):([A-Z]+)->(.+)$/);
+            if (!match) return null;
+            return {
+                fromEntityId: parseInt(match[1]),
+                character: match[2],
+                targets: match[3].split(',').map(id => parseInt(id.trim()))
+            };
+        }
+
+        function buildSourceLabel(msg) {
+            const entityId = msg.entity_id;
+            const char = ENTITY_CHARS[entityId] || { name: 'Entity', emoji: '?' };
+            const entityHtml = `<span class="entity-label" data-entity="${entityId}">${char.emoji} Entity ${entityId}</span>`;
+
+            if (msg.is_from_user) {
+                // Determine source tag
+                const src = msg.source || 'client';
+                let sourceTag = src;
+                if (src === 'web_chat') sourceTag = 'Web';
+                else if (src === 'android_chat') sourceTag = 'Android';
+                else if (src === 'widget') sourceTag = 'Widget';
+
+                return `You &rarr; ${entityHtml} &middot; ${escapeHtml(sourceTag)}`;
+            }
+
+            if (msg.is_from_bot) {
+                // Check for entity-to-entity source pattern
+                const parsed = parseEntitySource(msg.source);
+                if (parsed) {
+                    const senderChar = ENTITY_CHARS[parsed.fromEntityId] || { name: 'Entity', emoji: '?' };
+                    const senderHtml = `<span class="entity-label" data-entity="${parsed.fromEntityId}">${senderChar.emoji} Entity ${parsed.fromEntityId}</span>`;
+
+                    // Build 發送至 with per-target 已讀 status
+                    const deliveredIds = msg.delivered_to
+                        ? new Set(msg.delivered_to.split(',').map(id => parseInt(id.trim())))
+                        : new Set();
+
+                    const targetLabels = parsed.targets.map(tid => {
+                        const tc = ENTITY_CHARS[tid] || { name: 'Entity', emoji: '?' };
+                        const label = `${tc.emoji} Entity ${tid}`;
+                        return deliveredIds.has(tid) ? `${label} 已讀` : label;
+                    });
+
+                    return `${senderHtml} &rarr; 發送至: ${targetLabels.join(', ')}`;
+                }
+
+                return entityHtml;
+            }
+
+            // Fallback for other sources
+            return `${entityHtml} &middot; ${escapeHtml(msg.source || 'unknown')}`;
+        }
+
+        // ── Send Message ──
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const targets = getSelectedTargets();
+            if (targets.length === 0) {
+                showToast('Please select at least one entity', 'error');
+                return;
+            }
+
+            // Client-side limit check
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+            if (!isPremium && limit !== null && limit !== undefined && used >= limit) {
+                showToast(i18n.t('chat_limit_reached'), 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSend');
+            btn.disabled = true;
+            const savedContent = input.value;
+            input.value = '';
+
+            try {
+                // Single API call - backend handles parallel push via Promise.all
+                const entityId = targets.length === 1 ? targets[0] : targets;
+                await apiCall('POST', '/api/client/speak', {
+                    deviceId: currentUser.deviceId,
+                    entityId: entityId,
+                    text: text,
+                    source: 'web_chat'
+                });
+
+                // Bump local usage
+                if (currentUser.usageToday !== undefined) {
+                    currentUser.usageToday += targets.length;
+                    updateUsageBadge();
+                }
+
+                // Reload and scroll
+                await loadMessages();
+                const container = document.getElementById('chatMessages');
+                container.scrollTop = container.scrollHeight;
+
+            } catch (e) {
+                showToast('Send failed: ' + e.message, 'error');
+                input.value = savedContent;
+            } finally {
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+
+        // ── Utilities ──
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // ── Cleanup ──
+        window.addEventListener('beforeunload', () => {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+
+</html>
