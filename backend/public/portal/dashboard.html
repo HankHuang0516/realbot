@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="dash_title">E-Claw - Dashboard</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .entity-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+            background: var(--input-bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .entity-count strong {
+            color: var(--primary);
+        }
+
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Entity card overrides for body/footer layout */
+        .entity-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 0;
+        }
+
+        .entity-card-body {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .entity-avatar {
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .entity-avatar:hover {
+            transform: scale(1.12);
+        }
+
+        .entity-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entity-name {
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 1.3;
+            cursor: pointer;
+        }
+
+        .entity-name:hover {
+            text-decoration: underline;
+            opacity: 0.85;
+        }
+
+        .entity-badges {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        .badge-id {
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .entity-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .entity-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .entity-timestamp {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Collapsible add entity section */
+        .add-entity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .add-entity-header:hover {
+            opacity: 0.8;
+        }
+
+        .expand-arrow {
+            transition: transform 0.2s;
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .expand-arrow.expanded {
+            transform: rotate(180deg);
+        }
+
+        .add-entity-content {
+            display: none;
+            margin-top: 16px;
+        }
+
+        .add-entity-content.visible {
+            display: block;
+        }
+
+        /* Slot selector */
+        .slot-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .slot-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 8px;
+            background: var(--input-bg);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .slot-btn:hover:not(.occupied) {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .slot-btn.active {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--text);
+        }
+
+        .slot-btn.occupied {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .slot-emoji {
+            font-size: 24px;
+        }
+
+        /* Binding code display */
+        .code-display {
+            text-align: center;
+            padding: 20px;
+            margin: 16px 0;
+            background: var(--input-bg);
+            border-radius: var(--radius);
+            border: 1px dashed var(--card-border);
+        }
+
+        .binding-code {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .code-countdown {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .code-countdown.expiring {
+            color: var(--warning);
+        }
+
+        .code-countdown.expired {
+            color: var(--danger);
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        /* Confirm / overlay dialogs */
+        .confirm-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(13, 13, 26, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius);
+        }
+
+        /* Avatar Emoji Picker Modal */
+        .avatar-picker-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .avatar-picker {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            min-width: 320px;
+            max-width: 380px;
+            width: 90vw;
+        }
+
+        .avatar-picker-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .avatar-picker-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .avatar-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            font-size: 28px;
+            border-radius: var(--radius-sm);
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin: 0 auto;
+        }
+
+        .avatar-option:hover {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
+            transform: scale(1.1);
+        }
+
+        .avatar-option.selected {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.25);
+        }
+
+        .avatar-picker-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* ── Official Borrow Section ── */
+        .borrow-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .borrow-entity-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .borrow-chip {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            background: var(--input-bg);
+            border: 2px solid var(--card-border);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .borrow-chip:hover:not(.disabled) {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .borrow-chip.active {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--text);
+        }
+
+        .borrow-chip.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .borrow-chip .chip-badge {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .chip-badge.badge-free {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+        }
+
+        .chip-badge.badge-personal {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .borrow-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .borrow-option {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .borrow-option-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .borrow-option-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .borrow-availability {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .borrow-availability.available {
+            background: rgba(76, 175, 80, 0.15);
+            color: var(--success);
+        }
+
+        .borrow-availability.sold-out {
+            background: rgba(244, 67, 54, 0.15);
+            color: var(--danger);
+        }
+
+        .borrow-option-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .borrow-option-features {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .borrow-option-features li {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .borrow-option-features li::before {
+            content: "✓ ";
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .beta-badge {
+            background: linear-gradient(135deg, #FF6B35, #FF9F1C);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        .price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 8px 0 4px;
+        }
+
+        .price-original {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .price-discount {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--warning);
+        }
+
+        .price-period {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .discount-label {
+            font-size: 11px;
+            color: #FF6B35;
+            font-weight: 600;
+        }
+
+        /* Cost Comparison */
+        .cost-compare {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-top: 12px;
+        }
+
+        .cost-compare-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .cost-compare-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 12px;
+        }
+
+        .cost-compare-row+.cost-compare-row {
+            border-top: 1px solid rgba(51, 51, 85, 0.3);
+        }
+
+        .cost-compare-label {
+            color: var(--text-secondary);
+        }
+
+        .cost-compare-value {
+            font-weight: 600;
+        }
+
+        .cost-compare-value.highlight {
+            color: var(--success);
+        }
+
+        .cost-compare-value.dim {
+            color: var(--text-muted);
+        }
+
+        .cost-vs {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            padding: 6px 0;
+        }
+
+        /* Bindings list */
+        .bindings-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .bindings-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .binding-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+
+        .binding-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .binding-emoji {
+            font-size: 24px;
+        }
+
+        .binding-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .binding-entity-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .binding-type {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .no-bindings {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            padding: 16px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .entity-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .borrow-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* TapPay card fields */
+        .tappay-field {
+            margin-bottom: 10px;
+        }
+
+        .tappay-field label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .tappay-field-input {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            height: 40px;
+        }
+
+        .tappay-field-input.tappay-field-focus {
+            border-color: var(--primary);
+        }
+
+        .tappay-field-input.tappay-field-error {
+            border-color: #F44336;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title" data-i18n="dash_title">Dashboard</h1>
+            <span class="entity-count" id="entityCount">
+                <span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;"></span>
+            </span>
+        </div>
+
+        <!-- Entity Cards Grid -->
+        <div class="entity-grid" id="entityGrid">
+            <div class="empty-state" id="loadingState">
+                <div class="spinner" style="margin: 0 auto 12px;"></div>
+                <div data-i18n="dash_loading">Loading entities...</div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display:none;">
+            <div style="font-size:48px;margin-bottom:12px;">🦞</div>
+            <div style="font-size:16px;color:var(--text-secondary);margin-bottom:4px;" data-i18n="dash_empty_title">No
+                entities bound yet</div>
+            <div data-i18n="dash_empty_desc">Add your first entity below to get started!</div>
+        </div>
+
+        <!-- Add Entity Section -->
+        <div class="card" id="addEntityCard">
+            <div class="add-entity-header" onclick="toggleAddEntity()">
+                <div class="card-title" style="margin-bottom:0;" data-i18n="dash_add_entity">
+                    Add Entity
+                </div>
+                <span class="expand-arrow" id="expandArrow">&#9662;</span>
+            </div>
+
+            <div class="add-entity-content" id="addEntityContent">
+                <!-- Slot Selector -->
+                <label class="form-label" data-i18n="dash_label_select_slot">Select Entity Slot</label>
+                <div class="slot-selector" id="slotSelector">
+                    <button class="slot-btn active" data-slot="0" onclick="selectSlot(0)">
+                        <span class="slot-emoji">🦞</span>
+                        <span>Slot 0</span>
+                    </button>
+                    <button class="slot-btn" data-slot="1" onclick="selectSlot(1)">
+                        <span class="slot-emoji">🐷</span>
+                        <span>Slot 1</span>
+                    </button>
+                    <button class="slot-btn" data-slot="2" onclick="selectSlot(2)">
+                        <span class="slot-emoji">🦞</span>
+                        <span>Slot 2</span>
+                    </button>
+                    <button class="slot-btn" data-slot="3" onclick="selectSlot(3)">
+                        <span class="slot-emoji">🐷</span>
+                        <span>Slot 3</span>
+                    </button>
+                </div>
+
+                <!-- Generate Code Button -->
+                <button class="btn btn-primary btn-block" id="btnGenerate" onclick="generateCode()"
+                    data-i18n="dash_btn_generate">
+                    Generate Code
+                </button>
+
+                <!-- Code Display (hidden until generated) -->
+                <div class="code-display" id="codeDisplay" style="display:none;">
+                    <div class="binding-code" id="bindingCode">--- ---</div>
+                    <div class="code-countdown" id="codeCountdown"></div>
+                    <div class="code-actions">
+                        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="copyCommand()"
+                            data-i18n="dash_btn_copy">
+                            Copy Command
+                        </button>
+                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="generateCode()"
+                            data-i18n="dash_btn_regenerate">
+                            Regenerate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Official Borrow Section -->
+        <div class="card" id="borrowCard">
+            <div class="add-entity-header" onclick="toggleBorrow()">
+                <div class="card-title" style="margin-bottom:0;">
+                    <span data-i18n="borrow_title">Official Bot Rental</span>
+                    <span class="beta-badge">BETA</span>
+                </div>
+                <span class="expand-arrow" id="borrowArrow">&#9662;</span>
+            </div>
+
+            <div class="add-entity-content" id="borrowContent">
+                <div class="borrow-desc" data-i18n="borrow_desc">
+                    Rent an official bot for your entity. The bot will automatically interact with your live wallpaper.
+                </div>
+
+                <!-- Entity Chip Selector -->
+                <label class="form-label" data-i18n="borrow_select_entity">Select Entity</label>
+                <div class="borrow-entity-chips" id="borrowChips">
+                    <!-- Dynamically generated -->
+                </div>
+
+                <!-- Free / Personal Options -->
+                <div class="borrow-options">
+                    <div class="borrow-option">
+                        <div class="borrow-option-header">
+                            <span class="borrow-option-title" data-i18n="borrow_free_title">Free Version</span>
+                            <span class="borrow-availability" id="freeAvailBadge">--</span>
+                        </div>
+                        <div class="borrow-option-desc" data-i18n="borrow_free_desc">One free bot per device</div>
+                        <ul class="borrow-option-features">
+                            <li data-i18n="borrow_free_feat_shared">Shared memory with all free users</li>
+                            <li data-i18n="borrow_free_feat_limit">15 messages/day limit</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block btn-sm" id="btnBindFree" onclick="bindFree()" disabled
+                            data-i18n="borrow_btn_bind_free">Use Free Version</button>
+                    </div>
+                    <div class="borrow-option" style="border-color:var(--warning);">
+                        <div class="borrow-option-header">
+                            <span class="borrow-option-title" data-i18n="borrow_personal_title">Monthly Version</span>
+                            <span class="borrow-availability" id="personalAvailBadge">--</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="price-original">NT$588</span>
+                            <span class="price-discount">NT$288</span>
+                            <span class="price-period" data-i18n="borrow_price_period">/month</span>
+                        </div>
+                        <div class="discount-label" data-i18n="borrow_discount_label">Limited-time Beta discount</div>
+                        <ul class="borrow-option-features">
+                            <li data-i18n="borrow_personal_feat_dedicated">Dedicated cloud environment</li>
+                            <li data-i18n="borrow_personal_feat_memory">Private memory (only yours)</li>
+                            <li data-i18n="borrow_personal_feat_unlimited">Unlimited messages (no daily limit)</li>
+                            <li data-i18n="borrow_personal_feat_247">24/7 always online</li>
+                        </ul>
+                        <button class="btn btn-warning btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()"
+                            disabled data-i18n="borrow_btn_bind_personal">Subscribe & Bind</button>
+                    </div>
+                </div>
+
+                <!-- Cost Comparison -->
+                <div class="cost-compare" id="costCompare">
+                    <div class="cost-compare-title" data-i18n="borrow_cost_title">Why rent? Self-hosting cost comparison
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_eclaw">E-Claw Official Bot</span>
+                        <span class="cost-compare-value highlight">NT$288/mo</span>
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_24_7">24/7 stable connection</span>
+                        <span class="cost-compare-value highlight" data-i18n="borrow_cost_included">Included</span>
+                    </div>
+                    <div class="cost-vs">VS</div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_server">Cloud Server
+                            (Railway/AWS)</span>
+                        <span class="cost-compare-value dim">~NT$300+/mo</span>
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_llm">LLM API (OpenAI/Claude)</span>
+                        <span class="cost-compare-value dim">~NT$300+/mo</span>
+                    </div>
+                    <div class="cost-compare-row">
+                        <span class="cost-compare-label" data-i18n="borrow_cost_setup">Learning OpenClaw
+                            deployment</span>
+                        <span class="cost-compare-value dim" data-i18n="borrow_cost_priceless">Priceless time</span>
+                    </div>
+                </div>
+
+                <!-- Current Bindings -->
+                <div class="bindings-section">
+                    <div class="bindings-title" data-i18n="borrow_current_bindings">Current Bindings</div>
+                    <div id="bindingsList">
+                        <div class="no-bindings" data-i18n="borrow_no_bindings">No official bots bound</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TapPay Payment Dialog (for personal bot rental) -->
+    <div class="dialog-overlay" id="tappayDialog" style="display:none">
+        <div class="dialog" style="max-width:400px;">
+            <div class="dialog-title" data-i18n="borrow_pay_title">Official Bot Rental - NT$288/month</div>
+            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;" data-i18n="borrow_pay_desc">
+                Enter your credit card to rent a dedicated personal bot (NT$288/month). Includes unlimited messages and
+                24/7 always online.
+            </p>
+            <div class="tappay-field">
+                <label data-i18n="settings_label_card">Card Number</label>
+                <div class="tappay-field-input" id="tappay-card-number"></div>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <div class="tappay-field" style="flex:1">
+                    <label data-i18n="settings_label_expiry">Expiry Date</label>
+                    <div class="tappay-field-input" id="tappay-expiration-date"></div>
+                </div>
+                <div class="tappay-field" style="flex:1">
+                    <label data-i18n="settings_label_ccv">CCV</label>
+                    <div class="tappay-field-input" id="tappay-ccv"></div>
+                </div>
+            </div>
+            <div class="card-error" id="tpCardError" style="color:#F44336;font-size:12px;min-height:18px;"></div>
+            <div class="dialog-actions" style="margin-top:12px;">
+                <button class="btn btn-outline" onclick="closeTapPayDialog()" data-i18n="mc_dlg_cancel">Cancel</button>
+                <button class="btn btn-success" id="btnTpPay" disabled data-i18n="borrow_btn_pay">Pay NT$288</button>
+            </div>
+            <div id="tpLoading" style="display:none;text-align:center;padding:12px 0;">
+                <div class="spinner"></div>
+                <span style="color:var(--text-secondary);font-size:13px;margin-left:8px;"
+                    data-i18n="settings_processing">Processing payment...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TapPay SDK -->
+    <script src="https://js.tappaysdk.com/sdk/tpdirect/v5.17.0"></script>
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
+    <script>
+        // --- Constants ---
+        const DEFAULT_AVATARS = { 0: '🦞', 1: '🐷', 2: '🦞', 3: '🐷' };
+        const ENTITY_CHARS = {
+            0: { name: 'Lobster', emoji: '🦞' },
+            1: { name: 'Pig', emoji: '🐷' },
+            2: { name: 'Lobster', emoji: '🦞' },
+            3: { name: 'Pig', emoji: '🐷' }
+        };
+        const AVATAR_OPTIONS = [
+            '🦞', '🦀', '🐙', '🦑', '🐠', '🐟',
+            '🐷', '🐶', '🐱', '🐰', '🦊', '🐻',
+            '🐼', '🐨', '🦁', '🐯', '🐸', '🐵',
+            '🤖', '👾', '🎃', '👻', '🦄', '🐲',
+            '😎', '🥷', '🧙', '🦸', '🐧', '🦅'
+        ];
+
+        // --- State ---
+        let entities = [];
+        let selectedSlot = 0;
+        let currentCode = null;
+        let codeExpiry = null;
+        let countdownInterval = null;
+        let refreshInterval = null;
+        let isAddExpanded = false;
+
+        // --- Utilities ---
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function getAvatarForEntity(entityId) {
+            const saved = localStorage.getItem('eclaw_avatar_' + entityId);
+            if (saved) return saved;
+            return DEFAULT_AVATARS[entityId] || '🦞';
+        }
+
+        function saveAvatarForEntity(entityId, emoji) {
+            localStorage.setItem('eclaw_avatar_' + entityId, emoji);
+        }
+
+        // --- Init ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('dashboard');
+            const user = await checkAuth();
+            if (!user) return;
+
+            await loadEntities();
+
+            // Auto-refresh every 10 seconds
+            refreshInterval = setInterval(async () => {
+                await loadEntities();
+                if (isBorrowExpanded) await loadBorrowStatus();
+            }, 10000);
+        });
+
+        // --- Entity Loading ---
+        async function loadEntities() {
+            try {
+                const data = await apiCall('GET', '/api/entities?deviceId=' + currentUser.deviceId);
+                entities = (data.entities || []).filter(e => e.isBound);
+                renderEntities();
+                updateEntityCount();
+                updateSlotAvailability();
+            } catch (e) {
+                // Only show error on first load
+                const grid = document.getElementById('entityGrid');
+                if (grid.querySelector('#loadingState')) {
+                    grid.innerHTML = '<div class="empty-state">Failed to load entities</div>';
+                }
+            }
+        }
+
+        function updateEntityCount() {
+            const isPremium = currentUser.subscription && currentUser.subscription.tier === 'premium';
+            const max = isPremium ? 8 : 4;
+            document.getElementById('entityCount').innerHTML =
+                '<strong>' + entities.length + '</strong> / ' + max + ' bound';
+        }
+
+        function updateSlotAvailability() {
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            document.querySelectorAll('.slot-btn').forEach(btn => {
+                const slot = parseInt(btn.dataset.slot);
+                const isOccupied = occupiedSlots.has(slot);
+                btn.classList.toggle('occupied', isOccupied);
+                if (isOccupied && btn.classList.contains('active')) {
+                    // Auto-select first available slot
+                    const firstAvailable = [0, 1, 2, 3].find(s => !occupiedSlots.has(s));
+                    if (firstAvailable !== undefined) {
+                        selectSlot(firstAvailable);
+                    }
+                }
+            });
+        }
+
+        // --- Rendering ---
+        function renderEntities() {
+            const grid = document.getElementById('entityGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (entities.length === 0) {
+                grid.innerHTML = '';
+                emptyState.style.display = '';
+                // Auto-expand add entity when empty
+                if (!isAddExpanded) {
+                    toggleAddEntity();
+                }
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            grid.innerHTML = entities.map(entity => {
+                const char = ENTITY_CHARS[entity.entityId] || ENTITY_CHARS[0];
+                const displayName = entity.name || (char.name + ' #' + entity.entityId);
+                const avatar = getAvatarForEntity(entity.entityId);
+                const state = entity.state || 'idle';
+                const stateBadgeClass = getStateBadgeClass(state);
+                const lastMsg = entity.message || 'No messages yet';
+                const time = formatTime(entity.lastUpdated);
+
+                return '<div class="entity-card card">' +
+                    '<div class="entity-card-body">' +
+                    '<div class="entity-avatar" onclick="openAvatarPicker(' + entity.entityId + ')">' + avatar + '</div>' +
+                    '<div class="entity-info">' +
+                    '<div class="entity-name" onclick="openRenamePicker(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')" title="' + i18n.t('dash_rename_title') + '">' + escapeHtml(displayName) + '</div>' +
+                    '<div class="entity-badges">' +
+                    '<span class="badge-id">#' + entity.entityId + '</span>' +
+                    '<span class="badge ' + stateBadgeClass + '">' + escapeHtml(state) + '</span>' +
+                    '</div>' +
+                    '<div class="entity-message">' + escapeHtml(lastMsg) + '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    '<div class="entity-card-footer">' +
+                    '<span class="entity-timestamp">' + time + '</span>' +
+                    '<button class="btn btn-danger btn-sm" onclick="confirmRemove(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')">' +
+                    i18n.t('dash_btn_remove') +
+                    '</button>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // --- Avatar Emoji Picker ---
+        function openAvatarPicker(entityId) {
+            const currentAvatar = getAvatarForEntity(entityId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'avatar-picker-overlay';
+
+            let gridHtml = '';
+            for (let i = 0; i < AVATAR_OPTIONS.length; i++) {
+                const emoji = AVATAR_OPTIONS[i];
+                const selectedClass = emoji === currentAvatar ? ' selected' : '';
+                gridHtml += '<div class="avatar-option' + selectedClass + '" data-emoji="' + emoji + '">' + emoji + '</div>';
+            }
+
+            overlay.innerHTML =
+                '<div class="avatar-picker">' +
+                '<div class="avatar-picker-title" data-i18n="dash_avatar_title">' + i18n.t('dash_avatar_title') + '</div>' +
+                '<div class="avatar-picker-desc" data-i18n="dash_avatar_desc">' + i18n.t('dash_avatar_desc') + '</div>' +
+                '<div class="avatar-grid">' + gridHtml + '</div>' +
+                '<div class="avatar-picker-actions">' +
+                '<button class="btn btn-outline btn-sm" data-i18n="mc_dlg_cancel">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            // Handle emoji selection
+            overlay.querySelectorAll('.avatar-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const emoji = opt.getAttribute('data-emoji');
+                    saveAvatarForEntity(entityId, emoji);
+                    overlay.remove();
+                    renderEntities();
+                });
+            });
+
+            // Handle cancel button
+            overlay.querySelector('.avatar-picker-actions .btn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            // Close on background click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        // --- Rename Entity ---
+        function openRenamePicker(entityId, currentName) {
+            const overlay = document.createElement('div');
+            overlay.className = 'avatar-picker-overlay';
+
+            overlay.innerHTML =
+                '<div class="avatar-picker">' +
+                '<div class="avatar-picker-title">' + i18n.t('dash_rename_title') + '</div>' +
+                '<div class="avatar-picker-desc">' + i18n.t('dash_rename_placeholder') + '</div>' +
+                '<input type="text" class="rename-input" value="' + escapeHtml(currentName).replace(/"/g, '&quot;') + '" maxlength="20" style="' +
+                'width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-color);' +
+                'background:var(--input-bg);color:var(--text-primary);font-size:15px;margin:12px 0;' +
+                'outline:none;box-sizing:border-box;" />' +
+                '<div class="avatar-picker-actions" style="display:flex;gap:8px;justify-content:flex-end;">' +
+                '<button class="btn btn-outline btn-sm rename-cancel">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '<button class="btn btn-primary btn-sm rename-save">' + i18n.t('dash_rename_save') + '</button>' +
+                '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            var input = overlay.querySelector('.rename-input');
+            input.focus();
+            input.select();
+
+            // Save handler
+            async function doRename() {
+                var newName = input.value.trim();
+                if (!newName || newName === currentName) {
+                    overlay.remove();
+                    return;
+                }
+                try {
+                    var data = await apiCall('PUT', '/api/device/entity/name', { entityId: entityId, name: newName });
+                    if (data.success) {
+                        var ent = entities.find(function(e) { return e.entityId === entityId; });
+                        if (ent) ent.name = data.name;
+                        renderEntities();
+                        showToast(i18n.t('dash_rename_success'), 'success');
+                    } else {
+                        showToast(data.message || 'Failed', 'error');
+                    }
+                } catch (err) {
+                    showToast(err.message || 'Error', 'error');
+                }
+                overlay.remove();
+            }
+
+            overlay.querySelector('.rename-save').addEventListener('click', doRename);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') doRename();
+            });
+            overlay.querySelector('.rename-cancel').addEventListener('click', function() { overlay.remove(); });
+            overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        }
+
+        // --- Add Entity ---
+        function toggleAddEntity() {
+            isAddExpanded = !isAddExpanded;
+            const content = document.getElementById('addEntityContent');
+            const arrow = document.getElementById('expandArrow');
+            content.classList.toggle('visible', isAddExpanded);
+            arrow.classList.toggle('expanded', isAddExpanded);
+        }
+
+        function selectSlot(slot) {
+            const btn = document.querySelector('.slot-btn[data-slot="' + slot + '"]');
+            if (btn && btn.classList.contains('occupied')) {
+                showToast(i18n.t('dash_slot_occupied', { id: slot }), 'error');
+                return;
+            }
+
+            selectedSlot = slot;
+            document.querySelectorAll('.slot-btn').forEach(b => {
+                b.classList.toggle('active', parseInt(b.dataset.slot) === slot);
+            });
+        }
+
+        async function generateCode() {
+            const btn = document.getElementById('btnGenerate');
+            btn.disabled = true;
+            btn.textContent = i18n.t('dash_btn_generating');
+
+            // Check if slot is occupied
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            if (occupiedSlots.has(selectedSlot)) {
+                showToast(i18n.t('dash_slot_occupied', { id: selectedSlot }), 'error');
+                btn.disabled = false;
+                btn.textContent = i18n.t('dash_btn_generate');
+                return;
+            }
+
+            try {
+                const data = await apiCall('POST', '/api/device/register', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedSlot,
+                    appVersion: 'web'
+                });
+
+                currentCode = data.bindingCode || data.code;
+                if (!currentCode) {
+                    throw new Error('No binding code returned');
+                }
+
+                // Show code display
+                const codeDisplay = document.getElementById('codeDisplay');
+                codeDisplay.style.display = '';
+
+                // Format code with space in middle
+                const formatted = currentCode.length === 6
+                    ? currentCode.substring(0, 3) + ' ' + currentCode.substring(3)
+                    : currentCode;
+                document.getElementById('bindingCode').textContent = formatted;
+
+                // Start countdown using expiresIn from API (default 300s)
+                const expirySeconds = data.expiresIn || 300;
+                startCountdown(expirySeconds);
+
+                btn.textContent = i18n.t('dash_btn_regenerate');
+                showToast('Binding code generated!', 'success');
+            } catch (e) {
+                showToast(e.message, 'error');
+                btn.textContent = i18n.t('dash_btn_generate');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function startCountdown(seconds) {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            let remaining = seconds;
+            const countdownEl = document.getElementById('codeCountdown');
+
+            function updateCountdown() {
+                if (remaining <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    countdownEl.textContent = i18n.t('dash_code_expired');
+                    countdownEl.className = 'code-countdown expired';
+                    currentCode = null;
+                    return;
+                }
+
+                // Format as minutes:seconds when > 60s
+                let display;
+                if (remaining > 60) {
+                    const mins = Math.floor(remaining / 60);
+                    const secs = remaining % 60;
+                    display = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                } else {
+                    display = remaining + '';
+                }
+
+                countdownEl.textContent = i18n.t('dash_code_expires_in', { s: display });
+
+                if (remaining <= 30) {
+                    countdownEl.className = 'code-countdown expiring';
+                } else {
+                    countdownEl.className = 'code-countdown';
+                }
+
+                remaining--;
+            }
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        function copyCommand() {
+            if (!currentCode) {
+                showToast('No active code to copy', 'error');
+                return;
+            }
+
+            const command = 'Connect my E-Claw wallpaper device:\n' +
+                'POST https://eclaw.up.railway.app/api/bind\n' +
+                'Body: {"code": "' + currentCode + '"}\n' +
+                '\n' +
+                'IMPORTANT: The response will contain a \'skills_documentation\' field. You MUST read the \'E-claw MCP Skills\' documentation within it to understand the interaction protocol (Matrix Architecture, Push Mode, etc.).\n' +
+                '\n' +
+                'After binding, use these tools:\n' +
+                '- update_claw_status: Update wallpaper state\n' +
+                '- get_claw_status: Check current status';
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(command).then(() => {
+                    showToast('Command copied to clipboard!', 'success');
+                }).catch(() => {
+                    fallbackCopy(command);
+                });
+            } else {
+                fallbackCopy(command);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('Command copied to clipboard!', 'success');
+            } catch (e) {
+                showToast('Failed to copy - please copy manually', 'error');
+            }
+            document.body.removeChild(ta);
+        }
+
+        // --- Remove Entity ---
+        function confirmRemove(entityId, displayName) {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML =
+                '<div class="dialog">' +
+                '<div class="dialog-title">' + i18n.t('dash_remove_title') + '</div>' +
+                '<p style="color:var(--text-secondary);font-size:14px;">' +
+                i18n.t('dash_remove_desc', { name: escapeHtml(displayName), id: entityId }) +
+                '</p>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '<button class="btn btn-danger" id="btnConfirmRemove" onclick="removeEntity(' + entityId + ', this)">' + i18n.t('dash_btn_remove') + '</button>' +
+                '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+
+            // Close on background click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        async function removeEntity(entityId, btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = 'Removing...';
+
+            try {
+                await apiCall('DELETE', '/api/device/entity', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: entityId
+                });
+
+                // Close dialog
+                const overlay = btnEl.closest('.confirm-overlay');
+                if (overlay) overlay.remove();
+
+                showToast('Entity removed successfully', 'success');
+
+                // Refresh entities
+                await loadEntities();
+            } catch (e) {
+                showToast('Failed to remove: ' + e.message, 'error');
+                btnEl.disabled = false;
+                btnEl.textContent = i18n.t('dash_btn_remove');
+            }
+        }
+
+        // ============================================
+        // Official Borrow (Entity Rental)
+        // ============================================
+        let borrowStatus = null;
+        let selectedBorrowEntity = 0;
+        let isBorrowExpanded = false;
+
+        function toggleBorrow() {
+            isBorrowExpanded = !isBorrowExpanded;
+            const content = document.getElementById('borrowContent');
+            const arrow = document.getElementById('borrowArrow');
+            content.classList.toggle('visible', isBorrowExpanded);
+            arrow.classList.toggle('expanded', isBorrowExpanded);
+
+            if (isBorrowExpanded && !borrowStatus) {
+                loadBorrowStatus();
+            }
+        }
+
+        async function loadBorrowStatus() {
+            try {
+                borrowStatus = await apiCall('GET', '/api/official-borrow/status?deviceId=' + currentUser.deviceId);
+                renderBorrowChips();
+                updateBorrowButtons();
+                renderBindingsList();
+            } catch (e) {
+                console.warn('Failed to load borrow status:', e.message);
+            }
+        }
+
+        function renderBorrowChips() {
+            const container = document.getElementById('borrowChips');
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            const bindingMap = {};
+            if (borrowStatus && borrowStatus.bindings) {
+                borrowStatus.bindings.forEach(b => { bindingMap[b.entityId] = b; });
+            }
+
+            let html = '';
+            for (let i = 0; i < 4; i++) {
+                const char = ENTITY_CHARS[i] || ENTITY_CHARS[0];
+                const isActive = i === selectedBorrowEntity;
+                const binding = bindingMap[i];
+                const isOccupied = occupiedSlots.has(i) && !binding;
+
+                let badgeHtml = '';
+                if (binding) {
+                    const badgeClass = binding.botType === 'free' ? 'badge-free' : 'badge-personal';
+                    const badgeText = binding.botType === 'free' ? i18n.t('borrow_type_free') : i18n.t('borrow_type_personal');
+                    badgeHtml = '<span class="chip-badge ' + badgeClass + '">' + badgeText + '</span>';
+                }
+
+                html += '<div class="borrow-chip' + (isActive ? ' active' : '') + '" data-slot="' + i + '" onclick="selectBorrowEntity(' + i + ')">' +
+                    char.emoji + ' Entity ' + i + badgeHtml +
+                    '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function selectBorrowEntity(slot) {
+            selectedBorrowEntity = slot;
+            renderBorrowChips();
+            updateBorrowButtons();
+        }
+
+        function updateBorrowButtons() {
+            if (!borrowStatus) return;
+
+            const btnFree = document.getElementById('btnBindFree');
+            const btnPersonal = document.getElementById('btnBindPersonal');
+            const freeAvail = document.getElementById('freeAvailBadge');
+            const personalAvail = document.getElementById('personalAvailBadge');
+
+            // Reset click handlers
+            btnFree.onclick = bindFree;
+            btnPersonal.onclick = bindPersonal;
+
+            // Free availability badge
+            if (borrowStatus.free.available) {
+                freeAvail.textContent = i18n.t('borrow_free_available');
+                freeAvail.className = 'borrow-availability available';
+            } else {
+                freeAvail.textContent = i18n.t('borrow_free_unavailable');
+                freeAvail.className = 'borrow-availability sold-out';
+            }
+
+            // Personal availability badge
+            if (borrowStatus.personal.available > 0) {
+                personalAvail.textContent = i18n.t('borrow_personal_available', { count: borrowStatus.personal.available });
+                personalAvail.className = 'borrow-availability available';
+            } else {
+                personalAvail.textContent = i18n.t('borrow_personal_sold_out');
+                personalAvail.className = 'borrow-availability sold-out';
+            }
+
+            // Check if selected entity already has an official binding
+            const existingBinding = (borrowStatus.bindings || []).find(b => b.entityId === selectedBorrowEntity);
+
+            if (existingBinding) {
+                // Already bound - show unbind option
+                if (existingBinding.botType === 'free') {
+                    btnFree.textContent = i18n.t('borrow_bound_free');
+                    btnFree.disabled = true;
+                    btnPersonal.textContent = i18n.t('borrow_btn_unbind');
+                    btnPersonal.disabled = false;
+                    btnPersonal.onclick = function () { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
+                } else {
+                    btnPersonal.textContent = i18n.t('borrow_bound_personal');
+                    btnPersonal.disabled = true;
+                    btnFree.textContent = i18n.t('borrow_btn_unbind');
+                    btnFree.disabled = false;
+                    btnFree.onclick = function () { confirmUnbind(selectedBorrowEntity, existingBinding.botType); };
+                }
+                return;
+            }
+
+            // Not bound - check availability
+            // Free: check if device already has a free binding elsewhere
+            const hasFreeBound = (borrowStatus.bindings || []).find(b => b.botType === 'free');
+            if (hasFreeBound) {
+                btnFree.textContent = i18n.t('borrow_free_bound_other', { id: hasFreeBound.entityId });
+                btnFree.disabled = true;
+            } else {
+                btnFree.textContent = i18n.t('borrow_btn_bind_free');
+                btnFree.disabled = !borrowStatus.free.available;
+            }
+
+            // Personal
+            btnPersonal.textContent = i18n.t('borrow_btn_bind_personal');
+            btnPersonal.disabled = borrowStatus.personal.available <= 0;
+
+            // Check if entity slot is occupied by regular binding (not official)
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            const officialEntityIds = new Set((borrowStatus.bindings || []).map(b => b.entityId));
+            if (occupiedSlots.has(selectedBorrowEntity) && !officialEntityIds.has(selectedBorrowEntity)) {
+                btnFree.disabled = true;
+                btnPersonal.disabled = true;
+                btnFree.textContent = i18n.t('borrow_slot_occupied');
+                btnPersonal.textContent = i18n.t('borrow_slot_occupied');
+            }
+        }
+
+        function renderBindingsList() {
+            const container = document.getElementById('bindingsList');
+            const bindings = (borrowStatus && borrowStatus.bindings) || [];
+
+            if (bindings.length === 0) {
+                container.innerHTML = '<div class="no-bindings">' + i18n.t('borrow_no_bindings') + '</div>';
+                return;
+            }
+
+            container.innerHTML = bindings.map(b => {
+                const char = ENTITY_CHARS[b.entityId] || ENTITY_CHARS[0];
+                const typeBadgeClass = b.botType === 'free' ? 'badge-free' : 'badge-premium';
+                const typeText = b.botType === 'free' ? i18n.t('borrow_type_free') : i18n.t('borrow_type_personal');
+
+                return '<div class="binding-item">' +
+                    '<div class="binding-info">' +
+                    '<span class="binding-emoji">' + char.emoji + '</span>' +
+                    '<div class="binding-details">' +
+                    '<span class="binding-entity-name">Entity ' + b.entityId + '</span>' +
+                    '<span class="binding-type"><span class="badge ' + typeBadgeClass + '">' + typeText + '</span></span>' +
+                    '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-danger btn-sm" onclick="confirmUnbind(' + b.entityId + ', \'' + b.botType + '\')">' +
+                    i18n.t('borrow_btn_unbind') +
+                    '</button>' +
+                    '</div>';
+            }).join('');
+        }
+
+        async function bindFree() {
+            const btn = document.getElementById('btnBindFree');
+            btn.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_binding');
+
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/bind-free', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedBorrowEntity
+                });
+
+                if (result.success) {
+                    showToast(i18n.t('borrow_bind_success'), 'success');
+                    await loadBorrowStatus();
+                    await loadEntities();
+                } else {
+                    showToast(result.error || result.message || 'Bind failed', 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Bind failed', 'error');
+            } finally {
+                btn.disabled = false;
+                updateBorrowButtons();
+            }
+        }
+
+        // ============================================
+        // TapPay Integration (for personal bot)
+        // ============================================
+        let tappayReady = false;
+        let canGetPrime = false;
+
+        function initTapPay() {
+            try {
+                TPDirect.setupSDK(
+                    11327,
+                    'app_whdEWBH8e8Lzy4N6BnjIdBiWM32JlJmtAyVTLv7L0J0J9J9J0J0J0J0J',
+                    'sandbox'
+                );
+                TPDirect.card.setup({
+                    fields: {
+                        number: { element: '#tappay-card-number', placeholder: '4242 4242 4242 4242' },
+                        expirationDate: { element: '#tappay-expiration-date', placeholder: 'MM / YY' },
+                        ccv: { element: '#tappay-ccv', placeholder: 'CCV' }
+                    },
+                    styles: {
+                        'input': { 'color': '#ffffff', 'font-size': '14px', 'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+                        'input::placeholder': { 'color': '#555555' },
+                        ':focus': { 'color': '#ffffff' },
+                        '.valid': { 'color': '#4CAF50' },
+                        '.invalid': { 'color': '#F44336' }
+                    },
+                    isMaskCreditCardNumber: true,
+                    maskCreditCardNumberRange: { beginIndex: 6, endIndex: 11 }
+                });
+                TPDirect.card.onUpdate(function (update) {
+                    canGetPrime = update.canGetPrime;
+                    const btnPay = document.getElementById('btnTpPay');
+                    const errEl = document.getElementById('tpCardError');
+                    if (btnPay) btnPay.disabled = !canGetPrime;
+                    if (errEl) {
+                        if (update.status.number === 2) errEl.textContent = 'Invalid card number';
+                        else if (update.status.expiry === 2) errEl.textContent = 'Invalid expiry date';
+                        else if (update.status.ccv === 2) errEl.textContent = 'Invalid CCV';
+                        else errEl.textContent = '';
+                    }
+                });
+                tappayReady = true;
+            } catch (e) {
+                console.error('TapPay init error:', e);
+            }
+        }
+
+        function showTapPayDialog() {
+            const dialog = document.getElementById('tappayDialog');
+            dialog.style.display = '';
+            if (i18n) i18n.apply(dialog);
+            if (!tappayReady) initTapPay();
+
+            const btnPay = document.getElementById('btnTpPay');
+            btnPay.onclick = processTapPayAndBind;
+
+            // Click outside to close
+            dialog.onclick = function (e) { if (e.target === dialog) closeTapPayDialog(); };
+        }
+
+        function closeTapPayDialog() {
+            document.getElementById('tappayDialog').style.display = 'none';
+            document.getElementById('tpCardError').textContent = '';
+            document.getElementById('tpLoading').style.display = 'none';
+            const btnPay = document.getElementById('btnTpPay');
+            btnPay.style.display = '';
+            btnPay.disabled = !canGetPrime;
+            updateBorrowButtons();
+        }
+
+        async function processTapPayAndBind() {
+            if (!tappayReady || !canGetPrime) return;
+
+            const btnPay = document.getElementById('btnTpPay');
+            const loading = document.getElementById('tpLoading');
+            const errEl = document.getElementById('tpCardError');
+
+            btnPay.disabled = true;
+            btnPay.style.display = 'none';
+            loading.style.display = '';
+            errEl.textContent = '';
+
+            TPDirect.card.getPrime(async function (result) {
+                if (result.status !== 0) {
+                    errEl.textContent = 'Failed to process card: ' + (result.msg || 'Unknown error');
+                    btnPay.disabled = false;
+                    btnPay.style.display = '';
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    // Step 1: Pay via TapPay (borrow type = NT$288)
+                    await apiCall('POST', '/api/subscription/tappay/pay', { prime: result.card.prime, type: 'borrow' });
+
+                    // Step 2: Now bind the personal bot
+                    const bindResult = await apiCall('POST', '/api/official-borrow/bind-personal', {
+                        deviceId: currentUser.deviceId,
+                        deviceSecret: currentUser.deviceSecret,
+                        entityId: selectedBorrowEntity
+                    });
+
+                    if (bindResult.success) {
+                        // Step 3: Verify subscription
+                        try {
+                            await apiCall('POST', '/api/official-borrow/verify-subscription', {
+                                deviceId: currentUser.deviceId,
+                                deviceSecret: currentUser.deviceSecret,
+                                entityId: selectedBorrowEntity
+                            });
+                        } catch (_) { }
+
+                        closeTapPayDialog();
+                        showToast(i18n.t('borrow_bind_success'), 'success');
+                        // Refresh user info (subscription status changed)
+                        await checkAuth();
+                        await loadBorrowStatus();
+                        await loadEntities();
+                    } else {
+                        const errorMsg = bindResult.error === 'sold_out' ? i18n.t('borrow_personal_sold_out') : (bindResult.error || bindResult.message || 'Bind failed');
+                        errEl.textContent = errorMsg;
+                        btnPay.disabled = false;
+                        btnPay.style.display = '';
+                        loading.style.display = 'none';
+                    }
+                } catch (e) {
+                    errEl.textContent = e.message || 'Payment failed';
+                    btnPay.disabled = !canGetPrime;
+                    btnPay.style.display = '';
+                    loading.style.display = 'none';
+                }
+            });
+        }
+
+        async function bindPersonal() {
+            // Check if user already has premium subscription
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+
+            if (!isPremium) {
+                // Show TapPay payment dialog first
+                showTapPayDialog();
+                return;
+            }
+
+            // Already premium - bind directly
+            const btn = document.getElementById('btnBindPersonal');
+            btn.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_binding');
+
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/bind-personal', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedBorrowEntity
+                });
+
+                if (result.success) {
+                    showToast(i18n.t('borrow_bind_success'), 'success');
+                    try {
+                        await apiCall('POST', '/api/official-borrow/verify-subscription', {
+                            deviceId: currentUser.deviceId,
+                            deviceSecret: currentUser.deviceSecret,
+                            entityId: selectedBorrowEntity
+                        });
+                    } catch (_) { }
+                    await loadBorrowStatus();
+                    await loadEntities();
+                } else {
+                    const errorMsg = result.error === 'sold_out' ? i18n.t('borrow_personal_sold_out') : (result.error || result.message || 'Bind failed');
+                    showToast(errorMsg, 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Bind failed', 'error');
+            } finally {
+                btn.disabled = false;
+                updateBorrowButtons();
+            }
+        }
+
+        function confirmUnbind(entityId, botType) {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML =
+                '<div class="dialog">' +
+                '<div class="dialog-title">' + i18n.t('borrow_unbind_title') + '</div>' +
+                '<p style="color:var(--text-secondary);font-size:14px;">' +
+                i18n.t('borrow_unbind_desc', { id: entityId }) +
+                '</p>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '<button class="btn btn-danger" id="btnConfirmUnbind">' + i18n.t('borrow_btn_unbind') + '</button>' +
+                '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            overlay.querySelector('#btnConfirmUnbind').addEventListener('click', async function () {
+                this.disabled = true;
+                this.textContent = i18n.t('borrow_btn_unbinding');
+                await unbindOfficialBot(entityId, overlay);
+            });
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+        }
+
+        async function unbindOfficialBot(entityId, overlay) {
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/unbind', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: entityId
+                });
+
+                if (result.success) {
+                    showToast(i18n.t('borrow_unbind_success'), 'success');
+                    if (overlay) overlay.remove();
+                    await loadBorrowStatus();
+                    await loadEntities();
+                } else {
+                    showToast(result.message || 'Unbind failed', 'error');
+                }
+            } catch (e) {
+                showToast(e.message || 'Unbind failed', 'error');
+            }
+        }
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', () => {
+            if (countdownInterval) clearInterval(countdownInterval);
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+
+</html>
