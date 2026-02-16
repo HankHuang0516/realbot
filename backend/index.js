@@ -1083,7 +1083,26 @@ app.delete('/api/entity', (req, res) => {
  * This allows the device owner to remove entities without needing bot credentials.
  */
 app.delete('/api/device/entity', async (req, res) => {
-    const { deviceId, deviceSecret, entityId } = req.body;
+    let { deviceId, deviceSecret, entityId } = req.body || {};
+
+    // Fallback: use cookie-based auth (web portal)
+    if ((!deviceId || !deviceSecret) && req.user) {
+        deviceId = req.user.deviceId;
+        deviceSecret = req.user.deviceSecret;
+        if (!entityId && req.body) entityId = req.body.entityId;
+    }
+    // Also try parsing cookie if req.user not set (no auth middleware on this route)
+    if ((!deviceId || !deviceSecret) && req.cookies && req.cookies.eclaw_session) {
+        try {
+            const jwt = require('jsonwebtoken');
+            const decoded = jwt.verify(req.cookies.eclaw_session, process.env.JWT_SECRET || 'dev-secret-change-in-production');
+            if (decoded && decoded.deviceId && decoded.deviceSecret) {
+                deviceId = decoded.deviceId;
+                deviceSecret = decoded.deviceSecret;
+                if (!entityId && req.body) entityId = req.body.entityId;
+            }
+        } catch (e) { /* invalid token, fall through */ }
+    }
 
     if (!deviceId || !deviceSecret) {
         return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });

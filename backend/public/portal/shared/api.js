@@ -9,7 +9,7 @@ async function apiCall(method, path, body = null) {
         headers: {}
     };
 
-    if (body && (method === 'POST' || method === 'PUT')) {
+    if (body && (method === 'POST' || method === 'PUT' || method === 'DELETE')) {
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(body);
     }
