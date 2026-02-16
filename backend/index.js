@@ -694,6 +694,23 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
+// Temporary: Get server's outbound IP (for TapPay IP whitelist)
+app.get('/api/server-ip', async (req, res) => {
+    try {
+        const https = require('https');
+        const ip = await new Promise((resolve, reject) => {
+            https.get('https://api.ipify.org?format=json', (resp) => {
+                let data = '';
+                resp.on('data', chunk => data += chunk);
+                resp.on('end', () => resolve(JSON.parse(data).ip));
+            }).on('error', reject);
+        });
+        res.json({ ip });
+    } catch (e) {
+        res.json({ error: e.message });
+    }
+});
+
 // Version sync endpoint - AI Agent can check Web/APP sync status
 app.get('/api/version', (req, res) => {
     res.json({
