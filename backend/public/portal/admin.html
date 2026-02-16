@@ -278,7 +278,7 @@
 
         async function init() {
             renderNav('admin');
-            if (typeof i18n !== 'undefined') i18n.init();
+            if (typeof i18n !== 'undefined') i18n.apply();
 
             const user = await checkAuth();
             if (!user) return;
