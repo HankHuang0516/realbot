@@ -274,7 +274,7 @@
             <!-- TODO -->
             <div class="card">
                 <div class="card-header">
-                    <h2 data-i18n="mc_todo_title">TODO List</h2>
+                    <h2>📋 <span data-i18n="mc_todo_title">TODO</span></h2>
                     <button class="btn btn-outline btn-sm" onclick="showAddItem('todo')" data-i18n="mc_btn_add">+ Add</button>
                 </div>
                 <div id="todoList"></div>
@@ -283,7 +283,7 @@
             <!-- Mission -->
             <div class="card">
                 <div class="card-header">
-                    <h2 data-i18n="mc_mission_title">Mission List</h2>
+                    <h2>🎯 <span data-i18n="mc_mission_title">Mission</span></h2>
                 </div>
                 <div id="missionList"></div>
             </div>
@@ -291,7 +291,7 @@
             <!-- Done -->
             <div class="card">
                 <div class="card-header">
-                    <h2 data-i18n="mc_done_title">Done List</h2>
+                    <h2>✅ <span data-i18n="mc_done_title">Done</span></h2>
                 </div>
                 <div id="doneList"></div>
             </div>
@@ -299,7 +299,7 @@
             <!-- Notes -->
             <div class="card">
                 <div class="card-header">
-                    <h2 data-i18n="mc_notes_title">Notes (Bot Read-only)</h2>
+                    <h2>📝 <span data-i18n="mc_notes_title">Notes</span></h2>
                     <button class="btn btn-outline btn-sm" onclick="showAddNote()" data-i18n="mc_btn_add">+ Add</button>
                 </div>
                 <div id="notesList"></div>
@@ -317,7 +317,7 @@
             <!-- Rules -->
             <div class="card">
                 <div class="card-header">
-                    <h2 data-i18n="mc_rules_title">Rules (Workflow)</h2>
+                    <h2>📏 <span data-i18n="mc_rules_title">Rules</span></h2>
                     <button class="btn btn-outline btn-sm" onclick="showAddRule()" data-i18n="mc_btn_add">+ Add</button>
                 </div>
                 <div id="rulesList"></div>
@@ -671,15 +671,16 @@
             el.innerHTML = dashboard.missionList.map(item => {
                 const assignLabel = item.assignedBot != null && item.assignedBot !== ''
                     ? getEntityLabel(parseInt(item.assignedBot))
-                    : '-';
+                    : '';
                 return `
                 <div class="mc-item" onclick="showEditItem('${item.id}','mission')" oncontextmenu="showItemMenu(event,'${item.id}','mission')">
                     <div class="item-row">
                         <span class="item-priority">${(getPriorityLabel(item.priority?.value || item.priority)).slice(0, 2)}</span>
                         <span class="item-title">${esc(item.title)}</span>
+                        ${assignLabel ? `<span class="item-badge">${assignLabel}</span>` : ''}
                         <span class="item-badge">${getStatusLabel(item.status?.name || item.status)}</span>
                     </div>
-                    <div class="item-detail">${assignLabel} &nbsp; ${item.eta ? fmtDate(item.eta) : '-'}</div>
+                    ${item.description ? `<div class="item-detail">${esc(item.description)}</div>` : ''}
                 </div>`;
             }).join('');
         }
@@ -694,8 +695,9 @@
                 <div class="mc-item" oncontextmenu="showItemMenu(event,'${item.id}','done')">
                     <div class="item-row">
                         <span class="item-title">${esc(item.title)}</span>
+                        ${item.completedAt ? `<span class="item-badge" style="color:var(--success);">${fmtDate(item.completedAt)}</span>` : ''}
                     </div>
-                    ${item.completedAt ? `<div class="item-done">${fmtDate(item.completedAt)}</div>` : ''}
+                    ${item.description ? `<div class="item-detail">${esc(item.description)}</div>` : ''}
                 </div>
             `).join('');
         }
@@ -736,7 +738,7 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="item-detail">${esc(r.description || '')}</div>
+                    ${r.description ? `<div class="item-detail">${esc(r.description)}</div>` : ''}
                 </div>`;
             }).join('');
         }
@@ -985,7 +987,7 @@
         function renderSkills() {
             const el = document.getElementById('skillsList');
             if (!dashboard.skills.length) {
-                el.innerHTML = `<div class="mc-empty">No skills</div>`;
+                el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_skills') || 'No skills'}</div>`;
                 return;
             }
             el.innerHTML = dashboard.skills.map(s => {

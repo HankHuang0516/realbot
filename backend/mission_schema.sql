@@ -191,6 +191,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ============================================
+-- Migration: Add skills column
+-- ============================================
+ALTER TABLE mission_dashboard ADD COLUMN IF NOT EXISTS skills JSONB DEFAULT '[]'::jsonb;
+
 -- Grant execute to app user (adjust as needed)
 -- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_user;
 -- GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user;
