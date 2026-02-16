@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS user_accounts (
     subscription_expires_at BIGINT,
     tappay_card_key TEXT,
     tappay_card_token TEXT,
+    -- Admin
+    is_admin BOOLEAN DEFAULT FALSE,
     -- Preferences
     language VARCHAR(10) DEFAULT 'en',
     -- Metadata
@@ -72,7 +74,17 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     source VARCHAR(64) NOT NULL,
     is_from_user BOOLEAN DEFAULT FALSE,
     is_from_bot BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_chat_device ON chat_messages(device_id, created_at DESC);
+
+-- Migration: add read_at column to existing chat_messages tables
+ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+
+-- Migration: add is_admin column to existing user_accounts tables
+ALTER TABLE user_accounts ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
+
+-- Set admin for hankhuang0516@gmail.com
+UPDATE user_accounts SET is_admin = TRUE WHERE email = 'hankhuang0516@gmail.com';

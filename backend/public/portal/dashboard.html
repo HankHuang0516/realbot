@@ -495,6 +495,16 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* TapPay card fields */
+        .tappay-field { margin-bottom: 10px; }
+        .tappay-field label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        .tappay-field-input {
+            background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 12px; height: 40px;
+        }
+        .tappay-field-input.tappay-field-focus { border-color: var(--primary); }
+        .tappay-field-input.tappay-field-error { border-color: #F44336; }
     </style>
 </head>
 
@@ -631,6 +641,42 @@
             </div>
         </div>
     </div>
+
+    <!-- TapPay Payment Dialog (for personal bot subscription) -->
+    <div class="dialog-overlay" id="tappayDialog" style="display:none">
+        <div class="dialog" style="max-width:400px;">
+            <div class="dialog-title" data-i18n="borrow_pay_title">Subscribe &amp; Bind - NT$99/month</div>
+            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;" data-i18n="borrow_pay_desc">
+                Enter your credit card to subscribe to a personal bot (NT$99/month).
+            </p>
+            <div class="tappay-field">
+                <label data-i18n="settings_label_card">Card Number</label>
+                <div class="tappay-field-input" id="tappay-card-number"></div>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <div class="tappay-field" style="flex:1">
+                    <label data-i18n="settings_label_expiry">Expiry Date</label>
+                    <div class="tappay-field-input" id="tappay-expiration-date"></div>
+                </div>
+                <div class="tappay-field" style="flex:1">
+                    <label data-i18n="settings_label_ccv">CCV</label>
+                    <div class="tappay-field-input" id="tappay-ccv"></div>
+                </div>
+            </div>
+            <div class="card-error" id="tpCardError" style="color:#F44336;font-size:12px;min-height:18px;"></div>
+            <div class="dialog-actions" style="margin-top:12px;">
+                <button class="btn btn-outline" onclick="closeTapPayDialog()" data-i18n="mc_dlg_cancel">Cancel</button>
+                <button class="btn btn-success" id="btnTpPay" disabled data-i18n="settings_btn_pay">Pay NT$99</button>
+            </div>
+            <div id="tpLoading" style="display:none;text-align:center;padding:12px 0;">
+                <div class="spinner"></div>
+                <span style="color:var(--text-secondary);font-size:13px;margin-left:8px;" data-i18n="settings_processing">Processing payment...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- TapPay SDK -->
+    <script src="https://js.tappaysdk.com/sdk/tpdirect/v5.17.0"></script>
 
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
@@ -1234,7 +1280,151 @@
             }
         }
 
+        // ============================================
+        // TapPay Integration (for personal bot)
+        // ============================================
+        let tappayReady = false;
+        let canGetPrime = false;
+
+        function initTapPay() {
+            try {
+                TPDirect.setupSDK(
+                    166632,
+                    'app_eLtyNlnXhUY9PkZoJUw8wjU0o7Ts0iCe14YW6CND4AqYmi5hq8KR4PhKL9DA',
+                    'production'
+                );
+                TPDirect.card.setup({
+                    fields: {
+                        number: { element: '#tappay-card-number', placeholder: '4242 4242 4242 4242' },
+                        expirationDate: { element: '#tappay-expiration-date', placeholder: 'MM / YY' },
+                        ccv: { element: '#tappay-ccv', placeholder: 'CCV' }
+                    },
+                    styles: {
+                        'input': { 'color': '#ffffff', 'font-size': '14px', 'font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+                        'input::placeholder': { 'color': '#555555' },
+                        ':focus': { 'color': '#ffffff' },
+                        '.valid': { 'color': '#4CAF50' },
+                        '.invalid': { 'color': '#F44336' }
+                    },
+                    isMaskCreditCardNumber: true,
+                    maskCreditCardNumberRange: { beginIndex: 6, endIndex: 11 }
+                });
+                TPDirect.card.onUpdate(function(update) {
+                    canGetPrime = update.canGetPrime;
+                    const btnPay = document.getElementById('btnTpPay');
+                    const errEl = document.getElementById('tpCardError');
+                    if (btnPay) btnPay.disabled = !canGetPrime;
+                    if (errEl) {
+                        if (update.status.number === 2) errEl.textContent = 'Invalid card number';
+                        else if (update.status.expiry === 2) errEl.textContent = 'Invalid expiry date';
+                        else if (update.status.ccv === 2) errEl.textContent = 'Invalid CCV';
+                        else errEl.textContent = '';
+                    }
+                });
+                tappayReady = true;
+            } catch (e) {
+                console.error('TapPay init error:', e);
+            }
+        }
+
+        function showTapPayDialog() {
+            const dialog = document.getElementById('tappayDialog');
+            dialog.style.display = '';
+            if (i18n) i18n.apply(dialog);
+            if (!tappayReady) initTapPay();
+
+            const btnPay = document.getElementById('btnTpPay');
+            btnPay.onclick = processTapPayAndBind;
+
+            // Click outside to close
+            dialog.onclick = function(e) { if (e.target === dialog) closeTapPayDialog(); };
+        }
+
+        function closeTapPayDialog() {
+            document.getElementById('tappayDialog').style.display = 'none';
+            document.getElementById('tpCardError').textContent = '';
+            document.getElementById('tpLoading').style.display = 'none';
+            const btnPay = document.getElementById('btnTpPay');
+            btnPay.style.display = '';
+            btnPay.disabled = !canGetPrime;
+            updateBorrowButtons();
+        }
+
+        async function processTapPayAndBind() {
+            if (!tappayReady || !canGetPrime) return;
+
+            const btnPay = document.getElementById('btnTpPay');
+            const loading = document.getElementById('tpLoading');
+            const errEl = document.getElementById('tpCardError');
+
+            btnPay.disabled = true;
+            btnPay.style.display = 'none';
+            loading.style.display = '';
+            errEl.textContent = '';
+
+            TPDirect.card.getPrime(async function(result) {
+                if (result.status !== 0) {
+                    errEl.textContent = 'Failed to process card: ' + (result.msg || 'Unknown error');
+                    btnPay.disabled = false;
+                    btnPay.style.display = '';
+                    loading.style.display = 'none';
+                    return;
+                }
+
+                try {
+                    // Step 1: Pay via TapPay
+                    await apiCall('POST', '/api/subscription/tappay/pay', { prime: result.card.prime });
+
+                    // Step 2: Now bind the personal bot
+                    const bindResult = await apiCall('POST', '/api/official-borrow/bind-personal', {
+                        deviceId: currentUser.deviceId,
+                        deviceSecret: currentUser.deviceSecret,
+                        entityId: selectedBorrowEntity
+                    });
+
+                    if (bindResult.success) {
+                        // Step 3: Verify subscription
+                        try {
+                            await apiCall('POST', '/api/official-borrow/verify-subscription', {
+                                deviceId: currentUser.deviceId,
+                                deviceSecret: currentUser.deviceSecret,
+                                entityId: selectedBorrowEntity
+                            });
+                        } catch (_) { }
+
+                        closeTapPayDialog();
+                        showToast(i18n.t('borrow_bind_success'), 'success');
+                        // Refresh user info (subscription status changed)
+                        await checkAuth();
+                        await loadBorrowStatus();
+                        await loadEntities();
+                    } else {
+                        const errorMsg = bindResult.error === 'sold_out' ? i18n.t('borrow_personal_sold_out') : (bindResult.error || bindResult.message || 'Bind failed');
+                        errEl.textContent = errorMsg;
+                        btnPay.disabled = false;
+                        btnPay.style.display = '';
+                        loading.style.display = 'none';
+                    }
+                } catch (e) {
+                    errEl.textContent = e.message || 'Payment failed';
+                    btnPay.disabled = !canGetPrime;
+                    btnPay.style.display = '';
+                    loading.style.display = 'none';
+                }
+            });
+        }
+
         async function bindPersonal() {
+            // Check if user already has premium subscription
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+
+            if (!isPremium) {
+                // Show TapPay payment dialog first
+                showTapPayDialog();
+                return;
+            }
+
+            // Already premium - bind directly
             const btn = document.getElementById('btnBindPersonal');
             btn.disabled = true;
             btn.textContent = i18n.t('borrow_btn_binding');
@@ -1248,7 +1438,6 @@
 
                 if (result.success) {
                     showToast(i18n.t('borrow_bind_success'), 'success');
-                    // Verify subscription after bind
                     try {
                         await apiCall('POST', '/api/official-borrow/verify-subscription', {
                             deviceId: currentUser.deviceId,

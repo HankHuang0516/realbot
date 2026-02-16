@@ -132,6 +132,25 @@ module.exports = function(devices, getOrCreateDevice) {
         next();
     }
 
+    // Middleware: require admin role (must come after authMiddleware)
+    function adminMiddleware(req, res, next) {
+        if (!req.user || !req.user.userId) {
+            return res.status(403).json({ success: false, error: 'Admin access required' });
+        }
+        pool.query('SELECT is_admin FROM user_accounts WHERE id = $1', [req.user.userId])
+            .then(result => {
+                if (result.rows.length === 0 || !result.rows[0].is_admin) {
+                    return res.status(403).json({ success: false, error: 'Admin access required' });
+                }
+                req.isAdmin = true;
+                next();
+            })
+            .catch(err => {
+                console.error('[Auth] Admin check error:', err);
+                res.status(500).json({ success: false, error: 'Server error' });
+            });
+    }
+
     // ============================================
     // POST /register
     // ============================================
@@ -546,7 +565,7 @@ module.exports = function(devices, getOrCreateDevice) {
             }
 
             const result = await pool.query(
-                'SELECT id, email, device_id, device_secret, subscription_status, subscription_expires_at, language, email_verified, created_at FROM user_accounts WHERE id = $1',
+                'SELECT id, email, device_id, device_secret, subscription_status, subscription_expires_at, language, email_verified, is_admin, created_at FROM user_accounts WHERE id = $1',
                 [req.user.userId]
             );
 
@@ -586,6 +605,7 @@ module.exports = function(devices, getOrCreateDevice) {
                     language: user.language,
                     emailVerified: user.email_verified,
                     createdAt: user.created_at,
+                    isAdmin: user.is_admin || false,
                     usageToday: usageToday,
                     usageLimit: user.subscription_status === 'premium' ? null : 15
                 }
@@ -650,5 +670,5 @@ module.exports = function(devices, getOrCreateDevice) {
         }
     });
 
-    return { router, authMiddleware, initAuthDatabase, pool: pool };
+    return { router, authMiddleware, adminMiddleware, initAuthDatabase, pool: pool };
 };

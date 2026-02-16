@@ -8,6 +8,21 @@ function renderNav(activePage) {
         { id: 'settings', i18nKey: 'nav_settings', label: 'Settings', href: 'settings.html', icon: '⚙️' }
     ];
 
+    // Deferred: add admin link after auth check completes
+    setTimeout(() => {
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.isAdmin) {
+            const navLinks = document.getElementById('navLinks');
+            if (navLinks && !navLinks.querySelector('[data-admin-link]')) {
+                const link = document.createElement('a');
+                link.href = 'admin.html';
+                link.className = 'nav-link' + (activePage === 'admin' ? ' active' : '');
+                link.setAttribute('data-admin-link', '1');
+                link.innerHTML = '<span class="nav-link-icon">🔒</span><span class="nav-link-text">Admin</span>';
+                navLinks.appendChild(link);
+            }
+        }
+    }, 600);
+
     const t = (key, fallback) => typeof i18n !== 'undefined' ? i18n.t(key) : fallback;
 
     const nav = document.createElement('nav');

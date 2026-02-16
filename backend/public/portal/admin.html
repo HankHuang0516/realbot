@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Claw - Admin Dashboard</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .admin-header h1 {
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-badge {
+            background: var(--danger);
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text);
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--card-border);
+        }
+
+        /* Stat Cards Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-value.success {
+            color: var(--success);
+        }
+
+        .stat-value.warning {
+            color: var(--warning);
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Section Cards */
+        .section-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 8px 10px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--card-border);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(51, 51, 85, 0.3);
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover td {
+            background: rgba(108, 99, 255, 0.05);
+        }
+
+        .data-table .mono {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Badges */
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .type-free {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .type-personal {
+            background: rgba(255, 210, 63, 0.2);
+            color: #FFD23F;
+        }
+
+        .type-premium {
+            background: rgba(255, 210, 63, 0.2);
+            color: #FFD23F;
+        }
+
+        .type-active {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .type-expired {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+        }
+
+        .type-admin {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+        }
+
+        /* Signup Chart */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 120px;
+            padding: 10px 0;
+        }
+
+        .chart-bar-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .chart-bar {
+            width: 100%;
+            max-width: 40px;
+            background: var(--primary);
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            position: relative;
+        }
+
+        .chart-bar-count {
+            font-size: 11px;
+            color: var(--text);
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .chart-bar-date {
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Scrollable table wrapper */
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Loading */
+        .admin-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 6px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <h1>Admin Dashboard <span class="admin-badge">ADMIN</span></h1>
+            <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+        </div>
+
+        <div id="adminContent">
+            <div class="admin-loading">
+                <div class="spinner"></div>
+                <p style="margin-top:10px;">Loading admin data...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
+    <script>
+        let statsData = null;
+        let bindingsData = null;
+        let usersData = null;
+        let botsData = null;
+
+        async function init() {
+            renderNav('admin');
+            if (typeof i18n !== 'undefined') i18n.init();
+
+            const user = await checkAuth();
+            if (!user) return;
+
+            if (!user.isAdmin) {
+                document.getElementById('adminContent').innerHTML =
+                    '<div class="section-card" style="text-align:center;padding:40px;">' +
+                    '<p style="font-size:18px;margin-bottom:10px;">Access Denied</p>' +
+                    '<p style="color:var(--text-secondary);">You do not have admin privileges.</p>' +
+                    '<a href="dashboard.html" class="btn btn-primary" style="margin-top:16px;display:inline-block;">Back to Dashboard</a>' +
+                    '</div>';
+                return;
+            }
+
+            await loadAll();
+        }
+
+        async function loadAll() {
+            try {
+                const [stats, bindings, users, bots] = await Promise.all([
+                    apiCall('GET', '/api/admin/stats'),
+                    apiCall('GET', '/api/admin/bindings'),
+                    apiCall('GET', '/api/admin/users'),
+                    apiCall('GET', '/api/admin/bots')
+                ]);
+                statsData = stats;
+                bindingsData = bindings;
+                usersData = users;
+                botsData = bots;
+                render();
+            } catch (e) {
+                document.getElementById('adminContent').innerHTML =
+                    '<div class="section-card" style="text-align:center;color:var(--danger);">Failed to load: ' + escapeHtml(e.message) + '</div>';
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '-';
+            const d = new Date(typeof ts === 'number' ? ts : ts);
+            return d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' +
+                d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function render() {
+            const s = statsData;
+            const content = document.getElementById('adminContent');
+
+            let html = '';
+
+            // === Stat Cards ===
+            html += '<div class="stats-grid">';
+            html += statCard(s.users.total, 'Total Users', '');
+            html += statCard(s.users.premium, 'Premium Users', 'warning');
+            html += statCard(s.users.verified, 'Verified Emails', 'success');
+            html += statCard(s.devices.total, 'Devices', '');
+            html += statCard(s.devices.boundEntities + '/' + s.devices.entities, 'Bound Entities', 'success');
+            html += statCard(s.bindings.total, 'Bot Bindings', '');
+            html += statCard(s.bindings.free, 'Free Bindings', 'success');
+            html += statCard(s.bindings.personal, 'Personal Bindings', 'warning');
+            html += statCard(s.messagesToday, 'Messages Today', '');
+            html += '</div>';
+
+            // === Signup Chart ===
+            if (s.recentSignups && s.recentSignups.length > 0) {
+                html += '<div class="section-card">';
+                html += '<div class="section-title">New Signups (Last 7 Days)</div>';
+                html += renderChart(s.recentSignups);
+                html += '</div>';
+            }
+
+            // === Official Bots ===
+            html += '<div class="section-card">';
+            html += '<div class="section-title">Official Bots (' + (botsData.bots || []).length + ')</div>';
+            html += '<div class="table-scroll">';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>Bot ID</th><th>Type</th><th>Status</th><th>Assigned To</th><th>User</th><th>Assigned At</th></tr></thead>';
+            html += '<tbody>';
+            if (botsData.bots && botsData.bots.length > 0) {
+                for (const b of botsData.bots) {
+                    const typeCls = b.botType === 'free' ? 'type-free' : 'type-personal';
+                    const statusCls = b.status === 'assigned' ? 'type-active' : '';
+                    html += '<tr>' +
+                        '<td class="mono">' + escapeHtml(b.botId).substring(0, 12) + '...</td>' +
+                        '<td><span class="type-badge ' + typeCls + '">' + escapeHtml(b.botType) + '</span></td>' +
+                        '<td><span class="type-badge ' + statusCls + '">' + escapeHtml(b.status) + '</span></td>' +
+                        '<td class="mono">' + (b.assignedDeviceId ? escapeHtml(b.assignedDeviceId).substring(0, 8) + '...' : '-') + ' ' + (b.assignedEntityId !== null ? 'E' + b.assignedEntityId : '') + '</td>' +
+                        '<td>' + escapeHtml(b.assignedUserEmail || '-') + '</td>' +
+                        '<td>' + formatDate(b.assignedAt) + '</td>' +
+                        '</tr>';
+                }
+            } else {
+                html += '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">No official bots registered</td></tr>';
+            }
+            html += '</tbody></table></div></div>';
+
+            // === Active Bindings ===
+            html += '<div class="section-card">';
+            html += '<div class="section-title">Active Bindings (' + (bindingsData.bindings || []).length + ')</div>';
+            html += '<div class="table-scroll">';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>Bot ID</th><th>Type</th><th>Device</th><th>Entity</th><th>User</th><th>Bound At</th><th>Sub Verified</th></tr></thead>';
+            html += '<tbody>';
+            if (bindingsData.bindings && bindingsData.bindings.length > 0) {
+                for (const b of bindingsData.bindings) {
+                    const typeCls = b.botType === 'free' ? 'type-free' : 'type-personal';
+                    html += '<tr>' +
+                        '<td class="mono">' + escapeHtml(b.botId).substring(0, 12) + '...</td>' +
+                        '<td><span class="type-badge ' + typeCls + '">' + escapeHtml(b.botType) + '</span></td>' +
+                        '<td class="mono">' + escapeHtml(b.deviceId).substring(0, 8) + '...</td>' +
+                        '<td>Entity ' + b.entityId + '</td>' +
+                        '<td>' + escapeHtml(b.userEmail) + '</td>' +
+                        '<td>' + formatDate(b.boundAt) + '</td>' +
+                        '<td>' + formatDate(b.subscriptionVerifiedAt) + '</td>' +
+                        '</tr>';
+                }
+            } else {
+                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">No active bindings</td></tr>';
+            }
+            html += '</tbody></table></div></div>';
+
+            // === Users ===
+            html += '<div class="section-card">';
+            html += '<div class="section-title">Users (' + (usersData.users || []).length + ')</div>';
+            html += '<div class="table-scroll">';
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>Email</th><th>Verified</th><th>Subscription</th><th>Role</th><th>Device ID</th><th>Registered</th><th>Last Login</th></tr></thead>';
+            html += '<tbody>';
+            if (usersData.users && usersData.users.length > 0) {
+                for (const u of usersData.users) {
+                    const subCls = u.subscriptionStatus === 'premium' ? 'type-premium' :
+                        u.subscriptionStatus === 'expired' ? 'type-expired' : '';
+                    html += '<tr>' +
+                        '<td>' + escapeHtml(u.email) + '</td>' +
+                        '<td>' + (u.emailVerified ? '<span style="color:var(--success)">Yes</span>' : '<span style="color:var(--text-muted)">No</span>') + '</td>' +
+                        '<td><span class="type-badge ' + subCls + '">' + escapeHtml(u.subscriptionStatus) + '</span></td>' +
+                        '<td>' + (u.isAdmin ? '<span class="type-badge type-admin">Admin</span>' : 'User') + '</td>' +
+                        '<td class="mono">' + escapeHtml(u.deviceId).substring(0, 8) + '...</td>' +
+                        '<td>' + formatDate(u.createdAt) + '</td>' +
+                        '<td>' + formatDate(u.lastLoginAt) + '</td>' +
+                        '</tr>';
+                }
+            } else {
+                html += '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);">No users</td></tr>';
+            }
+            html += '</tbody></table></div></div>';
+
+            content.innerHTML = html;
+        }
+
+        function statCard(value, label, colorClass) {
+            return '<div class="stat-card">' +
+                '<div class="stat-value ' + colorClass + '">' + value + '</div>' +
+                '<div class="stat-label">' + label + '</div>' +
+                '</div>';
+        }
+
+        function renderChart(signups) {
+            if (!signups || signups.length === 0) return '';
+            const maxCount = Math.max(...signups.map(s => parseInt(s.count)), 1);
+            let html = '<div class="chart-container">';
+            for (const s of signups) {
+                const count = parseInt(s.count);
+                const height = Math.max(4, (count / maxCount) * 90);
+                const dateStr = new Date(s.date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+                html += '<div class="chart-bar-wrapper">' +
+                    '<span class="chart-bar-count">' + count + '</span>' +
+                    '<div class="chart-bar" style="height:' + height + 'px;"></div>' +
+                    '<span class="chart-bar-date">' + dateStr + '</span>' +
+                    '</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

@@ -289,6 +289,181 @@ app.use('/api/subscription', subscriptionModule.router);
 // Load premium status after persistence is ready
 setTimeout(() => subscriptionModule.loadPremiumStatus(), 5000);
 
+// ============================================
+// ADMIN API (PostgreSQL, admin-only)
+// ============================================
+const adminAuth = authModule.authMiddleware;
+const adminCheck = authModule.adminMiddleware;
+
+// GET /api/admin/stats - Overview stats
+app.get('/api/admin/stats', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const pg = authModule.pool;
+
+        // User counts
+        const userCount = await pg.query('SELECT COUNT(*) as total FROM user_accounts');
+        const premiumCount = await pg.query("SELECT COUNT(*) as total FROM user_accounts WHERE subscription_status = 'premium'");
+        const verifiedCount = await pg.query('SELECT COUNT(*) as total FROM user_accounts WHERE email_verified = true');
+
+        // Device counts (in-memory)
+        const deviceTotal = Object.keys(devices).length;
+        let entityTotal = 0;
+        let boundEntities = 0;
+        for (const d of Object.values(devices)) {
+            if (d.entities) {
+                for (const e of Object.values(d.entities)) {
+                    entityTotal++;
+                    if (e.isBound) boundEntities++;
+                }
+            }
+        }
+
+        // Official bots
+        const freeBotsResult = await pg.query("SELECT COUNT(*) as total FROM official_bots WHERE bot_type = 'free'");
+        const personalBotsResult = await pg.query("SELECT COUNT(*) as total FROM official_bots WHERE bot_type = 'personal'");
+        const freeAssigned = await pg.query("SELECT COUNT(*) as total FROM official_bots WHERE bot_type = 'free' AND status = 'assigned'");
+        const personalAssigned = await pg.query("SELECT COUNT(*) as total FROM official_bots WHERE bot_type = 'personal' AND status = 'assigned'");
+
+        // Bindings
+        const totalBindings = await pg.query('SELECT COUNT(*) as total FROM official_bot_bindings');
+        const freeBindings = await pg.query(
+            "SELECT COUNT(*) as total FROM official_bot_bindings b JOIN official_bots o ON b.bot_id = o.bot_id WHERE o.bot_type = 'free'"
+        );
+        const personalBindings = await pg.query(
+            "SELECT COUNT(*) as total FROM official_bot_bindings b JOIN official_bots o ON b.bot_id = o.bot_id WHERE o.bot_type = 'personal'"
+        );
+
+        // Chat messages today
+        const msgToday = await pg.query("SELECT COUNT(*) as total FROM chat_messages WHERE created_at::date = CURRENT_DATE");
+
+        // Recent signups (last 7 days)
+        const recentSignups = await pg.query(
+            "SELECT DATE(created_at) as date, COUNT(*) as count FROM user_accounts WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY DATE(created_at) ORDER BY date ASC"
+        );
+
+        res.json({
+            success: true,
+            users: {
+                total: parseInt(userCount.rows[0].total),
+                premium: parseInt(premiumCount.rows[0].total),
+                verified: parseInt(verifiedCount.rows[0].total)
+            },
+            devices: {
+                total: deviceTotal,
+                entities: entityTotal,
+                boundEntities: boundEntities
+            },
+            officialBots: {
+                free: { total: parseInt(freeBotsResult.rows[0].total), assigned: parseInt(freeAssigned.rows[0].total) },
+                personal: { total: parseInt(personalBotsResult.rows[0].total), assigned: parseInt(personalAssigned.rows[0].total) }
+            },
+            bindings: {
+                total: parseInt(totalBindings.rows[0].total),
+                free: parseInt(freeBindings.rows[0].total),
+                personal: parseInt(personalBindings.rows[0].total)
+            },
+            messagesToday: parseInt(msgToday.rows[0].total),
+            recentSignups: recentSignups.rows
+        });
+    } catch (err) {
+        console.error('[Admin] Stats error:', err);
+        res.status(500).json({ success: false, error: 'Failed to get stats' });
+    }
+});
+
+// GET /api/admin/bindings - Detailed binding list
+app.get('/api/admin/bindings', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const pg = authModule.pool;
+        const result = await pg.query(`
+            SELECT b.bot_id, b.device_id, b.entity_id, b.session_key, b.bound_at, b.subscription_verified_at,
+                   o.bot_type, o.status as bot_status,
+                   u.email as user_email
+            FROM official_bot_bindings b
+            JOIN official_bots o ON b.bot_id = o.bot_id
+            LEFT JOIN user_accounts u ON b.device_id = u.device_id
+            ORDER BY b.bound_at DESC
+        `);
+
+        res.json({
+            success: true,
+            bindings: result.rows.map(r => ({
+                botId: r.bot_id,
+                botType: r.bot_type,
+                deviceId: r.device_id,
+                entityId: r.entity_id,
+                userEmail: r.user_email || '(APP user)',
+                boundAt: r.bound_at,
+                subscriptionVerifiedAt: r.subscription_verified_at,
+                botStatus: r.bot_status
+            }))
+        });
+    } catch (err) {
+        console.error('[Admin] Bindings error:', err);
+        res.status(500).json({ success: false, error: 'Failed to get bindings' });
+    }
+});
+
+// GET /api/admin/users - User list
+app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const pg = authModule.pool;
+        const result = await pg.query(
+            `SELECT id, email, email_verified, device_id, subscription_status, subscription_expires_at, is_admin, created_at, last_login_at
+             FROM user_accounts ORDER BY created_at DESC LIMIT 200`
+        );
+
+        res.json({
+            success: true,
+            users: result.rows.map(r => ({
+                id: r.id,
+                email: r.email,
+                emailVerified: r.email_verified,
+                deviceId: r.device_id,
+                subscriptionStatus: r.subscription_status,
+                subscriptionExpiresAt: r.subscription_expires_at,
+                isAdmin: r.is_admin,
+                createdAt: r.created_at,
+                lastLoginAt: r.last_login_at
+            }))
+        });
+    } catch (err) {
+        console.error('[Admin] Users error:', err);
+        res.status(500).json({ success: false, error: 'Failed to get users' });
+    }
+});
+
+// GET /api/admin/bots - Official bot list
+app.get('/api/admin/bots', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const pg = authModule.pool;
+        const result = await pg.query(`
+            SELECT o.bot_id, o.bot_type, o.status, o.assigned_device_id, o.assigned_entity_id, o.assigned_at, o.created_at,
+                   u.email as assigned_user_email
+            FROM official_bots o
+            LEFT JOIN user_accounts u ON o.assigned_device_id = u.device_id
+            ORDER BY o.bot_type, o.created_at ASC
+        `);
+
+        res.json({
+            success: true,
+            bots: result.rows.map(r => ({
+                botId: r.bot_id,
+                botType: r.bot_type,
+                status: r.status,
+                assignedDeviceId: r.assigned_device_id,
+                assignedEntityId: r.assigned_entity_id,
+                assignedUserEmail: r.assigned_user_email || null,
+                assignedAt: r.assigned_at,
+                createdAt: r.created_at
+            }))
+        });
+    } catch (err) {
+        console.error('[Admin] Bots error:', err);
+        res.status(500).json({ success: false, error: 'Failed to get bots' });
+    }
+});
+
 // Helper: Generate 6-digit binding code
 function generateBindingCode() {
     let code;
@@ -832,6 +1007,7 @@ app.post('/api/transform', (req, res) => {
     // Save bot message to chat history so it appears in Chat page
     if (message) {
         saveChatMessage(deviceId, eId, message, entity.name || `Entity ${eId}`, false, true);
+        markMessagesAsRead(deviceId, eId);
     }
 
     console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${message || entity.message}"`);
@@ -1166,6 +1342,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
     };
     toEntity.messageQueue.push(messageObj);
     saveChatMessage(deviceId, toId, text, sourceLabel, false, true);
+    markMessagesAsRead(deviceId, toId);
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
 
@@ -1284,6 +1461,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
         };
         toEntity.messageQueue.push(messageObj);
         saveChatMessage(deviceId, toId, text, sourceLabel, false, true);
+        markMessagesAsRead(deviceId, toId);
 
         // Update entity.message so Android app can display it
         // Format must match Android's parseEntityMessage regex: "entity:{ID}:{CHARACTER}: {message}"
@@ -2651,6 +2829,20 @@ async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isF
     }
 }
 
+// Mark user messages as read when bot responds
+async function markMessagesAsRead(deviceId, entityId) {
+    try {
+        await chatPool.query(
+            `UPDATE chat_messages SET read_at = NOW()
+             WHERE device_id = $1 AND entity_id = $2
+             AND is_from_user = true AND read_at IS NULL`,
+            [deviceId, entityId]
+        );
+    } catch (err) {
+        // Silently fail - read receipts are non-critical
+    }
+}
+
 // GET /api/chat/history
 app.get('/api/chat/history', async (req, res) => {
     const { deviceId, deviceSecret, limit = 100, before, since } = req.query;
@@ -2763,6 +2955,7 @@ app.post('/api/bot/sync-message', async (req, res) => {
     }
     entity.messageQueue.push(messageObj);
     saveChatMessage(deviceId, entityId, message, fromLabel || "bot", false, true);
+    markMessagesAsRead(deviceId, entityId);
 
     // Also update entity.message for immediate display
     entity.message = message;

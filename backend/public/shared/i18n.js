@@ -145,6 +145,8 @@ const TRANSLATIONS = {
         "borrow_type_free": "Free",
         "borrow_type_personal": "Monthly",
         "borrow_entity_has_binding": "Already has official bot",
+        "borrow_pay_title": "Subscribe & Bind - NT$99/month",
+        "borrow_pay_desc": "Enter your credit card to subscribe to a personal bot (NT$99/month). Your subscription will auto-renew monthly.",
 
         // Settings (settings.html)
         "settings_title": "Settings",
@@ -339,6 +341,8 @@ const TRANSLATIONS = {
         "borrow_type_free": "免費版",
         "borrow_type_personal": "月租版",
         "borrow_entity_has_binding": "已有官方 Bot",
+        "borrow_pay_title": "訂閱並綁定 - NT$99/月",
+        "borrow_pay_desc": "輸入信用卡資訊以訂閱個人 Bot（NT$99/月）。訂閱將每月自動續約。",
 
         // Settings (settings.html)
         "settings_title": "設定",
