@@ -139,6 +139,7 @@ module.exports = function (devices, authMiddleware) {
                         name: user.email.split('@')[0],
                         phone_number: ''
                     },
+                    instalment: 0, // 0 = one-time payment (required for INS merchant)
                     remember: true // Store card for recurring
                 })
             });
@@ -319,7 +320,8 @@ module.exports = function (devices, authMiddleware) {
                             merchant_id: TAPPAY_MERCHANT_ID,
                             amount: SUBSCRIPTION_AMOUNT,
                             currency: SUBSCRIPTION_CURRENCY,
-                            details: 'E-Claw Premium Renewal'
+                            details: 'E-Claw Premium Renewal',
+                            instalment: 0
                         })
                     });
 
