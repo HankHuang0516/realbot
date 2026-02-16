@@ -334,6 +334,26 @@
         let version = 1;
         let hasChanges = false;
         let refreshTimer = null;
+        let boundEntities = [];
+
+        const ENTITY_CHARS = {
+            0: { name: 'Lobster', emoji: '\u{1F99E}' },
+            1: { name: 'Pig', emoji: '\u{1F437}' },
+            2: { name: 'Lobster', emoji: '\u{1F99E}' },
+            3: { name: 'Pig', emoji: '\u{1F437}' }
+        };
+
+        function getEntityDisplayName(id) {
+            const entity = boundEntities.find(e => e.entityId === id);
+            if (entity && entity.name) return entity.name;
+            const char = ENTITY_CHARS[id] || { name: 'Entity' };
+            return char.name;
+        }
+
+        function getEntityLabel(id) {
+            const char = ENTITY_CHARS[id] || { name: 'Entity', emoji: '?' };
+            return `${char.emoji} ${esc(getEntityDisplayName(id))} (#${id})`;
+        }
 
         // --- Helpers ---
         const getPriorityLabel = (p) => {
@@ -379,11 +399,31 @@
         }
 
         // --- Init ---
+        async function loadBoundEntities() {
+            try {
+                const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
+                boundEntities = (data.entities || []).filter(e => e.isBound);
+            } catch (e) {
+                console.warn('Failed to load entities:', e.message);
+            }
+        }
+
+        function getEntityOptions(selectedId) {
+            let opts = [{ value: '', label: i18n.t('mc_assign_none') || '-- 不指定 --' }];
+            boundEntities.forEach(e => {
+                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
+                const name = e.name || char.name;
+                opts.push({ value: String(e.entityId), label: `${char.emoji} ${name} (#${e.entityId})` });
+            });
+            return opts;
+        }
+
         window.addEventListener('DOMContentLoaded', async () => {
             renderNav('mission');
             const user = await checkAuth();
             if (!user) return;
 
+            await loadBoundEntities();
             await downloadDashboard();
 
             document.getElementById('loadingState').style.display = 'none';
@@ -481,16 +521,21 @@
                 el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_todo')}</div>`;
                 return;
             }
-            el.innerHTML = dashboard.todoList.map(item => `
+            el.innerHTML = dashboard.todoList.map(item => {
+                const assignLabel = item.assignedBot != null && item.assignedBot !== ''
+                    ? getEntityLabel(parseInt(item.assignedBot))
+                    : '';
+                return `
                 <div class="mc-item" onclick="showEditItem('${item.id}','todo')" oncontextmenu="showItemMenu(event,'${item.id}','todo')">
                     <div class="item-row">
                         <span class="item-priority">${(getPriorityLabel(item.priority?.value || item.priority)).slice(0, 2)}</span>
                         <span class="item-title">${esc(item.title)}</span>
+                        ${assignLabel ? `<span class="item-badge">${assignLabel}</span>` : ''}
                         <span class="item-badge">${getStatusLabel(item.status?.name || item.status)}</span>
                     </div>
                     ${item.description ? `<div class="item-detail">${esc(item.description)}</div>` : ''}
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
 
         function renderMission() {
@@ -499,16 +544,20 @@
                 el.innerHTML = `<div class="mc-empty">${i18n.t('mc_empty_mission')}</div>`;
                 return;
             }
-            el.innerHTML = dashboard.missionList.map(item => `
+            el.innerHTML = dashboard.missionList.map(item => {
+                const assignLabel = item.assignedBot != null && item.assignedBot !== ''
+                    ? getEntityLabel(parseInt(item.assignedBot))
+                    : '-';
+                return `
                 <div class="mc-item" onclick="showEditItem('${item.id}','mission')" oncontextmenu="showItemMenu(event,'${item.id}','mission')">
                     <div class="item-row">
                         <span class="item-priority">${(getPriorityLabel(item.priority?.value || item.priority)).slice(0, 2)}</span>
                         <span class="item-title">${esc(item.title)}</span>
                         <span class="item-badge">${getStatusLabel(item.status?.name || item.status)}</span>
                     </div>
-                    <div class="item-detail">${esc(item.assignedBot || '-')} &nbsp; ${item.eta ? fmtDate(item.eta) : '-'}</div>
-                </div>
-            `).join('');
+                    <div class="item-detail">${assignLabel} &nbsp; ${item.eta ? fmtDate(item.eta) : '-'}</div>
+                </div>`;
+            }).join('');
         }
 
         function renderDone() {
@@ -629,10 +678,11 @@
             showDialog(i18n.t('mc_dlg_add_todo'), [
                 { key: 'title', label: i18n.t('mc_dlg_title'), value: '' },
                 { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: '' },
-                { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: 2, options: priorityOpts }
+                { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: 2, options: priorityOpts },
+                { key: 'assignedEntity', label: i18n.t('mc_dlg_assign') || '指派實體', type: 'select', value: '', options: getEntityOptions() }
             ], vals => {
                 if (!vals.title.trim()) return;
-                dashboard.todoList.push({
+                const item = {
                     id: genId(),
                     title: vals.title.trim(),
                     description: vals.description.trim(),
@@ -641,7 +691,11 @@
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                     createdBy: 'user'
-                });
+                };
+                if (vals.assignedEntity) {
+                    item.assignedBot = vals.assignedEntity;
+                }
+                dashboard.todoList.push(item);
                 markChanged();
                 renderTodo();
             });
@@ -663,12 +717,14 @@
             showDialog(i18n.t('mc_dlg_edit'), [
                 { key: 'title', label: i18n.t('mc_dlg_title'), value: item.title },
                 { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: item.description },
-                { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: pv, options: priorityOpts }
+                { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: pv, options: priorityOpts },
+                { key: 'assignedEntity', label: i18n.t('mc_dlg_assign') || '指派實體', type: 'select', value: item.assignedBot || '', options: getEntityOptions() }
             ], vals => {
                 if (!vals.title.trim()) return;
                 item.title = vals.title.trim();
                 item.description = vals.description.trim();
                 item.priority = parseInt(vals.priority);
+                item.assignedBot = vals.assignedEntity || null;
                 item.updatedAt = Date.now();
                 markChanged();
                 renderAll();
