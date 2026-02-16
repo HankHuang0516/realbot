@@ -24,11 +24,13 @@ import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.local.database.ChatMessage
+import com.hank.clawlive.data.model.EntityStatus
 import com.hank.clawlive.data.remote.ClawApiService
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.repository.ChatRepository
 import com.hank.clawlive.ui.chat.ChatAdapter
 import com.hank.clawlive.widget.ChatWidgetProvider
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -119,15 +121,15 @@ class ChatActivity : AppCompatActivity() {
         chatAdapter = ChatAdapter()
         recyclerChat.apply {
             adapter = chatAdapter
-            layoutManager = LinearLayoutManager(this@ChatActivity).apply {
-                stackFromEnd = true // Start from bottom (newest messages at bottom)
-            }
+            layoutManager = LinearLayoutManager(this@ChatActivity)
         }
 
         // Scroll to bottom when new messages arrive
         chatAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                recyclerChat.scrollToPosition(chatAdapter.itemCount - 1)
+                if (chatAdapter.itemCount > 0) {
+                    recyclerChat.scrollToPosition(chatAdapter.itemCount - 1)
+                }
             }
         })
     }
@@ -251,7 +253,7 @@ class ChatActivity : AppCompatActivity() {
     private fun observeMessages() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // Observe messages
+                // Observe messages from Room DB
                 launch {
                     chatRepository.getMessagesAscending(500).collectLatest { messages ->
                         updateMessageList(messages)
@@ -264,7 +266,38 @@ class ChatActivity : AppCompatActivity() {
                         updateFilterChipVisibility(entityIds)
                     }
                 }
+
+                // Poll entity messages directly to ensure bot responses appear in chat
+                launch {
+                    pollEntityMessages()
+                }
             }
+        }
+    }
+
+    /**
+     * Periodically poll entity status and save messages to Room DB.
+     * This ensures bot responses (via Transform/update_claw_status) appear in Chat
+     * even if the wallpaper service polling hasn't processed them yet.
+     */
+    private suspend fun pollEntityMessages() {
+        while (true) {
+            try {
+                val response = api.getAllEntities(deviceId = deviceManager.deviceId)
+                val registeredIds = layoutPrefs.getRegisteredEntityIds()
+                val entities = if (registeredIds.isEmpty()) {
+                    response.entities
+                } else {
+                    response.entities.filter { it.entityId in registeredIds }
+                }
+
+                entities.forEach { entity ->
+                    chatRepository.processEntityMessage(entity)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "ChatActivity: Error polling entity messages")
+            }
+            delay(5_000)
         }
     }
 
@@ -312,10 +345,7 @@ class ChatActivity : AppCompatActivity() {
 
         val previousSize = chatAdapter.currentList.size
         chatAdapter.submitList(filtered) {
-            // Scroll to bottom when new messages arrive
-            if (filtered.size > previousSize && filtered.isNotEmpty()) {
-                recyclerChat.scrollToPosition(filtered.size - 1)
-            }
+            // Scroll to bottom handled by AdapterDataObserver
         }
 
         // Show/hide empty state
