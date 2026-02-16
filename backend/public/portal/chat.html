@@ -1,22 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Claw - Chat</title>
+    <title data-i18n="chat_title">E-Claw - Chat</title>
     <link rel="stylesheet" href="shared/style.css">
     <style>
+        /* ── Chat Layout ── */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        /* ── Chat Header ── */
         .chat-header {
             padding: 12px 16px;
             border-bottom: 1px solid var(--card-border);
-            background: var(--card);
+            background: var(--input-bg);
         }
 
         .chat-header-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
         .chat-title {
@@ -24,6 +37,7 @@
             font-weight: 700;
         }
 
+        /* ── Usage Badge ── */
         .usage-badge {
             display: inline-flex;
             align-items: center;
@@ -32,30 +46,133 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
-            background: var(--input-bg);
+            background: var(--card);
             color: var(--text-secondary);
         }
 
-        .usage-badge.warning {
-            color: var(--warning);
+        .usage-badge.warning { color: var(--warning); }
+        .usage-badge.danger  { color: var(--danger); }
+        .usage-badge.unlimited { color: var(--success); }
+
+        /* ── Filter Chips ── */
+        .chip-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
         }
 
-        .usage-badge.danger {
-            color: var(--danger);
+        .filter-chip {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            white-space: nowrap;
+            user-select: none;
         }
 
-        .usage-badge.unlimited {
-            color: var(--success);
+        .filter-chip:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
-        /* Target entity selector above input */
+        .filter-chip.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        /* ── Messages Area ── */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: var(--card-border); border-radius: 3px; }
+        .chat-messages::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        /* ── Message Bubbles ── */
+        .chat-msg {
+            max-width: 80%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-msg.sent {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .chat-msg.received {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .chat-source {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .chat-bubble {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .chat-msg.sent .chat-bubble {
+            background: var(--primary);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg.received .chat-bubble {
+            background: var(--input-bg);
+            color: var(--text);
+            border: 1px solid var(--card-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        /* ── Entity Label Coloring ── */
+        .entity-label { font-weight: 600; }
+        .entity-label[data-entity="0"],
+        .entity-label[data-entity="2"] { color: #FF6B6B; }
+        .entity-label[data-entity="1"],
+        .entity-label[data-entity="3"] { color: #FFB6C1; }
+
+        /* ── Read Receipts ── */
+        .read-receipt {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: 6px;
+        }
+
+        /* ── Target Bar (checkboxes) ── */
         .target-bar {
             padding: 8px 16px;
-            background: var(--card);
+            background: var(--input-bg);
             border-top: 1px solid var(--card-border);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
@@ -82,16 +199,56 @@
             cursor: pointer;
         }
 
-        .target-check.disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
+        /* ── Input Bar ── */
+        .chat-input-bar {
+            padding: 12px 16px;
+            background: var(--card);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .target-check.disabled input[type="checkbox"] {
-            cursor: not-allowed;
+        .limit-warning {
+            color: var(--warning);
+            font-size: 12px;
+            text-align: center;
+            display: none;
         }
 
-        /* Empty state for chat */
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus { border-color: var(--primary); }
+        .chat-input::placeholder { color: var(--text-muted); }
+
+        .btn-send {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ── Empty State ── */
         .chat-empty {
             display: flex;
             flex-direction: column;
@@ -101,58 +258,16 @@
             color: var(--text-muted);
             font-size: 14px;
             gap: 8px;
+            margin: auto;
         }
 
         .chat-empty-icon {
             font-size: 48px;
             margin-bottom: 4px;
+            opacity: 0.5;
         }
 
-        /* Source label styling */
-        .chat-source {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 2px;
-        }
-
-        .chat-msg.sent .chat-source {
-            text-align: right;
-        }
-
-        /* Entity label coloring */
-        .entity-label {
-            font-weight: 600;
-        }
-
-        .entity-label[data-entity="0"],
-        .entity-label[data-entity="2"] {
-            color: #FF6B6B;
-        }
-
-        .entity-label[data-entity="1"],
-        .entity-label[data-entity="3"] {
-            color: #FFB6C1;
-        }
-
-        /* Scrollbar styling */
-        .chat-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .chat-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: var(--card-border);
-            border-radius: 3px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
-        /* Loading indicator */
+        /* ── Loading ── */
         .chat-loading {
             display: flex;
             align-items: center;
@@ -161,13 +276,10 @@
             gap: 8px;
             color: var(--text-muted);
             font-size: 13px;
+            margin: auto;
         }
 
-        /* Send button icon */
-        .chat-input-bar button {
-            white-space: nowrap;
-        }
-
+        /* ── Responsive ── */
         @media (max-width: 640px) {
             .chat-header-row {
                 flex-wrap: wrap;
@@ -178,7 +290,7 @@
                 gap: 4px;
             }
 
-            .chip {
+            .filter-chip {
                 padding: 4px 10px;
                 font-size: 11px;
             }
@@ -190,90 +302,86 @@
             .chat-input-bar {
                 padding: 8px 12px;
             }
+
+            .chat-msg {
+                max-width: 90%;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="chat-container">
-        <!-- Chat Header with filters -->
-        <div class="chat-header">
-            <div class="chat-header-row">
-                <span class="chat-title">Chat</span>
-                <span class="usage-badge" id="usageBadge">
-                    <span class="spinner" style="width:12px;height:12px;border-width:2px;"></span>
-                </span>
+    <div class="container">
+        <div class="chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="chat-header-row">
+                    <span class="chat-title" data-i18n="chat_title">Chat</span>
+                    <span class="usage-badge" id="usageBadge">
+                        <span class="spinner" style="width:12px;height:12px;border-width:2px;"></span>
+                    </span>
+                </div>
+                <div class="chip-group" id="filterChips">
+                    <span class="filter-chip active" data-filter="all" onclick="setFilter('all')" data-i18n="chat_filter_all">All</span>
+                    <!-- Entity chips injected dynamically -->
+                    <span class="filter-chip" data-filter="my" onclick="setFilter('my')" data-i18n="chat_filter_my">My Messages</span>
+                </div>
             </div>
 
-            <!-- Filter Chips -->
-            <div class="chip-group" id="filterChips">
-                <span class="chip active" data-filter="all" onclick="setFilter('all')">All</span>
-                <span class="chip" data-filter="entity-0" onclick="setFilter('entity-0')">Entity 0</span>
-                <span class="chip" data-filter="entity-1" onclick="setFilter('entity-1')">Entity 1</span>
-                <span class="chip" data-filter="entity-2" onclick="setFilter('entity-2')">Entity 2</span>
-                <span class="chip" data-filter="entity-3" onclick="setFilter('entity-3')">Entity 3</span>
-                <span class="chip" data-filter="my" onclick="setFilter('my')">My Messages</span>
+            <!-- Messages Area -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-loading" id="chatLoading">
+                    <div class="spinner"></div>
+                    <span>Loading...</span>
+                </div>
             </div>
-        </div>
 
-        <!-- Message List -->
-        <div class="chat-messages" id="chatMessages">
-            <div class="chat-loading" id="chatLoading">
-                <div class="spinner"></div>
-                <span>Loading messages...</span>
+            <!-- Target Bar (checkboxes) -->
+            <div class="target-bar" id="targetBar">
+                <span class="target-label" data-i18n="chat_send_to">Send to:</span>
+                <label class="target-check" id="targetAll" style="display:none;">
+                    <input type="checkbox" checked onchange="toggleTargetAll(this)">
+                    <span data-i18n="chat_filter_all">All</span>
+                </label>
             </div>
-        </div>
 
-        <!-- Target Entity Selector -->
-        <div class="target-bar" id="targetBar">
-            <span class="target-label">Send to:</span>
-            <label class="target-check" id="targetAll">
-                <input type="checkbox" checked onchange="toggleTargetAll(this)">
-                <span>All</span>
-            </label>
-            <label class="target-check" id="targetEntity0" style="display:none;">
-                <input type="checkbox" data-entity="0" checked onchange="updateTargetAll()">
-                <span>Entity 0</span>
-            </label>
-            <label class="target-check" id="targetEntity1" style="display:none;">
-                <input type="checkbox" data-entity="1" checked onchange="updateTargetAll()">
-                <span>Entity 1</span>
-            </label>
-            <label class="target-check" id="targetEntity2" style="display:none;">
-                <input type="checkbox" data-entity="2" checked onchange="updateTargetAll()">
-                <span>Entity 2</span>
-            </label>
-            <label class="target-check" id="targetEntity3" style="display:none;">
-                <input type="checkbox" data-entity="3" checked onchange="updateTargetAll()">
-                <span>Entity 3</span>
-            </label>
-        </div>
-
-        <!-- Input Bar -->
-        <div class="chat-input-bar">
-            <input type="text" id="messageInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()">
-            <button class="btn btn-primary" id="btnSend" onclick="sendMessage()">Send</button>
+            <!-- Input Bar -->
+            <div class="chat-input-bar">
+                <div class="limit-warning" id="limitWarning" data-i18n="chat_limit_reached">
+                    Daily message limit reached. Upgrade to Premium for unlimited messages!
+                </div>
+                <div class="input-row">
+                    <input type="text" class="chat-input" id="messageInput"
+                        data-i18n="chat_input_placeholder" placeholder="Type a message..."
+                        onkeydown="if(event.key==='Enter')sendMessage()">
+                    <button class="btn btn-primary btn-send" id="btnSend" onclick="sendMessage()"
+                        data-i18n="chat_btn_send" title="Send">&#10148;</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
     <script>
-        // --- State ---
+        // ── State ──
         let allMessages = [];
-        let currentFilter = 'all';
+        let boundEntities = [];
         let boundEntityIds = new Set();
+        let currentFilter = 'all';
         let refreshInterval = null;
         let isFirstLoad = true;
 
         const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '🦞' },
-            1: { name: 'Pig', emoji: '🐷' },
-            2: { name: 'Lobster', emoji: '🦞' },
-            3: { name: 'Pig', emoji: '🐷' }
+            0: { name: 'Lobster', emoji: '\u{1F99E}' },
+            1: { name: 'Pig', emoji: '\u{1F437}' },
+            2: { name: 'Lobster', emoji: '\u{1F99E}' },
+            3: { name: 'Pig', emoji: '\u{1F437}' }
         };
 
-        // --- Init ---
+        // ── Init ──
         window.addEventListener('DOMContentLoaded', async () => {
             renderNav('chat');
             const user = await checkAuth();
@@ -284,26 +392,27 @@
             await loadMessages();
             isFirstLoad = false;
 
-            // Auto-refresh every 5 seconds
+            // Poll every 5 seconds
             refreshInterval = setInterval(async () => {
                 await loadMessages();
                 await refreshUsage();
             }, 5000);
         });
 
-        // --- Usage Display ---
+        // ── Usage Badge ──
         function updateUsageBadge() {
             const badge = document.getElementById('usageBadge');
             if (!currentUser) return;
 
-            if (currentUser.usageLimit === null || currentUser.subscriptionStatus === 'premium') {
-                badge.textContent = 'Unlimited';
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+
+            if (limit === null || limit === undefined || isPremium) {
+                badge.textContent = i18n.t('chat_usage_unlimited') || 'Unlimited';
                 badge.className = 'usage-badge unlimited';
             } else {
-                const used = currentUser.usageToday || 0;
-                const limit = currentUser.usageLimit || 15;
                 badge.textContent = `${used}/${limit}`;
-
                 if (used >= limit) {
                     badge.className = 'usage-badge danger';
                 } else if (used >= limit * 0.8) {
@@ -311,6 +420,25 @@
                 } else {
                     badge.className = 'usage-badge';
                 }
+            }
+
+            checkLimit();
+        }
+
+        function checkLimit() {
+            if (!currentUser) return;
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+
+            if (!isPremium && limit !== null && limit !== undefined && used >= limit) {
+                document.getElementById('limitWarning').style.display = 'block';
+                document.getElementById('messageInput').disabled = true;
+                document.getElementById('btnSend').disabled = true;
+            } else {
+                document.getElementById('limitWarning').style.display = 'none';
+                document.getElementById('messageInput').disabled = false;
+                document.getElementById('btnSend').disabled = false;
             }
         }
 
@@ -324,41 +452,73 @@
                     updateUsageBadge();
                 }
             } catch (e) {
-                // Silent fail - usage refresh is non-critical
+                // Silent - non-critical
             }
         }
 
-        // --- Load Bound Entities ---
+        // ── Entities ──
         async function loadBoundEntities() {
             try {
                 const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
-                const entities = (data.entities || []).filter(e => e.isBound);
-                boundEntityIds = new Set(entities.map(e => e.entityId));
-
-                // Update target checkboxes visibility
-                for (let i = 0; i < 4; i++) {
-                    const container = document.getElementById(`targetEntity${i}`);
-                    if (boundEntityIds.has(i)) {
-                        const char = ENTITY_CHARS[i];
-                        container.style.display = '';
-                        container.querySelector('span').textContent = `${char.emoji} Entity ${i}`;
-                    } else {
-                        container.style.display = 'none';
-                    }
-                }
-
-                // If only 1 or 0 entities, hide the target bar selector complexity
-                if (boundEntityIds.size <= 1) {
-                    document.getElementById('targetAll').style.display = 'none';
-                }
-
-                // Update filter chip visibility based on message data (done in renderMessages)
+                boundEntities = (data.entities || []).filter(e => e.isBound);
+                boundEntityIds = new Set(boundEntities.map(e => e.entityId));
+                renderTargetBar();
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
             }
         }
 
-        // --- Message Loading ---
+        function renderTargetBar() {
+            const bar = document.getElementById('targetBar');
+            const allLabel = document.getElementById('targetAll');
+
+            // Remove old dynamic checkboxes
+            bar.querySelectorAll('.target-entity-check').forEach(el => el.remove());
+
+            if (boundEntities.length === 0) {
+                allLabel.style.display = 'none';
+                return;
+            }
+
+            // Show "All" only if more than 1 entity
+            allLabel.style.display = boundEntities.length > 1 ? '' : 'none';
+
+            boundEntities.forEach(e => {
+                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
+                const label = document.createElement('label');
+                label.className = 'target-check target-entity-check';
+                label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" checked onchange="updateTargetAll()">
+                    <span>${char.emoji} ${escapeHtml(e.name || char.name)}</span>`;
+                bar.appendChild(label);
+            });
+        }
+
+        function toggleTargetAll(checkbox) {
+            const checked = checkbox.checked;
+            document.querySelectorAll('.target-entity-check input[type="checkbox"]').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function updateTargetAll() {
+            const allCb = document.querySelector('#targetAll input');
+            const entityCbs = document.querySelectorAll('.target-entity-check input[type="checkbox"]');
+            if (entityCbs.length === 0) return;
+            const allChecked = Array.from(entityCbs).every(cb => cb.checked);
+            allCb.checked = allChecked;
+        }
+
+        function getSelectedTargets() {
+            const targets = [];
+            document.querySelectorAll('.target-entity-check input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    targets.push(parseInt(cb.dataset.entity));
+                }
+            });
+            return targets;
+        }
+
+        // ── Messages ──
         async function loadMessages() {
             try {
                 const data = await apiCall('GET',
@@ -368,22 +528,55 @@
                 if (data.success && data.messages) {
                     const prevCount = allMessages.length;
                     allMessages = data.messages;
+                    renderFilterChips();
                     renderMessages(prevCount < allMessages.length);
                 }
             } catch (e) {
                 if (isFirstLoad) {
                     const container = document.getElementById('chatMessages');
-                    container.innerHTML = '<div class="chat-empty"><div>Failed to load messages</div></div>';
+                    container.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">&#x26A0;</div><div>Failed to load messages</div></div>';
                 }
             }
         }
 
-        // --- Filtering ---
+        // ── Filtering ──
+        function renderFilterChips() {
+            const group = document.getElementById('filterChips');
+
+            // Remove old entity chips
+            group.querySelectorAll('.filter-chip-entity').forEach(el => el.remove());
+
+            // Determine which entities have messages
+            const entityIdsWithMessages = new Set();
+            allMessages.forEach(m => {
+                if (m.entity_id !== null && m.entity_id !== undefined) {
+                    entityIdsWithMessages.add(m.entity_id);
+                }
+            });
+
+            // Insert entity chips before "My Messages" chip
+            const myChip = group.querySelector('[data-filter="my"]');
+
+            const sortedIds = Array.from(entityIdsWithMessages).sort((a, b) => a - b);
+            sortedIds.forEach(id => {
+                const char = ENTITY_CHARS[id] || ENTITY_CHARS[0];
+                const existing = group.querySelector(`[data-filter="entity-${id}"]`);
+                if (existing) return; // already exists
+
+                const chip = document.createElement('span');
+                chip.className = `filter-chip filter-chip-entity${currentFilter === 'entity-' + id ? ' active' : ''}`;
+                chip.dataset.filter = `entity-${id}`;
+                chip.onclick = () => setFilter(`entity-${id}`);
+                chip.textContent = `${char.emoji} Entity ${id}`;
+                group.insertBefore(chip, myChip);
+            });
+        }
+
         function setFilter(filter) {
             currentFilter = filter;
 
-            // Update chip active state
-            document.querySelectorAll('#filterChips .chip').forEach(chip => {
+            // Update active state on all chips
+            document.querySelectorAll('#filterChips .filter-chip').forEach(chip => {
                 chip.classList.toggle('active', chip.dataset.filter === filter);
             });
 
@@ -391,43 +584,30 @@
         }
 
         function getFilteredMessages() {
-            if (currentFilter === 'all') {
-                return allMessages;
-            }
+            if (currentFilter === 'all') return allMessages;
 
             if (currentFilter === 'my') {
                 return allMessages.filter(m => m.is_from_user);
             }
 
-            // Entity filter: "entity-0", "entity-1", etc.
+            // entity-N filter
             const entityId = parseInt(currentFilter.split('-')[1]);
-            return allMessages.filter(m => {
-                if (m.is_from_user) {
-                    // User messages targeted at this entity
-                    return m.entity_id === entityId;
-                } else {
-                    // Messages from this entity
-                    return m.entity_id === entityId;
-                }
-            });
+            return allMessages.filter(m => m.entity_id === entityId);
         }
 
-        // --- Rendering ---
-        function renderMessages(scrollToBottom) {
+        // ── Render Messages ──
+        function renderMessages(hasNewMessages) {
             const container = document.getElementById('chatMessages');
+            const wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
             const filtered = getFilteredMessages();
-
-            // Update filter chip visibility based on entities present in messages
-            updateFilterChipVisibility();
 
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="chat-empty">
-                        <div class="chat-empty-icon">💬</div>
-                        <div>No messages yet</div>
-                        <div style="font-size:12px;">Send a message to your entities below</div>
-                    </div>
-                `;
+                        <div class="chat-empty-icon">&#x1F4AC;</div>
+                        <div data-i18n="chat_empty">${escapeHtml(i18n.t('chat_empty'))}</div>
+                        <div style="font-size:12px;" data-i18n="chat_empty_sub">${escapeHtml(i18n.t('chat_empty_sub'))}</div>
+                    </div>`;
                 return;
             }
 
@@ -436,171 +616,126 @@
                 const msgClass = isSent ? 'sent' : 'received';
                 const text = escapeHtml(msg.text || '');
                 const time = formatTime(msg.created_at);
-                const sourceLabel = getSourceLabel(msg);
+                const sourceLabel = buildSourceLabel(msg);
+
+                // Read receipt for sent messages
+                let receipt = '';
+                if (isSent) {
+                    if (msg.read_at) {
+                        receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
+                    } else {
+                        receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_sent') || '\u2713 Sent')}</span>`;
+                    }
+                }
 
                 return `
                     <div class="chat-msg ${msgClass}">
                         <div class="chat-source">${sourceLabel}</div>
                         <div class="chat-bubble">${text}</div>
-                        <div class="chat-meta">${time}</div>
-                    </div>
-                `;
+                        <div class="chat-meta">${time}${receipt}</div>
+                    </div>`;
             }).join('');
 
-            // Scroll to bottom on new messages or first load
-            if (scrollToBottom || isFirstLoad) {
+            // Auto-scroll
+            if (isFirstLoad || hasNewMessages || wasAtBottom) {
                 container.scrollTop = container.scrollHeight;
             }
         }
 
-        function getSourceLabel(msg) {
+        function buildSourceLabel(msg) {
             const entityId = msg.entity_id;
             const char = ENTITY_CHARS[entityId] || { name: 'Entity', emoji: '?' };
+            const entityHtml = `<span class="entity-label" data-entity="${entityId}">${char.emoji} Entity ${entityId}</span>`;
 
             if (msg.is_from_user) {
-                const source = msg.source || 'client';
-                const sourceTag = source === 'web_chat' ? 'Web' :
-                                  source === 'android_chat' ? 'Android' :
-                                  source === 'widget' ? 'Widget' : source;
-                return `You → <span class="entity-label" data-entity="${entityId}">${char.emoji} Entity ${entityId}</span> &middot; ${escapeHtml(sourceTag)}`;
-            } else if (msg.is_from_bot) {
-                return `<span class="entity-label" data-entity="${entityId}">${char.emoji} Entity ${entityId}</span>`;
-            } else {
-                const source = msg.source || 'unknown';
-                return `<span class="entity-label" data-entity="${entityId}">${char.emoji} Entity ${entityId}</span> &middot; ${escapeHtml(source)}`;
-            }
-        }
+                // Determine source tag
+                const src = msg.source || 'client';
+                let sourceTag = src;
+                if (src === 'web_chat') sourceTag = 'Web';
+                else if (src === 'android_chat') sourceTag = 'Android';
+                else if (src === 'widget') sourceTag = 'Widget';
 
-        function updateFilterChipVisibility() {
-            // Collect entity IDs that have messages
-            const entityIdsWithMessages = new Set();
-            allMessages.forEach(m => {
-                if (m.entity_id !== null && m.entity_id !== undefined) {
-                    entityIdsWithMessages.add(m.entity_id);
-                }
-            });
-
-            // Show/hide entity filter chips
-            for (let i = 0; i < 4; i++) {
-                const chip = document.querySelector(`.chip[data-filter="entity-${i}"]`);
-                if (chip) {
-                    chip.style.display = entityIdsWithMessages.has(i) ? '' : 'none';
-                }
-            }
-        }
-
-        // --- Target Selection ---
-        function toggleTargetAll(checkbox) {
-            const checked = checkbox.checked;
-            for (let i = 0; i < 4; i++) {
-                const container = document.getElementById(`targetEntity${i}`);
-                if (container.style.display !== 'none') {
-                    container.querySelector('input').checked = checked;
-                }
-            }
-        }
-
-        function updateTargetAll() {
-            const allCheckbox = document.querySelector('#targetAll input');
-            const entityCheckboxes = [];
-            for (let i = 0; i < 4; i++) {
-                const container = document.getElementById(`targetEntity${i}`);
-                if (container.style.display !== 'none') {
-                    entityCheckboxes.push(container.querySelector('input'));
-                }
+                return `You &rarr; ${entityHtml} &middot; ${escapeHtml(sourceTag)}`;
             }
 
-            const allChecked = entityCheckboxes.length > 0 && entityCheckboxes.every(cb => cb.checked);
-            allCheckbox.checked = allChecked;
-        }
-
-        function getSelectedTargets() {
-            const targets = [];
-            for (let i = 0; i < 4; i++) {
-                const container = document.getElementById(`targetEntity${i}`);
-                if (container.style.display !== 'none') {
-                    const cb = container.querySelector('input');
-                    if (cb.checked) {
-                        targets.push(i);
-                    }
-                }
+            if (msg.is_from_bot) {
+                return entityHtml;
             }
-            return targets;
+
+            // Fallback for other sources
+            return `${entityHtml} &middot; ${escapeHtml(msg.source || 'unknown')}`;
         }
 
-        // --- Send Message ---
+        // ── Send Message ──
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            if (!text) {
-                showToast('Please enter a message', 'error');
-                return;
-            }
+            if (!text) return;
 
             const targets = getSelectedTargets();
             if (targets.length === 0) {
-                showToast('Please select at least one entity to send to', 'error');
+                showToast('Please select at least one entity', 'error');
                 return;
             }
 
-            // Check usage limit
-            if (currentUser.usageLimit !== null && currentUser.subscriptionStatus !== 'premium') {
-                if ((currentUser.usageToday || 0) >= (currentUser.usageLimit || 15)) {
-                    showToast('Daily message limit reached. Upgrade to Premium for unlimited messages!', 'error');
-                    return;
-                }
+            // Client-side limit check
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+            if (!isPremium && limit !== null && limit !== undefined && used >= limit) {
+                showToast(i18n.t('chat_limit_reached'), 'error');
+                return;
             }
 
             const btn = document.getElementById('btnSend');
             btn.disabled = true;
-            btn.textContent = 'Sending...';
+            const savedContent = input.value;
             input.value = '';
 
             try {
-                const entityIdValue = targets.length === 1 ? targets[0] : targets;
+                // Send to each selected target
+                for (const entityId of targets) {
+                    await apiCall('POST', '/api/client/speak', {
+                        deviceId: currentUser.deviceId,
+                        entityId: entityId,
+                        text: text,
+                        source: 'web_chat'
+                    });
+                }
 
-                await apiCall('POST', '/api/client/speak', {
-                    deviceId: currentUser.deviceId,
-                    entityId: entityIdValue,
-                    text: text,
-                    source: 'web_chat'
-                });
-
-                // Increment local usage count
+                // Bump local usage
                 if (currentUser.usageToday !== undefined) {
-                    currentUser.usageToday++;
+                    currentUser.usageToday += targets.length;
                     updateUsageBadge();
                 }
 
-                // Reload messages immediately
+                // Reload and scroll
                 await loadMessages();
-
-                // Scroll to bottom
                 const container = document.getElementById('chatMessages');
                 container.scrollTop = container.scrollHeight;
 
             } catch (e) {
                 showToast('Send failed: ' + e.message, 'error');
-                // Put the text back in input
-                input.value = text;
+                input.value = savedContent;
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Send';
                 input.focus();
             }
         }
 
-        // --- Utilities ---
+        // ── Utilities ──
         function escapeHtml(str) {
+            if (!str) return '';
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
         }
 
-        // Cleanup on page leave
+        // ── Cleanup ──
         window.addEventListener('beforeunload', () => {
             if (refreshInterval) clearInterval(refreshInterval);
         });
     </script>
 </body>
+
 </html>

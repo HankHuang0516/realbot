@@ -12,12 +12,12 @@ const TRANSLATIONS = {
         "mc_save": "Save to Cloud",
         "mc_saving": "Uploading...",
         "mc_save_unsaved": "Save to Cloud *",
-        "mc_todo_title": "📋 TODO List",
+        "mc_todo_title": "TODO List",
         "mc_btn_add": "+ Add",
-        "mc_mission_title": "🚀 Mission List",
-        "mc_done_title": "✅ Done List",
-        "mc_notes_title": "📝 Notes (Bot Read-only)",
-        "mc_rules_title": "📜 Rules (Workflow)",
+        "mc_mission_title": "Mission List",
+        "mc_done_title": "Done List",
+        "mc_notes_title": "Notes (Bot Read-only)",
+        "mc_rules_title": "Rules (Workflow)",
         "mc_sync_unsaved": "* Unsaved changes",
         "mc_sync_synced": "Synced",
         "mc_empty_todo": "No TODO items",
@@ -30,10 +30,10 @@ const TRANSLATIONS = {
         "mc_status_blocked": "Blocked",
         "mc_status_done": "Done",
         "mc_status_cancelled": "Cancelled",
-        "mc_priority_low": "🟢 Low",
-        "mc_priority_medium": "🟡 Med",
-        "mc_priority_high": "🟠 High",
-        "mc_priority_urgent": "🔴 Urgent",
+        "mc_priority_low": "Low",
+        "mc_priority_medium": "Med",
+        "mc_priority_high": "High",
+        "mc_priority_urgent": "Urgent",
         "mc_confirm_delete": "Are you sure you want to delete?",
         "mc_confirm_version": "Version conflict (You: v{you}, Server: v{server}). Download latest version?",
         "mc_dlg_add_todo": "Add TODO",
@@ -51,9 +51,9 @@ const TRANSLATIONS = {
         "mc_dlg_edit_rule": "Edit Rule",
         "mc_dlg_rule_name": "Rule Name",
         "mc_dlg_rule_type": "Type",
-        "mc_menu_move_mission": "➡️ Move to Mission",
-        "mc_menu_mark_done": "✅ Mark Done",
-        "mc_menu_delete": "🗑️ Delete",
+        "mc_menu_move_mission": "Move to Mission",
+        "mc_menu_mark_done": "Mark Done",
+        "mc_menu_delete": "Delete",
 
         // Portal Shared
         "portal_login_title": "E-Claw - Login",
@@ -102,20 +102,29 @@ const TRANSLATIONS = {
         "dash_btn_regenerate": "Regenerate",
         "dash_btn_copy": "Copy Command",
         "dash_code_expired": "Code expired - generate a new one",
-        "dash_code_expires_in": "Expires in {s}s",
+        "dash_code_expires_in": "Expires in {m}:{ss}",
         "dash_btn_remove": "Remove",
         "dash_remove_title": "Remove Entity",
         "dash_remove_desc": "Are you sure you want to remove <strong>{name}</strong> (#{id})? This will unbind the entity from your device.",
         "dash_slot_occupied": "Slot {id} is already occupied",
+        "dash_entity_bound": "{count} / {max} bound",
+        "dash_avatar_title": "Choose Avatar",
+        "dash_avatar_desc": "Select an emoji avatar for this entity",
+        "dash_code_copied": "Command copied to clipboard!",
+        "dash_code_generated": "Binding code generated!",
+        "dash_entity_removed": "Entity removed successfully",
+        "dash_no_messages": "No messages yet",
 
         // Settings (settings.html)
         "settings_title": "Settings",
         "settings_account": "Account",
+        "settings_email": "Email",
+        "settings_device_id": "Device ID",
         "settings_sub": "Subscription",
         "settings_sub_premium": "PREMIUM",
         "settings_sub_free": "FREE",
         "settings_usage_today": "Messages today",
-        "settings_usage_unlimited": "sent today (Unlimited)",
+        "settings_usage_unlimited": "{used} sent today (Unlimited)",
         "settings_usage_limit": "{used}/{limit} sends today",
         "settings_renews_on": "Renews on {date}",
         "settings_price": "NT$99",
@@ -133,6 +142,8 @@ const TRANSLATIONS = {
         "settings_cancel_desc": "Your premium access will remain active until the current billing period ends. After that, you'll revert to the free plan with 15 messages per day.",
         "settings_btn_keep": "Keep Subscription",
         "settings_lang": "Language",
+        "settings_lang_changed": "Language changed, reloading...",
+        "settings_version": "Version",
 
         // Chat (chat.html)
         "chat_title": "Chat",
@@ -144,7 +155,12 @@ const TRANSLATIONS = {
         "chat_btn_sending": "Sending...",
         "chat_empty": "No messages yet",
         "chat_empty_sub": "Send a message to your entities below",
-        "chat_limit_reached": "Daily message limit reached. Upgrade to Premium for unlimited messages!"
+        "chat_limit_reached": "Daily message limit reached. Upgrade to Premium for unlimited messages!",
+        "chat_read": "Read",
+        "chat_sent": "Sent",
+        "chat_usage_unlimited": "Unlimited",
+        "chat_select_entity": "Please select at least one entity",
+        "chat_enter_message": "Please enter a message"
     },
     zh: {
         // Mission Control (mission.html)
@@ -159,12 +175,12 @@ const TRANSLATIONS = {
         "mc_save": "儲存至雲端",
         "mc_saving": "上傳中...",
         "mc_save_unsaved": "儲存至雲端 *",
-        "mc_todo_title": "📋 待辦事項",
+        "mc_todo_title": "待辦事項",
         "mc_btn_add": "+ 新增",
-        "mc_mission_title": "🚀 任務列表",
-        "mc_done_title": "✅ 已完成",
-        "mc_notes_title": "📝 筆記 (Bot 唯讀)",
-        "mc_rules_title": "📜 規則 (Workflow)",
+        "mc_mission_title": "任務列表",
+        "mc_done_title": "已完成",
+        "mc_notes_title": "筆記 (Bot 唯讀)",
+        "mc_rules_title": "規則 (Workflow)",
         "mc_sync_unsaved": "* 未儲存的變更",
         "mc_sync_synced": "已同步",
         "mc_empty_todo": "尚無待辦事項",
@@ -177,10 +193,10 @@ const TRANSLATIONS = {
         "mc_status_blocked": "阻塞中",
         "mc_status_done": "完成",
         "mc_status_cancelled": "已取消",
-        "mc_priority_low": "🟢 低",
-        "mc_priority_medium": "🟡 中",
-        "mc_priority_high": "🟠 高",
-        "mc_priority_urgent": "🔴 緊急",
+        "mc_priority_low": "低",
+        "mc_priority_medium": "中",
+        "mc_priority_high": "高",
+        "mc_priority_urgent": "緊急",
         "mc_confirm_delete": "確定刪除？",
         "mc_confirm_version": "版本衝突 (你: v{you}, 伺服器: v{server})。要下載最新版本嗎？",
         "mc_dlg_add_todo": "新增待辦事項",
@@ -198,9 +214,9 @@ const TRANSLATIONS = {
         "mc_dlg_edit_rule": "編輯規則",
         "mc_dlg_rule_name": "規則名稱",
         "mc_dlg_rule_type": "類型",
-        "mc_menu_move_mission": "➡️ 移至 Mission",
-        "mc_menu_mark_done": "✅ 標記完成",
-        "mc_menu_delete": "🗑️ 刪除",
+        "mc_menu_move_mission": "移至 Mission",
+        "mc_menu_mark_done": "標記完成",
+        "mc_menu_delete": "刪除",
 
         // Portal Shared
         "portal_login_title": "E-Claw - 登入",
@@ -249,20 +265,29 @@ const TRANSLATIONS = {
         "dash_btn_regenerate": "重新產生",
         "dash_btn_copy": "複製指令",
         "dash_code_expired": "代碼已過期 - 請重新產生",
-        "dash_code_expires_in": "{s} 秒後過期",
+        "dash_code_expires_in": "{m}:{ss} 後過期",
         "dash_btn_remove": "移除",
         "dash_remove_title": "移除實體",
         "dash_remove_desc": "確定要移除 <strong>{name}</strong> (#{id}) 嗎？這將解除該實體與您裝置的綁定。",
         "dash_slot_occupied": "插槽 {id} 已被佔用",
+        "dash_entity_bound": "{count} / {max} 已綁定",
+        "dash_avatar_title": "選擇頭像",
+        "dash_avatar_desc": "為此實體選擇一個表情符號頭像",
+        "dash_code_copied": "指令已複製到剪貼簿！",
+        "dash_code_generated": "已產生綁定代碼！",
+        "dash_entity_removed": "實體已成功移除",
+        "dash_no_messages": "尚無訊息",
 
         // Settings (settings.html)
         "settings_title": "設定",
         "settings_account": "帳號",
+        "settings_email": "Email",
+        "settings_device_id": "Device ID",
         "settings_sub": "訂閱",
         "settings_sub_premium": "高級會員",
         "settings_sub_free": "免費版",
         "settings_usage_today": "今日訊息",
-        "settings_usage_unlimited": "今日已送 (無限制)",
+        "settings_usage_unlimited": "今日已送 {used} 則 (無限制)",
         "settings_usage_limit": "今日 {used}/{limit} 則",
         "settings_renews_on": "續約日期：{date}",
         "settings_price": "NT$99",
@@ -280,6 +305,8 @@ const TRANSLATIONS = {
         "settings_cancel_desc": "您的高級會員資格將保留至本期結束。之後將恢復為免費版（每日 15 則訊息）。",
         "settings_btn_keep": "保留訂閱",
         "settings_lang": "語言",
+        "settings_lang_changed": "語言已變更，重新載入中...",
+        "settings_version": "版本",
 
         // Chat (chat.html)
         "chat_title": "聊天",
@@ -291,9 +318,17 @@ const TRANSLATIONS = {
         "chat_btn_sending": "傳送中...",
         "chat_empty": "尚無訊息",
         "chat_empty_sub": "在下方傳送訊息給您的實體",
-        "chat_limit_reached": "已達每日訊息上限。升級至高級會員以享受無限訊息！"
+        "chat_limit_reached": "已達每日訊息上限。升級至高級會員以享受無限訊息！",
+        "chat_read": "已讀",
+        "chat_sent": "已送出",
+        "chat_usage_unlimited": "無限制",
+        "chat_select_entity": "請選擇至少一個實體",
+        "chat_enter_message": "請輸入訊息"
     }
 };
+
+// Portal version for sync tracking
+const PORTAL_VERSION = '1.2.0';
 
 class I18n {
     constructor() {
@@ -318,11 +353,11 @@ class I18n {
 
     t(key, params = {}) {
         const dict = TRANSLATIONS[this.lang] || TRANSLATIONS['en'];
-        let str = dict[key] || key;
+        let str = dict[key] || TRANSLATIONS['en'][key] || key;
 
         // Simple parameter replacement {name}
         Object.keys(params).forEach(k => {
-            str = str.replace(new RegExp(`{${k}}`, 'g'), params[k]);
+            str = str.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
         });
         return str;
     }
@@ -331,7 +366,6 @@ class I18n {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
             if (key) {
-                // Check if it's an input/textarea placeholder or text content
                 if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
                     if (el.hasAttribute('placeholder')) {
                         el.placeholder = this.t(key);

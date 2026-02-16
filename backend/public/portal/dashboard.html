@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Claw - Dashboard</title>
+    <title data-i18n="dash_title">E-Claw - Dashboard</title>
     <link rel="stylesheet" href="shared/style.css">
     <style>
         .page-header {
@@ -27,11 +28,12 @@
 
         .entity-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 14px;
             margin-bottom: 20px;
         }
 
+        /* Entity card overrides for body/footer layout */
         .entity-card {
             display: flex;
             flex-direction: column;
@@ -41,29 +43,36 @@
 
         .entity-card-body {
             display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px;
         }
 
-        .entity-card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 16px;
-            border-top: 1px solid var(--card-border);
+        .entity-avatar {
+            cursor: pointer;
+            transition: transform 0.15s;
         }
 
-        .entity-timestamp {
-            font-size: 11px;
-            color: var(--text-muted);
+        .entity-avatar:hover {
+            transform: scale(1.12);
+        }
+
+        .entity-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entity-name {
+            font-weight: 600;
+            font-size: 15px;
+            line-height: 1.3;
         }
 
         .entity-badges {
             display: flex;
             gap: 6px;
             align-items: center;
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
         .badge-id {
@@ -73,6 +82,32 @@
             padding: 2px 8px;
             border-radius: 10px;
             font-weight: 600;
+        }
+
+        .entity-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .entity-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .entity-timestamp {
+            font-size: 11px;
+            color: var(--text-muted);
         }
 
         /* Collapsible add entity section */
@@ -130,7 +165,7 @@
             font-size: 13px;
         }
 
-        .slot-btn:hover {
+        .slot-btn:hover:not(.occupied) {
             border-color: var(--primary);
             color: var(--text);
         }
@@ -188,7 +223,7 @@
             margin-top: 12px;
         }
 
-        /* Confirm dialog */
+        /* Confirm / overlay dialogs */
         .confirm-overlay {
             position: fixed;
             inset: 0;
@@ -208,13 +243,92 @@
             justify-content: center;
             border-radius: var(--radius);
         }
+
+        /* Avatar Emoji Picker Modal */
+        .avatar-picker-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .avatar-picker {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            min-width: 320px;
+            max-width: 380px;
+            width: 90vw;
+        }
+
+        .avatar-picker-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .avatar-picker-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .avatar-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            font-size: 28px;
+            border-radius: var(--radius-sm);
+            background: var(--input-bg);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin: 0 auto;
+        }
+
+        .avatar-option:hover {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.15);
+            transform: scale(1.1);
+        }
+
+        .avatar-option.selected {
+            border-color: var(--primary);
+            background: rgba(108, 99, 255, 0.25);
+        }
+
+        .avatar-picker-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .entity-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
-            <h1 class="page-title">Dashboard</h1>
+            <h1 class="page-title" data-i18n="dash_title">Dashboard</h1>
             <span class="entity-count" id="entityCount">
                 <span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;"></span>
             </span>
@@ -224,21 +338,22 @@
         <div class="entity-grid" id="entityGrid">
             <div class="empty-state" id="loadingState">
                 <div class="spinner" style="margin: 0 auto 12px;"></div>
-                <div>Loading entities...</div>
+                <div data-i18n="dash_loading">Loading entities...</div>
             </div>
         </div>
 
         <!-- Empty State -->
         <div class="empty-state" id="emptyState" style="display:none;">
             <div style="font-size:48px;margin-bottom:12px;">🦞</div>
-            <div style="font-size:16px;color:var(--text-secondary);margin-bottom:4px;">No entities bound yet</div>
-            <div>Add your first entity below to get started!</div>
+            <div style="font-size:16px;color:var(--text-secondary);margin-bottom:4px;" data-i18n="dash_empty_title">No
+                entities bound yet</div>
+            <div data-i18n="dash_empty_desc">Add your first entity below to get started!</div>
         </div>
 
         <!-- Add Entity Section -->
         <div class="card" id="addEntityCard">
             <div class="add-entity-header" onclick="toggleAddEntity()">
-                <div class="card-title" style="margin-bottom:0;">
+                <div class="card-title" style="margin-bottom:0;" data-i18n="dash_add_entity">
                     Add Entity
                 </div>
                 <span class="expand-arrow" id="expandArrow">&#9662;</span>
@@ -246,7 +361,7 @@
 
             <div class="add-entity-content" id="addEntityContent">
                 <!-- Slot Selector -->
-                <label class="form-label">Select Entity Slot</label>
+                <label class="form-label" data-i18n="dash_label_select_slot">Select Entity Slot</label>
                 <div class="slot-selector" id="slotSelector">
                     <button class="slot-btn active" data-slot="0" onclick="selectSlot(0)">
                         <span class="slot-emoji">🦞</span>
@@ -267,19 +382,22 @@
                 </div>
 
                 <!-- Generate Code Button -->
-                <button class="btn btn-primary btn-block" id="btnGenerate" onclick="generateCode()">
+                <button class="btn btn-primary btn-block" id="btnGenerate" onclick="generateCode()"
+                    data-i18n="dash_btn_generate">
                     Generate Code
                 </button>
 
                 <!-- Code Display (hidden until generated) -->
                 <div class="code-display" id="codeDisplay" style="display:none;">
                     <div class="binding-code" id="bindingCode">--- ---</div>
-                    <div class="code-countdown" id="codeCountdown">Tap Generate to get a code</div>
+                    <div class="code-countdown" id="codeCountdown"></div>
                     <div class="code-actions">
-                        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="copyCommand()">
+                        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="copyCommand()"
+                            data-i18n="dash_btn_copy">
                             Copy Command
                         </button>
-                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="generateCode()">
+                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="generateCode()"
+                            data-i18n="dash_btn_regenerate">
                             Regenerate
                         </button>
                     </div>
@@ -288,12 +406,27 @@
         </div>
     </div>
 
-    <!-- Confirm Remove Dialog (created dynamically) -->
-
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
     <script>
+        // --- Constants ---
+        const DEFAULT_AVATARS = { 0: '🦞', 1: '🐷', 2: '🦞', 3: '🐷' };
+        const ENTITY_CHARS = {
+            0: { name: 'Lobster', emoji: '🦞' },
+            1: { name: 'Pig', emoji: '🐷' },
+            2: { name: 'Lobster', emoji: '🦞' },
+            3: { name: 'Pig', emoji: '🐷' }
+        };
+        const AVATAR_OPTIONS = [
+            '🦞', '🦀', '🐙', '🦑', '🐠', '🐟',
+            '🐷', '🐶', '🐱', '🐰', '🦊', '🐻',
+            '🐼', '🐨', '🦁', '🐯', '🐸', '🐵',
+            '🤖', '👾', '🎃', '👻', '🦄', '🐲',
+            '😎', '🥷', '🧙', '🦸', '🐧', '🦅'
+        ];
+
         // --- State ---
         let entities = [];
         let selectedSlot = 0;
@@ -303,12 +436,22 @@
         let refreshInterval = null;
         let isAddExpanded = false;
 
-        const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '🦞' },
-            1: { name: 'Pig', emoji: '🐷' },
-            2: { name: 'Lobster', emoji: '🦞' },
-            3: { name: 'Pig', emoji: '🐷' }
-        };
+        // --- Utilities ---
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function getAvatarForEntity(entityId) {
+            const saved = localStorage.getItem('eclaw_avatar_' + entityId);
+            if (saved) return saved;
+            return DEFAULT_AVATARS[entityId] || '🦞';
+        }
+
+        function saveAvatarForEntity(entityId, emoji) {
+            localStorage.setItem('eclaw_avatar_' + entityId, emoji);
+        }
 
         // --- Init ---
         window.addEventListener('DOMContentLoaded', async () => {
@@ -325,7 +468,7 @@
         // --- Entity Loading ---
         async function loadEntities() {
             try {
-                const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
+                const data = await apiCall('GET', '/api/entities?deviceId=' + currentUser.deviceId);
                 entities = (data.entities || []).filter(e => e.isBound);
                 renderEntities();
                 updateEntityCount();
@@ -340,9 +483,10 @@
         }
 
         function updateEntityCount() {
-            const max = 4;
+            const isPremium = currentUser.subscription && currentUser.subscription.tier === 'premium';
+            const max = isPremium ? 8 : 4;
             document.getElementById('entityCount').innerHTML =
-                `<strong>${entities.length}</strong> / ${max}`;
+                '<strong>' + entities.length + '</strong> / ' + max + ' bound';
         }
 
         function updateSlotAvailability() {
@@ -379,34 +523,80 @@
             emptyState.style.display = 'none';
             grid.innerHTML = entities.map(entity => {
                 const char = ENTITY_CHARS[entity.entityId] || ENTITY_CHARS[0];
-                const displayName = entity.name || `${char.name} #${entity.entityId}`;
+                const displayName = entity.name || (char.name + ' #' + entity.entityId);
+                const avatar = getAvatarForEntity(entity.entityId);
                 const state = entity.state || 'idle';
                 const stateBadgeClass = getStateBadgeClass(state);
                 const lastMsg = entity.message || 'No messages yet';
                 const time = formatTime(entity.lastUpdated);
 
-                return `
-                    <div class="entity-card card">
-                        <div class="entity-card-body">
-                            <div class="entity-avatar">${char.emoji}</div>
-                            <div class="entity-info">
-                                <div class="entity-name">${escapeHtml(displayName)}</div>
-                                <div class="entity-badges">
-                                    <span class="badge-id">#${entity.entityId}</span>
-                                    <span class="badge ${stateBadgeClass}">${escapeHtml(state)}</span>
-                                </div>
-                                <div class="entity-message">${escapeHtml(lastMsg)}</div>
-                            </div>
-                        </div>
-                        <div class="entity-card-footer">
-                            <span class="entity-timestamp">${time}</span>
-                            <button class="btn btn-danger btn-sm" onclick="confirmRemove(${entity.entityId}, '${escapeHtml(displayName)}')">
-                                Remove
-                            </button>
-                        </div>
-                    </div>
-                `;
+                return '<div class="entity-card card">' +
+                    '<div class="entity-card-body">' +
+                        '<div class="entity-avatar" onclick="openAvatarPicker(' + entity.entityId + ')">' + avatar + '</div>' +
+                        '<div class="entity-info">' +
+                            '<div class="entity-name">' + escapeHtml(displayName) + '</div>' +
+                            '<div class="entity-badges">' +
+                                '<span class="badge-id">#' + entity.entityId + '</span>' +
+                                '<span class="badge ' + stateBadgeClass + '">' + escapeHtml(state) + '</span>' +
+                            '</div>' +
+                            '<div class="entity-message">' + escapeHtml(lastMsg) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="entity-card-footer">' +
+                        '<span class="entity-timestamp">' + time + '</span>' +
+                        '<button class="btn btn-danger btn-sm" onclick="confirmRemove(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')">' +
+                            i18n.t('dash_btn_remove') +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
             }).join('');
+        }
+
+        // --- Avatar Emoji Picker ---
+        function openAvatarPicker(entityId) {
+            const currentAvatar = getAvatarForEntity(entityId);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'avatar-picker-overlay';
+
+            let gridHtml = '';
+            for (let i = 0; i < AVATAR_OPTIONS.length; i++) {
+                const emoji = AVATAR_OPTIONS[i];
+                const selectedClass = emoji === currentAvatar ? ' selected' : '';
+                gridHtml += '<div class="avatar-option' + selectedClass + '" data-emoji="' + emoji + '">' + emoji + '</div>';
+            }
+
+            overlay.innerHTML =
+                '<div class="avatar-picker">' +
+                    '<div class="avatar-picker-title" data-i18n="dash_avatar_title">' + i18n.t('dash_avatar_title') + '</div>' +
+                    '<div class="avatar-picker-desc" data-i18n="dash_avatar_desc">' + i18n.t('dash_avatar_desc') + '</div>' +
+                    '<div class="avatar-grid">' + gridHtml + '</div>' +
+                    '<div class="avatar-picker-actions">' +
+                        '<button class="btn btn-outline btn-sm" data-i18n="mc_dlg_cancel">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                    '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            // Handle emoji selection
+            overlay.querySelectorAll('.avatar-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const emoji = opt.getAttribute('data-emoji');
+                    saveAvatarForEntity(entityId, emoji);
+                    overlay.remove();
+                    renderEntities();
+                });
+            });
+
+            // Handle cancel button
+            overlay.querySelector('.avatar-picker-actions .btn').addEventListener('click', () => {
+                overlay.remove();
+            });
+
+            // Close on background click
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
         }
 
         // --- Add Entity ---
@@ -419,9 +609,9 @@
         }
 
         function selectSlot(slot) {
-            const btn = document.querySelector(`.slot-btn[data-slot="${slot}"]`);
+            const btn = document.querySelector('.slot-btn[data-slot="' + slot + '"]');
             if (btn && btn.classList.contains('occupied')) {
-                showToast('This slot is already occupied', 'error');
+                showToast(i18n.t('dash_slot_occupied', { id: slot }), 'error');
                 return;
             }
 
@@ -434,14 +624,14 @@
         async function generateCode() {
             const btn = document.getElementById('btnGenerate');
             btn.disabled = true;
-            btn.textContent = 'Generating...';
+            btn.textContent = i18n.t('dash_btn_generating');
 
             // Check if slot is occupied
             const occupiedSlots = new Set(entities.map(e => e.entityId));
             if (occupiedSlots.has(selectedSlot)) {
-                showToast('Slot ' + selectedSlot + ' is already occupied', 'error');
+                showToast(i18n.t('dash_slot_occupied', { id: selectedSlot }), 'error');
                 btn.disabled = false;
-                btn.textContent = 'Generate Code';
+                btn.textContent = i18n.t('dash_btn_generate');
                 return;
             }
 
@@ -468,21 +658,21 @@
                     : currentCode;
                 document.getElementById('bindingCode').textContent = formatted;
 
-                // Start countdown (60 seconds)
-                startCountdown(60);
+                // Start countdown using expiresIn from API (default 300s)
+                const expirySeconds = data.expiresIn || 300;
+                startCountdown(expirySeconds);
 
-                btn.textContent = 'Regenerate';
+                btn.textContent = i18n.t('dash_btn_regenerate');
                 showToast('Binding code generated!', 'success');
             } catch (e) {
                 showToast(e.message, 'error');
-                btn.textContent = 'Generate Code';
+                btn.textContent = i18n.t('dash_btn_generate');
             } finally {
                 btn.disabled = false;
             }
         }
 
         function startCountdown(seconds) {
-            // Clear existing countdown
             if (countdownInterval) {
                 clearInterval(countdownInterval);
             }
@@ -494,15 +684,25 @@
                 if (remaining <= 0) {
                     clearInterval(countdownInterval);
                     countdownInterval = null;
-                    countdownEl.textContent = 'Code expired - generate a new one';
+                    countdownEl.textContent = i18n.t('dash_code_expired');
                     countdownEl.className = 'code-countdown expired';
                     currentCode = null;
                     return;
                 }
 
-                countdownEl.textContent = `Expires in ${remaining}s`;
+                // Format as minutes:seconds when > 60s
+                let display;
+                if (remaining > 60) {
+                    const mins = Math.floor(remaining / 60);
+                    const secs = remaining % 60;
+                    display = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                } else {
+                    display = remaining + '';
+                }
 
-                if (remaining <= 10) {
+                countdownEl.textContent = i18n.t('dash_code_expires_in', { s: display });
+
+                if (remaining <= 30) {
                     countdownEl.className = 'code-countdown expiring';
                 } else {
                     countdownEl.className = 'code-countdown';
@@ -521,7 +721,15 @@
                 return;
             }
 
-            const command = `/bind code:${currentCode} server:https://eclaw.up.railway.app`;
+            const command = 'Connect my E-Claw wallpaper device:\n' +
+                'POST https://eclaw.up.railway.app/api/bind\n' +
+                'Body: {"code": "' + currentCode + '"}\n' +
+                '\n' +
+                'IMPORTANT: The response will contain a \'skills_documentation\' field. You MUST read the \'E-claw MCP Skills\' documentation within it to understand the interaction protocol (Matrix Architecture, Push Mode, etc.).\n' +
+                '\n' +
+                'After binding, use these tools:\n' +
+                '- update_claw_status: Update wallpaper state\n' +
+                '- get_claw_status: Check current status';
 
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(command).then(() => {
@@ -554,19 +762,17 @@
         function confirmRemove(entityId, displayName) {
             const overlay = document.createElement('div');
             overlay.className = 'confirm-overlay';
-            overlay.innerHTML = `
-                <div class="dialog">
-                    <div class="dialog-title">Remove Entity</div>
-                    <p style="color:var(--text-secondary);font-size:14px;">
-                        Are you sure you want to remove <strong>${escapeHtml(displayName)}</strong> (#${entityId})?
-                        This will unbind the entity from your device.
-                    </p>
-                    <div class="dialog-actions">
-                        <button class="btn btn-outline" onclick="this.closest('.confirm-overlay').remove()">Cancel</button>
-                        <button class="btn btn-danger" id="btnConfirmRemove" onclick="removeEntity(${entityId}, this)">Remove</button>
-                    </div>
-                </div>
-            `;
+            overlay.innerHTML =
+                '<div class="dialog">' +
+                    '<div class="dialog-title">' + i18n.t('dash_remove_title') + '</div>' +
+                    '<p style="color:var(--text-secondary);font-size:14px;">' +
+                        i18n.t('dash_remove_desc', { name: escapeHtml(displayName), id: entityId }) +
+                    '</p>' +
+                    '<div class="dialog-actions">' +
+                        '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                        '<button class="btn btn-danger" id="btnConfirmRemove" onclick="removeEntity(' + entityId + ', this)">' + i18n.t('dash_btn_remove') + '</button>' +
+                    '</div>' +
+                '</div>';
             document.body.appendChild(overlay);
 
             // Close on background click
@@ -597,15 +803,8 @@
             } catch (e) {
                 showToast('Failed to remove: ' + e.message, 'error');
                 btnEl.disabled = false;
-                btnEl.textContent = 'Remove';
+                btnEl.textContent = i18n.t('dash_btn_remove');
             }
-        }
-
-        // --- Utilities ---
-        function escapeHtml(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
         }
 
         // Cleanup on page leave
@@ -615,4 +814,5 @@
         });
     </script>
 </body>
+
 </html>

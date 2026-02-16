@@ -473,6 +473,20 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: Date.now() });
 });
 
+// Version sync endpoint - AI Agent can check Web/APP sync status
+app.get('/api/version', (req, res) => {
+    res.json({
+        api: '1.2.0',
+        portal: '1.2.0',
+        android: '1.0.6',
+        features: {
+            portal: ['auth', 'dashboard', 'chat', 'mission', 'settings', 'subscription', 'i18n', 'avatar-picker'],
+            android: ['auth', 'dashboard', 'chat', 'mission', 'settings', 'subscription', 'i18n', 'avatar-picker', 'live-wallpaper', 'widget']
+        },
+        lastSync: Date.now()
+    });
+});
+
 // ============================================
 // DEVICE REGISTRATION (Android App)
 // ============================================

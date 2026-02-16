@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-Claw - Settings</title>
+    <title data-i18n="settings_title">E-Claw - Settings</title>
     <link rel="stylesheet" href="shared/style.css">
     <style>
-        /* Settings-specific styles */
+        /* Info rows (label/value pairs) */
         .info-row {
             display: flex;
             justify-content: space-between;
@@ -31,13 +32,13 @@
             max-width: 60%;
         }
 
-        .info-value.small {
+        .info-value.mono {
             font-size: 11px;
             color: var(--text-muted);
-            font-family: monospace;
+            font-family: 'Courier New', Courier, monospace;
         }
 
-        /* Subscription section */
+        /* Subscription header with badge */
         .subscription-header {
             display: flex;
             align-items: center;
@@ -50,6 +51,7 @@
             font-weight: 600;
         }
 
+        /* Usage bar */
         .usage-row {
             display: flex;
             justify-content: space-between;
@@ -73,6 +75,7 @@
             margin-top: 10px;
         }
 
+        /* Price / period */
         .subscribe-price {
             font-size: 24px;
             font-weight: 700;
@@ -86,7 +89,7 @@
             margin-bottom: 16px;
         }
 
-        /* TapPay card form */
+        /* TapPay card form (dark theme) */
         .tappay-section {
             margin-top: 16px;
             display: none;
@@ -137,7 +140,22 @@
             min-height: 16px;
         }
 
-        /* Cancel confirm */
+        /* Loading state for card form */
+        .card-loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 16px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .card-loading.visible {
+            display: flex;
+        }
+
+        /* Cancel section */
         .cancel-section {
             margin-top: 12px;
             padding-top: 12px;
@@ -151,7 +169,7 @@
             margin-top: 8px;
         }
 
-        /* Actions section */
+        /* Logout button (red outline) */
         .actions-section {
             margin-top: 8px;
         }
@@ -174,48 +192,56 @@
             color: var(--text);
         }
 
-        /* Loading overlay for card form */
-        .card-loading {
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 16px;
+        /* Cancel confirmation dialog */
+        .dialog-overlay .dialog p {
             font-size: 14px;
             color: var(--text-secondary);
+            line-height: 1.5;
         }
 
-        .card-loading.visible {
-            display: flex;
+        /* Responsive */
+        @media (max-width: 640px) {
+            .info-value {
+                max-width: 55%;
+            }
+
+            .tappay-row {
+                grid-template-columns: 1fr;
+            }
+
+            .subscribe-price {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container" id="pageContent" style="display:none">
-        <h1 class="page-title">Settings</h1>
+        <h1 class="page-title" data-i18n="settings_title">Settings</h1>
 
         <!-- Account Info Card -->
         <div class="card">
-            <div class="card-title">Account</div>
+            <div class="card-title" data-i18n="settings_account">Account</div>
             <div class="info-row">
                 <span class="info-label">Email</span>
                 <span class="info-value" id="accountEmail">--</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Device ID</span>
-                <span class="info-value small" id="accountDeviceId">--</span>
+                <span class="info-value mono" id="accountDeviceId">--</span>
             </div>
         </div>
 
         <!-- Subscription Card -->
         <div class="card">
             <div class="subscription-header">
-                <h3>Subscription</h3>
+                <h3 data-i18n="settings_sub">Subscription</h3>
                 <span class="badge" id="subBadge">--</span>
             </div>
 
             <div class="usage-row">
-                <span class="usage-label">Messages today</span>
+                <span class="usage-label" data-i18n="settings_usage_today">Messages today</span>
                 <span class="usage-count" id="usageCount">--</span>
             </div>
             <div class="progress-bar">
@@ -226,35 +252,37 @@
 
             <!-- FREE user: Subscribe section -->
             <div id="freeSection" style="display:none;margin-top:16px;">
-                <div class="subscribe-price">NT$99</div>
-                <div class="subscribe-period">per month - Unlimited messages</div>
-                <button class="btn btn-primary btn-block" id="btnShowCard" onclick="toggleCardForm()">
-                    Subscribe
-                </button>
+                <div class="subscribe-price" data-i18n="settings_price">NT$99</div>
+                <div class="subscribe-period" data-i18n="settings_period">per month - Unlimited messages</div>
+                <button class="btn btn-primary btn-block" id="btnShowCard" onclick="toggleCardForm()"
+                    data-i18n="settings_btn_subscribe">Subscribe</button>
 
                 <!-- TapPay Card Form (collapsible) -->
                 <div class="tappay-section" id="tappaySection">
                     <div class="tappay-field">
-                        <label>Card Number</label>
+                        <label data-i18n="settings_label_card">Card Number</label>
                         <div class="tappay-field-input" id="tappay-card-number"></div>
                     </div>
                     <div class="tappay-row">
                         <div class="tappay-field">
-                            <label>Expiry Date</label>
+                            <label data-i18n="settings_label_expiry">Expiry Date</label>
                             <div class="tappay-field-input" id="tappay-expiration-date"></div>
                         </div>
                         <div class="tappay-field">
-                            <label>CCV</label>
+                            <label data-i18n="settings_label_ccv">CCV</label>
                             <div class="tappay-field-input" id="tappay-ccv"></div>
                         </div>
                     </div>
                     <div class="card-error" id="cardError"></div>
-                    <button class="btn btn-success btn-block" id="btnPay" onclick="processPayment()" disabled>
-                        Pay NT$99
-                    </button>
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <button class="btn btn-success" style="flex:1" id="btnPay" onclick="processPayment()" disabled
+                            data-i18n="settings_btn_pay">Pay NT$99</button>
+                        <button class="btn btn-outline" onclick="toggleCardForm()"
+                            data-i18n="settings_btn_hide_card">Hide Card Form</button>
+                    </div>
                     <div class="card-loading" id="cardLoading">
                         <div class="spinner"></div>
-                        <span>Processing payment...</span>
+                        <span data-i18n="settings_processing">Processing payment...</span>
                     </div>
                 </div>
             </div>
@@ -262,39 +290,40 @@
             <!-- PREMIUM user: Cancel section -->
             <div id="premiumSection" style="display:none">
                 <div class="cancel-section">
-                    <button class="btn btn-outline btn-block" id="btnCancel" onclick="confirmCancel()">
-                        Cancel Subscription
-                    </button>
+                    <button class="btn btn-outline btn-block" id="btnCancel" onclick="confirmCancel()"
+                        data-i18n="settings_btn_cancel">Cancel Subscription</button>
                 </div>
             </div>
         </div>
 
         <!-- Language Card -->
         <div class="card">
-            <div class="card-title">Language</div>
+            <div class="card-title" data-i18n="settings_lang">Language</div>
             <div class="language-chips">
-                <div class="chip active" id="chipEn" onclick="setLanguage('en')">English</div>
+                <div class="chip" id="chipEn" onclick="setLanguage('en')">English</div>
                 <div class="chip" id="chipZh" onclick="setLanguage('zh')">&#x4E2D;&#x6587;</div>
             </div>
         </div>
 
-        <!-- Actions -->
+        <!-- Logout -->
         <div class="actions-section">
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <button class="logout-btn" onclick="doLogout()" data-i18n="nav_logout">Logout</button>
         </div>
     </div>
 
     <!-- Cancel Confirmation Dialog -->
     <div class="dialog-overlay" id="cancelDialog" style="display:none">
         <div class="dialog">
-            <div class="dialog-title">Cancel Subscription</div>
-            <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;">
+            <div class="dialog-title" data-i18n="settings_cancel_title">Cancel Subscription</div>
+            <p data-i18n="settings_cancel_desc">
                 Your premium access will remain active until the current billing period ends.
                 After that, you'll revert to the free plan with 15 messages per day.
             </p>
             <div class="dialog-actions">
-                <button class="btn btn-outline" onclick="closeCancelDialog()">Keep Subscription</button>
-                <button class="btn btn-danger" id="btnConfirmCancel" onclick="cancelSubscription()">Cancel</button>
+                <button class="btn btn-outline" onclick="closeCancelDialog()"
+                    data-i18n="settings_btn_keep">Keep Subscription</button>
+                <button class="btn btn-danger" id="btnConfirmCancel" onclick="cancelSubscription()"
+                    data-i18n="settings_btn_cancel">Cancel Subscription</button>
             </div>
         </div>
     </div>
@@ -306,6 +335,7 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="../shared/i18n.js"></script>
 
     <script>
         let tappayReady = false;
@@ -359,27 +389,27 @@
 
             // Badge
             if (isPremium) {
-                badge.textContent = 'PREMIUM';
+                badge.textContent = i18n.t('settings_sub_premium');
                 badge.className = 'badge badge-premium';
             } else {
-                badge.textContent = 'FREE';
+                badge.textContent = i18n.t('settings_sub_free');
                 badge.className = 'badge badge-free';
             }
 
             // Usage
             const used = data.usageToday || 0;
-            const limit = data.usageLimit;
+            const limit = data.usageLimit || 15;
 
             if (isPremium) {
-                usageCount.textContent = used + ' sent today (Unlimited)';
+                usageCount.textContent = used + ' ' + i18n.t('settings_usage_unlimited');
                 usageProgress.style.width = '0%';
                 usageProgress.style.background = 'var(--warning)';
             } else {
-                usageCount.textContent = used + '/' + (limit || 15) + ' sends today';
-                const pct = Math.min((used / (limit || 15)) * 100, 100);
+                usageCount.textContent = i18n.t('settings_usage_limit', { used, limit });
+                const pct = Math.min((used / limit) * 100, 100);
                 usageProgress.style.width = pct + '%';
 
-                // Red when near limit (80%+)
+                // Red when near limit (>=80%)
                 if (pct >= 80) {
                     usageProgress.style.background = 'var(--danger)';
                 } else {
@@ -387,12 +417,13 @@
                 }
             }
 
-            // Expiry
+            // Expiry / renewal
             if (isPremium && data.expiresAt) {
                 const expiryDate = new Date(Number(data.expiresAt));
-                expiryText.textContent = 'Renews on ' + expiryDate.toLocaleDateString(undefined, {
+                const dateStr = expiryDate.toLocaleDateString(undefined, {
                     year: 'numeric', month: 'long', day: 'numeric'
                 });
+                expiryText.textContent = i18n.t('settings_renews_on', { date: dateStr });
                 expiryText.style.display = '';
             } else {
                 expiryText.style.display = 'none';
@@ -463,15 +494,13 @@
                     }
                 });
 
-                TPDirect.card.onUpdate(function(update) {
+                TPDirect.card.onUpdate(function (update) {
                     const btnPay = document.getElementById('btnPay');
                     const cardError = document.getElementById('cardError');
 
-                    // Check if all fields are valid
                     canGetPrime = update.canGetPrime;
                     btnPay.disabled = !canGetPrime;
 
-                    // Show field-level status
                     if (update.status.number === 2) {
                         cardError.textContent = 'Invalid card number';
                     } else if (update.status.expiry === 2) {
@@ -495,10 +524,10 @@
 
             if (section.classList.contains('visible')) {
                 section.classList.remove('visible');
-                btn.textContent = 'Subscribe';
+                btn.textContent = i18n.t('settings_btn_subscribe');
             } else {
                 section.classList.add('visible');
-                btn.textContent = 'Hide Card Form';
+                btn.textContent = i18n.t('settings_btn_hide_card');
             }
         }
 
@@ -514,7 +543,7 @@
             cardLoading.classList.add('visible');
             cardError.textContent = '';
 
-            TPDirect.card.getPrime(async function(result) {
+            TPDirect.card.getPrime(async function (result) {
                 if (result.status !== 0) {
                     cardError.textContent = 'Failed to process card: ' + (result.msg || 'Unknown error');
                     btnPay.disabled = false;
@@ -524,7 +553,7 @@
                 }
 
                 try {
-                    const data = await apiCall('POST', '/api/subscription/tappay/pay', {
+                    await apiCall('POST', '/api/subscription/tappay/pay', {
                         prime: result.card.prime
                     });
 
@@ -535,7 +564,7 @@
 
                     // Hide card form
                     document.getElementById('tappaySection').classList.remove('visible');
-                    document.getElementById('btnShowCard').textContent = 'Subscribe';
+                    document.getElementById('btnShowCard').textContent = i18n.t('settings_btn_subscribe');
                 } catch (e) {
                     cardError.textContent = e.message || 'Payment failed';
                     showToast('Payment failed: ' + e.message, 'error');
@@ -561,7 +590,7 @@
         async function cancelSubscription() {
             const btn = document.getElementById('btnConfirmCancel');
             btn.disabled = true;
-            btn.textContent = 'Cancelling...';
+            btn.textContent = i18n.t('settings_btn_cancelling');
 
             try {
                 await apiCall('POST', '/api/subscription/cancel');
@@ -572,40 +601,37 @@
                 showToast('Failed to cancel: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = 'Cancel';
+                btn.textContent = i18n.t('settings_btn_cancel');
             }
         }
 
         // ============================================
-        // Language
+        // Language - CRITICAL: page reload on change
         // ============================================
         function loadLanguagePreference() {
-            const lang = localStorage.getItem('eclaw-language') || 'en';
+            const lang = localStorage.getItem('eclaw-language') || i18n.lang || 'en';
             setLanguageChip(lang);
         }
 
         function setLanguage(lang) {
             localStorage.setItem('eclaw-language', lang);
-            setLanguageChip(lang);
-            showToast(lang === 'zh' ? 'Language changed' : 'Language changed', 'success');
+            window.location.reload(); // RELOAD PAGE to fully apply language
         }
 
         function setLanguageChip(lang) {
-            const chipEn = document.getElementById('chipEn');
-            const chipZh = document.getElementById('chipZh');
-
-            chipEn.classList.toggle('active', lang === 'en');
-            chipZh.classList.toggle('active', lang === 'zh');
+            document.getElementById('chipEn').classList.toggle('active', lang === 'en');
+            document.getElementById('chipZh').classList.toggle('active', lang === 'zh');
         }
 
         // ============================================
         // Dialog backdrop close
         // ============================================
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (e.target.classList.contains('dialog-overlay')) {
                 e.target.style.display = 'none';
             }
         });
     </script>
 </body>
+
 </html>
