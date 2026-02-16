@@ -377,6 +377,41 @@ function getEntity(deviceId, entityId) {
     return device.entities[entityId] || null;
 }
 
+/**
+ * Helper: Send binding credentials + skill documentation to official bot.
+ * Called after bind-free and bind-personal to give the bot its credentials and API docs.
+ * Fire-and-forget (non-blocking) - binding is already complete.
+ */
+function sendBindCredentialsToBot(webhookUrl, webhookToken, sessionKey, deviceId, entityId, botSecret, botType) {
+    const skillDoc = loadSkillDoc();
+    const msg = `[SYSTEM:BIND_COMPLETE] Official borrow binding established.
+Your credentials for this binding:
+- deviceId: ${deviceId}
+- entityId: ${entityId}
+- botSecret: ${botSecret}
+- botType: ${botType}
+- API Base: https://eclaw.up.railway.app
+
+Save these credentials. Use botSecret to authenticate all API calls.
+Do NOT call /api/bind or /api/bot/register - webhook is already configured for you.
+Use update_claw_status (POST /api/transform) to respond to user messages.
+
+--- E-Claw API Documentation (Latest) ---
+${skillDoc}`;
+
+    sendToSession(webhookUrl, webhookToken, sessionKey, msg)
+        .then(result => {
+            if (result.success) {
+                console.log(`[Borrow] ✓ Sent credentials + skill doc to bot (device ${deviceId} entity ${entityId})`);
+            } else {
+                console.warn(`[Borrow] ✗ Failed to send skill doc to bot: ${result.error || 'unknown'}`);
+            }
+        })
+        .catch(err => {
+            console.warn(`[Borrow] ✗ Error sending skill doc to bot: ${err.message}`);
+        });
+}
+
 // Helper: Load MCP skill documentation
 function loadSkillDoc() {
     try {
@@ -1740,6 +1775,10 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     await saveData();
 
     console.log(`[Borrow] Free bot ${freeBot.bot_id} bound to device ${deviceId} entity ${eId} (session: ${sessionKey})`);
+
+    // Fire-and-forget: send credentials + skill doc to bot
+    sendBindCredentialsToBot(freeBot.webhook_url, freeBot.token, sessionKey, deviceId, eId, botSecret, 'free');
+
     res.json({
         success: true,
         entityId: eId,
@@ -1841,6 +1880,10 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
     await saveData();
 
     console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId} (session: ${sessionKey})`);
+
+    // Fire-and-forget: send credentials + skill doc to bot
+    sendBindCredentialsToBot(personalBot.webhook_url, personalBot.token, sessionKey, deviceId, eId, botSecret, 'personal');
+
     res.json({
         success: true,
         entityId: eId,
