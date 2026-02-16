@@ -999,8 +999,16 @@ app.post('/api/client/speak', async (req, res) => {
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (entity.webhook) {
             console.log(`[Push] Attempting push to Device ${deviceId} Entity ${eId} (webhook: ${entity.webhook.url})`);
+
+            // For official bot entities, include auth credentials so bot can reply
+            let pushMsg = `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`;
+            const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
+            if (officialBind && entity.botSecret) {
+                pushMsg += `\n\n[AUTH] botSecret=${entity.botSecret}`;
+            }
+
             pushResult = await pushToBot(entity, deviceId, "new_message", {
-                message: `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`
+                message: pushMsg
             });
 
             if (pushResult.pushed) {
