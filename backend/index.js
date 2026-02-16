@@ -1233,6 +1233,7 @@ app.post('/api/client/speak', async (req, res) => {
 
             // For official bot entities, include auth credentials so bot can reply
             let pushMsg = `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`;
+            pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
             if (officialBind && entity.botSecret) {
                 pushMsg += `\n\n[AUTH] botSecret=${entity.botSecret}`;
@@ -1355,6 +1356,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
         let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
+        pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
             pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
@@ -1472,6 +1474,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
             let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
+            pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {
                 pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
