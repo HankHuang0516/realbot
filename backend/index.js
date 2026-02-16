@@ -33,6 +33,9 @@ const devices = {};
 // Pending binding codes (code -> { deviceId, entityId, expires })
 const pendingBindings = {};
 
+// Official bot pool (loaded from DB on startup)
+const officialBots = {};
+
 // ============================================
 // DATA PERSISTENCE (Fix for Bug #2: Survive Railway Redeployment)
 // PostgreSQL with file-based fallback
@@ -129,6 +132,13 @@ async function initPersistence() {
 
     // Load existing data
     await loadData();
+
+    // Load official bot pool
+    if (usePostgreSQL) {
+        const loadedBots = await db.loadOfficialBots();
+        Object.assign(officialBots, loadedBots);
+        console.log(`[Persistence] Official bots loaded: ${Object.keys(officialBots).length}`);
+    }
 }
 
 // Auto-save interval
@@ -195,6 +205,41 @@ setInterval(async () => {
     if (testRemoved > 0 || zombieRemoved > 0) {
         console.log(`[Cleanup] Removed ${testRemoved} test device(s), ${zombieRemoved} zombie device(s). Remaining: ${Object.keys(devices).length}`);
         await saveData();
+    }
+}, CLEANUP_INTERVAL);
+
+// Subscription expiry cleanup - auto-unbind personal bots not verified in 48h
+const SUBSCRIPTION_EXPIRY_MS = 48 * 60 * 60 * 1000; // 48 hours
+setInterval(async () => {
+    if (!usePostgreSQL) return;
+    try {
+        const expired = await db.getExpiredPersonalBindings(SUBSCRIPTION_EXPIRY_MS);
+        for (const binding of expired) {
+            const bot = officialBots[binding.bot_id];
+            if (bot) {
+                bot.status = 'available';
+                bot.assigned_device_id = null;
+                bot.assigned_entity_id = null;
+                bot.assigned_at = null;
+                await db.saveOfficialBot(bot);
+            }
+
+            // Reset entity if device still exists
+            const device = devices[binding.device_id];
+            if (device && device.entities[binding.entity_id]) {
+                device.entities[binding.entity_id] = createDefaultEntity(binding.entity_id);
+            }
+
+            delete officialBindingsCache[getBindingCacheKey(binding.device_id, binding.entity_id)];
+            await db.removeOfficialBinding(binding.device_id, binding.entity_id);
+            console.log(`[Borrow Cleanup] Expired personal binding: device ${binding.device_id} entity ${binding.entity_id} bot ${binding.bot_id}`);
+        }
+        if (expired.length > 0) {
+            await saveData();
+            console.log(`[Borrow Cleanup] Released ${expired.length} expired personal bot(s)`);
+        }
+    } catch (err) {
+        console.error('[Borrow Cleanup] Error:', err.message);
     }
 }, CLEANUP_INTERVAL);
 
@@ -816,6 +861,23 @@ app.delete('/api/device/entity', (req, res) => {
         return res.status(400).json({ success: false, message: `Entity ${eId} is not bound` });
     }
 
+    // Check and clean up official bot binding if exists
+    const bindCacheKey = getBindingCacheKey(deviceId, eId);
+    const officialBinding = officialBindingsCache[bindCacheKey];
+    if (officialBinding) {
+        const bot = officialBots[officialBinding.bot_id];
+        if (bot && bot.bot_type === 'personal') {
+            bot.status = 'available';
+            bot.assigned_device_id = null;
+            bot.assigned_entity_id = null;
+            bot.assigned_at = null;
+            if (usePostgreSQL) db.saveOfficialBot(bot);
+            console.log(`[Device Remove] Personal bot ${bot.bot_id} released back to pool`);
+        }
+        delete officialBindingsCache[bindCacheKey];
+        if (usePostgreSQL) db.removeOfficialBinding(deviceId, eId);
+    }
+
     // Reset entity to unbound state
     device.entities[eId] = createDefaultEntity(eId);
 
@@ -1290,6 +1352,461 @@ app.post('/api/debug/reset', (req, res) => {
 });
 
 // ============================================
+// OFFICIAL BOT POOL - Admin API
+// ============================================
+
+function verifyAdmin(req) {
+    const adminToken = req.headers['x-admin-token'] || req.body.adminToken;
+    const expectedToken = process.env.ADMIN_SECRET || 'dev-only-localhost';
+    const isLocalhost = req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1';
+    return isLocalhost || adminToken === expectedToken;
+}
+
+/**
+ * POST /api/admin/official-bot/register
+ * Register an official bot into the pool.
+ * Body: { botId, botType: "free"|"personal", webhookUrl, token, sessionKeyTemplate? }
+ */
+app.post('/api/admin/official-bot/register', async (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
+    }
+
+    const { botId, botType, webhookUrl, token, sessionKeyTemplate } = req.body;
+
+    if (!botId || !botType || !webhookUrl || !token) {
+        return res.status(400).json({ success: false, error: 'botId, botType, webhookUrl, and token are required' });
+    }
+
+    if (!['free', 'personal'].includes(botType)) {
+        return res.status(400).json({ success: false, error: 'botType must be "free" or "personal"' });
+    }
+
+    const bot = {
+        bot_id: botId,
+        bot_type: botType,
+        webhook_url: webhookUrl,
+        token: token,
+        session_key_template: sessionKeyTemplate || null,
+        status: 'available',
+        assigned_device_id: null,
+        assigned_entity_id: null,
+        assigned_at: null,
+        created_at: Date.now()
+    };
+
+    officialBots[botId] = bot;
+    if (usePostgreSQL) await db.saveOfficialBot(bot);
+
+    console.log(`[Admin] Registered official bot: ${botId} (${botType})`);
+    res.json({ success: true, bot: { bot_id: botId, bot_type: botType, status: 'available' } });
+});
+
+/**
+ * GET /api/admin/official-bots
+ * List all official bots with status.
+ */
+app.get('/api/admin/official-bots', (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
+    }
+
+    const bots = Object.values(officialBots).map(b => ({
+        bot_id: b.bot_id,
+        bot_type: b.bot_type,
+        status: b.status,
+        assigned_device_id: b.assigned_device_id,
+        assigned_entity_id: b.assigned_entity_id,
+        assigned_at: b.assigned_at,
+        created_at: b.created_at
+    }));
+
+    res.json({ success: true, bots, count: bots.length });
+});
+
+/**
+ * PUT /api/admin/official-bot/:botId
+ * Update an official bot's webhook/token/status.
+ */
+app.put('/api/admin/official-bot/:botId', async (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
+    }
+
+    const { botId } = req.params;
+    const bot = officialBots[botId];
+    if (!bot) {
+        return res.status(404).json({ success: false, error: 'Bot not found' });
+    }
+
+    const { webhookUrl, token, sessionKeyTemplate, status } = req.body;
+    if (webhookUrl) bot.webhook_url = webhookUrl;
+    if (token) bot.token = token;
+    if (sessionKeyTemplate !== undefined) bot.session_key_template = sessionKeyTemplate;
+    if (status && ['available', 'assigned', 'disabled'].includes(status)) bot.status = status;
+
+    if (usePostgreSQL) await db.saveOfficialBot(bot);
+
+    console.log(`[Admin] Updated official bot: ${botId}`);
+    res.json({ success: true, bot: { bot_id: bot.bot_id, bot_type: bot.bot_type, status: bot.status } });
+});
+
+/**
+ * DELETE /api/admin/official-bot/:botId
+ * Remove an official bot from the pool.
+ */
+app.delete('/api/admin/official-bot/:botId', async (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
+    }
+
+    const { botId } = req.params;
+    const bot = officialBots[botId];
+    if (!bot) {
+        return res.status(404).json({ success: false, error: 'Bot not found' });
+    }
+
+    const force = req.query.force === 'true';
+    if (bot.status === 'assigned' && !force) {
+        return res.status(400).json({ success: false, error: 'Bot is currently assigned. Use ?force=true to remove anyway.' });
+    }
+
+    delete officialBots[botId];
+    if (usePostgreSQL) await db.deleteOfficialBot(botId);
+
+    console.log(`[Admin] Removed official bot: ${botId}`);
+    res.json({ success: true, message: `Bot ${botId} removed` });
+});
+
+// ============================================
+// OFFICIAL BORROW - User-Facing Endpoints
+// ============================================
+
+// In-memory cache of official bindings (deviceId:entityId -> binding)
+const officialBindingsCache = {};
+
+function getBindingCacheKey(deviceId, entityId) {
+    return `${deviceId}:${entityId}`;
+}
+
+/**
+ * GET /api/official-borrow/status
+ * Get borrow availability and current bindings for a device.
+ */
+app.get('/api/official-borrow/status', async (req, res) => {
+    const { deviceId } = req.query;
+
+    if (!deviceId) {
+        return res.status(400).json({ success: false, error: 'deviceId required' });
+    }
+
+    // Count free bots
+    const freeBots = Object.values(officialBots).filter(b => b.bot_type === 'free' && b.status !== 'disabled');
+    const freeAvailable = freeBots.length > 0;
+
+    // Count available personal bots
+    const personalBots = Object.values(officialBots).filter(b => b.bot_type === 'personal');
+    const personalAvailable = personalBots.filter(b => b.status === 'available').length;
+    const personalTotal = personalBots.filter(b => b.status !== 'disabled').length;
+
+    // Get bindings for this device
+    let bindings = [];
+    if (usePostgreSQL) {
+        bindings = await db.getDeviceOfficialBindings(deviceId);
+    } else {
+        bindings = Object.values(officialBindingsCache)
+            .filter(b => b.device_id === deviceId)
+            .map(b => {
+                const bot = officialBots[b.bot_id];
+                return { entityId: b.entity_id, botType: bot ? bot.bot_type : 'unknown', botId: b.bot_id };
+            });
+    }
+
+    res.json({
+        success: true,
+        free: { available: freeAvailable },
+        personal: { available: personalAvailable, total: personalTotal },
+        bindings: bindings.map(b => ({
+            entityId: b.entity_id ?? b.entityId,
+            botType: b.bot_type ?? b.botType,
+            botId: b.bot_id ?? b.botId
+        }))
+    });
+});
+
+/**
+ * POST /api/official-borrow/bind-free
+ * Bind a free official bot to a device entity.
+ * Body: { deviceId, deviceSecret, entityId }
+ */
+app.post('/api/official-borrow/bind-free', async (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, error: 'Device not found. Open the app first.' });
+    }
+
+    if (device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    }
+
+    const entity = device.entities[eId];
+    if (entity && entity.isBound) {
+        return res.status(400).json({ success: false, error: `Entity ${eId} is already bound. Remove it first.` });
+    }
+
+    // Find a free bot
+    const freeBot = Object.values(officialBots).find(b => b.bot_type === 'free' && b.status !== 'disabled');
+    if (!freeBot) {
+        return res.status(404).json({ success: false, error: 'No free bot available' });
+    }
+
+    // Generate per-user session key
+    const sessionKey = freeBot.session_key_template
+        ? `${freeBot.session_key_template}_${deviceId}_${eId}`
+        : `free_${deviceId}_${eId}`;
+
+    // Generate botSecret for this binding
+    const crypto = require('crypto');
+    const botSecret = crypto.randomBytes(16).toString('hex');
+
+    // Set up entity with official bot's webhook
+    device.entities[eId] = {
+        ...createDefaultEntity(eId),
+        botSecret: botSecret,
+        isBound: true,
+        name: '免費版',
+        state: 'IDLE',
+        message: 'Connected via Official Free Bot!',
+        lastUpdated: Date.now(),
+        webhook: {
+            url: freeBot.webhook_url,
+            token: freeBot.token,
+            sessionKey: sessionKey,
+            registeredAt: Date.now()
+        }
+    };
+
+    // Save binding record
+    const binding = {
+        bot_id: freeBot.bot_id,
+        device_id: deviceId,
+        entity_id: eId,
+        session_key: sessionKey,
+        bound_at: Date.now(),
+        subscription_verified_at: Date.now()
+    };
+    officialBindingsCache[getBindingCacheKey(deviceId, eId)] = binding;
+    if (usePostgreSQL) await db.saveOfficialBinding(binding);
+
+    // Mark free bot as assigned (it can still serve others)
+    freeBot.status = 'assigned';
+    if (usePostgreSQL) await db.saveOfficialBot(freeBot);
+
+    await saveData();
+
+    console.log(`[Borrow] Free bot ${freeBot.bot_id} bound to device ${deviceId} entity ${eId}`);
+    res.json({
+        success: true,
+        entityId: eId,
+        botType: 'free',
+        message: 'Free bot bound successfully'
+    });
+});
+
+/**
+ * POST /api/official-borrow/bind-personal
+ * Bind a personal official bot to a device entity (requires subscription).
+ * Body: { deviceId, deviceSecret, entityId }
+ */
+app.post('/api/official-borrow/bind-personal', async (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, error: 'Device not found. Open the app first.' });
+    }
+
+    if (device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    }
+
+    const entity = device.entities[eId];
+    if (entity && entity.isBound) {
+        return res.status(400).json({ success: false, error: `Entity ${eId} is already bound. Remove it first.` });
+    }
+
+    // Find first available personal bot
+    const personalBot = Object.values(officialBots).find(b => b.bot_type === 'personal' && b.status === 'available');
+    if (!personalBot) {
+        return res.status(404).json({ success: false, error: 'sold_out', message: 'No personal bots available' });
+    }
+
+    // Generate session key
+    const sessionKey = personalBot.session_key_template
+        ? `${personalBot.session_key_template}_${deviceId}_${eId}`
+        : `personal_${personalBot.bot_id}_${deviceId}_${eId}`;
+
+    // Generate botSecret
+    const crypto = require('crypto');
+    const botSecret = crypto.randomBytes(16).toString('hex');
+
+    // Set up entity
+    device.entities[eId] = {
+        ...createDefaultEntity(eId),
+        botSecret: botSecret,
+        isBound: true,
+        name: '月租版',
+        state: 'IDLE',
+        message: 'Connected via Personal Bot!',
+        lastUpdated: Date.now(),
+        webhook: {
+            url: personalBot.webhook_url,
+            token: personalBot.token,
+            sessionKey: sessionKey,
+            registeredAt: Date.now()
+        }
+    };
+
+    // Mark personal bot as assigned
+    personalBot.status = 'assigned';
+    personalBot.assigned_device_id = deviceId;
+    personalBot.assigned_entity_id = eId;
+    personalBot.assigned_at = Date.now();
+    if (usePostgreSQL) await db.saveOfficialBot(personalBot);
+
+    // Save binding record
+    const binding = {
+        bot_id: personalBot.bot_id,
+        device_id: deviceId,
+        entity_id: eId,
+        session_key: sessionKey,
+        bound_at: Date.now(),
+        subscription_verified_at: Date.now()
+    };
+    officialBindingsCache[getBindingCacheKey(deviceId, eId)] = binding;
+    if (usePostgreSQL) await db.saveOfficialBinding(binding);
+
+    await saveData();
+
+    console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId}`);
+    res.json({
+        success: true,
+        entityId: eId,
+        botType: 'personal',
+        botId: personalBot.bot_id,
+        message: 'Personal bot bound successfully'
+    });
+});
+
+/**
+ * POST /api/official-borrow/unbind
+ * Unbind an official bot from a device entity.
+ * Body: { deviceId, deviceSecret, entityId }
+ */
+app.post('/api/official-borrow/unbind', async (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, error: 'Device not found' });
+    }
+
+    if (device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    }
+
+    // Check if this entity has an official binding
+    const cacheKey = getBindingCacheKey(deviceId, eId);
+    let binding = officialBindingsCache[cacheKey];
+    if (!binding && usePostgreSQL) {
+        binding = await db.getOfficialBinding(deviceId, eId);
+    }
+
+    if (!binding) {
+        return res.status(404).json({ success: false, error: 'No official binding found for this entity' });
+    }
+
+    // Release the bot back to pool
+    const bot = officialBots[binding.bot_id];
+    if (bot && bot.bot_type === 'personal') {
+        bot.status = 'available';
+        bot.assigned_device_id = null;
+        bot.assigned_entity_id = null;
+        bot.assigned_at = null;
+        if (usePostgreSQL) await db.saveOfficialBot(bot);
+        console.log(`[Borrow] Personal bot ${bot.bot_id} released back to pool`);
+    }
+
+    // Remove binding
+    delete officialBindingsCache[cacheKey];
+    if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+
+    // Reset entity
+    device.entities[eId] = createDefaultEntity(eId);
+    await saveData();
+
+    console.log(`[Borrow] Official binding removed: device ${deviceId} entity ${eId}`);
+    res.json({ success: true, message: `Official bot unbound from entity ${eId}` });
+});
+
+/**
+ * POST /api/official-borrow/verify-subscription
+ * Client reports subscription status to keep binding alive.
+ * Body: { deviceId, deviceSecret, entityId }
+ */
+app.post('/api/official-borrow/verify-subscription', async (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const eId = parseInt(entityId);
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid device credentials' });
+    }
+
+    const cacheKey = getBindingCacheKey(deviceId, eId);
+    const binding = officialBindingsCache[cacheKey];
+    if (binding) {
+        binding.subscription_verified_at = Date.now();
+    }
+    if (usePostgreSQL) await db.updateSubscriptionVerified(deviceId, eId);
+
+    res.json({ success: true, message: 'Subscription verified' });
+});
+
+// ============================================
 // BOT WEBHOOK REGISTRATION (Push Mode)
 // ============================================
 
@@ -1437,9 +1954,10 @@ app.post('/api/bot/register', async (req, res) => {
                     success: false,
                     message: "Webhook handshake failed: gateway cannot execute 'sessions_send' tool. " +
                         `Server responded: "${errorMessage}". ` +
-                        "This tool is required for push notifications. " +
-                        "Please update your OpenClaw gateway or check its configuration.",
-                    hint: "Your gateway might be outdated or sessions plugin is not enabled.",
+                        "OpenClaw 2.14+ blocks sessions_send by default. " +
+                        "Please add the following to your .openclaw/openclaw.json and restart OpenClaw:\n" +
+                        '{ "gateway": { "tools": { "allow": ["sessions_send"] } } }',
+                    hint: "Edit .openclaw/openclaw.json to allow sessions_send, then restart OpenClaw.",
                     debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
                 });
             }
@@ -1628,10 +2146,18 @@ async function pushToBot(entity, deviceId, eventType, payload) {
 
     const { url, token, sessionKey } = entity.webhook;
 
+    // For official bot bindings, use the per-user session key
+    let effectiveSessionKey = sessionKey;
+    const bindCacheKey = getBindingCacheKey(deviceId, entity.entityId);
+    const officialBinding = officialBindingsCache[bindCacheKey];
+    if (officialBinding && officialBinding.session_key) {
+        effectiveSessionKey = officialBinding.session_key;
+    }
+
     const requestPayload = {
         tool: "sessions_send",
         args: {
-            sessionKey: sessionKey,
+            sessionKey: effectiveSessionKey,
             message: payload.message || JSON.stringify(payload)
         }
     };
@@ -1669,7 +2195,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             } else if (response.status === 405) {
                 debugHint = ' URL may be incorrect (double slash?). Re-register webhook with correct URL.';
             } else if (response.status === 404) {
-                debugHint = ' Webhook endpoint not found. Verify your bot server is running and the URL path is correct.';
+                debugHint = ' sessions_send tool not available. OpenClaw 2.14+ blocks it by default. Add {"gateway":{"tools":{"allow":["sessions_send"]}}} to .openclaw/openclaw.json and restart OpenClaw.';
             }
 
             // Notify device about webhook failure via entity message
