@@ -217,8 +217,22 @@
                 android:text="@string/privacy_policy_title"
                 android:textColor="@android:color/black"
                 app:backgroundTint="@android:color/white"
+                android:layout_marginBottom="12dp"
+                app:cornerRadius="12dp"
+                style="@style/Widget.Material3.Button.TonalButton"/>
+
+            <!-- Web Portal Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnWebPortal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/web_portal"
+                android:textColor="@android:color/black"
+                app:backgroundTint="@android:color/white"
                 android:layout_marginBottom="24dp"
                 app:cornerRadius="12dp"
+                app:icon="@android:drawable/ic_menu_share"
+                app:iconTint="@android:color/black"
                 style="@style/Widget.Material3.Button.TonalButton"/>
 
             <!-- Language Settings Section -->

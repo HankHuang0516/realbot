@@ -133,8 +133,35 @@
     <string name="submit">Submit</string>
     <string name="app_version">Version: %s</string>
 
+    <!-- Official Borrow -->
+    <string name="official_borrow">官方借用</string>
+    <string name="official_borrow_title">官方借用</string>
+    <string name="free_version">免費版</string>
+    <string name="free_version_model">Model: MiniMax 2.1</string>
+    <string name="free_version_desc">共用記憶，與所有免費版用戶共享</string>
+    <string name="free_version_warning">敏感資訊不建議與實體分享</string>
+    <string name="use_free_version">使用免費版</string>
+    <string name="monthly_version">月租版</string>
+    <string name="monthly_version_price">$9.9 USD/月</string>
+    <string name="monthly_version_model">Model: MiniMax 2.1</string>
+    <string name="monthly_version_desc">獨立雲端環境、獨立記憶</string>
+    <string name="subscribe_and_bind">訂閱並綁定</string>
+    <string name="remaining_bots">剩餘 %d 個</string>
+    <string name="sold_out">已售罄</string>
+    <string name="already_bound_free">已綁定 (免費版)</string>
+    <string name="already_bound_personal">已綁定 (月租版)</string>
+    <string name="unbind">解除綁定</string>
+    <string name="bind_success">綁定成功！</string>
+    <string name="bind_failed">綁定失敗: %s</string>
+    <string name="unbind_success">已解除綁定</string>
+    <string name="select_entity_to_bind">選擇要綁定的實體欄位</string>
+    <string name="no_free_bot">目前無可用免費版</string>
+    <string name="subscription_required">需要月租訂閱</string>
+    <string name="entity_already_bound">實體 #%d 已被佔用，請先移除</string>
+
     <!-- Privacy Policy -->
     <string name="privacy_policy_title">Privacy Policy</string>
+    <string name="web_portal">Web Portal</string>
     <string name="privacy_policy_content">
 <b>1. Commitment to Privacy First</b>\n
 The E-claw team understands the importance of privacy to you. We hereby solemnly declare: <b>We will never sell, leak, or misuse any of your personal data.</b>\n\n

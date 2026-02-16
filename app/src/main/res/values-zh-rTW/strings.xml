@@ -27,7 +27,7 @@
     <string name="send_message">發送訊息</string>
     <string name="send">發送</string>
     <string name="cancel">取消</string>
-    <string name="to_format">發送至：%s (#%d)</string>
+    <string name="to_format">發送至：%1$s (#%2$d)</string>
     <string name="message_hint">發送訊息給 %s…</string>
     <string name="broadcast_message_hint">廣播訊息…</string>
     <string name="send_to_entities">發送給 %d 個實體</string>
@@ -121,6 +121,7 @@
 
     <!-- Privacy Policy -->
     <string name="privacy_policy_title">隱私權政策</string>
+    <string name="web_portal">網頁入口</string>
     <string name="privacy_policy_content">
 <b>1. 隱私權至上承諾</b>\n
 E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲明：<b>我們絕不會販賣、洩露或濫用您的任何個人資料。</b>\n\n

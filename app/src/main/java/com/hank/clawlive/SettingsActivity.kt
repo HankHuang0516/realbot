@@ -1,5 +1,8 @@
 package com.hank.clawlive
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
@@ -49,6 +52,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnSubscribe: MaterialButton
     private lateinit var btnFeedback: MaterialButton
     private lateinit var btnPrivacyPolicy: MaterialButton
+    private lateinit var btnWebPortal: MaterialButton
     private lateinit var chipGroupLanguage: ChipGroup
     private lateinit var chipLangEn: Chip
     private lateinit var chipLangZh: Chip
@@ -116,6 +120,7 @@ class SettingsActivity : AppCompatActivity() {
         tvEntityCount = findViewById(R.id.tvEntityCount)
         btnFeedback = findViewById(R.id.btnFeedback)
         btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy)
+        btnWebPortal = findViewById(R.id.btnWebPortal)
     }
 
     private fun setupClickListeners() {
@@ -133,6 +138,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnPrivacyPolicy.setOnClickListener {
             startActivity(android.content.Intent(this, PrivacyPolicyActivity::class.java))
+        }
+
+        btnWebPortal.setOnClickListener {
+            showWebPortalDialog()
         }
 
         // Language selection
@@ -237,6 +246,31 @@ class SettingsActivity : AppCompatActivity() {
                 Timber.e(e, "Failed to fetch entity count from API")
             }
         }
+    }
+
+    private fun showWebPortalDialog() {
+        val deviceId = deviceManager.deviceId
+        val deviceSecret = deviceManager.deviceSecret
+        val portalUrl = "https://eclaw.up.railway.app/portal/"
+
+        val msg = "Device ID:\n$deviceId\n\n" +
+            "Device Secret:\n$deviceSecret\n\n" +
+            "Portal URL:\n$portalUrl"
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.web_portal))
+            .setMessage(msg)
+            .setPositiveButton("Open Portal") { _, _ ->
+                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(portalUrl)))
+            }
+            .setNeutralButton("Copy Credentials") { _, _ ->
+                val clip = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                clip.setPrimaryClip(ClipData.newPlainText("credentials",
+                    "Device ID: $deviceId\nDevice Secret: $deviceSecret"))
+                Toast.makeText(this, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun showFeedbackDialog() {

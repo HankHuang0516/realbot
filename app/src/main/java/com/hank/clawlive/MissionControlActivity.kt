@@ -1,7 +1,5 @@
 package com.hank.clawlive
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -22,7 +20,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
-import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.model.*
 import com.hank.clawlive.ui.MissionUiState
 import com.hank.clawlive.ui.MissionViewModel
@@ -102,8 +99,6 @@ class MissionControlActivity : AppCompatActivity() {
     private fun setupButtons() {
         findViewById<View>(R.id.btnBack).setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        findViewById<MaterialButton>(R.id.btnWebSync).setOnClickListener { showWebSyncDialog() }
-
         findViewById<MaterialButton>(R.id.btnUpload).setOnClickListener {
             viewModel.uploadDashboard { yourVersion, serverVersion ->
                 runOnUiThread {
@@ -175,38 +170,6 @@ class MissionControlActivity : AppCompatActivity() {
         if (state.error != null) {
             Toast.makeText(this, state.error, Toast.LENGTH_SHORT).show()
         }
-    }
-
-    // ============================================
-    // Web Sync
-    // ============================================
-
-    private fun showWebSyncDialog() {
-        val dm = DeviceManager.getInstance(this)
-        val deviceId = dm.deviceId
-        val deviceSecret = dm.deviceSecret
-
-        val msg = "在瀏覽器開啟 Mission Control 網頁後，\n輸入以下憑證即可同步：\n\n" +
-            "Device ID:\n$deviceId\n\n" +
-            "Device Secret:\n$deviceSecret"
-
-        AlertDialog.Builder(this)
-            .setTitle("網頁同步憑證")
-            .setMessage(msg)
-            .setPositiveButton("複製全部") { _, _ ->
-                val clip = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                clip.setPrimaryClip(ClipData.newPlainText("credentials",
-                    "Device ID: $deviceId\nDevice Secret: $deviceSecret"))
-                Toast.makeText(this, "已複製到剪貼簿", Toast.LENGTH_SHORT).show()
-            }
-            .setNeutralButton("複製網址") { _, _ ->
-                val clip = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-                clip.setPrimaryClip(ClipData.newPlainText("url",
-                    "https://eclaw.up.railway.app/mission/mission.html"))
-                Toast.makeText(this, "已複製網址", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
     }
 
     // ============================================
