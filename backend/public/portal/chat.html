@@ -381,6 +381,21 @@
             3: { name: 'Pig', emoji: '\u{1F437}' }
         };
 
+        // Entity name lookup (populated from boundEntities)
+        let entityNameMap = {};
+
+        function getEntityDisplayName(id) {
+            if (entityNameMap[id]) return entityNameMap[id];
+            const char = ENTITY_CHARS[id] || { name: 'Entity' };
+            return char.name;
+        }
+
+        function getEntityLabel(id) {
+            const char = ENTITY_CHARS[id] || { name: 'Entity', emoji: '?' };
+            const name = getEntityDisplayName(id);
+            return `${char.emoji} ${escapeHtml(name)} (#${id})`;
+        }
+
         // ── Init ──
         window.addEventListener('DOMContentLoaded', async () => {
             renderNav('chat');
@@ -462,6 +477,10 @@
                 const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
                 boundEntities = (data.entities || []).filter(e => e.isBound);
                 boundEntityIds = new Set(boundEntities.map(e => e.entityId));
+                entityNameMap = {};
+                boundEntities.forEach(e => {
+                    if (e.name) entityNameMap[e.entityId] = e.name;
+                });
                 renderTargetBar();
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
@@ -485,10 +504,11 @@
 
             boundEntities.forEach(e => {
                 const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
+                const name = e.name || char.name;
                 const label = document.createElement('label');
                 label.className = 'target-check target-entity-check';
                 label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" checked onchange="updateTargetAll()">
-                    <span>${char.emoji} ${escapeHtml(e.name || char.name)}</span>`;
+                    <span>${char.emoji} ${escapeHtml(name)} (#${e.entityId})</span>`;
                 bar.appendChild(label);
             });
         }
@@ -561,13 +581,17 @@
             sortedIds.forEach(id => {
                 const char = ENTITY_CHARS[id] || ENTITY_CHARS[0];
                 const existing = group.querySelector(`[data-filter="entity-${id}"]`);
-                if (existing) return; // already exists
+                if (existing) {
+                    // Update name in case it changed
+                    existing.textContent = `${char.emoji} ${getEntityDisplayName(id)} (#${id})`;
+                    return;
+                }
 
                 const chip = document.createElement('span');
                 chip.className = `filter-chip filter-chip-entity${currentFilter === 'entity-' + id ? ' active' : ''}`;
                 chip.dataset.filter = `entity-${id}`;
                 chip.onclick = () => setFilter(`entity-${id}`);
-                chip.textContent = `${char.emoji} Entity ${id}`;
+                chip.textContent = `${char.emoji} ${getEntityDisplayName(id)} (#${id})`;
                 group.insertBefore(chip, myChip);
             });
         }
@@ -660,8 +684,7 @@
 
         function buildSourceLabel(msg) {
             const entityId = msg.entity_id;
-            const char = ENTITY_CHARS[entityId] || { name: 'Entity', emoji: '?' };
-            const entityHtml = `<span class="entity-label" data-entity="${entityId}">${char.emoji} Entity ${entityId}</span>`;
+            const entityHtml = `<span class="entity-label" data-entity="${entityId}">${getEntityLabel(entityId)}</span>`;
 
             if (msg.is_from_user) {
                 // Determine source tag
@@ -678,8 +701,7 @@
                 // Check for entity-to-entity source pattern
                 const parsed = parseEntitySource(msg.source);
                 if (parsed) {
-                    const senderChar = ENTITY_CHARS[parsed.fromEntityId] || { name: 'Entity', emoji: '?' };
-                    const senderHtml = `<span class="entity-label" data-entity="${parsed.fromEntityId}">${senderChar.emoji} Entity ${parsed.fromEntityId}</span>`;
+                    const senderHtml = `<span class="entity-label" data-entity="${parsed.fromEntityId}">${getEntityLabel(parsed.fromEntityId)}</span>`;
 
                     // Build 發送至 with per-target 已讀 status
                     const deliveredIds = msg.delivered_to
@@ -687,8 +709,7 @@
                         : new Set();
 
                     const targetLabels = parsed.targets.map(tid => {
-                        const tc = ENTITY_CHARS[tid] || { name: 'Entity', emoji: '?' };
-                        const label = `${tc.emoji} Entity ${tid}`;
+                        const label = getEntityLabel(tid);
                         return deliveredIds.has(tid) ? `${label} 已讀` : label;
                     });
 
