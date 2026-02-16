@@ -592,24 +592,13 @@
                     url: items[idx].url || ''
                 }));
 
-                const notifyBtn = document.getElementById('dlgNotifyBtn');
-                notifyBtn.disabled = true;
-                notifyBtn.textContent = '發送中...';
-
-                try {
-                    const data = await apiCall('POST', '/api/mission/notify', {
-                        deviceId: currentUser.deviceId,
-                        deviceSecret: currentUser.deviceSecret,
-                        notifications
-                    });
-                    if (data.success) {
-                        showToast(`通知已發送 (${data.delivered}/${data.total} 已送達)`, data.delivered > 0 ? 'success' : 'warning');
-                    } else {
-                        showToast('通知發送失敗: ' + (data.error || ''), 'error');
-                    }
-                } catch (e) {
-                    showToast('通知錯誤: ' + e.message, 'error');
-                }
+                // Fire-and-forget: user can check chat for read receipts
+                apiCall('POST', '/api/mission/notify', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    notifications
+                }).catch(() => {});
+                showToast('通知已發送', 'success');
                 closeDialog();
             };
         }

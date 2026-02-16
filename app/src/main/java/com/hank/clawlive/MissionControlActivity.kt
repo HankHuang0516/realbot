@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
+import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
@@ -47,6 +49,7 @@ class MissionControlActivity : AppCompatActivity() {
     private lateinit var missionAdapter: MissionItemAdapter
     private lateinit var doneAdapter: MissionItemAdapter
     private lateinit var noteAdapter: MissionNoteAdapter
+    private lateinit var skillAdapter: MissionSkillAdapter
     private lateinit var ruleAdapter: MissionRuleAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -79,8 +82,12 @@ class MissionControlActivity : AppCompatActivity() {
                 // Update adapters with entity names for display
                 todoAdapter.entityNames = nameMap
                 missionAdapter.entityNames = nameMap
+                skillAdapter.entityNames = nameMap
+                ruleAdapter.entityNames = nameMap
                 todoAdapter.notifyDataSetChanged()
                 missionAdapter.notifyDataSetChanged()
+                skillAdapter.notifyDataSetChanged()
+                ruleAdapter.notifyDataSetChanged()
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load entities for mission")
             }
@@ -109,6 +116,10 @@ class MissionControlActivity : AppCompatActivity() {
             onItemClick = { },
             onItemLongClick = { showItemActionMenu(it, ListMode.DONE) }
         )
+        skillAdapter = MissionSkillAdapter(
+            onSkillClick = { showEditSkillDialog(it) },
+            onSkillLongClick = { showDeleteConfirm(it.title) { viewModel.deleteSkill(it.id) } }
+        )
         noteAdapter = MissionNoteAdapter(
             onNoteClick = { showEditNoteDialog(it) },
             onNoteLongClick = { showDeleteConfirm(it.title) { viewModel.deleteNote(it.id) } }
@@ -129,6 +140,7 @@ class MissionControlActivity : AppCompatActivity() {
         setup(findViewById(R.id.rvMission), missionAdapter)
         setup(findViewById(R.id.rvDone), doneAdapter)
         setup(findViewById(R.id.rvNotes), noteAdapter)
+        setup(findViewById(R.id.rvSkills), skillAdapter)
         setup(findViewById(R.id.rvRules), ruleAdapter)
     }
 
@@ -136,19 +148,25 @@ class MissionControlActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnBack).setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         findViewById<MaterialButton>(R.id.btnUpload).setOnClickListener {
-            viewModel.uploadDashboard { yourVersion, serverVersion ->
-                runOnUiThread {
-                    AlertDialog.Builder(this)
-                        .setTitle(getString(R.string.version_conflict_title))
-                        .setMessage(getString(R.string.version_conflict_message, yourVersion, serverVersion))
-                        .setPositiveButton(getString(R.string.download_latest)) { _, _ -> viewModel.downloadDashboard() }
-                        .setNegativeButton(R.string.cancel, null)
-                        .show()
+            viewModel.uploadDashboard(
+                onConflict = { yourVersion, serverVersion ->
+                    runOnUiThread {
+                        AlertDialog.Builder(this)
+                            .setTitle(getString(R.string.version_conflict_title))
+                            .setMessage(getString(R.string.version_conflict_message, yourVersion, serverVersion))
+                            .setPositiveButton(getString(R.string.download_latest)) { _, _ -> viewModel.downloadDashboard() }
+                            .setNegativeButton(R.string.cancel, null)
+                            .show()
+                    }
+                },
+                onSuccess = {
+                    runOnUiThread { showNotifyPrompt() }
                 }
-            }
+            )
         }
 
         findViewById<MaterialButton>(R.id.btnAddTodo).setOnClickListener { showAddItemDialog() }
+        findViewById<MaterialButton>(R.id.btnAddSkill).setOnClickListener { showAddSkillDialog() }
         findViewById<MaterialButton>(R.id.btnAddNote).setOnClickListener { showAddNoteDialog() }
         findViewById<MaterialButton>(R.id.btnAddRule).setOnClickListener { showAddRuleDialog() }
     }
@@ -178,6 +196,7 @@ class MissionControlActivity : AppCompatActivity() {
         missionAdapter.submitList(state.missionList)
         doneAdapter.submitList(state.doneList)
         noteAdapter.submitList(state.notes)
+        skillAdapter.submitList(state.skills)
         ruleAdapter.submitList(state.rules)
 
         // Empty states
@@ -189,6 +208,8 @@ class MissionControlActivity : AppCompatActivity() {
             if (state.doneList.isEmpty() && !state.isLoading) View.VISIBLE else View.GONE
         findViewById<View>(R.id.tvNotesEmpty).visibility =
             if (state.notes.isEmpty() && !state.isLoading) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.tvSkillsEmpty).visibility =
+            if (state.skills.isEmpty() && !state.isLoading) View.VISIBLE else View.GONE
         findViewById<View>(R.id.tvRulesEmpty).visibility =
             if (state.rules.isEmpty() && !state.isLoading) View.VISIBLE else View.GONE
 
@@ -381,11 +402,14 @@ class MissionControlActivity : AppCompatActivity() {
         val etName = view.findViewById<EditText>(R.id.etName)
         val etDescription = view.findViewById<EditText>(R.id.etDescription)
         val spinnerType = view.findViewById<Spinner>(R.id.spinnerRuleType)
+        val container = view.findViewById<LinearLayout>(R.id.entityCheckboxContainer)
 
         val types = RuleType.values()
         spinnerType.adapter = ArrayAdapter(this,
             android.R.layout.simple_spinner_dropdown_item,
             types.map { it.name })
+
+        val checkboxes = buildEntityCheckboxes(container, emptyList())
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.add_rule))
@@ -396,7 +420,8 @@ class MissionControlActivity : AppCompatActivity() {
                     viewModel.addRule(
                         name = name,
                         description = etDescription.text.toString().trim(),
-                        ruleType = types[spinnerType.selectedItemPosition]
+                        ruleType = types[spinnerType.selectedItemPosition],
+                        assignedEntities = checkboxes.filter { it.second.isChecked }.map { it.first }
                     )
                 }
             }
@@ -409,6 +434,7 @@ class MissionControlActivity : AppCompatActivity() {
         val etName = view.findViewById<EditText>(R.id.etName)
         val etDescription = view.findViewById<EditText>(R.id.etDescription)
         val spinnerType = view.findViewById<Spinner>(R.id.spinnerRuleType)
+        val container = view.findViewById<LinearLayout>(R.id.entityCheckboxContainer)
 
         val types = RuleType.values()
         spinnerType.adapter = ArrayAdapter(this,
@@ -418,6 +444,8 @@ class MissionControlActivity : AppCompatActivity() {
         etName.setText(rule.name)
         etDescription.setText(rule.description)
         spinnerType.setSelection(types.indexOf(rule.ruleType))
+
+        val checkboxes = buildEntityCheckboxes(container, rule.assignedEntities)
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.edit))
@@ -429,11 +457,153 @@ class MissionControlActivity : AppCompatActivity() {
                         ruleId = rule.id,
                         name = name,
                         description = etDescription.text.toString().trim(),
-                        ruleType = types[spinnerType.selectedItemPosition]
+                        ruleType = types[spinnerType.selectedItemPosition],
+                        assignedEntities = checkboxes.filter { it.second.isChecked }.map { it.first }
                     )
                 }
             }
             .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** Build entity checkboxes into a container, returns list of (entityId, CheckBox) */
+    private fun buildEntityCheckboxes(container: LinearLayout, selectedEntities: List<String>): List<Pair<String, CheckBox>> {
+        val checkboxes = mutableListOf<Pair<String, CheckBox>>()
+        for (i in 1 until entityOptions.size) {
+            val (entityId, label) = entityOptions[i]
+            val cb = CheckBox(this).apply {
+                text = label
+                isChecked = selectedEntities.contains(entityId)
+            }
+            container.addView(cb)
+            checkboxes.add(entityId to cb)
+        }
+        if (checkboxes.isEmpty()) {
+            val tv = TextView(this).apply {
+                text = "No bound entities"
+                setTextColor(0xFF666666.toInt())
+                textSize = 12f
+            }
+            container.addView(tv)
+        }
+        return checkboxes
+    }
+
+    // ============================================
+    // Skill Dialogs
+    // ============================================
+
+    private fun showAddSkillDialog() {
+        showSkillDialogInternal(null)
+    }
+
+    private fun showEditSkillDialog(skill: MissionSkill) {
+        showSkillDialogInternal(skill)
+    }
+
+    private fun showSkillDialogInternal(skill: MissionSkill?) {
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_mission_skill, null)
+        val etTitle = view.findViewById<EditText>(R.id.etTitle)
+        val etUrl = view.findViewById<EditText>(R.id.etUrl)
+        val container = view.findViewById<LinearLayout>(R.id.entityCheckboxContainer)
+
+        if (skill != null) {
+            etTitle.setText(skill.title)
+            etUrl.setText(skill.url)
+        }
+
+        val checkboxes = buildEntityCheckboxes(container, skill?.assignedEntities ?: emptyList())
+
+        AlertDialog.Builder(this)
+            .setTitle(if (skill != null) getString(R.string.edit) else "新增技能")
+            .setView(view)
+            .setPositiveButton(if (skill != null) R.string.done else R.string.send) { _, _ ->
+                val title = etTitle.text.toString().trim()
+                if (title.isNotEmpty()) {
+                    val url = etUrl.text.toString().trim()
+                    val selectedEntities = checkboxes.filter { it.second.isChecked }.map { it.first }
+                    if (skill != null) {
+                        viewModel.editSkill(skill.id, title, url, selectedEntities)
+                    } else {
+                        viewModel.addSkill(title, url, selectedEntities)
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    // ============================================
+    // Notification Prompt
+    // ============================================
+
+    private fun showNotifyPrompt() {
+        val state = viewModel.uiState.value
+        data class NotifyItem(val type: String, val title: String, val priority: Int, val entityIds: List<String>, val url: String = "")
+
+        val items = mutableListOf<NotifyItem>()
+
+        // TODO items with HIGH/CRITICAL + assigned entity
+        state.todoList.forEach { item ->
+            if (item.priority.value >= 3 && item.assignedBot != null) {
+                items.add(NotifyItem("TODO", item.title, item.priority.value, listOf(item.assignedBot)))
+            }
+        }
+
+        // SKILL items with assigned entities
+        state.skills.forEach { skill ->
+            if (skill.assignedEntities.isNotEmpty()) {
+                items.add(NotifyItem("SKILL", skill.title, 0, skill.assignedEntities, skill.url))
+            }
+        }
+
+        // RULE items with assigned entities (enabled only)
+        state.rules.forEach { rule ->
+            if (rule.assignedEntities.isNotEmpty() && rule.isEnabled) {
+                items.add(NotifyItem("RULE", rule.name, 0, rule.assignedEntities))
+            }
+        }
+
+        if (items.isEmpty()) return
+
+        val labels = items.map { item ->
+            val entityLabel = item.entityIds.joinToString(", ") { id ->
+                entityOptions.find { it.first == id }?.second ?: "Entity $id"
+            }
+            when (item.type) {
+                "TODO" -> "📋 ${item.title} → $entityLabel"
+                "SKILL" -> "🔧 ${item.title} → $entityLabel"
+                "RULE" -> "📏 ${item.title} → $entityLabel"
+                else -> "${item.title} → $entityLabel"
+            }
+        }.toTypedArray()
+
+        val checked = BooleanArray(items.size) { true }
+
+        AlertDialog.Builder(this)
+            .setTitle("📢 發布任務更新通知")
+            .setMultiChoiceItems(labels, checked) { _, which, isChecked ->
+                checked[which] = isChecked
+            }
+            .setPositiveButton("發送通知") { _, _ ->
+                val selected = items.filterIndexed { idx, _ -> checked[idx] }
+                if (selected.isEmpty()) return@setPositiveButton
+
+                val notifications = selected.map { item ->
+                    mapOf<String, Any>(
+                        "type" to item.type,
+                        "title" to item.title,
+                        "priority" to item.priority,
+                        "entityIds" to item.entityIds,
+                        "url" to item.url
+                    )
+                }
+
+                // Fire-and-forget: user can check chat for read receipts
+                viewModel.notifyEntities(notifications) { _, _ -> }
+                Toast.makeText(this, "通知已發送", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("跳過", null)
             .show()
     }
 
