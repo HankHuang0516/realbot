@@ -1,3 +1,0 @@
-com.hank.clawlive.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme

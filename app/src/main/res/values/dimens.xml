@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Chat UI dimensions -->
-    <dimen name="chat_input_section_height">180dp</dimen>
-</resources>

@@ -1,7 +1,0 @@
-com.hank.clawlive.test.app-androidTest-0 C:\Hank\Other\project\realbot\app\build\generated\res\resValues\androidTest\debug
-com.hank.clawlive.test.app-updated_navigation_xml-1 C:\Hank\Other\project\realbot\app\build\generated\updated_navigation_xml\debugAndroidTest
-com.hank.clawlive.test.app-mergeDebugAndroidTestResources-2 C:\Hank\Other\project\realbot\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
-com.hank.clawlive.test.app-mergeDebugAndroidTestResources-3 C:\Hank\Other\project\realbot\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
-com.hank.clawlive.test.app-debugAndroidTest-4 C:\Hank\Other\project\realbot\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources
-com.hank.clawlive.test.app-core-1.5.0-5 C:\Users\z004rx2h\.gradle\caches\8.13\transforms\5095985c9852d1aa5f123270240816b6\transformed\core-1.5.0\res
-com.hank.clawlive.test.app-annotation-experimental-1.3.0-6 C:\Users\z004rx2h\.gradle\caches\8.13\transforms\b60c1b39a120042e1c234f4b1770d7fb\transformed\annotation-experimental-1.3.0\res

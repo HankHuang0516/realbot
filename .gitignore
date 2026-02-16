@@ -17,3 +17,13 @@ local.properties
 # Node
 node_modules/
 backend/node_modules/
+backend/data/
+dist/
+coverage/
+.env
+*.log
+tappay_secrets.json
+view_icon.html
+automation/
+playwright-report/
+test-results/
