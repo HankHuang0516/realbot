@@ -39,6 +39,33 @@ const devices = {};
 // Pending binding codes (code -> { deviceId, entityId, expires })
 const pendingBindings = {};
 
+// Bot-to-bot loop prevention: track message timestamps per entity
+// Key: "deviceId:entityId" -> array of timestamps
+const botToBotTracker = {};
+const BOT2BOT_WINDOW_MS = 2 * 60 * 1000; // 2 minute window
+const BOT2BOT_MAX_MESSAGES = 5; // max messages per entity in window
+
+function checkBotToBotRateLimit(deviceId, entityId) {
+    const key = `${deviceId}:${entityId}`;
+    const now = Date.now();
+    if (!botToBotTracker[key]) botToBotTracker[key] = [];
+    // Prune old entries
+    botToBotTracker[key] = botToBotTracker[key].filter(t => now - t < BOT2BOT_WINDOW_MS);
+    if (botToBotTracker[key].length >= BOT2BOT_MAX_MESSAGES) {
+        return false; // rate limited
+    }
+    botToBotTracker[key].push(now);
+    return true; // allowed
+}
+
+function getBotToBotRemaining(deviceId, entityId) {
+    const key = `${deviceId}:${entityId}`;
+    const now = Date.now();
+    if (!botToBotTracker[key]) return BOT2BOT_MAX_MESSAGES;
+    const recent = botToBotTracker[key].filter(t => now - t < BOT2BOT_WINDOW_MS);
+    return Math.max(0, BOT2BOT_MAX_MESSAGES - recent.length);
+}
+
 // Official bot pool (loaded from DB on startup)
 const officialBots = {};
 
@@ -1642,6 +1669,17 @@ app.post('/api/entity/speak-to', async (req, res) => {
         return res.status(400).json({ success: false, message: `Entity ${toId} is not bound` });
     }
 
+    // Bot-to-bot loop prevention: rate limit per sending entity
+    if (!checkBotToBotRateLimit(deviceId, fromId)) {
+        console.warn(`[Entity] RATE LIMITED: Device ${deviceId} Entity ${fromId} -> Entity ${toId} (bot-to-bot loop prevention)`);
+        return res.status(429).json({
+            success: false,
+            message: `Entity ${fromId} has sent too many bot-to-bot messages. Max ${BOT2BOT_MAX_MESSAGES} per ${BOT2BOT_WINDOW_MS / 60000} minutes. Please wait before sending again.`,
+            rateLimited: true
+        });
+    }
+    const b2bRemaining = getBotToBotRemaining(deviceId, fromId);
+
     // Create message source identifier
     const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
 
@@ -1662,7 +1700,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
     const chatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true, mediaType || null, mediaUrl || null);
     markMessagesAsRead(deviceId, toId);
 
-    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
+    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}" (b2b remaining: ${b2bRemaining})`);
 
     // Update entity.message so Android app can display it
     // Format must match Android's parseEntityMessage regex: "entity:{ID}:{CHARACTER}: {message}"
@@ -1679,6 +1717,12 @@ app.post('/api/entity/speak-to', async (req, res) => {
             if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
         } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
+        // Warn bot about remaining quota to discourage loop
+        const toRemaining = getBotToBotRemaining(deviceId, toId);
+        pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}`;
+        if (toRemaining <= 2) {
+            pushMsg += `\n⚠️ 警告: 配額即將用盡，請不要自動回覆此訊息，避免無限循環。只在用戶主動要求時才回覆其他實體。`;
+        }
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
             pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
@@ -1758,6 +1802,17 @@ app.post('/api/entity/broadcast', async (req, res) => {
         return res.status(403).json({ success: false, message: "Invalid botSecret for sending entity" });
     }
 
+    // Bot-to-bot loop prevention: rate limit per sending entity
+    if (!checkBotToBotRateLimit(deviceId, fromId)) {
+        console.warn(`[Broadcast] RATE LIMITED: Device ${deviceId} Entity ${fromId} (bot-to-bot loop prevention)`);
+        return res.status(429).json({
+            success: false,
+            message: `Entity ${fromId} has sent too many bot-to-bot messages. Max ${BOT2BOT_MAX_MESSAGES} per ${BOT2BOT_WINDOW_MS / 60000} minutes. Please wait before sending again.`,
+            rateLimited: true
+        });
+    }
+    const b2bRemaining = getBotToBotRemaining(deviceId, fromId);
+
     // Create message source identifier
     const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
 
@@ -1779,7 +1834,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
         });
     }
 
-    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}"`);
+    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}" (b2b remaining: ${b2bRemaining})`);
 
     // Save ONE chat message for the broadcast (sender's perspective, all targets)
     const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true, mediaType || null, mediaUrl || null);
@@ -1820,6 +1875,12 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
             } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
+            // Warn bot about remaining quota to discourage loop
+            const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
+            pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}`;
+            if (toRemainingBcast <= 2) {
+                pushMsg += `\n⚠️ 警告: 配額即將用盡，請不要自動回覆此廣播，避免無限循環。只在用戶主動要求時才回覆其他實體。`;
+            }
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {
                 pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
