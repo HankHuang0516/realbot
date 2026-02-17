@@ -287,6 +287,182 @@
             margin: auto;
         }
 
+        /* ── Media in Chat ── */
+        .chat-photo {
+            max-width: 240px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 6px;
+            cursor: pointer;
+            object-fit: cover;
+        }
+
+        .chat-photo:hover { opacity: 0.9; }
+
+        .chat-voice {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            min-width: 180px;
+        }
+
+        .voice-play-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .chat-msg.sent .voice-play-btn {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+
+        .chat-msg.received .voice-play-btn {
+            background: var(--card-border);
+            color: var(--text);
+        }
+
+        .voice-progress {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .chat-msg.received .voice-progress {
+            background: var(--card-border);
+        }
+
+        .voice-progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        .chat-msg.received .voice-progress-fill {
+            background: var(--primary);
+        }
+
+        .voice-duration {
+            font-size: 11px;
+            opacity: 0.7;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        /* ── Photo Lightbox ── */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+
+        .lightbox.active { display: flex; }
+
+        .lightbox img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        /* ── Media Buttons in Input Bar ── */
+        .btn-media {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-media:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-media.recording {
+            background: #ff4444;
+            border-color: #ff4444;
+            color: #fff;
+            animation: pulse-record 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-record {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .recording-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255,68,68,0.1);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #ff4444;
+        }
+
+        .recording-indicator.active { display: flex; }
+
+        .recording-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse-record 1s ease-in-out infinite;
+        }
+
+        .recording-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+        }
+
+        .recording-actions button {
+            padding: 4px 12px;
+            border-radius: 12px;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-cancel-record {
+            background: var(--card-border);
+            color: var(--text);
+        }
+
+        .btn-send-record {
+            background: var(--primary);
+            color: #fff;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 640px) {
             .chat-header-row {
@@ -358,15 +534,31 @@
                 <div class="limit-warning" id="limitWarning" data-i18n="chat_limit_reached">
                     Daily message limit reached. Upgrade to Premium for unlimited messages!
                 </div>
+                <div class="recording-indicator" id="recordingIndicator">
+                    <span class="recording-dot"></span>
+                    <span id="recordingTime">0:00</span>
+                    <div class="recording-actions">
+                        <button class="btn-cancel-record" onclick="stopRecording(false)">Cancel</button>
+                        <button class="btn-send-record" onclick="stopRecording(true)">Send</button>
+                    </div>
+                </div>
                 <div class="input-row">
+                    <button class="btn-media" id="btnPhoto" onclick="openPhotoPicker()" title="Send photo">&#x1F4F7;</button>
+                    <button class="btn-media" id="btnVoice" onclick="toggleRecording()" title="Voice message">&#x1F3A4;</button>
                     <input type="text" class="chat-input" id="messageInput"
                         data-i18n="chat_input_placeholder" placeholder="Type a message..."
                         onkeydown="if(event.key==='Enter')sendMessage()">
                     <button class="btn btn-primary btn-send" id="btnSend" onclick="sendMessage()"
                         data-i18n="chat_btn_send" title="Send">&#10148;</button>
                 </div>
+                <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handlePhotoSelected(this)">
             </div>
         </div>
+    </div>
+
+    <!-- Photo Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <img id="lightboxImg" src="" alt="">
     </div>
 
     <script src="shared/api.js"></script>
@@ -653,15 +845,34 @@
             container.innerHTML = filtered.map(msg => {
                 const isSent = msg.is_from_user;
                 const msgClass = isSent ? 'sent' : 'received';
-                const text = escapeHtml(msg.text || '');
                 const time = formatTime(msg.created_at);
                 const sourceLabel = buildSourceLabel(msg);
+
+                // Build media content
+                let mediaHtml = '';
+                if (msg.media_type === 'photo' && msg.media_url) {
+                    mediaHtml = `<img class="chat-photo" src="${escapeHtml(msg.media_url)}" alt="Photo" onclick="openLightbox('${escapeHtml(msg.media_url)}')" loading="lazy">`;
+                } else if (msg.media_type === 'voice' && msg.media_url) {
+                    const durationMatch = (msg.text || '').match(/\d+/);
+                    const seconds = durationMatch ? parseInt(durationMatch[0]) : 0;
+                    const durStr = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+                    mediaHtml = `
+                        <div class="chat-voice" data-src="${escapeHtml(msg.media_url)}">
+                            <button class="voice-play-btn" onclick="toggleVoice(this)">&#9654;</button>
+                            <div class="voice-progress" onclick="seekVoice(event, this)"><div class="voice-progress-fill"></div></div>
+                            <span class="voice-duration">${durStr}</span>
+                        </div>`;
+                }
+
+                // Text content (hide placeholder text for media messages)
+                const rawText = msg.text || '';
+                const isPlaceholder = (rawText === '[Photo]' || rawText === '[Voice message]');
+                const textHtml = (!isPlaceholder && rawText) ? escapeHtml(rawText) : '';
 
                 // Read receipt for sent messages
                 let receipt = '';
                 if (isSent) {
                     if (msg.source && msg.source.startsWith('mission_notify')) {
-                        // Source format: "mission_notify:0,1" - extract targets
                         const targetPart = (msg.source.split(':')[1] || '');
                         const targetIds = targetPart ? targetPart.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id)) : [];
                         const deliveredIds = new Set((msg.delivered_to || '').split(',').map(id => id.trim()).filter(Boolean));
@@ -687,7 +898,7 @@
                 return `
                     <div class="chat-msg ${msgClass}">
                         <div class="chat-source">${sourceLabel}</div>
-                        <div class="chat-bubble">${text}</div>
+                        <div class="chat-bubble">${textHtml}${mediaHtml}</div>
                         <div class="chat-meta">${time}</div>
                         ${receipt ? `<div class="chat-receipt">${receipt}</div>` : ''}
                     </div>`;
@@ -822,9 +1033,289 @@
             return div.innerHTML;
         }
 
+        // ── Photo Upload ──
+        function openPhotoPicker() {
+            document.getElementById('photoFileInput').click();
+        }
+
+        async function handlePhotoSelected(input) {
+            const file = input.files[0];
+            if (!file) return;
+            input.value = ''; // Reset for next pick
+
+            const targets = getSelectedTargets();
+            if (targets.length === 0) {
+                showToast('Please select at least one entity', 'error');
+                return;
+            }
+
+            // Client-side limit check
+            const isPremium = currentUser.subscriptionStatus === 'premium';
+            const limit = currentUser.usageLimit;
+            const used = currentUser.usageToday || 0;
+            if (!isPremium && limit !== null && limit !== undefined && used >= limit) {
+                showToast(i18n.t('chat_limit_reached'), 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnPhoto');
+            btn.disabled = true;
+            btn.textContent = '⏳';
+
+            try {
+                // Upload to backend
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('deviceId', currentUser.deviceId);
+                formData.append('deviceSecret', currentUser.deviceSecret);
+                formData.append('mediaType', 'photo');
+
+                const uploadRes = await fetch(API_BASE + '/api/chat/upload-media', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) throw new Error(uploadData.error || 'Upload failed');
+
+                // Send message with photo
+                const entityId = targets.length === 1 ? targets[0] : targets;
+                await apiCall('POST', '/api/client/speak', {
+                    deviceId: currentUser.deviceId,
+                    entityId: entityId,
+                    text: '[Photo]',
+                    source: 'web_chat',
+                    mediaType: 'photo',
+                    mediaUrl: uploadData.mediaUrl
+                });
+
+                if (currentUser.usageToday !== undefined) {
+                    currentUser.usageToday += targets.length;
+                    updateUsageBadge();
+                }
+
+                await loadMessages();
+                const container = document.getElementById('chatMessages');
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                showToast('Photo upload failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '\u{1F4F7}';
+            }
+        }
+
+        // ── Voice Recording ──
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStartTime = 0;
+        let recordingTimer = null;
+        const MAX_RECORD_SECONDS = 180;
+
+        function toggleRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording(true);
+            } else {
+                startRecording();
+            }
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) audioChunks.push(e.data);
+                };
+
+                mediaRecorder.start();
+                recordingStartTime = Date.now();
+
+                // UI
+                document.getElementById('btnVoice').classList.add('recording');
+                document.getElementById('recordingIndicator').classList.add('active');
+                updateRecordingTime();
+
+                // Auto-stop at max duration
+                recordingTimer = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                    updateRecordingTime();
+                    if (elapsed >= MAX_RECORD_SECONDS) {
+                        stopRecording(true);
+                    }
+                }, 500);
+
+            } catch (e) {
+                showToast('Microphone access denied', 'error');
+            }
+        }
+
+        function updateRecordingTime() {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const m = Math.floor(elapsed / 60);
+            const s = elapsed % 60;
+            document.getElementById('recordingTime').textContent = `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        function stopRecording(send) {
+            if (!mediaRecorder) return;
+
+            clearInterval(recordingTimer);
+            const durationSec = Math.floor((Date.now() - recordingStartTime) / 1000);
+
+            document.getElementById('btnVoice').classList.remove('recording');
+            document.getElementById('recordingIndicator').classList.remove('active');
+
+            if (!send || durationSec < 1) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                mediaRecorder = null;
+                return;
+            }
+
+            mediaRecorder.onstop = async () => {
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                mediaRecorder = null;
+                await uploadVoice(audioBlob, durationSec);
+            };
+
+            mediaRecorder.stop();
+        }
+
+        async function uploadVoice(blob, durationSec) {
+            const targets = getSelectedTargets();
+            if (targets.length === 0) {
+                showToast('Please select at least one entity', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnVoice');
+            btn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', blob, 'voice.webm');
+                formData.append('deviceId', currentUser.deviceId);
+                formData.append('deviceSecret', currentUser.deviceSecret);
+                formData.append('mediaType', 'voice');
+
+                const uploadRes = await fetch(API_BASE + '/api/chat/upload-media', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadRes.json();
+                if (!uploadData.success) throw new Error(uploadData.error || 'Upload failed');
+
+                const entityId = targets.length === 1 ? targets[0] : targets;
+                await apiCall('POST', '/api/client/speak', {
+                    deviceId: currentUser.deviceId,
+                    entityId: entityId,
+                    text: `[Voice ${durationSec}s]`,
+                    source: 'web_chat',
+                    mediaType: 'voice',
+                    mediaUrl: uploadData.mediaUrl
+                });
+
+                if (currentUser.usageToday !== undefined) {
+                    currentUser.usageToday += targets.length;
+                    updateUsageBadge();
+                }
+
+                await loadMessages();
+                const container = document.getElementById('chatMessages');
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                showToast('Voice upload failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ── Voice Playback ──
+        let currentAudio = null;
+        let currentPlayBtn = null;
+
+        function toggleVoice(btn) {
+            const voiceDiv = btn.closest('.chat-voice');
+            const src = voiceDiv.dataset.src;
+
+            // Stop current playback
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+                if (currentPlayBtn) currentPlayBtn.innerHTML = '&#9654;';
+                const prevFill = currentPlayBtn?.closest('.chat-voice')?.querySelector('.voice-progress-fill');
+                if (prevFill) prevFill.style.width = '0%';
+
+                if (currentPlayBtn === btn) {
+                    currentPlayBtn = null;
+                    return;
+                }
+            }
+
+            const audio = new Audio(src);
+            currentAudio = audio;
+            currentPlayBtn = btn;
+            btn.innerHTML = '&#9646;&#9646;';
+
+            const progressFill = voiceDiv.querySelector('.voice-progress-fill');
+            const durationLabel = voiceDiv.querySelector('.voice-duration');
+
+            audio.addEventListener('timeupdate', () => {
+                if (audio.duration) {
+                    progressFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+                    const rem = Math.ceil(audio.duration - audio.currentTime);
+                    durationLabel.textContent = Math.floor(rem / 60) + ':' + String(rem % 60).padStart(2, '0');
+                }
+            });
+
+            audio.addEventListener('ended', () => {
+                btn.innerHTML = '&#9654;';
+                progressFill.style.width = '0%';
+                currentAudio = null;
+                currentPlayBtn = null;
+            });
+
+            audio.play().catch(() => {
+                showToast('Playback failed', 'error');
+                btn.innerHTML = '&#9654;';
+                currentAudio = null;
+                currentPlayBtn = null;
+            });
+        }
+
+        function seekVoice(event, progressBar) {
+            if (!currentAudio) return;
+            const rect = progressBar.getBoundingClientRect();
+            const ratio = (event.clientX - rect.left) / rect.width;
+            currentAudio.currentTime = ratio * currentAudio.duration;
+        }
+
+        // ── Photo Lightbox ──
+        function openLightbox(url) {
+            document.getElementById('lightboxImg').src = url;
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.getElementById('lightboxImg').src = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+
         // ── Cleanup ──
         window.addEventListener('beforeunload', () => {
             if (refreshInterval) clearInterval(refreshInterval);
+            if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            }
         });
     </script>
 </body>
