@@ -42,7 +42,7 @@ const pendingBindings = {};
 // Bot-to-bot loop prevention: counter resets ONLY when a human message arrives
 // Key: "deviceId:entityId" -> count of bot-to-bot messages since last human message
 const botToBotCounter = {};
-const BOT2BOT_MAX_MESSAGES = 3; // max bot-to-bot messages before human must intervene
+const BOT2BOT_MAX_MESSAGES = 8; // max bot-to-bot messages before human must intervene
 
 function checkBotToBotRateLimit(deviceId, entityId) {
     const key = `${deviceId}:${entityId}`;
