@@ -566,10 +566,10 @@
         // ========== Notification Prompt ==========
         function getNotifiableItems() {
             const items = [];
-            // TODO items with HIGH/CRITICAL priority + assigned entity
+            // TODO items with assigned entity (any priority)
             dashboard.todoList.forEach(item => {
                 const p = item.priority?.value || item.priority || 2;
-                if (p >= 3 && item.assignedBot) {
+                if (item.assignedBot) {
                     items.push({
                         type: 'TODO',
                         title: item.title,

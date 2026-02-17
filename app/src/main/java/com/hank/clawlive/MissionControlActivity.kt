@@ -544,9 +544,9 @@ class MissionControlActivity : AppCompatActivity() {
 
         val items = mutableListOf<NotifyItem>()
 
-        // TODO items with HIGH/CRITICAL + assigned entity
+        // TODO items with assigned entity (any priority)
         state.todoList.forEach { item ->
-            if (item.priority.value >= 3 && item.assignedBot != null) {
+            if (item.assignedBot != null) {
                 items.add(NotifyItem("TODO", item.title, item.priority.value, listOf(item.assignedBot)))
             }
         }
