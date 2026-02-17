@@ -1669,9 +1669,9 @@ app.post('/api/entity/speak-to', async (req, res) => {
     toEntity.message = `entity:${fromId}:${fromEntity.character}: ${text}`;
     toEntity.lastUpdated = Date.now();
 
-    // Push to target bot if webhook is registered
-    let pushResult = { pushed: false, reason: "no_webhook" };
-    if (toEntity.webhook) {
+    // Fire-and-forget: push to target bot webhook (don't block response)
+    const hasWebhook = !!toEntity.webhook;
+    if (hasWebhook) {
         let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
         if (mediaType === 'photo') {
             pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
@@ -1683,14 +1683,16 @@ app.post('/api/entity/speak-to', async (req, res) => {
         if (officialBind && toEntity.botSecret) {
             pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
         }
-        pushResult = await pushToBot(toEntity, deviceId, "entity_message", {
+        pushToBot(toEntity, deviceId, "entity_message", {
             message: pushMsg
+        }).then(pushResult => {
+            if (pushResult.pushed) {
+                messageObj.delivered = true;
+                markChatMessageDelivered(chatMsgId, String(toId));
+            }
+        }).catch(err => {
+            console.error(`[SpeakTo] Background push failed: ${err.message}`);
         });
-
-        if (pushResult.pushed) {
-            messageObj.delivered = true;
-            markChatMessageDelivered(chatMsgId, String(toId));
-        }
     } else if (toEntity.isBound) {
         console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
     }
@@ -1708,9 +1710,9 @@ app.post('/api/entity/speak-to', async (req, res) => {
         message: `Message sent from Entity ${fromId} to Entity ${toId}`,
         from: { entityId: fromId, character: fromEntity.character },
         to: { entityId: toId, character: toEntity.character },
-        pushed: pushResult.pushed,
-        mode: toEntity.webhook ? "push" : "polling",
-        reason: pushResult.pushed ? "ok" : (pushResult.reason || "unknown"),
+        pushed: hasWebhook ? "pending" : false,
+        mode: hasWebhook ? "push" : "polling",
+        reason: hasWebhook ? "fire_and_forget" : "no_webhook",
         bindingType: bindingTypeTo
     });
 });
@@ -1782,8 +1784,8 @@ app.post('/api/entity/broadcast', async (req, res) => {
     // Save ONE chat message for the broadcast (sender's perspective, all targets)
     const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true, mediaType || null, mediaUrl || null);
 
-    // Parallel processing - send to all entities simultaneously
-    const pushPromises = targetIds.map(async (toId) => {
+    // Queue messages synchronously, then fire-and-forget webhook pushes
+    const results = targetIds.map((toId) => {
         const toEntity = device.entities[toId];
 
         toEntity.message = `From Entity ${fromId}: "${text}"`;
@@ -1807,9 +1809,10 @@ app.post('/api/entity/broadcast', async (req, res) => {
         toEntity.message = `entity:${fromId}:${fromEntity.character}: [廣播] ${text}`;
         toEntity.lastUpdated = Date.now();
 
-        // Push to target bot if webhook is registered
-        let pushResult = { pushed: false, reason: "no_webhook" };
-        if (toEntity.webhook) {
+        const hasWebhook = !!toEntity.webhook;
+
+        // Fire-and-forget: push to target bot webhook (don't block response)
+        if (hasWebhook) {
             let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
             if (mediaType === 'photo') {
                 pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
@@ -1821,13 +1824,16 @@ app.post('/api/entity/broadcast', async (req, res) => {
             if (officialBind && toEntity.botSecret) {
                 pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
             }
-            pushResult = await pushToBot(toEntity, deviceId, "entity_broadcast", {
+            pushToBot(toEntity, deviceId, "entity_broadcast", {
                 message: pushMsg
+            }).then(pushResult => {
+                if (pushResult.pushed) {
+                    messageObj.delivered = true;
+                    markChatMessageDelivered(broadcastChatMsgId, String(toId));
+                }
+            }).catch(err => {
+                console.error(`[Broadcast] Background push to Entity ${toId} failed: ${err.message}`);
             });
-
-            if (pushResult.pushed) {
-                messageObj.delivered = true;
-            }
         } else if (toEntity.isBound) {
             console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
         }
@@ -1843,30 +1849,20 @@ app.post('/api/entity/broadcast', async (req, res) => {
         return {
             entityId: toId,
             character: toEntity.character,
-            pushed: pushResult.pushed,
-            mode: toEntity.webhook ? "push" : "polling",
-            reason: pushResult.pushed ? "ok" : (pushResult.reason || "unknown"),
+            pushed: hasWebhook ? "pending" : false,
+            mode: hasWebhook ? "push" : "polling",
+            reason: hasWebhook ? "fire_and_forget" : "no_webhook",
             bindingType: bindingTypeBcast
         };
     });
-
-    // Wait for all push operations to complete in parallel
-    const results = await Promise.all(pushPromises);
-    const pushedCount = results.filter(r => r.pushed).length;
-
-    // Mark chat message as delivered with successfully pushed entity IDs
-    const deliveredIds = results.filter(r => r.pushed).map(r => r.entityId);
-    if (deliveredIds.length > 0) {
-        markChatMessageDelivered(broadcastChatMsgId, deliveredIds.join(','));
-    }
 
     res.json({
         success: true,
         message: `Broadcast sent from Entity ${fromId} to ${results.length} entities`,
         from: { entityId: fromId, character: fromEntity.character },
         sentCount: results.length,
-        pushedCount: pushedCount,
-        results: results
+        targets: results,
+        broadcast: targetIds.length > 1
     });
 });
 
