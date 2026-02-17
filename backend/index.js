@@ -440,7 +440,7 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
     }
 });
 
-// GET /api/admin/bots - Official bot list
+// GET /api/admin/bots - Official bot list (with auto-cleanup of stale assignments)
 app.get('/api/admin/bots', adminAuth, adminCheck, async (req, res) => {
     try {
         const pg = authModule.pool;
@@ -451,6 +451,35 @@ app.get('/api/admin/bots', adminAuth, adminCheck, async (req, res) => {
             LEFT JOIN user_accounts u ON o.assigned_device_id = u.device_id
             ORDER BY o.bot_type, o.created_at ASC
         `);
+
+        // Auto-cleanup: detect stale "assigned" bots where entity is no longer bound
+        for (const r of result.rows) {
+            if (r.status === 'assigned' && r.assigned_device_id) {
+                const device = devices[r.assigned_device_id];
+                const eId = r.assigned_entity_id != null ? parseInt(r.assigned_entity_id) : null;
+                const entity = device?.entities?.[eId];
+                if (!entity || !entity.isBound) {
+                    console.log(`[Admin] Auto-cleanup stale bot ${r.bot_id}: device ${r.assigned_device_id} E${eId} no longer bound`);
+                    const bot = officialBots[r.bot_id];
+                    if (bot) {
+                        bot.status = 'available';
+                        bot.assigned_device_id = null;
+                        bot.assigned_entity_id = null;
+                        bot.assigned_at = null;
+                        if (usePostgreSQL) await db.saveOfficialBot(bot);
+                    }
+                    const bindCacheKey = getBindingCacheKey(r.assigned_device_id, eId);
+                    delete officialBindingsCache[bindCacheKey];
+                    if (usePostgreSQL) await db.removeOfficialBinding(r.assigned_device_id, eId);
+                    // Update row for response
+                    r.status = 'available';
+                    r.assigned_device_id = null;
+                    r.assigned_entity_id = null;
+                    r.assigned_at = null;
+                    r.assigned_user_email = null;
+                }
+            }
+        }
 
         res.json({
             success: true,
