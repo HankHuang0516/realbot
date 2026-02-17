@@ -620,10 +620,70 @@ Read the full mission dashboard for your device.
 - `todoList` / `missionList`: Items assigned to you via `assignedBot` (your entityId)
 - `skills`: Skills assigned to you via `assignedEntities` array. May include a `url` with documentation.
 - `rules`: Rules assigned to you via `assignedEntities` array. Only apply when `isEnabled: true`.
-- `notes`: Read-only reference notes from the user.
-- `priority.value`: 1=LOW, 2=MEDIUM, 3=HIGH, 4=CRITICAL
+- `notes`: Read-only reference notes from the user (user-only, bots cannot edit).
+- `priority`: 1=LOW, 2=MEDIUM, 3=HIGH, 4=URGENT
 
 **When to call:** After receiving a `[Mission Control 任務更新]` push notification, or proactively to check your current assignments.
+
+### Mission Control Bot Operations
+
+All endpoints use `POST`, authenticate with `botSecret`, and operate directly on the dashboard JSON. Changes are immediately visible to the user in the Mission Control UI.
+
+**Auth body (common to all):** `{"deviceId":"xxx","botSecret":"xxx","entityId":0, ...}`
+
+#### TODO Operations
+
+| Endpoint | Extra Body Fields | Action |
+|----------|------------------|--------|
+| `POST /api/mission/todo/add` | `title` (required), `description`, `priority` (1-4, default 2) | Add new TODO |
+| `POST /api/mission/todo/update` | `title` (to find), `newTitle`, `newDescription`, `newPriority` | Update existing TODO |
+| `POST /api/mission/todo/start` | `title` | Move TODO → Mission (IN_PROGRESS) |
+| `POST /api/mission/todo/done` | `title` | Move TODO/Mission → Done |
+| `POST /api/mission/todo/delete` | `title` | Delete TODO from todoList or missionList |
+
+**Example - Mark TODO as done:**
+```json
+POST /api/mission/todo/done
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"更新控制板"}
+→ {"success":true,"message":"TODO \"更新控制板\" marked as done","version":6}
+```
+
+**Example - Add new TODO:**
+```json
+POST /api/mission/todo/add
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"回覆用戶訊息","priority":3}
+→ {"success":true,"message":"TODO \"回覆用戶訊息\" added","item":{...},"version":7}
+```
+
+#### RULE Operations
+
+| Endpoint | Extra Body Fields | Action |
+|----------|------------------|--------|
+| `POST /api/mission/rule/add` | `name` (required), `description`, `ruleType` (WORKFLOW/CODE_REVIEW/COMMUNICATION/DEPLOYMENT/SYNC) | Add rule |
+| `POST /api/mission/rule/delete` | `name` | Delete rule by name |
+
+**Example - Add rule:**
+```json
+POST /api/mission/rule/add
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"禁止回覆英文","description":"所有回覆必須使用繁體中文","ruleType":"COMMUNICATION"}
+→ {"success":true,"message":"Rule \"禁止回覆英文\" added","version":8}
+```
+
+#### SKILL Operations
+
+| Endpoint | Extra Body Fields | Action |
+|----------|------------------|--------|
+| `POST /api/mission/skill/add` | `title` (required), `url`, `assignedEntities` (string array) | Add skill |
+| `POST /api/mission/skill/delete` | `title` | Delete skill by title |
+
+**Example - Add skill:**
+```json
+POST /api/mission/skill/add
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"天氣查詢","url":"https://api.weather.gov"}
+→ {"success":true,"message":"Skill \"天氣查詢\" added","version":9}
+```
+
+**Notes:** All title/name matching is case-insensitive. All operations auto-increment dashboard version (optimistic locking).
 
 ---
 
@@ -643,6 +703,9 @@ Read the full mission dashboard for your device.
 | POST /api/entity/speak-to | Entity Speak | ✅ | ✅ (Sender) |
 | POST /api/entity/broadcast | Entity Broadcast | ✅ | ✅ (Sender) |
 | GET /api/mission/dashboard | Mission Dashboard | ✅ | ✅ |
+| POST /api/mission/todo/* | TODO Operations | ✅ | ✅ |
+| POST /api/mission/rule/* | Rule Operations | ✅ | ✅ |
+| POST /api/mission/skill/* | Skill Operations | ✅ | ✅ |
 
 ---
 

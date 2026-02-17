@@ -565,9 +565,10 @@ module.exports = function(devices) {
 
             for (const eId of entityIds) {
                 const id = parseInt(eId);
-                if (!entityMessages[id]) entityMessages[id] = [];
+                if (!entityMessages[id]) entityMessages[id] = { lines: [], types: new Set() };
                 const perEntityLine = `${typeTag} ${n.title}${n.url ? ' - ' + n.url : ''}`;
-                entityMessages[id].push(perEntityLine);
+                entityMessages[id].lines.push(perEntityLine);
+                entityMessages[id].types.add(n.type);
             }
         }
 
@@ -588,18 +589,45 @@ module.exports = function(devices) {
             console.warn('[Mission] Failed to save consolidated chat message:', dbErr.message);
         }
 
-        // Push to each entity via webhook
-        const pushPromises = Object.entries(entityMessages).map(async ([eIdStr, lines]) => {
+        // Respond immediately after DB save so frontend can navigate to chat
+        res.json({
+            success: true,
+            chatMessageId: chatMsgId,
+            total: Object.keys(entityMessages).length
+        });
+
+        // Push to each entity via webhook (background, non-blocking)
+        const pushPromises = Object.entries(entityMessages).map(async ([eIdStr, msgData]) => {
             const eId = parseInt(eIdStr);
+            const { lines, types } = msgData;
             const entity = device.entities[eId];
             if (!entity || !entity.isBound) {
                 return { entityId: eId, pushed: false, reason: 'not_bound' };
             }
 
             const botSecret = entity.botSecret || 'xxx';
+            const auth = `"deviceId":"${deviceId}","botSecret":"${botSecret}","entityId":${eId}`;
             const dashboardApi = `GET /api/mission/dashboard?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${eId}`;
-            const todoDoneApi = `POST /api/mission/todo/done  body: {"deviceId":"${deviceId}","botSecret":"${botSecret}","entityId":${eId},"title":"<TODO標題>"}`;
-            const pushMessage = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}\n標記TODO完成: ${todoDoneApi}`;
+
+            // Build smart API hints based on notification types
+            const apiHints = [`取得完整任務面板: ${dashboardApi}`];
+            if (types.has('TODO')) {
+                apiHints.push(`標記完成: POST /api/mission/todo/done {${auth},"title":"<標題>"}`);
+                apiHints.push(`標記進行中: POST /api/mission/todo/start {${auth},"title":"<標題>"}`);
+                apiHints.push(`新增TODO: POST /api/mission/todo/add {${auth},"title":"<標題>","priority":2}`);
+                apiHints.push(`更新TODO: POST /api/mission/todo/update {${auth},"title":"<原標題>","newTitle":"<新標題>"}`);
+                apiHints.push(`刪除TODO: POST /api/mission/todo/delete {${auth},"title":"<標題>"}`);
+            }
+            if (types.has('RULE')) {
+                apiHints.push(`新增規則: POST /api/mission/rule/add {${auth},"name":"<規則名>","description":"<說明>","ruleType":"WORKFLOW"}`);
+                apiHints.push(`刪除規則: POST /api/mission/rule/delete {${auth},"name":"<規則名>"}`);
+            }
+            if (types.has('SKILL')) {
+                apiHints.push(`新增技能: POST /api/mission/skill/add {${auth},"title":"<技能名>","url":"<連結>"}`);
+                apiHints.push(`刪除技能: POST /api/mission/skill/delete {${auth},"title":"<技能名>"}`);
+            }
+
+            const pushMessage = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n可用操作:\n${apiHints.join('\n')}`;
 
             if (!entity.webhook) {
                 return { entityId: eId, pushed: false, reason: 'no_webhook' };
@@ -638,26 +666,20 @@ module.exports = function(devices) {
             }
         });
 
-        const pushResults = await Promise.all(pushPromises);
-        const delivered = pushResults.filter(r => r.pushed).length;
-        const deliveredIds = pushResults.filter(r => r.pushed).map(r => r.entityId);
-
-        // Update consolidated chat message with delivery status
-        if (chatMsgId && deliveredIds.length > 0) {
-            try {
-                await pool.query(
-                    `UPDATE chat_messages SET is_delivered = true, delivered_to = $2 WHERE id = $1`,
-                    [chatMsgId, deliveredIds.join(',')]
-                );
-            } catch (e) { /* ignore */ }
-        }
-
-        res.json({
-            success: true,
-            results: pushResults,
-            delivered,
-            total: pushResults.length,
-            chatMessageId: chatMsgId
+        // Background: update delivery status after all pushes complete
+        Promise.all(pushPromises).then(async (pushResults) => {
+            const deliveredIds = pushResults.filter(r => r.pushed).map(r => r.entityId);
+            if (chatMsgId && deliveredIds.length > 0) {
+                try {
+                    await pool.query(
+                        `UPDATE chat_messages SET is_delivered = true, delivered_to = $2 WHERE id = $1`,
+                        [chatMsgId, deliveredIds.join(',')]
+                    );
+                } catch (e) { /* ignore */ }
+            }
+            console.log(`[Mission] Notify delivery complete: ${deliveredIds.length}/${pushResults.length} pushed`);
+        }).catch(err => {
+            console.error('[Mission] Background push error:', err.message);
         });
     });
 
@@ -738,6 +760,467 @@ module.exports = function(devices) {
         } catch (error) {
             await client.query('ROLLBACK');
             console.error('[Mission] Error marking TODO done:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /todo/add
+    // Bot adds a new TODO to dashboard
+    // ============================================
+    router.post('/todo/add', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, entityId, title, description, priority } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('SELECT init_mission_dashboard($1)', [deviceId]);
+
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            const row = result.rows[0];
+            const todoList = row.todo_list || [];
+
+            const newItem = {
+                id: crypto.randomUUID(),
+                title: title.trim(),
+                description: (description || '').trim(),
+                priority: parseInt(priority) || 2,
+                status: 'PENDING',
+                assignedBot: entityId != null ? String(entityId) : null,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                createdBy: entityId != null ? `entity_${entityId}` : 'bot'
+            };
+            todoList.push(newItem);
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET todo_list = $2, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(todoList)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] TODO added: "${newItem.title}" by bot, device ${deviceId}`);
+            res.json({ success: true, message: `TODO "${newItem.title}" added`, item: newItem, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error adding TODO:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /todo/update
+    // Bot updates a TODO by title
+    // ============================================
+    router.post('/todo/update', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, title, newTitle, newDescription, newPriority } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const todoList = row.todo_list || [];
+            const missionList = row.mission_list || [];
+
+            const titleLower = title.trim().toLowerCase();
+            let item = todoList.find(i => i.title && i.title.trim().toLowerCase() === titleLower);
+            let listName = 'todoList';
+            if (!item) {
+                item = missionList.find(i => i.title && i.title.trim().toLowerCase() === titleLower);
+                listName = 'missionList';
+            }
+
+            if (!item) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `TODO not found: "${title}"` });
+            }
+
+            if (newTitle) item.title = newTitle.trim();
+            if (newDescription !== undefined) item.description = newDescription.trim();
+            if (newPriority !== undefined) item.priority = parseInt(newPriority) || item.priority;
+            item.updatedAt = Date.now();
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET todo_list = $2, mission_list = $3, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(todoList), JSON.stringify(missionList)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] TODO updated: "${item.title}" in ${listName}, device ${deviceId}`);
+            res.json({ success: true, message: `TODO "${item.title}" updated`, item, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error updating TODO:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /todo/start
+    // Bot moves TODO → missionList (IN_PROGRESS)
+    // ============================================
+    router.post('/todo/start', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, title } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const todoList = row.todo_list || [];
+            const missionList = row.mission_list || [];
+
+            const titleLower = title.trim().toLowerCase();
+            const foundIdx = todoList.findIndex(i => i.title && i.title.trim().toLowerCase() === titleLower);
+
+            if (foundIdx < 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `TODO not found in todoList: "${title}"` });
+            }
+
+            const item = todoList.splice(foundIdx, 1)[0];
+            item.status = 'IN_PROGRESS';
+            item.updatedAt = Date.now();
+            missionList.push(item);
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET todo_list = $2, mission_list = $3, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(todoList), JSON.stringify(missionList)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] TODO started: "${item.title}" → missionList, device ${deviceId}`);
+            res.json({ success: true, message: `TODO "${item.title}" moved to in-progress`, item, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error starting TODO:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /todo/delete
+    // Bot deletes a TODO by title
+    // ============================================
+    router.post('/todo/delete', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, title } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const todoList = row.todo_list || [];
+            const missionList = row.mission_list || [];
+
+            const titleLower = title.trim().toLowerCase();
+            let foundIdx = todoList.findIndex(i => i.title && i.title.trim().toLowerCase() === titleLower);
+            let fromList = 'todoList';
+
+            if (foundIdx >= 0) {
+                todoList.splice(foundIdx, 1);
+            } else {
+                foundIdx = missionList.findIndex(i => i.title && i.title.trim().toLowerCase() === titleLower);
+                fromList = 'missionList';
+                if (foundIdx >= 0) {
+                    missionList.splice(foundIdx, 1);
+                }
+            }
+
+            if (foundIdx < 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `TODO not found: "${title}"` });
+            }
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET todo_list = $2, mission_list = $3, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(todoList), JSON.stringify(missionList)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] TODO deleted: "${title}" from ${fromList}, device ${deviceId}`);
+            res.json({ success: true, message: `TODO "${title}" deleted`, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error deleting TODO:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /rule/add
+    // Bot adds a new rule to dashboard
+    // ============================================
+    router.post('/rule/add', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, entityId, name, description, ruleType } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Missing name' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('SELECT init_mission_dashboard($1)', [deviceId]);
+
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            const row = result.rows[0];
+            const rules = row.rules || [];
+
+            const newRule = {
+                id: crypto.randomUUID(),
+                name: name.trim(),
+                description: (description || '').trim(),
+                ruleType: ruleType || 'WORKFLOW',
+                assignedEntities: entityId != null ? [String(entityId)] : [],
+                isEnabled: true,
+                priority: 0,
+                config: {},
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            rules.push(newRule);
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET rules = $2, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(rules)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] Rule added: "${newRule.name}" by bot, device ${deviceId}`);
+            res.json({ success: true, message: `Rule "${newRule.name}" added`, item: newRule, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error adding rule:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /rule/delete
+    // Bot deletes a rule by name
+    // ============================================
+    router.post('/rule/delete', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, name } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Missing name' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const rules = row.rules || [];
+            const nameLower = name.trim().toLowerCase();
+            const foundIdx = rules.findIndex(r => r.name && r.name.trim().toLowerCase() === nameLower);
+
+            if (foundIdx < 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `Rule not found: "${name}"` });
+            }
+
+            rules.splice(foundIdx, 1);
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET rules = $2, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(rules)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] Rule deleted: "${name}", device ${deviceId}`);
+            res.json({ success: true, message: `Rule "${name}" deleted`, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error deleting rule:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /skill/add
+    // Bot adds a new skill to dashboard
+    // ============================================
+    router.post('/skill/add', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, entityId, title, url, assignedEntities } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            await client.query('SELECT init_mission_dashboard($1)', [deviceId]);
+
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            const row = result.rows[0];
+            const skills = row.skills || [];
+
+            const entities = assignedEntities || (entityId != null ? [String(entityId)] : []);
+            const newSkill = {
+                id: crypto.randomUUID(),
+                title: title.trim(),
+                url: (url || '').trim(),
+                assignedEntities: entities,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                createdBy: entityId != null ? `entity_${entityId}` : 'bot'
+            };
+            skills.push(newSkill);
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET skills = $2, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(skills)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] Skill added: "${newSkill.title}" by bot, device ${deviceId}`);
+            res.json({ success: true, message: `Skill "${newSkill.title}" added`, item: newSkill, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error adding skill:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /skill/delete
+    // Bot deletes a skill by title
+    // ============================================
+    router.post('/skill/delete', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, title } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const skills = row.skills || [];
+            const titleLower = title.trim().toLowerCase();
+            const foundIdx = skills.findIndex(s => s.title && s.title.trim().toLowerCase() === titleLower);
+
+            if (foundIdx < 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `Skill not found: "${title}"` });
+            }
+
+            skills.splice(foundIdx, 1);
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET skills = $2, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(skills)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] Skill deleted: "${title}", device ${deviceId}`);
+            res.json({ success: true, message: `Skill "${title}" deleted`, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error deleting skill:', error);
             res.status(500).json({ success: false, error: error.message });
         } finally {
             client.release();
