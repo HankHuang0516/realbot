@@ -155,7 +155,7 @@
     <string name="monthly_version_discount_label">Limited-time Beta discount</string>
     <string name="monthly_version_model">Model: MiniMax 2.1</string>
     <string name="monthly_version_desc">Dedicated cloud environment, private memory\nUnlimited messages \u2022 24/7 always online</string>
-    <string name="subscribe_and_bind">Subscribe &amp; Bind</string>
+    <string name="subscribe_and_bind">Buy Monthly Plan</string>
     <string name="remaining_bots">%d remaining</string>
     <string name="sold_out">Sold Out</string>
     <string name="already_bound_free">Bound (Free)</string>

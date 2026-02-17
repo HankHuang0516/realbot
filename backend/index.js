@@ -452,10 +452,10 @@ app.get('/api/admin/bots', adminAuth, adminCheck, async (req, res) => {
                 botType: r.bot_type,
                 status: r.status,
                 assignedDeviceId: r.assigned_device_id,
-                assignedEntityId: r.assigned_entity_id,
+                assignedEntityId: r.assigned_entity_id != null ? parseInt(r.assigned_entity_id) : null,
                 assignedUserEmail: r.assigned_user_email || null,
-                assignedAt: r.assigned_at,
-                createdAt: r.created_at
+                assignedAt: r.assigned_at ? parseInt(r.assigned_at) : null,
+                createdAt: r.created_at ? parseInt(r.created_at) : null
             }))
         });
     } catch (err) {
@@ -1088,7 +1088,7 @@ app.post('/api/transform', (req, res) => {
  * Remove/unbind an entity.
  * Body/Query: { deviceId, entityId, botSecret }
  */
-app.delete('/api/entity', (req, res) => {
+app.delete('/api/entity', async (req, res) => {
     const deviceId = req.body.deviceId || req.query.deviceId;
     const entityId = req.body.entityId ?? req.query.entityId;
     const botSecret = req.body.botSecret || req.query.botSecret;
@@ -1118,13 +1118,48 @@ app.delete('/api/entity', (req, res) => {
         return res.status(403).json({ success: false, message: "Invalid botSecret" });
     }
 
+    // Clean up official bot binding if exists
+    const bindCacheKey = getBindingCacheKey(deviceId, eId);
+    const officialBinding = officialBindingsCache[bindCacheKey];
+    if (officialBinding) {
+        const bot = officialBots[officialBinding.bot_id];
+        if (bot) {
+            if (bot.bot_type === 'personal') {
+                bot.status = 'available';
+                bot.assigned_device_id = null;
+                bot.assigned_entity_id = null;
+                bot.assigned_at = null;
+                if (usePostgreSQL) await db.saveOfficialBot(bot);
+                console.log(`[Remove] Personal bot ${bot.bot_id} released back to pool`);
+            } else if (bot.bot_type === 'free') {
+                delete officialBindingsCache[bindCacheKey];
+                const remainingBindings = Object.values(officialBindingsCache).filter(b => b.bot_id === bot.bot_id);
+                if (remainingBindings.length === 0) {
+                    bot.status = 'available';
+                    bot.assigned_device_id = null;
+                    bot.assigned_entity_id = null;
+                    bot.assigned_at = null;
+                    if (usePostgreSQL) await db.saveOfficialBot(bot);
+                    console.log(`[Remove] Free bot ${bot.bot_id} released (no remaining bindings)`);
+                }
+                if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+                console.log(`[Remove] Official binding cleaned up for device ${deviceId} entity ${eId}`);
+            }
+        }
+        if (!bot || bot.bot_type !== 'free') {
+            delete officialBindingsCache[bindCacheKey];
+            if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+            console.log(`[Remove] Official binding cleaned up for device ${deviceId} entity ${eId}`);
+        }
+    }
+
     // Reset entity to unbound state
     device.entities[eId] = createDefaultEntity(eId);
 
     console.log(`[Remove] Device ${deviceId} Entity ${eId} unbound`);
 
     // Save data immediately after unbinding (critical operation)
-    saveData();
+    await saveData();
 
     res.json({ success: true, message: `Entity ${eId} removed` });
 });

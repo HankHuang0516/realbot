@@ -162,7 +162,7 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="monthly_version_discount_label">Beta 限時折扣</string>
     <string name="monthly_version_model">Model: MiniMax 2.1</string>
     <string name="monthly_version_desc">獨立雲端環境、專屬記憶\n無限訊息 \u2022 24/7 全天候在線</string>
-    <string name="subscribe_and_bind">訂閱並綁定</string>
+    <string name="subscribe_and_bind">購買月租版</string>
     <string name="remaining_bots">剩餘 %d 個</string>
     <string name="sold_out">已售罄</string>
     <string name="already_bound_free">已綁定 (免費版)</string>

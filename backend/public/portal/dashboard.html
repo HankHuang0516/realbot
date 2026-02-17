@@ -778,7 +778,7 @@
                             <li data-i18n="borrow_personal_feat_247">24/7 always online</li>
                         </ul>
                         <button class="btn btn-warning btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()"
-                            disabled data-i18n="borrow_btn_bind_personal">Subscribe & Bind</button>
+                            disabled data-i18n="borrow_btn_bind_personal">Buy Monthly Plan</button>
                     </div>
                 </div>
 
@@ -1653,48 +1653,8 @@
         }
 
         async function bindPersonal() {
-            // Check if user already has premium subscription
-            const isPremium = currentUser.subscriptionStatus === 'premium';
-
-            if (!isPremium) {
-                // Show TapPay payment dialog first
-                showTapPayDialog();
-                return;
-            }
-
-            // Already premium - bind directly
-            const btn = document.getElementById('btnBindPersonal');
-            btn.disabled = true;
-            btn.textContent = i18n.t('borrow_btn_binding');
-
-            try {
-                const result = await apiCall('POST', '/api/official-borrow/bind-personal', {
-                    deviceId: currentUser.deviceId,
-                    deviceSecret: currentUser.deviceSecret,
-                    entityId: selectedBorrowEntity
-                });
-
-                if (result.success) {
-                    showToast(i18n.t('borrow_bind_success'), 'success');
-                    try {
-                        await apiCall('POST', '/api/official-borrow/verify-subscription', {
-                            deviceId: currentUser.deviceId,
-                            deviceSecret: currentUser.deviceSecret,
-                            entityId: selectedBorrowEntity
-                        });
-                    } catch (_) { }
-                    await loadBorrowStatus();
-                    await loadEntities();
-                } else {
-                    const errorMsg = result.error === 'sold_out' ? i18n.t('borrow_personal_sold_out') : (result.error || result.message || 'Bind failed');
-                    showToast(errorMsg, 'error');
-                }
-            } catch (e) {
-                showToast(e.message || 'Bind failed', 'error');
-            } finally {
-                btn.disabled = false;
-                updateBorrowButtons();
-            }
+            // Always require payment per entity - show TapPay dialog
+            showTapPayDialog();
         }
 
         function confirmUnbind(entityId, botType) {
