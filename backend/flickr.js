@@ -41,6 +41,27 @@ function initFlickr() {
 }
 
 /**
+ * Retry wrapper for Flickr API calls that may hit rate limits (429)
+ * Retries up to maxRetries times with exponential backoff
+ */
+async function withRetry(fn, label, maxRetries = 3) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            const status = err.statusCode || err.status || (err.response && err.response.status);
+            if (status === 429 && attempt < maxRetries) {
+                const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+                console.warn(`[Flickr] ${label}: Rate limited (429), retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+                await new Promise(r => setTimeout(r, delay));
+            } else {
+                throw err;
+            }
+        }
+    }
+}
+
+/**
  * Find or create the "Eclaw" photoset/album
  * @param {string} primaryPhotoId - Required when creating a new album
  * @returns {string|null} photoset ID
@@ -50,7 +71,10 @@ async function getOrCreateAlbum(primaryPhotoId = null) {
     if (!flickrClient) return null;
 
     try {
-        const res = await flickrClient.photosets.getList();
+        const res = await withRetry(
+            () => flickrClient.photosets.getList(),
+            'getList'
+        );
         const photosets = res.body.photosets.photoset || [];
         const existing = photosets.find(p => p.title._content === ALBUM_NAME);
 
@@ -62,11 +86,14 @@ async function getOrCreateAlbum(primaryPhotoId = null) {
 
         // Create album if we have a photo to use as primary
         if (primaryPhotoId) {
-            const createRes = await flickrClient.photosets.create({
-                title: ALBUM_NAME,
-                description: 'Eclaw Chat Photos',
-                primary_photo_id: primaryPhotoId
-            });
+            const createRes = await withRetry(
+                () => flickrClient.photosets.create({
+                    title: ALBUM_NAME,
+                    description: 'Eclaw Chat Photos',
+                    primary_photo_id: primaryPhotoId
+                }),
+                'createAlbum'
+            );
             cachedAlbumId = createRes.body.photoset.id;
             console.log(`[Flickr] Created album "${ALBUM_NAME}" (ID: ${cachedAlbumId})`);
             return cachedAlbumId;
@@ -111,53 +138,48 @@ async function uploadPhoto(buffer, filename) {
         const photoId = uploadRes.body.photoid._content || uploadRes.body.photoid;
         console.log(`[Flickr] Uploaded photo ID: ${photoId}`);
 
-        // Add to album
-        const albumId = await getOrCreateAlbum(photoId);
-        if (albumId) {
-            try {
-                await flickrClient.photosets.addPhoto({
-                    photoset_id: albumId,
-                    photo_id: photoId
-                });
-                console.log(`[Flickr] Added photo ${photoId} to album ${albumId}`);
-            } catch (albumErr) {
-                // Photo might already be in album (if it was used to create it)
-                if (!albumErr.message.includes('already in')) {
-                    console.warn('[Flickr] Failed to add to album:', albumErr.message);
-                }
-            }
-        }
-
-        // Get photo sizes to find a suitable URL
-        const sizesRes = await flickrClient.photos.getSizes({ photo_id: photoId });
-        const sizes = sizesRes.body.sizes.size || [];
-
-        // Prefer Large (1024px), fallback to Medium 800, Original
-        const preferredLabels = ['Large', 'Medium 800', 'Original', 'Medium 640', 'Medium'];
-        let photoUrl = null;
-        for (const label of preferredLabels) {
-            const size = sizes.find(s => s.label === label);
-            if (size) {
-                photoUrl = size.source;
-                break;
-            }
-        }
-
-        // Last resort: use the largest available
-        if (!photoUrl && sizes.length > 0) {
-            photoUrl = sizes[sizes.length - 1].source;
-        }
-
-        if (!photoUrl) {
-            return { success: false, error: 'Could not get photo URL after upload' };
-        }
-
+        // Get photo info to construct URL (lighter than getSizes, avoids rate limits)
+        const infoRes = await withRetry(
+            () => flickrClient.photos.getInfo({ photo_id: photoId }),
+            'getInfo'
+        );
+        const photo = infoRes.body.photo;
+        // Construct static URL: _b = Large 1024px
+        const photoUrl = `https://live.staticflickr.com/${photo.server}/${photo.id}_${photo.secret}_b.jpg`;
         console.log(`[Flickr] Photo URL: ${photoUrl}`);
+
+        // Add to album (fire-and-forget, don't block on this)
+        addToAlbumAsync(photoId);
+
         return { success: true, url: photoUrl, photoId };
 
     } catch (err) {
         console.error('[Flickr] Upload error:', err.message);
         return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Add photo to album asynchronously (non-blocking)
+ */
+async function addToAlbumAsync(photoId) {
+    try {
+        const albumId = await getOrCreateAlbum(photoId);
+        if (albumId) {
+            await withRetry(
+                () => flickrClient.photosets.addPhoto({
+                    photoset_id: albumId,
+                    photo_id: photoId
+                }),
+                'addPhoto'
+            );
+            console.log(`[Flickr] Added photo ${photoId} to album ${albumId}`);
+        }
+    } catch (err) {
+        // Photo might already be in album (if it was used to create it)
+        if (!err.message.includes('already in')) {
+            console.warn('[Flickr] Failed to add to album:', err.message);
+        }
     }
 }
 
