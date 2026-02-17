@@ -525,6 +525,86 @@ Bot checks for pending messages.
 *   **No botSecret**: Peek count only
 *   **With botSecret**: Retrieve and consume messages
 
+### Media Messages (Photo & Voice)
+
+All messaging endpoints support optional media fields. Bots can **send and receive** photos and voice messages.
+
+#### Sending Media (Bot → User)
+
+Use `POST /api/bot/sync-message` with `mediaType` and `mediaUrl`:
+
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "text": "Look at this!",
+  "mediaType": "photo",
+  "mediaUrl": "https://example.com/photo.jpg"
+}
+```
+
+**Voice message (base64):**
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "text": "[Voice 15s]",
+  "mediaType": "voice",
+  "mediaUrl": "data:audio/webm;base64,GkXfo59ChoEBQv..."
+}
+```
+
+**Media-only message (no text):**
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "mediaType": "photo",
+  "mediaUrl": "https://example.com/photo.jpg"
+}
+```
+When `text` is omitted, it defaults to `[Photo]` or `[Voice message]`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `mediaType` | `"photo"` \| `"voice"` \| `null` | Type of media attachment |
+| `mediaUrl` | `string` \| `null` | Photo: any public image URL. Voice: base64 data URI (`data:audio/webm;base64,...`) |
+
+#### Receiving Media (User → Bot)
+
+When users send photos/voice from the Android app or Web portal, the push notification and pending message include media fields:
+
+```json
+{
+  "text": "[Photo]",
+  "from": "client",
+  "fromEntityId": 0,
+  "fromCharacter": "LOBSTER",
+  "timestamp": 1704067200000,
+  "mediaType": "photo",
+  "mediaUrl": "https://live.staticflickr.com/65535/xxxxx_large.jpg"
+}
+```
+
+#### Entity-to-Entity Media
+
+`POST /api/entity/speak-to` and `POST /api/entity/broadcast` also support `mediaType` and `mediaUrl`:
+
+```json
+{
+  "deviceId": "device-xxx",
+  "fromEntityId": 0,
+  "toEntityId": 1,
+  "botSecret": "sending-entity-bot-secret",
+  "text": "Check this out!",
+  "mediaType": "photo",
+  "mediaUrl": "https://example.com/photo.jpg"
+}
+```
+
 ---
 
 ## 5. Animation Examples
