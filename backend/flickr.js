@@ -1,14 +1,14 @@
 // Flickr Upload Service for Eclaw Chat Photos
-// Pattern follows HankHuang0516/wishlist-app flickr integration
-const { createFlickr } = require('flickr-sdk');
+// Uses flickr-sdk v6 (CommonJS) API
+const Flickr = require('flickr-sdk');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
 const ALBUM_NAME = 'Eclaw';
 
-let flickr = null;    // REST API function: flickr('flickr.method', { params })
-let upload = null;     // Upload function: upload(filePath, { params })
+let authPlugin = null;   // OAuth plugin for Upload
+let flickrClient = null;  // REST API client
 let cachedAlbumId = null;
 
 /**
@@ -25,14 +25,13 @@ function initFlickr() {
     }
 
     try {
-        const result = createFlickr({
-            consumerKey: FLICKR_API_KEY,
-            consumerSecret: FLICKR_API_SECRET,
-            oauthToken: FLICKR_OAUTH_TOKEN,
-            oauthTokenSecret: FLICKR_OAUTH_TOKEN_SECRET
-        });
-        flickr = result.flickr;
-        upload = result.upload;
+        authPlugin = Flickr.OAuth.createPlugin(
+            FLICKR_API_KEY,
+            FLICKR_API_SECRET,
+            FLICKR_OAUTH_TOKEN,
+            FLICKR_OAUTH_TOKEN_SECRET
+        );
+        flickrClient = new Flickr(authPlugin);
         console.log('[Flickr] Client initialized successfully');
         return true;
     } catch (err) {
@@ -48,11 +47,11 @@ function initFlickr() {
  */
 async function getOrCreateAlbum(primaryPhotoId = null) {
     if (cachedAlbumId) return cachedAlbumId;
-    if (!flickr) return null;
+    if (!flickrClient) return null;
 
     try {
-        const res = await flickr('flickr.photosets.getList', {});
-        const photosets = res.photosets.photoset || [];
+        const res = await flickrClient.photosets.getList();
+        const photosets = res.body.photosets.photoset || [];
         const existing = photosets.find(p => p.title._content === ALBUM_NAME);
 
         if (existing) {
@@ -63,12 +62,12 @@ async function getOrCreateAlbum(primaryPhotoId = null) {
 
         // Create album if we have a photo to use as primary
         if (primaryPhotoId) {
-            const createRes = await flickr('flickr.photosets.create', {
+            const createRes = await flickrClient.photosets.create({
                 title: ALBUM_NAME,
                 description: 'Eclaw Chat Photos',
                 primary_photo_id: primaryPhotoId
             });
-            cachedAlbumId = createRes.photoset.id;
+            cachedAlbumId = createRes.body.photoset.id;
             console.log(`[Flickr] Created album "${ALBUM_NAME}" (ID: ${cachedAlbumId})`);
             return cachedAlbumId;
         }
@@ -88,7 +87,7 @@ async function getOrCreateAlbum(primaryPhotoId = null) {
  * @returns {{ success: boolean, url?: string, photoId?: string, error?: string }}
  */
 async function uploadPhoto(buffer, filename) {
-    if (!upload || !flickr) {
+    if (!authPlugin || !flickrClient) {
         return { success: false, error: 'Flickr client not initialized' };
     }
 
@@ -97,26 +96,26 @@ async function uploadPhoto(buffer, filename) {
         const tempPath = path.join(os.tmpdir(), `eclaw_${Date.now()}_${filename}`);
         fs.writeFileSync(tempPath, buffer);
 
-        // Upload to Flickr
-        const uploadRes = await upload(tempPath, {
+        // Upload to Flickr using Flickr.Upload constructor (returns thenable)
+        const uploadRes = await new Flickr.Upload(authPlugin, tempPath, {
             title: `eclaw_${Date.now()}`,
             tags: 'eclaw chat',
-            is_public: '1',
-            hidden: '2'  // Hidden from public searches
+            is_public: 1,
+            hidden: 2  // Hidden from public searches
         });
 
         // Clean up temp file
         try { fs.unlinkSync(tempPath); } catch (_) {}
 
-        // Get photo ID from upload response
-        const photoId = uploadRes.id || uploadRes;
+        // Parse photo ID from upload response
+        const photoId = uploadRes.body.photoid._content || uploadRes.body.photoid;
         console.log(`[Flickr] Uploaded photo ID: ${photoId}`);
 
         // Add to album
         const albumId = await getOrCreateAlbum(photoId);
         if (albumId) {
             try {
-                await flickr('flickr.photosets.addPhoto', {
+                await flickrClient.photosets.addPhoto({
                     photoset_id: albumId,
                     photo_id: photoId
                 });
@@ -130,8 +129,8 @@ async function uploadPhoto(buffer, filename) {
         }
 
         // Get photo sizes to find a suitable URL
-        const sizesRes = await flickr('flickr.photos.getSizes', { photo_id: photoId });
-        const sizes = sizesRes.sizes.size || [];
+        const sizesRes = await flickrClient.photos.getSizes({ photo_id: photoId });
+        const sizes = sizesRes.body.sizes.size || [];
 
         // Prefer Large (1024px), fallback to Medium 800, Original
         const preferredLabels = ['Large', 'Medium 800', 'Original', 'Medium 640', 'Medium'];
@@ -166,7 +165,7 @@ async function uploadPhoto(buffer, filename) {
  * Check if Flickr is available
  */
 function isAvailable() {
-    return flickr !== null && upload !== null;
+    return authPlugin !== null && flickrClient !== null;
 }
 
 module.exports = { initFlickr, uploadPhoto, isAvailable };
