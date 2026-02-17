@@ -34,6 +34,7 @@ release_v*
 keystore.properties
 found_secrets.json
 tappay_dump.txt
+play-service-account.json
 
 # Build artifacts
 app/build/
