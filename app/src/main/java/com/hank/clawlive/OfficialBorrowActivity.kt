@@ -276,7 +276,12 @@ class OfficialBorrowActivity : AppCompatActivity() {
     }
 
     private fun bindPersonal() {
-        // Always require payment per entity - launch purchase flow
+        if (BuildConfig.DEBUG) {
+            // Test mode: skip payment, bind directly
+            completePersonalBind(selectedEntityId)
+            return
+        }
+        // Production: require payment per entity
         pendingBindEntityId = selectedEntityId
         billingManager.launchBorrowPurchaseFlow(this)
     }

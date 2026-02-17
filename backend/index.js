@@ -855,13 +855,11 @@ app.post('/api/device/status', (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid entityId" });
     }
 
-    const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, message: "Device not found" });
-    }
+    // Auto-create device if missing (e.g. after server redeploy)
+    const device = getOrCreateDevice(deviceId, deviceSecret);
 
     // Verify device secret
-    if (device.deviceSecret !== deviceSecret) {
+    if (device.deviceSecret && device.deviceSecret !== deviceSecret) {
         return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
@@ -2142,12 +2140,10 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
     }
 
-    const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, error: 'Device not found. Open the app first.' });
-    }
+    // Auto-create device if missing (e.g. after server redeploy)
+    const device = getOrCreateDevice(deviceId, deviceSecret);
 
-    if (device.deviceSecret !== deviceSecret) {
+    if (device.deviceSecret && device.deviceSecret !== deviceSecret) {
         return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
     }
 
@@ -2265,12 +2261,10 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
     }
 
-    const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, error: 'Device not found. Open the app first.' });
-    }
+    // Auto-create device if missing (e.g. after server redeploy)
+    const device = getOrCreateDevice(deviceId, deviceSecret);
 
-    if (device.deviceSecret !== deviceSecret) {
+    if (device.deviceSecret && device.deviceSecret !== deviceSecret) {
         return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
     }
 
@@ -2371,12 +2365,10 @@ app.post('/api/official-borrow/unbind', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
     }
 
-    const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, error: 'Device not found' });
-    }
+    // Auto-create device if missing (e.g. after server redeploy)
+    const device = getOrCreateDevice(deviceId, deviceSecret);
 
-    if (device.deviceSecret !== deviceSecret) {
+    if (device.deviceSecret && device.deviceSecret !== deviceSecret) {
         return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
     }
 
