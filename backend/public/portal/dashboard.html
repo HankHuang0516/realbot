@@ -948,18 +948,43 @@
 
         function updateSlotAvailability() {
             const occupiedSlots = new Set(entities.map(e => e.entityId));
+            let needsReset = false;
             document.querySelectorAll('.slot-btn').forEach(btn => {
                 const slot = parseInt(btn.dataset.slot);
+                const wasOccupied = btn.classList.contains('occupied');
                 const isOccupied = occupiedSlots.has(slot);
                 btn.classList.toggle('occupied', isOccupied);
-                if (isOccupied && btn.classList.contains('active')) {
-                    // Auto-select first available slot
-                    const firstAvailable = [0, 1, 2, 3].find(s => !occupiedSlots.has(s));
-                    if (firstAvailable !== undefined) {
-                        selectSlot(firstAvailable);
-                    }
+
+                // Detect newly bound entity on currently selected slot
+                if (isOccupied && !wasOccupied && slot === selectedSlot) {
+                    needsReset = true;
                 }
             });
+
+            if (needsReset) {
+                // Reset code display since current slot was just bound
+                resetCodeDisplay();
+                // Auto-select first available slot
+                const firstAvailable = [0, 1, 2, 3].find(s => !occupiedSlots.has(s));
+                if (firstAvailable !== undefined) {
+                    selectSlot(firstAvailable);
+                }
+            }
+        }
+
+        function resetCodeDisplay() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            currentCode = null;
+            const codeDisplay = document.getElementById('codeDisplay');
+            if (codeDisplay) codeDisplay.style.display = 'none';
+            const btn = document.getElementById('btnGenerate');
+            if (btn) {
+                btn.textContent = i18n.t('dash_btn_generate');
+                btn.disabled = false;
+            }
         }
 
         // --- Rendering ---
