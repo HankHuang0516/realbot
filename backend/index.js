@@ -759,10 +759,19 @@ app.get('/api/health', (req, res) => {
 
 // Get server's outbound IP history (for TapPay IP whitelist)
 app.get('/api/server-ip', async (req, res) => {
+    // Read fresh from DB if available
+    let allIPs = global.knownOutboundIPs || [];
+    if (usePostgreSQL) {
+        try {
+            const result = await db.query('SELECT ip FROM known_server_ips ORDER BY last_seen DESC');
+            allIPs = result.rows.map(r => r.ip);
+            global.knownOutboundIPs = allIPs;
+        } catch (_) { /* use in-memory fallback */ }
+    }
     res.json({
         current: global.serverOutboundIP || 'unknown',
-        all: global.knownOutboundIPs || [],
-        tappay_whitelist: (global.knownOutboundIPs || []).map(ip => ip + '/32').join('; ')
+        all: allIPs,
+        tappay_whitelist: allIPs.map(ip => ip + '/32').join('; ')
     });
 });
 
@@ -3226,47 +3235,62 @@ app.listen(port, async () => {
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 
-    // Detect outbound IP on startup, persist all known IPs to DB
-    try {
-        const https = require('https');
-        const ip = await new Promise((resolve, reject) => {
-            https.get('https://api.ipify.org?format=json', (resp) => {
-                let data = '';
-                resp.on('data', chunk => data += chunk);
-                resp.on('end', () => resolve(JSON.parse(data).ip));
-            }).on('error', reject);
-        });
-        global.serverOutboundIP = ip;
+    // Detect outbound IP and persist to DB
+    async function detectAndPersistIP() {
+        try {
+            const https = require('https');
+            const ip = await new Promise((resolve, reject) => {
+                https.get('https://api.ipify.org?format=json', (resp) => {
+                    let data = '';
+                    resp.on('data', chunk => data += chunk);
+                    resp.on('end', () => resolve(JSON.parse(data).ip));
+                }).on('error', reject);
+            });
 
-        // Persist to DB (create table if needed, insert if new)
-        if (usePostgreSQL) {
-            try {
-                await db.query(`CREATE TABLE IF NOT EXISTS known_server_ips (
-                    ip TEXT PRIMARY KEY,
-                    first_seen TIMESTAMPTZ DEFAULT NOW(),
-                    last_seen TIMESTAMPTZ DEFAULT NOW()
-                )`);
-                await db.query(
-                    `INSERT INTO known_server_ips (ip) VALUES ($1)
-                     ON CONFLICT (ip) DO UPDATE SET last_seen = NOW()`,
-                    [ip]
-                );
-                const result = await db.query('SELECT ip, first_seen, last_seen FROM known_server_ips ORDER BY last_seen DESC');
-                global.knownOutboundIPs = result.rows.map(r => r.ip);
-                console.log(`[IP] Current: ${ip} | All known IPs (${result.rows.length}): ${global.knownOutboundIPs.join(', ')}`);
-                console.log(`[IP] TapPay whitelist: ${global.knownOutboundIPs.map(i => i + '/32').join('; ')}`);
-            } catch (dbErr) {
-                console.log('[IP] DB save failed (non-fatal):', dbErr.message);
-                global.knownOutboundIPs = [ip];
+            const prevIP = global.serverOutboundIP;
+            global.serverOutboundIP = ip;
+
+            if (usePostgreSQL) {
+                try {
+                    await db.query(`CREATE TABLE IF NOT EXISTS known_server_ips (
+                        ip TEXT PRIMARY KEY,
+                        first_seen TIMESTAMPTZ DEFAULT NOW(),
+                        last_seen TIMESTAMPTZ DEFAULT NOW()
+                    )`);
+                    await db.query(
+                        `INSERT INTO known_server_ips (ip) VALUES ($1)
+                         ON CONFLICT (ip) DO UPDATE SET last_seen = NOW()`,
+                        [ip]
+                    );
+                    // Always reload full list from DB
+                    const result = await db.query('SELECT ip, first_seen, last_seen FROM known_server_ips ORDER BY last_seen DESC');
+                    global.knownOutboundIPs = result.rows.map(r => r.ip);
+
+                    if (prevIP && prevIP !== ip) {
+                        console.log(`[IP] ⚠️ IP changed: ${prevIP} → ${ip}`);
+                    }
+                    console.log(`[IP] Current: ${ip} | All known (${result.rows.length}): ${global.knownOutboundIPs.join(', ')}`);
+                } catch (dbErr) {
+                    console.log('[IP] DB save failed (non-fatal):', dbErr.message);
+                    // On DB failure, preserve existing list and just add current
+                    if (!global.knownOutboundIPs) global.knownOutboundIPs = [];
+                    if (!global.knownOutboundIPs.includes(ip)) global.knownOutboundIPs.unshift(ip);
+                }
+            } else {
+                if (!global.knownOutboundIPs) global.knownOutboundIPs = [];
+                if (!global.knownOutboundIPs.includes(ip)) global.knownOutboundIPs.unshift(ip);
                 console.log(`[IP] Outbound IP: ${ip}`);
             }
-        } else {
-            global.knownOutboundIPs = [ip];
-            console.log(`[IP] Outbound IP: ${ip}`);
+        } catch (e) {
+            console.log('[IP] Could not detect outbound IP:', e.message);
         }
-    } catch (e) {
-        console.log('[IP] Could not detect outbound IP:', e.message);
     }
+
+    // Run on startup
+    await detectAndPersistIP();
+
+    // Re-check every 10 minutes
+    setInterval(detectAndPersistIP, 10 * 60 * 1000);
 });
 // Force redeploy Sat Feb 14 09:53:10 UTC 2026
 
