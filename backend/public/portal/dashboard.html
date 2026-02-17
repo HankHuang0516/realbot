@@ -1480,15 +1480,7 @@
             }
             btnPersonal.disabled = borrowStatus.personal.available <= 0;
 
-            // Check if entity slot is occupied by regular binding (not official)
-            const occupiedSlots = new Set(entities.map(e => e.entityId));
-            const officialEntityIds = new Set((borrowStatus.bindings || []).map(b => b.entityId));
-            if (occupiedSlots.has(selectedBorrowEntity) && !officialEntityIds.has(selectedBorrowEntity)) {
-                btnFree.disabled = true;
-                btnPersonal.disabled = true;
-                btnFree.textContent = i18n.t('borrow_slot_occupied');
-                btnPersonal.textContent = i18n.t('borrow_slot_occupied');
-            }
+            // Override mode: backend auto-unbinds existing binding, no client-side blocking
         }
 
         function renderBindingsList() {

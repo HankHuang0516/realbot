@@ -2071,6 +2071,47 @@ function getBindingCacheKey(deviceId, entityId) {
 }
 
 /**
+ * Auto-unbind an entity if it has an existing official binding.
+ * Used by bind-free and bind-personal to support override mode.
+ */
+async function autoUnbindEntity(deviceId, eId, device) {
+    const cacheKey = getBindingCacheKey(deviceId, eId);
+    let binding = officialBindingsCache[cacheKey];
+    if (!binding && usePostgreSQL) {
+        binding = await db.getOfficialBinding(deviceId, eId);
+    }
+
+    if (binding) {
+        // Release the bot back to pool
+        const bot = officialBots[binding.bot_id];
+        if (bot && bot.bot_type === 'personal') {
+            bot.status = 'available';
+            bot.assigned_device_id = null;
+            bot.assigned_entity_id = null;
+            bot.assigned_at = null;
+            if (usePostgreSQL) await db.saveOfficialBot(bot);
+            console.log(`[Borrow] Auto-unbind: personal bot ${bot.bot_id} released`);
+        } else if (bot && bot.bot_type === 'free') {
+            delete officialBindingsCache[cacheKey];
+            const remaining = Object.values(officialBindingsCache).filter(b => b.bot_id === bot.bot_id);
+            if (remaining.length === 0) {
+                bot.status = 'available';
+                bot.assigned_device_id = null;
+                bot.assigned_entity_id = null;
+                bot.assigned_at = null;
+                if (usePostgreSQL) await db.saveOfficialBot(bot);
+            }
+            console.log(`[Borrow] Auto-unbind: free bot binding removed`);
+        }
+        delete officialBindingsCache[cacheKey];
+        if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
+    }
+
+    // Reset entity to default
+    device.entities[eId] = createDefaultEntity(eId);
+}
+
+/**
  * GET /api/official-borrow/status
  * Get borrow availability and current bindings for a device.
  */
@@ -2177,9 +2218,11 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
     }
 
+    // Override mode: auto-unbind if entity already has a binding
     const entity = device.entities[eId];
     if (entity && entity.isBound) {
-        return res.status(400).json({ success: false, error: `Entity ${eId} is already bound. Remove it first.` });
+        console.log(`[Borrow] Override: auto-unbinding entity ${eId} on device ${deviceId}`);
+        await autoUnbindEntity(deviceId, eId, device);
     }
 
     // Each device can only have one free bot binding
@@ -2298,9 +2341,11 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
     }
 
+    // Override mode: auto-unbind if entity already has a binding
     const entity = device.entities[eId];
     if (entity && entity.isBound) {
-        return res.status(400).json({ success: false, error: `Entity ${eId} is already bound. Remove it first.` });
+        console.log(`[Borrow] Override: auto-unbinding entity ${eId} on device ${deviceId}`);
+        await autoUnbindEntity(deviceId, eId, device);
     }
 
     // Check paid_borrow_slots: if user has unused paid slots, allow free rebind

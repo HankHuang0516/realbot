@@ -169,60 +169,49 @@ class OfficialBorrowActivity : AppCompatActivity() {
     private fun updateButtonStates() {
         val status = borrowStatus ?: return
 
+        // Always restore click listeners (override mode)
+        btnBindFree.setOnClickListener { bindFree() }
+        btnBindPersonal.setOnClickListener { bindPersonal() }
+
         // Check if selected entity already has an official binding
         val existingBinding = status.bindings.find { it.entityId == selectedEntityId }
 
-        if (existingBinding != null) {
-            // Already bound - show bound state with unbind option
-            when (existingBinding.botType) {
-                "free" -> {
-                    btnBindFree.text = getString(R.string.already_bound_free)
-                    btnBindFree.isEnabled = false
-                    btnBindPersonal.text = getString(R.string.unbind)
-                    btnBindPersonal.isEnabled = true
-                    btnBindPersonal.setOnClickListener { confirmUnbind(existingBinding) }
-                }
-                "personal" -> {
-                    btnBindPersonal.text = getString(R.string.already_bound_personal)
-                    btnBindPersonal.isEnabled = false
-                    btnBindFree.text = getString(R.string.unbind)
-                    btnBindFree.isEnabled = true
-                    btnBindFree.setOnClickListener { confirmUnbind(existingBinding) }
-                }
-            }
-        } else {
-            // Not bound - show available actions, restore click listeners
-            btnBindFree.setOnClickListener { bindFree() }
-            btnBindPersonal.setOnClickListener { bindPersonal() }
-
-            // Check if device already has a free binding on another entity (limit 1 per device)
-            val hasFreeBoundElsewhere = status.bindings.any { it.botType == "free" }
-            if (hasFreeBoundElsewhere) {
-                val boundEntity = status.bindings.first { it.botType == "free" }.entityId
-                btnBindFree.text = getString(R.string.bound_on_entity, boundEntity)
-                btnBindFree.isEnabled = false
-            } else {
-                btnBindFree.text = getString(R.string.use_free_version)
-                btnBindFree.isEnabled = status.free.available
-            }
-
-            if (status.availableSlots > 0) {
-                btnBindPersonal.text = getString(R.string.rebind_free)
-            } else {
-                btnBindPersonal.text = getString(R.string.subscribe_and_bind)
-            }
-            btnBindPersonal.isEnabled = status.personal.available > 0
-        }
-
-        // Check if entity slot is already occupied by a non-official binding
-        val registeredIds = layoutPrefs.getRegisteredEntityIds()
-        if (registeredIds.contains(selectedEntityId) && existingBinding == null) {
-            // Slot occupied by regular binding
+        // Free button logic
+        val hasFreeBoundElsewhere = status.bindings.any { it.botType == "free" && it.entityId != selectedEntityId }
+        if (existingBinding?.botType == "free") {
+            // This slot already has free binding - show unbind option
+            btnBindFree.text = getString(R.string.already_bound_free)
             btnBindFree.isEnabled = false
-            btnBindPersonal.isEnabled = false
-            btnBindFree.text = getString(R.string.entity_already_bound, selectedEntityId)
-            btnBindPersonal.text = getString(R.string.entity_already_bound, selectedEntityId)
+            btnBindPersonal.text = getString(R.string.unbind)
+            btnBindPersonal.isEnabled = true
+            btnBindPersonal.setOnClickListener { confirmUnbind(existingBinding) }
+            return
+        } else if (existingBinding?.botType == "personal") {
+            // This slot has personal binding - show unbind, but also allow re-bind
+            btnBindPersonal.text = getString(R.string.unbind)
+            btnBindPersonal.isEnabled = true
+            btnBindPersonal.setOnClickListener { confirmUnbind(existingBinding) }
+            btnBindFree.text = getString(R.string.use_free_version)
+            btnBindFree.isEnabled = status.free.available && !hasFreeBoundElsewhere
+            return
         }
+
+        // Not officially bound - show normal bind buttons (override any local registration)
+        if (hasFreeBoundElsewhere) {
+            val boundEntity = status.bindings.first { it.botType == "free" }.entityId
+            btnBindFree.text = getString(R.string.bound_on_entity, boundEntity)
+            btnBindFree.isEnabled = false
+        } else {
+            btnBindFree.text = getString(R.string.use_free_version)
+            btnBindFree.isEnabled = status.free.available
+        }
+
+        if (status.availableSlots > 0) {
+            btnBindPersonal.text = getString(R.string.rebind_free)
+        } else {
+            btnBindPersonal.text = getString(R.string.subscribe_and_bind)
+        }
+        btnBindPersonal.isEnabled = status.personal.available > 0
     }
 
     private fun bindFree() {
