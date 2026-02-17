@@ -93,6 +93,9 @@
     <string name="you">You</string>
     <string name="to_entities">To: %s</string>
     <string name="entity_read_receipt">Entity %d Read</string>
+    <string name="send_voice">Send</string>
+    <string name="recording_voice">Recording…</string>
+    <string name="uploading_media">Uploading…</string>
 
     <!-- Mission Control -->
     <!-- Mission Control -->

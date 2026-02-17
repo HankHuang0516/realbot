@@ -81,7 +81,9 @@ class ChatRepository private constructor(
     suspend fun saveOutgoingMessage(
         text: String,
         entityIds: List<Int>,
-        source: String = "android_widget"
+        source: String = "android_widget",
+        mediaType: String? = null,
+        mediaUrl: String? = null
     ): Long {
         val messageType = if (entityIds.size > 1) {
             MessageType.USER_BROADCAST
@@ -95,7 +97,9 @@ class ChatRepository private constructor(
             messageType = messageType,
             source = source,
             targetEntityIds = entityIds.joinToString(","),
-            isSynced = false // Will be marked true after API success
+            isSynced = false, // Will be marked true after API success
+            mediaType = mediaType,
+            mediaUrl = mediaUrl
         )
 
         val id = chatDao.insert(message)
@@ -320,7 +324,9 @@ class ChatRepository private constructor(
                     deduplicationKey = deduplicationKey,
                     isSynced = true,
                     isDelivered = msg.is_delivered,
-                    deliveredTo = msg.delivered_to
+                    deliveredTo = msg.delivered_to,
+                    mediaType = msg.media_type,
+                    mediaUrl = msg.media_url
                 )
             } else if (entityMatch != null) {
                 val senderEntityId = entityMatch.groupValues[1].toIntOrNull()
@@ -339,7 +345,9 @@ class ChatRepository private constructor(
                     deduplicationKey = deduplicationKey,
                     isSynced = true,
                     isDelivered = msg.is_delivered,
-                    deliveredTo = msg.delivered_to
+                    deliveredTo = msg.delivered_to,
+                    mediaType = msg.media_type,
+                    mediaUrl = msg.media_url
                 )
             } else {
                 ChatMessage(
@@ -350,7 +358,9 @@ class ChatRepository private constructor(
                     fromEntityId = msg.entity_id,
                     fromEntityName = msg.source,
                     deduplicationKey = deduplicationKey,
-                    isSynced = true
+                    isSynced = true,
+                    mediaType = msg.media_type,
+                    mediaUrl = msg.media_url
                 )
             }
 
@@ -418,7 +428,9 @@ class ChatRepository private constructor(
                             fromEntityId = entityId,
                             fromEntityCharacter = msg.fromCharacter,
                             deduplicationKey = deduplicationKey,
-                            isSynced = true
+                            isSynced = true,
+                            mediaType = msg.mediaType,
+                            mediaUrl = msg.mediaUrl
                         )
                         chatDao.insert(message)
                         addedCount++

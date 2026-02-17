@@ -2,24 +2,32 @@ package com.hank.clawlive.ui.chat
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.media.MediaPlayer
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.hank.clawlive.R
 import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.database.ChatMessage
-import com.hank.clawlive.data.local.database.MessageType
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
  * Adapter for chat messages with dual ViewHolder types (sent/received)
+ * Supports text, photo, and voice messages
  */
 class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCallback()) {
 
@@ -62,6 +70,14 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         }
     }
 
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        super.onViewRecycled(holder)
+        when (holder) {
+            is SentMessageViewHolder -> holder.stopAudio()
+            is ReceivedMessageViewHolder -> holder.stopAudio()
+        }
+    }
+
     /**
      * ViewHolder for sent messages (right-aligned, green bubble)
      */
@@ -70,9 +86,16 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         private val tvTime: TextView = itemView.findViewById(R.id.tvTime)
         private val tvTargets: TextView = itemView.findViewById(R.id.tvTargets)
         private val tvDeliveryStatus: TextView = itemView.findViewById(R.id.tvDeliveryStatus)
+        private val ivPhoto: ImageView = itemView.findViewById(R.id.ivPhoto)
+        private val layoutVoice: LinearLayout = itemView.findViewById(R.id.layoutVoice)
+        private val btnPlay: ImageButton = itemView.findViewById(R.id.btnPlay)
+        private val progressVoice: ProgressBar = itemView.findViewById(R.id.progressVoice)
+        private val tvDuration: TextView = itemView.findViewById(R.id.tvDuration)
+
+        private var mediaPlayer: MediaPlayer? = null
+        private var tempFile: File? = null
 
         fun bind(message: ChatMessage, adapter: ChatAdapter) {
-            tvMessage.text = message.text
             tvTime.text = formatTime(message.timestamp)
 
             // Long-press to copy message text
@@ -80,6 +103,9 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 copyToClipboard(it, message.text)
                 true
             }
+
+            // Handle media types
+            bindMedia(message)
 
             // Show target entities
             val targets = message.getTargetEntityIdList()
@@ -98,18 +124,81 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             val deliveredIds = message.deliveredTo?.split(",")
                 ?.mapNotNull { it.trim().toIntOrNull() }?.toSet() ?: emptySet()
             if (isMissionNotify && targets.isNotEmpty()) {
-                // Mission notify: show per-entity status (✓ 已讀 or waiting)
                 tvDeliveryStatus.text = targets.joinToString("  ") { id ->
                     val name = adapter.getEntityDisplayName(id)
-                    if (id in deliveredIds) "$name ✓已讀" else "$name ..."
+                    if (id in deliveredIds) "$name \u2713\u5DF2\u8B80" else "$name ..."
                 }
                 tvDeliveryStatus.visibility = View.VISIBLE
             } else if (message.isDelivered && deliveredIds.isNotEmpty()) {
-                tvDeliveryStatus.text = deliveredIds.joinToString(", ") { adapter.getEntityDisplayName(it) } + " 已讀"
+                tvDeliveryStatus.text = deliveredIds.joinToString(", ") { adapter.getEntityDisplayName(it) } + " \u5DF2\u8B80"
                 tvDeliveryStatus.visibility = View.VISIBLE
             } else {
                 tvDeliveryStatus.visibility = View.GONE
             }
+        }
+
+        private fun bindMedia(message: ChatMessage) {
+            when (message.mediaType) {
+                "photo" -> {
+                    ivPhoto.visibility = View.VISIBLE
+                    layoutVoice.visibility = View.GONE
+                    tvMessage.visibility = if (message.text == "[Photo]") View.GONE else View.VISIBLE
+                    if (message.text != "[Photo]") tvMessage.text = message.text
+                    Glide.with(itemView.context)
+                        .load(message.mediaUrl)
+                        .centerCrop()
+                        .into(ivPhoto)
+                }
+                "voice" -> {
+                    ivPhoto.visibility = View.GONE
+                    layoutVoice.visibility = View.VISIBLE
+                    tvMessage.visibility = View.GONE
+                    val durationMatch = Regex("\\d+").find(message.text)
+                    val seconds = durationMatch?.value?.toIntOrNull() ?: 0
+                    tvDuration.text = String.format("%d:%02d", seconds / 60, seconds % 60)
+                    progressVoice.progress = 0
+                    btnPlay.setImageResource(android.R.drawable.ic_media_play)
+                    btnPlay.setOnClickListener { toggleVoicePlayback(message.mediaUrl ?: "") }
+                }
+                else -> {
+                    ivPhoto.visibility = View.GONE
+                    layoutVoice.visibility = View.GONE
+                    tvMessage.visibility = View.VISIBLE
+                    tvMessage.text = message.text
+                }
+            }
+        }
+
+        private fun toggleVoicePlayback(dataUri: String) {
+            if (mediaPlayer?.isPlaying == true) {
+                stopAudio()
+                return
+            }
+            try {
+                val base64Data = dataUri.substringAfter("base64,")
+                val audioBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                tempFile = File.createTempFile("voice_", ".webm", itemView.context.cacheDir)
+                tempFile!!.writeBytes(audioBytes)
+
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(tempFile!!.absolutePath)
+                    prepare()
+                    start()
+                    btnPlay.setImageResource(android.R.drawable.ic_media_pause)
+                    setOnCompletionListener { stopAudio() }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(itemView.context, "Playback failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fun stopAudio() {
+            mediaPlayer?.release()
+            mediaPlayer = null
+            tempFile?.delete()
+            tempFile = null
+            btnPlay.setImageResource(android.R.drawable.ic_media_play)
+            progressVoice.progress = 0
         }
     }
 
@@ -122,9 +211,16 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         private val tvMessage: TextView = itemView.findViewById(R.id.tvMessage)
         private val tvTime: TextView = itemView.findViewById(R.id.tvTime)
         private val tvReadReceipt: TextView = itemView.findViewById(R.id.tvReadReceipt)
+        private val ivPhoto: ImageView = itemView.findViewById(R.id.ivPhoto)
+        private val layoutVoice: LinearLayout = itemView.findViewById(R.id.layoutVoice)
+        private val btnPlay: ImageButton = itemView.findViewById(R.id.btnPlay)
+        private val progressVoice: ProgressBar = itemView.findViewById(R.id.progressVoice)
+        private val tvDuration: TextView = itemView.findViewById(R.id.tvDuration)
+
+        private var mediaPlayer: MediaPlayer? = null
+        private var tempFile: File? = null
 
         fun bind(message: ChatMessage, adapter: ChatAdapter) {
-            tvMessage.text = message.text
             tvTime.text = formatTime(message.timestamp)
 
             // Long-press to copy message text
@@ -133,32 +229,95 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 true
             }
 
-            // Entity name and avatar (synced from user's chosen avatar)
+            // Entity name and avatar
             val entityId = message.fromEntityId ?: 0
-
-            // Set avatar from EntityAvatarManager (synced across all screens)
             val avatarManager = EntityAvatarManager.getInstance(itemView.context)
             tvAvatar.text = avatarManager.getAvatar(entityId)
-
-            // Set entity name (prefer adapter's name map, fallback to message's fromEntityName)
             tvEntityName.text = adapter.getEntityDisplayName(entityId)
 
-            // Show "發送至" footer for entity-to-entity / broadcast messages
+            // Handle media types
+            bindMedia(message)
+
+            // Show read receipt footer for entity-to-entity / broadcast messages
             val targets = message.getTargetEntityIdList()
             if (targets.isNotEmpty()) {
                 val deliveredIds = message.deliveredTo?.split(",")
                     ?.mapNotNull { it.trim().toIntOrNull() }?.toSet() ?: emptySet()
 
-                val footer = "發送至: " + targets.joinToString(", ") { id ->
+                val footer = "\u767C\u9001\u81F3: " + targets.joinToString(", ") { id ->
                     val avatar = avatarManager.getAvatar(id)
                     val name = adapter.getEntityDisplayName(id)
-                    if (id in deliveredIds) "$avatar $name 已讀" else "$avatar $name"
+                    if (id in deliveredIds) "$avatar $name \u5DF2\u8B80" else "$avatar $name"
                 }
                 tvReadReceipt.text = footer
                 tvReadReceipt.visibility = View.VISIBLE
             } else {
                 tvReadReceipt.visibility = View.GONE
             }
+        }
+
+        private fun bindMedia(message: ChatMessage) {
+            when (message.mediaType) {
+                "photo" -> {
+                    ivPhoto.visibility = View.VISIBLE
+                    layoutVoice.visibility = View.GONE
+                    tvMessage.visibility = if (message.text == "[Photo]") View.GONE else View.VISIBLE
+                    if (message.text != "[Photo]") tvMessage.text = message.text
+                    Glide.with(itemView.context)
+                        .load(message.mediaUrl)
+                        .centerCrop()
+                        .into(ivPhoto)
+                }
+                "voice" -> {
+                    ivPhoto.visibility = View.GONE
+                    layoutVoice.visibility = View.VISIBLE
+                    tvMessage.visibility = View.GONE
+                    val durationMatch = Regex("\\d+").find(message.text)
+                    val seconds = durationMatch?.value?.toIntOrNull() ?: 0
+                    tvDuration.text = String.format("%d:%02d", seconds / 60, seconds % 60)
+                    progressVoice.progress = 0
+                    btnPlay.setImageResource(android.R.drawable.ic_media_play)
+                    btnPlay.setOnClickListener { toggleVoicePlayback(message.mediaUrl ?: "") }
+                }
+                else -> {
+                    ivPhoto.visibility = View.GONE
+                    layoutVoice.visibility = View.GONE
+                    tvMessage.visibility = View.VISIBLE
+                    tvMessage.text = message.text
+                }
+            }
+        }
+
+        private fun toggleVoicePlayback(dataUri: String) {
+            if (mediaPlayer?.isPlaying == true) {
+                stopAudio()
+                return
+            }
+            try {
+                val base64Data = dataUri.substringAfter("base64,")
+                val audioBytes = Base64.decode(base64Data, Base64.DEFAULT)
+                tempFile = File.createTempFile("voice_", ".webm", itemView.context.cacheDir)
+                tempFile!!.writeBytes(audioBytes)
+
+                mediaPlayer = MediaPlayer().apply {
+                    setDataSource(tempFile!!.absolutePath)
+                    prepare()
+                    start()
+                    btnPlay.setImageResource(android.R.drawable.ic_media_pause)
+                    setOnCompletionListener { stopAudio() }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(itemView.context, "Playback failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        fun stopAudio() {
+            mediaPlayer?.release()
+            mediaPlayer = null
+            tempFile?.delete()
+            tempFile = null
+            btnPlay.setImageResource(android.R.drawable.ic_media_play)
+            progressVoice.progress = 0
         }
     }
 

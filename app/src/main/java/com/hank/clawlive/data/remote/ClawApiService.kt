@@ -1,6 +1,8 @@
 package com.hank.clawlive.data.remote
 
 import com.hank.clawlive.data.model.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.*
 
 interface ClawApiService {
@@ -105,6 +107,16 @@ interface ClawApiService {
         @Query("limit") limit: Int = 100
     ): ChatHistoryResponse
 
+    // Upload media (photo/voice) for chat
+    @Multipart
+    @POST("api/chat/upload-media")
+    suspend fun uploadMedia(
+        @Part file: MultipartBody.Part,
+        @Part("deviceId") deviceId: RequestBody,
+        @Part("deviceSecret") deviceSecret: RequestBody,
+        @Part("mediaType") mediaType: RequestBody
+    ): MediaUploadResponse
+
     // ============================================
     // MISSION CONTROL DASHBOARD
     // Auth: deviceId + deviceSecret in query/body
@@ -195,5 +207,14 @@ data class ChatHistoryMessage(
     val is_from_bot: Boolean,
     val is_delivered: Boolean = false,
     val delivered_to: String? = null,
-    val created_at: String // ISO timestamp from PostgreSQL
+    val created_at: String, // ISO timestamp from PostgreSQL
+    val media_type: String? = null,
+    val media_url: String? = null
+)
+
+data class MediaUploadResponse(
+    val success: Boolean,
+    val mediaUrl: String? = null,
+    val mediaType: String? = null,
+    val error: String? = null
 )
