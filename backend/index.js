@@ -8,6 +8,8 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const db = require('./db');
+const flickr = require('./flickr');
+const multer = require('multer');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -1407,7 +1409,7 @@ app.put('/api/device/entity/name', async (req, res) => {
  * If bot has registered webhook, push notification is sent.
  */
 app.post('/api/client/speak', async (req, res) => {
-    const { deviceId, entityId, text, source = "client" } = req.body;
+    const { deviceId, entityId, text, source = "client", mediaType, mediaUrl } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -1470,10 +1472,12 @@ app.post('/api/client/speak', async (req, res) => {
             text: text,
             from: source,
             timestamp: Date.now(),
-            read: false
+            read: false,
+            mediaType: mediaType || null,
+            mediaUrl: mediaUrl || null
         };
         entity.messageQueue.push(messageObj);
-        saveChatMessage(deviceId, eId, text, source, true, false);
+        saveChatMessage(deviceId, eId, text, source, true, false, mediaType || null, mediaUrl || null);
 
         console.log(`[Client] Device ${deviceId} -> Entity ${eId}: "${text}" (source: ${source})`);
 
@@ -1484,8 +1488,9 @@ app.post('/api/client/speak', async (req, res) => {
 
             // For official bot entities, include auth credentials so bot can reply
             let pushMsg = `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`;
+            if (mediaType === 'photo') pushMsg += `\n[附件: 照片 ${mediaUrl}]`;
+            else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`;
-            pushMsg += `\n查看任務面板: GET /api/mission/dashboard?deviceId=xxx&botSecret=xxx&entityId=x`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
             if (officialBind && entity.botSecret) {
                 pushMsg += `\n\n[AUTH] botSecret=${entity.botSecret}`;
@@ -1609,7 +1614,6 @@ app.post('/api/entity/speak-to', async (req, res) => {
     if (toEntity.webhook) {
         let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
         pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
-        pushMsg += `\n查看任務面板: GET /api/mission/dashboard?deviceId=xxx&botSecret=xxx&entityId=x`;
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
             pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
@@ -1731,7 +1735,6 @@ app.post('/api/entity/broadcast', async (req, res) => {
         if (toEntity.webhook) {
             let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
-            pushMsg += `\n查看任務面板: GET /api/mission/dashboard?deviceId=xxx&botSecret=xxx&entityId=x`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {
                 pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
@@ -3181,19 +3184,21 @@ const chatPool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
 });
 
-// Auto-migrate: add delivery tracking columns
+// Auto-migrate: add delivery tracking + media columns
 chatPool.query(`
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_delivered BOOLEAN DEFAULT FALSE;
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS delivered_to TEXT DEFAULT NULL;
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_type VARCHAR(16) DEFAULT NULL;
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_url TEXT DEFAULT NULL;
 `).catch(() => {});
 
 // Save chat message to database, returns row ID (UUID) or null
-async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot) {
+async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot, mediaType = null, mediaUrl = null) {
     try {
         const result = await chatPool.query(
-            `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-            [deviceId, entityId, text, source, isFromUser || false, isFromBot || false]
+            `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot, media_type, media_url)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+            [deviceId, entityId, text, source, isFromUser || false, isFromBot || false, mediaType, mediaUrl]
         );
         return result.rows[0]?.id || null;
     } catch (err) {
@@ -3286,11 +3291,76 @@ app.get('/api/chat/history', async (req, res) => {
     }
 });
 
+// ============================================
+// CHAT MEDIA UPLOAD (Flickr for photos, Base64 for voice)
+// ============================================
+const mediaUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'audio/webm', 'audio/ogg', 'audio/mp4', 'audio/aac', 'audio/mpeg'];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Unsupported file type: ' + file.mimetype));
+        }
+    }
+});
+
+/**
+ * POST /api/chat/upload-media
+ * Upload photo (→ Flickr) or voice (→ base64) for chat messages
+ * Body (multipart): file, deviceId, deviceSecret, mediaType ("photo" | "voice")
+ */
+app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) => {
+    const { deviceId, deviceSecret, mediaType } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'Missing credentials' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (!req.file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    try {
+        let mediaUrl;
+
+        if (mediaType === 'photo') {
+            if (!flickr.isAvailable()) {
+                return res.status(503).json({ success: false, error: 'Photo upload service unavailable (Flickr not configured)' });
+            }
+            const result = await flickr.uploadPhoto(req.file.buffer, req.file.originalname || 'photo.jpg');
+            if (!result.success) {
+                return res.status(500).json({ success: false, error: 'Flickr upload failed: ' + result.error });
+            }
+            mediaUrl = result.url;
+        } else if (mediaType === 'voice') {
+            const base64 = req.file.buffer.toString('base64');
+            mediaUrl = `data:${req.file.mimetype};base64,${base64}`;
+        } else {
+            return res.status(400).json({ success: false, error: 'Invalid mediaType. Use "photo" or "voice"' });
+        }
+
+        res.json({ success: true, mediaUrl, mediaType });
+    } catch (err) {
+        console.error('[Upload] Error:', err);
+        res.status(500).json({ success: false, error: 'Upload failed: ' + err.message });
+    }
+});
+
 app.listen(port, async () => {
     console.log(`Claw Backend v5.3 (PostgreSQL + Auth + Portal) running on port ${port}`);
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 
+    // Initialize Flickr client
+    flickr.initFlickr();
 });
 // Force redeploy Sat Feb 14 09:53:10 UTC 2026
 
@@ -3304,12 +3374,12 @@ app.listen(port, async () => {
  * This enables the Chat page to show Bot responses
  */
 app.post('/api/bot/sync-message', async (req, res) => {
-    const { deviceId, entityId, botSecret, message, fromLabel } = req.body;
+    const { deviceId, entityId, botSecret, message, fromLabel, mediaType, mediaUrl } = req.body;
 
-    if (!deviceId || entityId === undefined || !botSecret || !message) {
+    if (!deviceId || entityId === undefined || !botSecret || (!message && !mediaUrl)) {
         return res.status(400).json({
             success: false,
-            error: "Missing required fields: deviceId, entityId, botSecret, message"
+            error: "Missing required fields: deviceId, entityId, botSecret, message (or mediaUrl)"
         });
     }
 
@@ -3329,14 +3399,17 @@ app.post('/api/bot/sync-message', async (req, res) => {
     }
 
     // Create message object for the device's message queue
+    const msgText = message || (mediaType === 'photo' ? '[Photo]' : '[Voice message]');
     const messageObj = {
-        text: message,
+        text: msgText,
         from: fromLabel || "bot",
         fromEntityId: entityId,
         fromCharacter: entity.character,
         timestamp: Date.now(),
         read: false,
-        isFromBot: true  // Mark as from Bot for the device
+        isFromBot: true,
+        mediaType: mediaType || null,
+        mediaUrl: mediaUrl || null
     };
 
     // Add to entity's message queue
@@ -3344,11 +3417,11 @@ app.post('/api/bot/sync-message', async (req, res) => {
         entity.messageQueue = [];
     }
     entity.messageQueue.push(messageObj);
-    saveChatMessage(deviceId, entityId, message, fromLabel || "bot", false, true);
+    saveChatMessage(deviceId, entityId, msgText, fromLabel || "bot", false, true, mediaType || null, mediaUrl || null);
     markMessagesAsRead(deviceId, entityId);
 
     // Also update entity.message for immediate display
-    entity.message = message;
+    entity.message = msgText;
     entity.lastUpdated = Date.now();
 
     console.log(`[Bot Sync] Saved message to device ${deviceId} Entity ${entityId}: "${message.substring(0, 50)}..."`);
