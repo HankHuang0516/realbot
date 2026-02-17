@@ -81,26 +81,31 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 true
             }
 
-            // Show target entities for broadcast messages
-            if (message.messageType == MessageType.USER_BROADCAST) {
-                val targets = message.getTargetEntityIdList()
-                if (targets.size > 1) {
-                    tvTargets.text = itemView.context.getString(
-                        R.string.to_entities,
-                        targets.joinToString(", ") { adapter.getEntityDisplayName(it) }
-                    )
-                    tvTargets.visibility = View.VISIBLE
-                } else {
-                    tvTargets.visibility = View.GONE
-                }
+            // Show target entities
+            val targets = message.getTargetEntityIdList()
+            val isMissionNotify = message.source == "mission_notify"
+            if (targets.isNotEmpty() && (targets.size > 1 || isMissionNotify)) {
+                tvTargets.text = itemView.context.getString(
+                    R.string.to_entities,
+                    targets.joinToString(", ") { adapter.getEntityDisplayName(it) }
+                )
+                tvTargets.visibility = View.VISIBLE
             } else {
                 tvTargets.visibility = View.GONE
             }
 
-            // Show delivery status
-            if (message.isDelivered && !message.deliveredTo.isNullOrEmpty()) {
-                val entityIds = message.deliveredTo.split(",").mapNotNull { it.trim().toIntOrNull() }
-                tvDeliveryStatus.text = entityIds.joinToString(", ") { adapter.getEntityDisplayName(it) } + " 已讀"
+            // Show per-entity delivery status
+            val deliveredIds = message.deliveredTo?.split(",")
+                ?.mapNotNull { it.trim().toIntOrNull() }?.toSet() ?: emptySet()
+            if (isMissionNotify && targets.isNotEmpty()) {
+                // Mission notify: show per-entity status (✓ 已讀 or waiting)
+                tvDeliveryStatus.text = targets.joinToString("  ") { id ->
+                    val name = adapter.getEntityDisplayName(id)
+                    if (id in deliveredIds) "$name ✓已讀" else "$name ..."
+                }
+                tvDeliveryStatus.visibility = View.VISIBLE
+            } else if (message.isDelivered && deliveredIds.isNotEmpty()) {
+                tvDeliveryStatus.text = deliveredIds.joinToString(", ") { adapter.getEntityDisplayName(it) } + " 已讀"
                 tvDeliveryStatus.visibility = View.VISIBLE
             } else {
                 tvDeliveryStatus.visibility = View.GONE

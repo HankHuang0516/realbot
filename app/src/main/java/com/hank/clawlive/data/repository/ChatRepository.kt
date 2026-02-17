@@ -296,7 +296,7 @@ class ChatRepository private constructor(
 
             // Skip user messages - we already save those locally when sent
             // Exception: mission_notify messages are user-side but saved by backend
-            if (msg.is_from_user && msg.source != "mission_notify") {
+            if (msg.is_from_user && !msg.source.startsWith("mission_notify")) {
                 continue
             }
 
@@ -307,14 +307,16 @@ class ChatRepository private constructor(
             val entityPattern = Regex("^entity:(\\d+):([A-Z]+)->(\\S+)$")
             val entityMatch = entityPattern.find(msg.source)
 
-            val message = if (msg.source == "mission_notify") {
-                // Mission Control notification - user-side broadcast saved by backend
+            val message = if (msg.source.startsWith("mission_notify")) {
+                // Mission Control notification - source format: "mission_notify:0,1"
+                val targets = msg.source.substringAfter(":", "")
                 ChatMessage(
                     text = msg.text,
                     timestamp = timestamp,
                     isFromUser = true,
                     messageType = MessageType.USER_BROADCAST,
                     source = "mission_notify",
+                    targetEntityIds = targets.ifEmpty { null },
                     deduplicationKey = deduplicationKey,
                     isSynced = true,
                     isDelivered = msg.is_delivered,

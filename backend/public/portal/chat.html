@@ -645,13 +645,20 @@
                 // Read receipt for sent messages
                 let receipt = '';
                 if (isSent) {
-                    if (msg.source === 'mission_notify' && msg.delivered_to) {
-                        // Per-entity delivery status for mission notifications
-                        const deliveredIds = new Set(msg.delivered_to.split(',').map(id => id.trim()));
-                        const badges = Array.from(deliveredIds).map(id =>
-                            `<span class="read-receipt">${getEntityLabel(parseInt(id))} \u2713</span>`
+                    if (msg.source && msg.source.startsWith('mission_notify')) {
+                        // Source format: "mission_notify:0,1" - extract targets
+                        const targetPart = (msg.source.split(':')[1] || '');
+                        const targetIds = targetPart ? targetPart.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id)) : [];
+                        const deliveredIds = new Set((msg.delivered_to || '').split(',').map(id => id.trim()).filter(Boolean));
+                        const sendTo = targetIds.length > 0
+                            ? '發送至: ' + targetIds.map(id => getEntityLabel(id)).join(', ')
+                            : '';
+                        const statusBadges = targetIds.map(id =>
+                            deliveredIds.has(String(id))
+                                ? `<span class="read-receipt">${getEntityLabel(id)} \u2713 已讀</span>`
+                                : `<span class="read-receipt" style="opacity:0.5">${getEntityLabel(id)} ...</span>`
                         ).join(' ');
-                        receipt = badges;
+                        receipt = (sendTo ? `<div style="font-size:11px;opacity:0.7;margin-bottom:2px">${sendTo}</div>` : '') + statusBadges;
                     } else if (msg.read_at) {
                         receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
                     } else if (msg.is_delivered) {
@@ -695,7 +702,7 @@
 
             if (msg.is_from_user) {
                 // Mission notify: consolidated notification bubble
-                if (msg.source === 'mission_notify') {
+                if (msg.source && msg.source.startsWith('mission_notify')) {
                     return 'Mission Control';
                 }
                 // Determine source tag

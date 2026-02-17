@@ -572,14 +572,16 @@ module.exports = function(devices) {
         }
 
         // Save ONE consolidated chat message (user bubble)
+        // Source encodes target entity IDs: "mission_notify:0,1"
         const chatText = `📢 任務通知\n${allLines.join('\n')}`;
         const allEntityIds = [...new Set(notifications.flatMap(n => (n.entityIds || []).map(Number)))];
+        const chatSource = `mission_notify:${allEntityIds.join(',')}`;
         let chatMsgId = null;
         try {
             const insertResult = await pool.query(
                 `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-                [deviceId, null, chatText, 'mission_notify', true, false]
+                [deviceId, null, chatText, chatSource, true, false]
             );
             chatMsgId = insertResult.rows[0]?.id;
         } catch (dbErr) {
