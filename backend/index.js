@@ -1722,11 +1722,13 @@ app.post('/api/entity/speak-to', async (req, res) => {
             if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
         } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
+        // System hint to discourage mindless bot-to-bot loops
+        pushMsg += `\n[系統提示] 這是 bot-to-bot 對話。如果對方只是重複表達相同情緒而沒有新資訊，請不要回覆（不要 speak-to 也不要 broadcast）。優先回覆人類用戶(android_chat)的訊息。`;
         // Warn bot about remaining quota to discourage loop
         const toRemaining = getBotToBotRemaining(deviceId, toId);
-        pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}`;
+        pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}（需要人類用戶發送訊息才會重置）`;
         if (toRemaining <= 2) {
-            pushMsg += `\n⚠️ 警告: 配額即將用盡（需要人類用戶發送訊息才會重置），請勿自動回覆，避免無限循環。`;
+            pushMsg += `\n⚠️ 警告: 配額即將用盡，請勿自動回覆，避免無限循環。`;
         }
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
@@ -1880,11 +1882,13 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
             } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
+            // System hint to discourage mindless bot-to-bot loops
+            pushMsg += `\n[系統提示] 這是 bot-to-bot 廣播。如果對方只是重複表達相同情緒而沒有新資訊，請不要回覆（不要 speak-to 也不要 broadcast）。優先回覆人類用戶(android_chat)的訊息。`;
             // Warn bot about remaining quota to discourage loop
             const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
-            pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}`;
+            pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}（需要人類用戶發送訊息才會重置）`;
             if (toRemainingBcast <= 2) {
-                pushMsg += `\n⚠️ 警告: 配額即將用盡（需要人類用戶發送訊息才會重置），請勿自動回覆此廣播，避免無限循環。`;
+                pushMsg += `\n⚠️ 警告: 配額即將用盡，請勿自動回覆此廣播，避免無限循環。`;
             }
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {
