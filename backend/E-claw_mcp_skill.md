@@ -442,6 +442,10 @@ Phone sends message to Bot. Supports single entity or broadcast.
 ### `entity_speak_to` (Entity → Entity)
 Entity to entity messaging. Requires sender's botSecret.
 
+> **WARNING: Do NOT use `POST /api/transform` (`update_claw_status`) to reply to entity-to-entity messages!**
+> `transform` only updates YOUR wallpaper bubble — the other entity will NOT receive anything.
+> You MUST use `POST /api/entity/speak-to` to actually send a message to another entity.
+
 #### Identity & Anti-Spoofing (Hidden Logic)
 The system employs a hidden logic to prevent identity spoofing during entity-to-entity communication.
 *   **Source Tagging**: When an entity sends a message, the system automatically tags the source as `entity:{ID}:{CHARACTER}` (e.g., `entity:0:LOBSTER`).
@@ -755,7 +759,7 @@ Read the full mission dashboard for your device.
 - `priority`: 1=LOW, 2=MEDIUM, 3=HIGH, 4=URGENT
 
 **When to call:**
-1. After receiving a `[Mission Control 任務更新]` push notification (immediate)
+1. After receiving a `[Mission Control Task Update]` push notification (immediate)
 2. On your heartbeat interval (every 15 minutes) to detect silent user edits
 3. On startup / after reconnecting to refresh your current assignments
 
@@ -778,15 +782,15 @@ All endpoints use `POST`, authenticate with `botSecret`, and operate directly on
 **Example - Mark TODO as done:**
 ```json
 POST /api/mission/todo/done
-{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"更新控制板"}
-→ {"success":true,"message":"TODO \"更新控制板\" marked as done","version":6}
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"Update dashboard"}
+→ {"success":true,"message":"TODO \"Update dashboard\" marked as done","version":6}
 ```
 
 **Example - Add new TODO:**
 ```json
 POST /api/mission/todo/add
-{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"回覆用戶訊息","priority":3}
-→ {"success":true,"message":"TODO \"回覆用戶訊息\" added","item":{...},"version":7}
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"Reply to user message","priority":3}
+→ {"success":true,"message":"TODO \"Reply to user message\" added","item":{...},"version":7}
 ```
 
 #### RULE Operations
@@ -800,15 +804,15 @@ POST /api/mission/todo/add
 **Example - Add rule assigned to multiple entities:**
 ```json
 POST /api/mission/rule/add
-{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"全中文回覆","description":"所有回覆必須使用繁體中文","ruleType":"COMMUNICATION","assignedEntities":["0","1","2"]}
-→ {"success":true,"message":"Rule \"全中文回覆\" added","version":8}
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"Reply in English","description":"All replies must be in English","ruleType":"COMMUNICATION","assignedEntities":["0","1","2"]}
+→ {"success":true,"message":"Rule \"Reply in English\" added","version":8}
 ```
 
 **Example - Update rule (reassign entities):**
 ```json
 POST /api/mission/rule/update
-{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"全中文回覆","newAssignedEntities":["0","1","2"],"newDescription":"所有實體必須使用繁體中文回覆"}
-→ {"success":true,"message":"Rule \"全中文回覆\" updated","version":9}
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"Reply in English","newAssignedEntities":["0","1","2"],"newDescription":"All entities must reply in English"}
+→ {"success":true,"message":"Rule \"Reply in English\" updated","version":9}
 ```
 
 #### SKILL Operations
@@ -821,8 +825,8 @@ POST /api/mission/rule/update
 **Example - Add skill:**
 ```json
 POST /api/mission/skill/add
-{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"天氣查詢","url":"https://api.weather.gov"}
-→ {"success":true,"message":"Skill \"天氣查詢\" added","version":9}
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"title":"Weather Query","url":"https://api.weather.gov"}
+→ {"success":true,"message":"Skill \"Weather Query\" added","version":9}
 ```
 
 **Notes:** All title/name matching is case-insensitive. All operations auto-increment dashboard version (optimistic locking).

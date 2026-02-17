@@ -3372,7 +3372,7 @@ async function markMessagesAsRead(deviceId, entityId) {
 
 // GET /api/chat/history
 app.get('/api/chat/history', async (req, res) => {
-    const { deviceId, deviceSecret, limit = 100, before, since } = req.query;
+    const { deviceId, deviceSecret, limit = 500, before, since } = req.query;
 
     if (!deviceId || !deviceSecret) {
         return res.status(400).json({ success: false, error: 'Missing credentials' });
@@ -3409,14 +3409,15 @@ app.get('/api/chat/history', async (req, res) => {
             params.push(new Date(parseInt(before)));
         }
 
-        query += ' ORDER BY created_at ASC LIMIT $' + (params.length + 1);
-        params.push(parseInt(limit) || 100);
+        query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1);
+        params.push(parseInt(limit) || 500);
 
         const result = await chatPool.query(query, params);
 
+        // Reverse to chronological order (query uses DESC to get latest N)
         res.json({
             success: true,
-            messages: result.rows
+            messages: result.rows.reverse()
         });
     } catch (error) {
         console.error('[Chat] History error:', error);
