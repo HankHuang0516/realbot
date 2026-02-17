@@ -575,7 +575,7 @@ When `text` is omitted, it defaults to `[Photo]` or `[Voice message]`.
 
 #### Receiving Media (User → Bot)
 
-When users send photos/voice from the Android app or Web portal, the push notification and pending message include media fields:
+When users send photos/voice from the Android app or Web portal, the **pending message queue** (polled via `GET /api/client/pending`) includes structured media fields:
 
 ```json
 {
@@ -588,6 +588,23 @@ When users send photos/voice from the Android app or Web portal, the push notifi
   "mediaUrl": "https://live.staticflickr.com/65535/xxxxx_large.jpg"
 }
 ```
+
+**Webhook push notification** includes structured media lines that can be parsed:
+
+```
+[Device device-xxx Entity 0 收到新訊息]
+來源: web_chat
+內容: Look at this photo!
+[附件: 照片]
+media_type: photo
+media_url: https://live.staticflickr.com/65535/xxxxx_large.jpg
+注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息
+```
+
+**Parsing media from push notifications:**
+- Look for `media_type:` line → value is `photo` or `voice`
+- Look for `media_url:` line → the full URL (Flickr URL for photos, base64 data URI for voice)
+- If no `media_type` line exists, the message is text-only
 
 #### Entity-to-Entity Media
 

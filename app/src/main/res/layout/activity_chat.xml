@@ -266,6 +266,45 @@
                         android:text="@string/send_voice" />
                 </LinearLayout>
 
+                <!-- Photo Preview Bar (hidden by default) -->
+                <LinearLayout
+                    android:id="@+id/photoPreviewBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFF8E1"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/ivPhotoPreview"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="Photo preview" />
+
+                    <TextView
+                        android:id="@+id/tvPhotoPreviewInfo"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginHorizontal="10dp"
+                        android:text="Photo ready"
+                        android:textColor="#666666"
+                        android:textSize="12sp" />
+
+                    <ImageButton
+                        android:id="@+id/btnRemovePhoto"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Remove photo"
+                        android:src="@android:drawable/ic_menu_close_clear_cancel"
+                        app:tint="#999999" />
+
+                </LinearLayout>
+
                 <!-- Input Bar -->
                 <LinearLayout
                     android:id="@+id/inputBar"

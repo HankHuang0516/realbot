@@ -1488,8 +1488,8 @@ app.post('/api/client/speak', async (req, res) => {
 
             // For official bot entities, include auth credentials so bot can reply
             let pushMsg = `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`;
-            if (mediaType === 'photo') pushMsg += `\n[附件: 照片 ${mediaUrl}]`;
-            else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]`;
+            if (mediaType === 'photo') pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+            else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
             if (officialBind && entity.botSecret) {
@@ -1537,7 +1537,7 @@ app.post('/api/client/speak', async (req, res) => {
  * The receiving entity gets the message with source marked as the sending entity.
  */
 app.post('/api/entity/speak-to', async (req, res) => {
-    const { deviceId, fromEntityId, toEntityId, botSecret, text } = req.body;
+    const { deviceId, fromEntityId, toEntityId, botSecret, text, mediaType, mediaUrl } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -1596,10 +1596,12 @@ app.post('/api/entity/speak-to', async (req, res) => {
         fromEntityId: fromId,
         fromCharacter: fromEntity.character,
         timestamp: Date.now(),
-        read: false
+        read: false,
+        mediaType: mediaType || null,
+        mediaUrl: mediaUrl || null
     };
     toEntity.messageQueue.push(messageObj);
-    const chatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true);
+    const chatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true, mediaType || null, mediaUrl || null);
     markMessagesAsRead(deviceId, toId);
 
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}"`);
@@ -1613,6 +1615,8 @@ app.post('/api/entity/speak-to', async (req, res) => {
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
         let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
+        if (mediaType === 'photo') pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+        else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
@@ -1649,13 +1653,13 @@ app.post('/api/entity/speak-to', async (req, res) => {
  * All other bound entities on the same device will receive the message.
  */
 app.post('/api/entity/broadcast', async (req, res) => {
-    const { deviceId, fromEntityId, botSecret, text } = req.body;
+    const { deviceId, fromEntityId, botSecret, text, mediaType, mediaUrl } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
     }
-    if (!text) {
-        return res.status(400).json({ success: false, message: "text required" });
+    if (!text && !mediaUrl) {
+        return res.status(400).json({ success: false, message: "text or mediaUrl required" });
     }
 
     const device = devices[deviceId];
@@ -1705,7 +1709,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
     console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}"`);
 
     // Save ONE chat message for the broadcast (sender's perspective, all targets)
-    const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true);
+    const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true, mediaType || null, mediaUrl || null);
 
     // Parallel processing - send to all entities simultaneously
     const pushPromises = targetIds.map(async (toId) => {
@@ -1720,7 +1724,9 @@ app.post('/api/entity/broadcast', async (req, res) => {
             fromEntityId: fromId,
             fromCharacter: fromEntity.character,
             timestamp: Date.now(),
-            read: false
+            read: false,
+            mediaType: mediaType || null,
+            mediaUrl: mediaUrl || null
         };
         toEntity.messageQueue.push(messageObj);
         markMessagesAsRead(deviceId, toId);
@@ -1734,6 +1740,8 @@ app.post('/api/entity/broadcast', async (req, res) => {
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
             let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
+            if (mediaType === 'photo') pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+            else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {

@@ -88,6 +88,15 @@ class ChatActivity : AppCompatActivity() {
     private lateinit var btnCancelRecord: MaterialButton
     private lateinit var btnSendVoice: MaterialButton
 
+    // Photo preview UI
+    private lateinit var photoPreviewBar: LinearLayout
+    private lateinit var ivPhotoPreview: android.widget.ImageView
+    private lateinit var tvPhotoPreviewInfo: TextView
+    private lateinit var btnRemovePhoto: ImageButton
+
+    // Pending photo state (uploaded but not yet sent)
+    private var pendingPhotoUrl: String? = null
+
     // Voice recording state
     private var mediaRecorder: MediaRecorder? = null
     private var voiceFile: File? = null
@@ -167,6 +176,10 @@ class ChatActivity : AppCompatActivity() {
         tvRecordingTime = findViewById(R.id.tvRecordingTime)
         btnCancelRecord = findViewById(R.id.btnCancelRecord)
         btnSendVoice = findViewById(R.id.btnSendVoice)
+        photoPreviewBar = findViewById(R.id.photoPreviewBar)
+        ivPhotoPreview = findViewById(R.id.ivPhotoPreview)
+        tvPhotoPreviewInfo = findViewById(R.id.tvPhotoPreviewInfo)
+        btnRemovePhoto = findViewById(R.id.btnRemovePhoto)
     }
 
     private fun setupFloatingDialog() {
@@ -271,6 +284,9 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
+        // Photo preview remove button
+        btnRemovePhoto.setOnClickListener { clearPendingPhoto() }
+
         // Voice recording controls
         btnCancelRecord.setOnClickListener { stopVoiceRecording(send = false) }
         btnSendVoice.setOnClickListener { stopVoiceRecording(send = true) }
@@ -306,13 +322,13 @@ class ChatActivity : AppCompatActivity() {
         cameraLauncher.launch(pendingPhotoUri)
     }
 
-    private fun uploadAndSendPhoto(uri: Uri) {
-        val targetIds = getSelectedTargets()
-        if (targetIds.isEmpty()) {
-            Toast.makeText(this, "Please select at least one entity", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun clearPendingPhoto() {
+        pendingPhotoUrl = null
+        photoPreviewBar.visibility = View.GONE
+        ivPhotoPreview.setImageDrawable(null)
+    }
 
+    private fun uploadAndSendPhoto(uri: Uri) {
         lifecycleScope.launch {
             try {
                 val inputStream = contentResolver.openInputStream(uri) ?: return@launch
@@ -324,7 +340,10 @@ class ChatActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                Toast.makeText(this@ChatActivity, getString(R.string.uploading_media), Toast.LENGTH_SHORT).show()
+                // Show preview immediately with local URI
+                photoPreviewBar.visibility = View.VISIBLE
+                ivPhotoPreview.setImageURI(uri)
+                tvPhotoPreviewInfo.text = getString(R.string.uploading_media)
 
                 val filePart = MultipartBody.Part.createFormData(
                     "file", "photo.jpg",
@@ -339,14 +358,19 @@ class ChatActivity : AppCompatActivity() {
 
                 if (!uploadResponse.success || uploadResponse.mediaUrl == null) {
                     Toast.makeText(this@ChatActivity, "Upload failed: ${uploadResponse.error}", Toast.LENGTH_SHORT).show()
+                    clearPendingPhoto()
                     return@launch
                 }
 
-                sendMediaMessage("[Photo]", targetIds, "photo", uploadResponse.mediaUrl)
+                // Stage the photo — don't send yet, let user type caption
+                pendingPhotoUrl = uploadResponse.mediaUrl
+                tvPhotoPreviewInfo.text = "Photo ready — type a caption or press send"
+                editMessage.requestFocus()
 
             } catch (e: Exception) {
                 Timber.e(e, "Photo upload failed")
                 Toast.makeText(this@ChatActivity, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                clearPendingPhoto()
             }
         }
     }
@@ -636,7 +660,10 @@ class ChatActivity : AppCompatActivity() {
 
     private fun sendMessage() {
         val text = editMessage.text.toString().trim()
-        if (text.isEmpty()) {
+        val hasPhoto = pendingPhotoUrl != null
+
+        // Must have text or a pending photo
+        if (text.isEmpty() && !hasPhoto) {
             Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
             return
         }
@@ -649,6 +676,18 @@ class ChatActivity : AppCompatActivity() {
 
         if (!usageManager.canUseMessage()) {
             showUpgradeDialog()
+            return
+        }
+
+        // If there's a pending photo, send as media message
+        if (hasPhoto) {
+            val caption = text.ifEmpty { "[Photo]" }
+            editMessage.text?.clear()
+            usageManager.incrementUsage()
+            chatPrefs.saveLastMessage(caption, targetIds)
+            val photoUrl = pendingPhotoUrl!!
+            clearPendingPhoto()
+            sendMediaMessage(caption, targetIds, "photo", photoUrl)
             return
         }
 

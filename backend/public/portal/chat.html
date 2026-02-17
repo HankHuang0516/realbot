@@ -463,6 +463,52 @@
             color: #fff;
         }
 
+        /* ── Photo Preview Bar ── */
+        .photo-preview-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: var(--input-bg);
+            border-top: 1px solid var(--card-border);
+        }
+
+        .photo-preview-bar.active { display: flex; }
+
+        .photo-preview-bar img {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--card-border);
+        }
+
+        .photo-preview-info {
+            flex: 1;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .btn-remove-photo {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: none;
+            background: var(--card-border);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .btn-remove-photo:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 640px) {
             .chat-header-row {
@@ -541,6 +587,11 @@
                         <button class="btn-cancel-record" onclick="stopRecording(false)">Cancel</button>
                         <button class="btn-send-record" onclick="stopRecording(true)">Send</button>
                     </div>
+                </div>
+                <div class="photo-preview-bar" id="photoPreviewBar">
+                    <img id="photoPreviewImg" src="" alt="Preview">
+                    <span class="photo-preview-info" id="photoPreviewInfo">Photo attached</span>
+                    <button class="btn-remove-photo" onclick="clearPendingPhoto()" title="Remove photo">&#x2715;</button>
                 </div>
                 <div class="input-row">
                     <button class="btn-media" id="btnPhoto" onclick="openPhotoPicker()" title="Send photo">&#x1F4F7;</button>
@@ -973,7 +1024,10 @@
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-            if (!text) return;
+            const hasPhoto = !!pendingPhotoUrl;
+
+            // Must have text or a pending photo
+            if (!text && !hasPhoto) return;
 
             const targets = getSelectedTargets();
             if (targets.length === 0) {
@@ -996,14 +1050,24 @@
             input.value = '';
 
             try {
-                // Single API call - backend handles parallel push via Promise.all
                 const entityId = targets.length === 1 ? targets[0] : targets;
-                await apiCall('POST', '/api/client/speak', {
+                const payload = {
                     deviceId: currentUser.deviceId,
                     entityId: entityId,
-                    text: text,
+                    text: text || (hasPhoto ? '[Photo]' : ''),
                     source: 'web_chat'
-                });
+                };
+
+                // Attach photo if pending
+                if (hasPhoto) {
+                    payload.mediaType = 'photo';
+                    payload.mediaUrl = pendingPhotoUrl;
+                }
+
+                await apiCall('POST', '/api/client/speak', payload);
+
+                // Clear pending photo
+                if (hasPhoto) clearPendingPhoto();
 
                 // Bump local usage
                 if (currentUser.usageToday !== undefined) {
@@ -1033,9 +1097,17 @@
             return div.innerHTML;
         }
 
-        // ── Photo Upload ──
+        // ── Photo Upload (staged: upload first, then user types caption and presses send) ──
+        let pendingPhotoUrl = null;
+
         function openPhotoPicker() {
             document.getElementById('photoFileInput').click();
+        }
+
+        function clearPendingPhoto() {
+            pendingPhotoUrl = null;
+            document.getElementById('photoPreviewBar').classList.remove('active');
+            document.getElementById('photoPreviewImg').src = '';
         }
 
         async function handlePhotoSelected(input) {
@@ -1043,27 +1115,18 @@
             if (!file) return;
             input.value = ''; // Reset for next pick
 
-            const targets = getSelectedTargets();
-            if (targets.length === 0) {
-                showToast('Please select at least one entity', 'error');
-                return;
-            }
-
-            // Client-side limit check
-            const isPremium = currentUser.subscriptionStatus === 'premium';
-            const limit = currentUser.usageLimit;
-            const used = currentUser.usageToday || 0;
-            if (!isPremium && limit !== null && limit !== undefined && used >= limit) {
-                showToast(i18n.t('chat_limit_reached'), 'error');
-                return;
-            }
-
             const btn = document.getElementById('btnPhoto');
             btn.disabled = true;
             btn.textContent = '⏳';
 
             try {
-                // Upload to backend
+                // Show local preview immediately
+                const localUrl = URL.createObjectURL(file);
+                document.getElementById('photoPreviewImg').src = localUrl;
+                document.getElementById('photoPreviewInfo').textContent = 'Uploading...';
+                document.getElementById('photoPreviewBar').classList.add('active');
+
+                // Upload to backend (Flickr)
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('deviceId', currentUser.deviceId);
@@ -1077,27 +1140,14 @@
                 const uploadData = await uploadRes.json();
                 if (!uploadData.success) throw new Error(uploadData.error || 'Upload failed');
 
-                // Send message with photo
-                const entityId = targets.length === 1 ? targets[0] : targets;
-                await apiCall('POST', '/api/client/speak', {
-                    deviceId: currentUser.deviceId,
-                    entityId: entityId,
-                    text: '[Photo]',
-                    source: 'web_chat',
-                    mediaType: 'photo',
-                    mediaUrl: uploadData.mediaUrl
-                });
+                // Store the URL, show preview, let user type caption
+                pendingPhotoUrl = uploadData.mediaUrl;
+                document.getElementById('photoPreviewInfo').textContent = 'Photo ready — type a caption or press send';
+                document.getElementById('messageInput').focus();
 
-                if (currentUser.usageToday !== undefined) {
-                    currentUser.usageToday += targets.length;
-                    updateUsageBadge();
-                }
-
-                await loadMessages();
-                const container = document.getElementById('chatMessages');
-                container.scrollTop = container.scrollHeight;
             } catch (e) {
                 showToast('Photo upload failed: ' + e.message, 'error');
+                clearPendingPhoto();
             } finally {
                 btn.disabled = false;
                 btn.textContent = '\u{1F4F7}';
