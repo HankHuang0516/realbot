@@ -3699,7 +3699,7 @@ app.delete('/api/bot/file', async (req, res) => {
     }
 });
 
-app.listen(port, async () => {
+app.listen(port, '0.0.0.0', async () => {
     console.log(`Claw Backend v5.3 (PostgreSQL + Auth + Portal) running on port ${port}`);
     console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
     console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
