@@ -27,7 +27,10 @@ async function apiCall(method, path, body = null) {
     }
 
     if (!response.ok) {
-        throw new Error(data.error || data.message || `HTTP ${response.status}`);
+        const err = new Error(data.error || data.message || `HTTP ${response.status}`);
+        err.status = response.status;
+        err.data = data;
+        throw err;
     }
 
     return data;

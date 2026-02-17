@@ -495,7 +495,11 @@ class ChatActivity : AppCompatActivity() {
                 ChatWidgetProvider.updateWidgets(this@ChatActivity)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to send media message")
-                Toast.makeText(this@ChatActivity, "Send failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                if (e is retrofit2.HttpException && e.code() == 429) {
+                    showUsageLimitDialog()
+                } else {
+                    Toast.makeText(this@ChatActivity, "Send failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -655,6 +659,14 @@ class ChatActivity : AppCompatActivity() {
         if (chipTarget1.isChecked) selected.add(1)
         if (chipTarget2.isChecked) selected.add(2)
         if (chipTarget3.isChecked) selected.add(3)
+
+        // Fallback: if nothing selected but entities are bound, auto-select all bound
+        if (selected.isEmpty()) {
+            if (chipTarget0.visibility == View.VISIBLE) selected.add(0)
+            if (chipTarget1.visibility == View.VISIBLE) selected.add(1)
+            if (chipTarget2.visibility == View.VISIBLE) selected.add(2)
+            if (chipTarget3.visibility == View.VISIBLE) selected.add(3)
+        }
         return selected
     }
 
@@ -740,9 +752,25 @@ class ChatActivity : AppCompatActivity() {
                 ChatWidgetProvider.updateWidgets(this@ChatActivity)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to send message")
-                Toast.makeText(this@ChatActivity, "Send failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                if (e is retrofit2.HttpException && e.code() == 429) {
+                    showUsageLimitDialog()
+                } else {
+                    Toast.makeText(this@ChatActivity, "Send failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
+    }
+
+    private fun showUsageLimitDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.usage_limit_title))
+            .setMessage(getString(R.string.usage_limit_message))
+            .setPositiveButton(getString(R.string.usage_limit_upgrade)) { _, _ ->
+                startActivity(android.content.Intent(this, SettingsActivity::class.java))
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .setCancelable(false)
+            .show()
     }
 
     private fun showPushErrorDialog(failedTargets: List<com.hank.clawlive.data.model.MessageTarget>) {

@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.hank.clawlive.R
 import com.hank.clawlive.data.model.MissionItem
 import com.hank.clawlive.data.model.MissionStatus
+import io.noties.markwon.Markwon
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,7 +35,10 @@ class MissionItemAdapter(
         }
     }
 
+    private var markwon: Markwon? = null
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        if (markwon == null) markwon = Markwon.create(parent.context)
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_mission, parent, false)
         return ViewHolder(view)
@@ -59,9 +63,9 @@ class MissionItemAdapter(
             tvTitle.text = item.title
             tvStatus.text = item.status?.label ?: "待處理"
 
-            // Description
+            // Description (Markdown)
             if (item.description.isNotBlank()) {
-                tvDescription.text = item.description
+                markwon?.setMarkdown(tvDescription, item.description)
                 tvDescription.visibility = View.VISIBLE
             } else {
                 tvDescription.visibility = View.GONE

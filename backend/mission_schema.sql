@@ -196,6 +196,23 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 ALTER TABLE mission_dashboard ADD COLUMN IF NOT EXISTS skills JSONB DEFAULT '[]'::jsonb;
 
+-- ============================================
+-- Bot File Storage Table
+-- ============================================
+CREATE TABLE IF NOT EXISTS bot_files (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    device_id VARCHAR(64) NOT NULL,
+    entity_id INTEGER NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(device_id, entity_id, filename)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bot_files_device_entity
+ON bot_files(device_id, entity_id);
+
 -- Grant execute to app user (adjust as needed)
 -- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_user;
 -- GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user;

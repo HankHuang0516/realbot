@@ -537,6 +537,60 @@
                 max-width: 90%;
             }
         }
+
+        /* ── Usage Limit Modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .modal-message {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-actions .btn {
+            min-width: 120px;
+        }
     </style>
 </head>
 
@@ -610,6 +664,19 @@
     <!-- Photo Lightbox -->
     <div class="lightbox" id="lightbox" onclick="closeLightbox()">
         <img id="lightboxImg" src="" alt="">
+    </div>
+
+    <!-- Usage Limit Modal -->
+    <div class="modal-overlay" id="usageLimitModal">
+        <div class="modal-box">
+            <div class="modal-icon">⚠️</div>
+            <div class="modal-title" data-i18n="chat_limit_title">Daily Limit Reached</div>
+            <div class="modal-message" data-i18n="chat_limit_body">You have reached the daily limit of 15 messages. Upgrade to Premium for unlimited messaging!</div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeUsageLimitModal()" data-i18n="chat_limit_close">Close</button>
+                <button class="btn btn-primary" onclick="window.location.href='settings.html'" data-i18n="chat_limit_upgrade">Upgrade</button>
+            </div>
+        </div>
     </div>
 
     <script src="shared/api.js"></script>
@@ -794,6 +861,10 @@
                     targets.push(parseInt(cb.dataset.entity));
                 }
             });
+            // Fallback: if nothing selected but entities exist, auto-select all bound
+            if (targets.length === 0 && boundEntities.length > 0) {
+                boundEntities.forEach(e => targets.push(e.entityId));
+            }
             return targets;
         }
 
@@ -1092,7 +1163,11 @@
                 container.scrollTop = container.scrollHeight;
 
             } catch (e) {
-                showToast('Send failed: ' + e.message, 'error');
+                if (e.status === 429) {
+                    showUsageLimitModal();
+                } else {
+                    showToast('Send failed: ' + e.message, 'error');
+                }
                 input.value = savedContent;
             } finally {
                 btn.disabled = false;
@@ -1368,6 +1443,15 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeLightbox();
         });
+
+        // ── Usage Limit Modal ──
+        function showUsageLimitModal() {
+            document.getElementById('usageLimitModal').classList.add('active');
+        }
+
+        function closeUsageLimitModal() {
+            document.getElementById('usageLimitModal').classList.remove('active');
+        }
 
         // ── Cleanup ──
         window.addEventListener('beforeunload', () => {

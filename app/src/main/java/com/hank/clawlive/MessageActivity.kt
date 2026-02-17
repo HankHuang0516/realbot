@@ -131,7 +131,7 @@ class MessageActivity : AppCompatActivity() {
     private fun updateChipState(chip: Chip, entityId: Int, boundIds: Set<Int>) {
         val isBound = boundIds.contains(entityId)
         chip.isEnabled = isBound
-        chip.isChecked = isBound && entityId == 0 // Auto-select entity 0 if bound
+        chip.isChecked = isBound // Auto-select ALL bound entities
         chip.alpha = if (isBound) 1.0f else 0.5f
     }
 
@@ -144,6 +144,14 @@ class MessageActivity : AppCompatActivity() {
         if (chipEntity1.isChecked) selected.add(1)
         if (chipEntity2.isChecked) selected.add(2)
         if (chipEntity3.isChecked) selected.add(3)
+
+        // Fallback: if nothing selected but entities are enabled (bound), auto-select all
+        if (selected.isEmpty()) {
+            if (chipEntity0.isEnabled) selected.add(0)
+            if (chipEntity1.isEnabled) selected.add(1)
+            if (chipEntity2.isEnabled) selected.add(2)
+            if (chipEntity3.isEnabled) selected.add(3)
+        }
         return selected
     }
 

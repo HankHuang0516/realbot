@@ -25,7 +25,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="優先權"
+        android:text="@string/priority"
         android:textSize="12sp"
         android:layout_marginBottom="4dp" />
 
@@ -38,13 +38,14 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="指派實體"
+        android:text="@string/assign_entity"
         android:textSize="12sp"
         android:layout_marginBottom="4dp" />
 
-    <Spinner
-        android:id="@+id/spinnerEntity"
+    <LinearLayout
+        android:id="@+id/entityCheckboxContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
 
 </LinearLayout>

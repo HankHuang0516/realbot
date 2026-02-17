@@ -43,7 +43,7 @@ class MissionControlActivity : AppCompatActivity() {
     private val avatarManager: EntityAvatarManager by lazy { EntityAvatarManager.getInstance(this) }
     private val api by lazy { NetworkModule.api }
 
-    /** Bound entity options for spinner: list of (entityId, displayLabel) */
+    /** Bound entity options: list of (entityId, displayLabel). First entry is placeholder. */
     private var entityOptions: List<Pair<String, String>> = listOf("" to "-- 不指定 --")
 
     private lateinit var todoAdapter: MissionItemAdapter
@@ -241,30 +241,12 @@ class MissionControlActivity : AppCompatActivity() {
     // Dialogs
     // ============================================
 
-    private fun setupEntitySpinner(spinnerEntity: Spinner, selectedEntityId: String? = null) {
-        spinnerEntity.adapter = ArrayAdapter(this,
-            android.R.layout.simple_spinner_dropdown_item,
-            entityOptions.map { it.second })
-        // Pre-select the matching entity
-        if (selectedEntityId != null) {
-            val idx = entityOptions.indexOfFirst { it.first == selectedEntityId }
-            if (idx >= 0) spinnerEntity.setSelection(idx)
-        }
-    }
-
-    private fun getSelectedEntityId(spinnerEntity: Spinner): String? {
-        val pos = spinnerEntity.selectedItemPosition
-        if (pos < 0 || pos >= entityOptions.size) return null
-        val value = entityOptions[pos].first
-        return value.ifEmpty { null }
-    }
-
     private fun showAddItemDialog() {
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_mission_item, null)
         val etTitle = view.findViewById<EditText>(R.id.etTitle)
         val etDescription = view.findViewById<EditText>(R.id.etDescription)
         val spinnerPriority = view.findViewById<Spinner>(R.id.spinnerPriority)
-        val spinnerEntity = view.findViewById<Spinner>(R.id.spinnerEntity)
+        val container = view.findViewById<LinearLayout>(R.id.entityCheckboxContainer)
 
         val priorities = Priority.values()
         spinnerPriority.adapter = ArrayAdapter(this,
@@ -272,7 +254,7 @@ class MissionControlActivity : AppCompatActivity() {
             priorities.map { it.label })
         spinnerPriority.setSelection(1) // MEDIUM
 
-        setupEntitySpinner(spinnerEntity)
+        val checkboxes = buildEntityCheckboxes(container, emptyList())
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.add_todo))
@@ -280,11 +262,12 @@ class MissionControlActivity : AppCompatActivity() {
             .setPositiveButton(R.string.send) { _, _ ->
                 val title = etTitle.text.toString().trim()
                 if (title.isNotEmpty()) {
+                    val selectedEntities = checkboxes.filter { it.second.isChecked }.map { it.first }
                     viewModel.addTodoItem(
                         title = title,
                         description = etDescription.text.toString().trim(),
                         priority = priorities[spinnerPriority.selectedItemPosition],
-                        assignedBot = getSelectedEntityId(spinnerEntity)
+                        assignedBot = selectedEntities.joinToString(",").ifEmpty { null }
                     )
                 }
             }
@@ -297,7 +280,7 @@ class MissionControlActivity : AppCompatActivity() {
         val etTitle = view.findViewById<EditText>(R.id.etTitle)
         val etDescription = view.findViewById<EditText>(R.id.etDescription)
         val spinnerPriority = view.findViewById<Spinner>(R.id.spinnerPriority)
-        val spinnerEntity = view.findViewById<Spinner>(R.id.spinnerEntity)
+        val container = view.findViewById<LinearLayout>(R.id.entityCheckboxContainer)
 
         val priorities = Priority.values()
         spinnerPriority.adapter = ArrayAdapter(this,
@@ -307,7 +290,9 @@ class MissionControlActivity : AppCompatActivity() {
         etTitle.setText(item.title)
         etDescription.setText(item.description)
         spinnerPriority.setSelection(priorities.indexOf(item.priority ?: Priority.MEDIUM))
-        setupEntitySpinner(spinnerEntity, item.assignedBot)
+
+        val selectedEntities = item.assignedBot?.split(",")?.map { it.trim() } ?: emptyList()
+        val checkboxes = buildEntityCheckboxes(container, selectedEntities)
 
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.edit))
@@ -315,12 +300,13 @@ class MissionControlActivity : AppCompatActivity() {
             .setPositiveButton(R.string.done) { _, _ ->
                 val title = etTitle.text.toString().trim()
                 if (title.isNotEmpty()) {
+                    val selected = checkboxes.filter { it.second.isChecked }.map { it.first }
                     viewModel.editItem(
                         itemId = item.id,
                         title = title,
                         description = etDescription.text.toString().trim(),
                         priority = priorities[spinnerPriority.selectedItemPosition],
-                        assignedBot = getSelectedEntityId(spinnerEntity)
+                        assignedBot = selected.joinToString(",").ifEmpty { null }
                     )
                 }
             }
@@ -518,6 +504,11 @@ class MissionControlActivity : AppCompatActivity() {
         if (skill != null) {
             etTitle.setText(skill.title)
             etUrl.setText(skill.url)
+            // System skills: lock title and URL
+            if (skill.isSystem) {
+                etTitle.isEnabled = false
+                etUrl.isEnabled = false
+            }
         }
 
         val checkboxes = buildEntityCheckboxes(container, skill?.assignedEntities ?: emptyList())

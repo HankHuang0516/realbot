@@ -190,6 +190,29 @@ module.exports = function(devices) {
             }
 
             const row = result.rows[0];
+            const skills = row.skills || [];
+
+            // Auto-inject system "E-Claw API Skill" if not present
+            const systemSkillTitle = 'E-Claw API Skill';
+            const hasSystemSkill = skills.some(s => s.isSystem === true);
+            if (!hasSystemSkill) {
+                skills.unshift({
+                    id: 'system-eclaw-api-skill',
+                    title: systemSkillTitle,
+                    url: 'https://eclaw.up.railway.app/api/skill-doc',
+                    assignedEntities: [],
+                    isSystem: true,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    createdBy: 'system'
+                });
+                // Persist system skill to DB (fire-and-forget)
+                pool.query(
+                    `UPDATE mission_dashboard SET skills = $2 WHERE device_id = $1`,
+                    [deviceId, JSON.stringify(skills)]
+                ).catch(() => {});
+            }
+
             const dashboard = {
                 deviceId: row.device_id,
                 version: row.version,
@@ -199,7 +222,7 @@ module.exports = function(devices) {
                 doneList: row.done_list,
                 notes: row.notes,
                 rules: row.rules,
-                skills: row.skills || [],
+                skills: skills,
                 lastUpdated: new Date(row.updated_at).getTime()
             };
 
@@ -249,6 +272,20 @@ module.exports = function(devices) {
                 }
             }
 
+            // Preserve system skills on upload (merge: keep existing system skills)
+            let uploadedSkills = dashboard.skills || [];
+            const existingRow = await client.query(
+                'SELECT skills FROM mission_dashboard WHERE device_id = $1',
+                [deviceId]
+            );
+            if (existingRow.rows.length > 0) {
+                const existingSkills = existingRow.rows[0].skills || [];
+                const systemSkills = existingSkills.filter(s => s.isSystem === true);
+                // Remove any system skills from uploaded data, then prepend existing system skills
+                uploadedSkills = uploadedSkills.filter(s => s.isSystem !== true);
+                uploadedSkills = [...systemSkills, ...uploadedSkills];
+            }
+
             // Update dashboard (Trigger will auto-increment version)
             const result = await client.query(
                 `UPDATE mission_dashboard
@@ -263,7 +300,7 @@ module.exports = function(devices) {
                     JSON.stringify(dashboard.doneList || []),
                     JSON.stringify(dashboard.notes || []),
                     JSON.stringify(dashboard.rules || []),
-                    JSON.stringify(dashboard.skills || [])
+                    JSON.stringify(uploadedSkills)
                 ]
             );
 
@@ -1283,6 +1320,12 @@ module.exports = function(devices) {
             if (foundIdx < 0) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ success: false, error: `Skill not found: "${title}"` });
+            }
+
+            // Block deletion of system skills
+            if (skills[foundIdx].isSystem) {
+                await client.query('ROLLBACK');
+                return res.status(403).json({ success: false, error: 'Cannot delete system skill' });
             }
 
             skills.splice(foundIdx, 1);

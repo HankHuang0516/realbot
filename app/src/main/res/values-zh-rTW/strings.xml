@@ -110,6 +110,11 @@
     <string name="rename_title">更改名稱</string>
     <string name="rename_hint">輸入新名稱（最多 20 字）</string>
     <string name="rename_success">名稱已更新！</string>
+    <string name="edit">編輯</string>
+    <string name="priority">優先權</string>
+    <string name="assign_entity">指派實體</string>
+    <string name="assign_entity_multi">指派實體 (可多選)</string>
+    <string name="rule_type">規則類型</string>
 
     <!-- System Messages -->
     <string name="webhook_error_title">推播通知失敗</string>
@@ -226,4 +231,9 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="no_notes">尚無筆記</string>
     <string name="no_rules">尚無規則</string>
     <string name="entity_read_receipt">Entity %d 已讀</string>
+
+    <!-- Usage Limit -->
+    <string name="usage_limit_title">已達每日上限</string>
+    <string name="usage_limit_message">您今日已達 15 則訊息的免費上限。\n\n升級尊爵會員即可享有無限發送！</string>
+    <string name="usage_limit_upgrade">立即升級</string>
 </resources>

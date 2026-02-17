@@ -304,6 +304,40 @@ initPersistence().catch(err => {
 });
 
 // ============================================
+// SKILL DOCUMENTATION (serve E-claw_mcp_skill.md as HTML)
+// ============================================
+app.get('/api/skill-doc', (req, res) => {
+    try {
+        const mdPath = path.join(__dirname, 'E-claw_mcp_skill.md');
+        const mdContent = fs.readFileSync(mdPath, 'utf8');
+        // Serve as HTML page with marked.js CDN for client-side rendering
+        res.type('html').send(`<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Claw MCP Skills Documentation</title>
+<style>
+body{max-width:900px;margin:0 auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;line-height:1.6}
+h1,h2,h3{color:#00d4ff}h1{border-bottom:2px solid #00d4ff;padding-bottom:8px}
+pre{background:#0d1117;padding:16px;border-radius:8px;overflow-x:auto;border:1px solid #333}
+code{background:#0d1117;padding:2px 6px;border-radius:4px;font-size:0.9em}
+pre code{padding:0;background:none}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #444;padding:8px 12px;text-align:left}th{background:#16213e}
+a{color:#00d4ff}blockquote{border-left:4px solid #f39c12;margin:16px 0;padding:8px 16px;background:#16213e}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"><\/script>
+</head><body>
+<div id="content"></div>
+<script>
+document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(mdContent)});
+<\/script>
+</body></html>`);
+    } catch (err) {
+        console.error('[SkillDoc] Error reading skill doc:', err.message);
+        res.status(500).json({ error: 'Failed to load skill documentation' });
+    }
+});
+
+// ============================================
 // MISSION CONTROL DASHBOARD (PostgreSQL)
 // ============================================
 const missionModule = require('./mission')(devices);
@@ -3516,6 +3550,155 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
     } catch (err) {
         console.error('[Upload] Error:', err);
         res.status(500).json({ success: false, error: 'Upload failed: ' + err.message });
+    }
+});
+
+// ============================================
+// BOT FILE STORAGE API
+// ============================================
+
+// Auto-migrate: create bot_files table
+chatPool.query(`
+    CREATE TABLE IF NOT EXISTS bot_files (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        device_id VARCHAR(64) NOT NULL,
+        entity_id INTEGER NOT NULL,
+        filename VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+        UNIQUE(device_id, entity_id, filename)
+    );
+    CREATE INDEX IF NOT EXISTS idx_bot_files_device_entity ON bot_files(device_id, entity_id);
+`).catch(err => console.warn('[BotFiles] Table migration:', err.message));
+
+const BOT_FILE_MAX_SIZE = 64 * 1024; // 64KB per file
+const BOT_FILE_MAX_COUNT = 20;       // 20 files per entity
+
+function authenticateBot(deviceId, entityId, botSecret) {
+    const device = devices[deviceId];
+    if (!device) return false;
+    const entity = (device.entities || {})[entityId];
+    return entity && entity.botSecret === botSecret;
+}
+
+/**
+ * PUT /api/bot/file - Create or update a file (upsert)
+ */
+app.put('/api/bot/file', async (req, res) => {
+    const { deviceId, entityId, botSecret, filename, content } = req.body;
+    if (!deviceId || entityId == null || !botSecret || !filename) {
+        return res.status(400).json({ success: false, error: 'Missing required fields: deviceId, entityId, botSecret, filename' });
+    }
+    if (!authenticateBot(deviceId, parseInt(entityId), botSecret)) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    const fileContent = content || '';
+    if (Buffer.byteLength(fileContent, 'utf8') > BOT_FILE_MAX_SIZE) {
+        return res.status(413).json({ success: false, error: `File too large (max ${BOT_FILE_MAX_SIZE / 1024}KB)` });
+    }
+    try {
+        // Check file count limit
+        const countResult = await chatPool.query(
+            'SELECT COUNT(*) as cnt FROM bot_files WHERE device_id = $1 AND entity_id = $2',
+            [deviceId, parseInt(entityId)]
+        );
+        const existingCount = parseInt(countResult.rows[0].cnt);
+        // Check if this is an update (file already exists)
+        const existing = await chatPool.query(
+            'SELECT id FROM bot_files WHERE device_id = $1 AND entity_id = $2 AND filename = $3',
+            [deviceId, parseInt(entityId), filename]
+        );
+        if (existing.rows.length === 0 && existingCount >= BOT_FILE_MAX_COUNT) {
+            return res.status(429).json({ success: false, error: `File limit reached (max ${BOT_FILE_MAX_COUNT} files per entity)` });
+        }
+        const result = await chatPool.query(
+            `INSERT INTO bot_files (device_id, entity_id, filename, content)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (device_id, entity_id, filename)
+             DO UPDATE SET content = $4, updated_at = NOW()
+             RETURNING id, filename, created_at, updated_at`,
+            [deviceId, parseInt(entityId), filename, fileContent]
+        );
+        res.json({ success: true, file: result.rows[0] });
+    } catch (err) {
+        console.error('[BotFiles] PUT error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/bot/file - Read a single file
+ */
+app.get('/api/bot/file', async (req, res) => {
+    const { deviceId, entityId, botSecret, filename } = req.query;
+    if (!deviceId || entityId == null || !botSecret || !filename) {
+        return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    if (!authenticateBot(deviceId, parseInt(entityId), botSecret)) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    try {
+        const result = await chatPool.query(
+            'SELECT filename, content, created_at, updated_at FROM bot_files WHERE device_id = $1 AND entity_id = $2 AND filename = $3',
+            [deviceId, parseInt(entityId), filename]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: `File not found: "${filename}"` });
+        }
+        res.json({ success: true, file: result.rows[0] });
+    } catch (err) {
+        console.error('[BotFiles] GET error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/bot/files - List all files for an entity
+ */
+app.get('/api/bot/files', async (req, res) => {
+    const { deviceId, entityId, botSecret } = req.query;
+    if (!deviceId || entityId == null || !botSecret) {
+        return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    if (!authenticateBot(deviceId, parseInt(entityId), botSecret)) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    try {
+        const result = await chatPool.query(
+            'SELECT filename, length(content) as size, created_at, updated_at FROM bot_files WHERE device_id = $1 AND entity_id = $2 ORDER BY updated_at DESC',
+            [deviceId, parseInt(entityId)]
+        );
+        res.json({ success: true, files: result.rows, count: result.rows.length, maxCount: BOT_FILE_MAX_COUNT });
+    } catch (err) {
+        console.error('[BotFiles] LIST error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * DELETE /api/bot/file - Delete a file
+ */
+app.delete('/api/bot/file', async (req, res) => {
+    const { deviceId, entityId, botSecret, filename } = req.body;
+    if (!deviceId || entityId == null || !botSecret || !filename) {
+        return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    if (!authenticateBot(deviceId, parseInt(entityId), botSecret)) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    try {
+        const result = await chatPool.query(
+            'DELETE FROM bot_files WHERE device_id = $1 AND entity_id = $2 AND filename = $3 RETURNING filename',
+            [deviceId, parseInt(entityId), filename]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: `File not found: "${filename}"` });
+        }
+        res.json({ success: true, message: `File "${filename}" deleted` });
+    } catch (err) {
+        console.error('[BotFiles] DELETE error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

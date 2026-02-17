@@ -15,6 +15,7 @@ activityKtx = "1.8.2"
 billing = "7.0.0"
 room = "2.7.0"
 glide = "4.16.0"
+markwon = "4.6.2"
 
 [libraries]
 billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
@@ -42,6 +43,9 @@ timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "tim
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Markwon Markdown Rendering
+markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
 
 # Glide Image Loading
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }

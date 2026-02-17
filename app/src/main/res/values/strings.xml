@@ -111,6 +111,10 @@
     <string name="no_notes">No notes</string>
     <string name="no_rules">No rules</string>
     <string name="edit">Edit</string>
+    <string name="priority">Priority</string>
+    <string name="assign_entity">Assign Entity</string>
+    <string name="assign_entity_multi">Assign Entity (Multiple)</string>
+    <string name="rule_type">Rule Type</string>
 
     <!-- Bot Avatar -->
     <string name="bot_avatar">Bot Avatar</string>
@@ -232,5 +236,10 @@ If you have any questions, please contact us via our official email.
     <string name="delete_confirm_message_format">Are you sure you want to delete "%s"?</string>
     <string name="delete">Delete</string>
     <string name="last_synced_format"> | Last synced: %s</string>
+
+    <!-- Usage Limit -->
+    <string name="usage_limit_title">Daily Limit Reached</string>
+    <string name="usage_limit_message">You have reached the daily limit of 15 messages.\n\nUpgrade to Premium for unlimited messaging!</string>
+    <string name="usage_limit_upgrade">Upgrade</string>
 </resources>
 

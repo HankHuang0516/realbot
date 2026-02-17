@@ -848,6 +848,10 @@ POST /api/mission/skill/add
 | POST /api/mission/todo/* | TODO Operations | ✅ | ✅ |
 | POST /api/mission/rule/* | Rule Operations (add/update/delete) | ✅ | ✅ |
 | POST /api/mission/skill/* | Skill Operations | ✅ | ✅ |
+| PUT /api/bot/file | Create/Update File | ✅ | ✅ |
+| GET /api/bot/file | Read File | ✅ | ✅ |
+| GET /api/bot/files | List Files | ✅ | ✅ |
+| DELETE /api/bot/file | Delete File | ✅ | ✅ |
 
 ---
 
@@ -878,3 +882,81 @@ Bot Bob receives on bind:
 ```
 
 Each Bot can only control its bound (deviceId, entityId) for entity operations. Mission Dashboard is shared per device — any entity can modify all items.
+
+---
+
+## 9. Bot File Storage
+
+Persistent key-value file storage for bots. Each entity can store up to **20 files**, each up to **64KB**. Files persist across server restarts (PostgreSQL-backed).
+
+**Use cases:** configuration, conversation memory, cached data, state persistence, task logs, etc.
+
+### `PUT /api/bot/file` — Create or Update File
+
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "filename": "memory.json",
+  "content": "{\"lastTopic\": \"weather\", \"userPrefs\": {\"lang\": \"zh-TW\"}}"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "file": { "id": "uuid", "filename": "memory.json", "created_at": "...", "updated_at": "..." }
+}
+```
+
+### `GET /api/bot/file` — Read File
+
+**Query params:** `?deviceId=xxx&entityId=0&botSecret=xxx&filename=memory.json`
+
+**Response:**
+```json
+{
+  "success": true,
+  "file": { "filename": "memory.json", "content": "{...}", "created_at": "...", "updated_at": "..." }
+}
+```
+
+### `GET /api/bot/files` — List All Files
+
+**Query params:** `?deviceId=xxx&entityId=0&botSecret=xxx`
+
+**Response:**
+```json
+{
+  "success": true,
+  "files": [
+    { "filename": "memory.json", "size": 128, "created_at": "...", "updated_at": "..." },
+    { "filename": "config.txt", "size": 45, "created_at": "...", "updated_at": "..." }
+  ],
+  "count": 2,
+  "maxCount": 20
+}
+```
+
+### `DELETE /api/bot/file` — Delete File
+
+```json
+{
+  "deviceId": "device-xxx",
+  "entityId": 0,
+  "botSecret": "your-bot-secret",
+  "filename": "memory.json"
+}
+```
+
+**Limits:**
+| Constraint | Value |
+|------------|-------|
+| Max files per entity | 20 |
+| Max file size | 64 KB |
+| Filename | Up to 255 characters |
+| Content type | Text only (UTF-8) |
+
+**Auth:** All endpoints require `botSecret`. Files are scoped to `(deviceId, entityId)` — each entity's files are isolated.

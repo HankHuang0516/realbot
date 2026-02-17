@@ -378,7 +378,7 @@ module.exports = function (devices, authMiddleware) {
     // Usage enforcement helper (exported for index.js)
     // ============================================
     async function enforceUsageLimit(deviceId) {
-        // Check if premium
+        // Check if premium (in-memory cache)
         const device = devices[deviceId];
         if (device && device.isPremium) return { allowed: true, remaining: null };
 
@@ -390,14 +390,21 @@ module.exports = function (devices, authMiddleware) {
 
         if (userResult.rows.length > 0) {
             const user = userResult.rows[0];
-            if (user.subscription_status === 'premium' &&
-                (!user.subscription_expires_at || user.subscription_expires_at > Date.now())) {
+            const expiresAt = user.subscription_expires_at ? parseInt(user.subscription_expires_at) : null;
+            const now = Date.now();
+
+            if (user.subscription_status === 'premium' && (!expiresAt || expiresAt > now)) {
                 if (device) device.isPremium = true;
+                console.log(`[Usage] Premium user ${deviceId} - bypassing limit`);
                 return { allowed: true, remaining: null };
+            }
+
+            if (user.subscription_status === 'premium' && expiresAt && expiresAt <= now) {
+                console.log(`[Usage] Premium EXPIRED for ${deviceId}: expiresAt=${expiresAt}, now=${now}`);
             }
         }
 
-        // Check usage count
+        // Check usage count for free-tier users
         const usageResult = await pool.query(
             `INSERT INTO usage_tracking (device_id, date, message_count)
              VALUES ($1, CURRENT_DATE, 1)
@@ -411,6 +418,7 @@ module.exports = function (devices, authMiddleware) {
         const limit = 15;
 
         if (count > limit) {
+            console.log(`[Usage] LIMIT HIT for ${deviceId}: ${count}/${limit}`);
             return { allowed: false, remaining: 0, limit: limit };
         }
 
