@@ -779,7 +779,7 @@ module.exports = function(devices) {
     // ============================================
     router.post('/todo/add', async (req, res) => {
         if (!authenticate(req, res)) return;
-        const { deviceId, entityId, title, description, priority } = req.body;
+        const { deviceId, entityId, title, description, priority, assignedBot: assignedBotParam } = req.body;
 
         if (!title) {
             return res.status(400).json({ success: false, error: 'Missing title' });
@@ -803,7 +803,9 @@ module.exports = function(devices) {
                 description: (description || '').trim(),
                 priority: toPriorityName(priority),
                 status: 'PENDING',
-                assignedBot: entityId != null ? String(entityId) : null,
+                assignedBot: assignedBotParam != null
+                    ? (Array.isArray(assignedBotParam) ? assignedBotParam.map(String).join(',') : String(assignedBotParam))
+                    : (entityId != null ? String(entityId) : null),
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 createdBy: entityId != null ? `entity_${entityId}` : 'bot'
@@ -834,7 +836,7 @@ module.exports = function(devices) {
     // ============================================
     router.post('/todo/update', async (req, res) => {
         if (!authenticate(req, res)) return;
-        const { deviceId, title, newTitle, newDescription, newPriority } = req.body;
+        const { deviceId, title, newTitle, newDescription, newPriority, newAssignedBot } = req.body;
 
         if (!title) {
             return res.status(400).json({ success: false, error: 'Missing title' });
@@ -872,6 +874,15 @@ module.exports = function(devices) {
             if (newTitle) item.title = newTitle.trim();
             if (newDescription !== undefined) item.description = newDescription.trim();
             if (newPriority !== undefined) item.priority = toPriorityName(newPriority);
+            if (newAssignedBot !== undefined) {
+                if (newAssignedBot === null) {
+                    item.assignedBot = null;
+                } else if (Array.isArray(newAssignedBot)) {
+                    item.assignedBot = newAssignedBot.map(String).join(',');
+                } else {
+                    item.assignedBot = String(newAssignedBot);
+                }
+            }
             item.updatedAt = Date.now();
 
             const updateResult = await client.query(
@@ -1022,7 +1033,7 @@ module.exports = function(devices) {
     // ============================================
     router.post('/rule/add', async (req, res) => {
         if (!authenticate(req, res)) return;
-        const { deviceId, entityId, name, description, ruleType } = req.body;
+        const { deviceId, entityId, name, description, ruleType, assignedEntities } = req.body;
 
         if (!name) {
             return res.status(400).json({ success: false, error: 'Missing name' });
@@ -1040,12 +1051,13 @@ module.exports = function(devices) {
             const row = result.rows[0];
             const rules = row.rules || [];
 
+            const entities = assignedEntities || (entityId != null ? [String(entityId)] : []);
             const newRule = {
                 id: crypto.randomUUID(),
                 name: name.trim(),
                 description: (description || '').trim(),
                 ruleType: ruleType || 'WORKFLOW',
-                assignedEntities: entityId != null ? [String(entityId)] : [],
+                assignedEntities: entities,
                 isEnabled: true,
                 priority: 0,
                 config: {},
@@ -1066,6 +1078,65 @@ module.exports = function(devices) {
         } catch (error) {
             await client.query('ROLLBACK');
             console.error('[Mission] Error adding rule:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
+    });
+
+    // ============================================
+    // POST /rule/update
+    // Bot updates a rule by name
+    // ============================================
+    router.post('/rule/update', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, name, newName, newDescription, newRuleType, newAssignedEntities, newIsEnabled } = req.body;
+
+        if (!name) {
+            return res.status(400).json({ success: false, error: 'Missing name' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const rules = row.rules || [];
+            const nameLower = name.trim().toLowerCase();
+            const rule = rules.find(r => r.name && r.name.trim().toLowerCase() === nameLower);
+
+            if (!rule) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `Rule not found: "${name}"` });
+            }
+
+            if (newName) rule.name = newName.trim();
+            if (newDescription !== undefined) rule.description = newDescription.trim();
+            if (newRuleType) rule.ruleType = newRuleType;
+            if (newAssignedEntities !== undefined) rule.assignedEntities = newAssignedEntities;
+            if (newIsEnabled !== undefined) rule.isEnabled = newIsEnabled;
+            rule.updatedAt = Date.now();
+
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard SET rules = $2, last_synced_at = NOW()
+                 WHERE device_id = $1 RETURNING version`,
+                [deviceId, JSON.stringify(rules)]
+            );
+            await client.query('COMMIT');
+
+            console.log(`[Mission] Rule updated: "${rule.name}", device ${deviceId}`);
+            res.json({ success: true, message: `Rule "${rule.name}" updated`, item: rule, version: updateResult.rows[0].version });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error updating rule:', error);
             res.status(500).json({ success: false, error: error.message });
         } finally {
             client.release();

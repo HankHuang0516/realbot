@@ -397,6 +397,7 @@
     <script>
         // --- State ---
         let dashboard = { todoList: [], missionList: [], doneList: [], notes: [], rules: [], skills: [] };
+        let lastSavedDashboard = null; // snapshot for change detection
         let version = 1;
         let hasChanges = false;
         let refreshTimer = null;
@@ -544,8 +545,10 @@
                     renderSyncBar();
                     btn.textContent = i18n.t('mc_save');
                     showToast(i18n.t('mc_sync_synced'), 'success');
-                    // After save, check if there are notifiable items
+                    // After save, check if there are changed notifiable items
                     showNotifyPrompt();
+                    // Update snapshot after notify prompt captures its items
+                    lastSavedDashboard = JSON.parse(JSON.stringify(dashboard));
                 } else if (data.error === 'VERSION_CONFLICT') {
                     if (confirm(i18n.t('mc_confirm_version', { you: version, server: data.currentVersion }))) {
                         await downloadDashboard();
@@ -564,24 +567,56 @@
         }
 
         // ========== Notification Prompt ==========
+        // Change detection helpers
+        function isTodoChanged(item) {
+            if (!lastSavedDashboard) return true;
+            const prev = lastSavedDashboard.todoList.find(p => p.id === item.id);
+            if (!prev) return true; // new item
+            const pCur = item.priority?.value || item.priority;
+            const pPrev = prev.priority?.value || prev.priority;
+            return item.title !== prev.title || item.description !== prev.description
+                || pCur !== pPrev || (item.assignedBot || '') !== (prev.assignedBot || '')
+                || (item.status?.name || item.status) !== (prev.status?.name || prev.status);
+        }
+
+        function isSkillChanged(skill) {
+            if (!lastSavedDashboard) return true;
+            const prev = lastSavedDashboard.skills.find(p => p.id === skill.id);
+            if (!prev) return true;
+            return skill.title !== prev.title || skill.url !== prev.url
+                || JSON.stringify(skill.assignedEntities || []) !== JSON.stringify(prev.assignedEntities || []);
+        }
+
+        function isRuleChanged(rule) {
+            if (!lastSavedDashboard) return true;
+            const prev = lastSavedDashboard.rules.find(p => p.id === rule.id);
+            if (!prev) return true;
+            return rule.name !== prev.name || rule.description !== prev.description
+                || (rule.ruleType?.name || rule.ruleType) !== (prev.ruleType?.name || prev.ruleType)
+                || rule.isEnabled !== prev.isEnabled
+                || JSON.stringify(rule.assignedEntities || []) !== JSON.stringify(prev.assignedEntities || []);
+        }
+
         function getNotifiableItems() {
             const items = [];
-            // TODO items with assigned entity (any priority)
+            // TODO items with assigned entity - only if changed
             dashboard.todoList.forEach(item => {
                 const p = item.priority?.value || item.priority || 2;
-                if (item.assignedBot) {
+                if (item.assignedBot && isTodoChanged(item)) {
+                    const botIds = String(item.assignedBot).split(',').map(s => s.trim()).filter(Boolean);
+                    const botLabels = botIds.map(id => getEntityLabel(parseInt(id))).join(', ');
                     items.push({
                         type: 'TODO',
                         title: item.title,
                         priority: p,
-                        entityIds: [item.assignedBot],
-                        label: `📋 ${esc(item.title)} → ${getEntityLabel(parseInt(item.assignedBot))}`
+                        entityIds: botIds,
+                        label: `📋 ${esc(item.title)} → ${botLabels}`
                     });
                 }
             });
-            // SKILL items with assigned entities
+            // SKILL items with assigned entities - only if changed
             dashboard.skills.forEach(skill => {
-                if (skill.assignedEntities && skill.assignedEntities.length > 0) {
+                if (skill.assignedEntities && skill.assignedEntities.length > 0 && isSkillChanged(skill)) {
                     const entLabels = skill.assignedEntities.map(id => getEntityLabel(parseInt(id))).join(', ');
                     items.push({
                         type: 'SKILL',
@@ -593,9 +628,9 @@
                     });
                 }
             });
-            // RULE items with assigned entities
+            // RULE items with assigned entities - only if changed
             dashboard.rules.forEach(rule => {
-                if (rule.assignedEntities && rule.assignedEntities.length > 0 && rule.isEnabled !== false) {
+                if (rule.assignedEntities && rule.assignedEntities.length > 0 && rule.isEnabled !== false && isRuleChanged(rule)) {
                     const entLabels = rule.assignedEntities.map(id => getEntityLabel(parseInt(id))).join(', ');
                     items.push({
                         type: 'RULE',
@@ -671,6 +706,7 @@
             };
             version = d.version || 1;
             hasChanges = false;
+            lastSavedDashboard = JSON.parse(JSON.stringify(dashboard));
             renderAll();
         }
 
@@ -693,7 +729,7 @@
             }
             el.innerHTML = dashboard.todoList.map(item => {
                 const assignLabel = item.assignedBot != null && item.assignedBot !== ''
-                    ? getEntityLabel(parseInt(item.assignedBot))
+                    ? String(item.assignedBot).split(',').map(id => getEntityLabel(parseInt(id.trim()))).join(', ')
                     : '';
                 return `
                 <div class="mc-item" onclick="showEditItem('${item.id}','todo')" oncontextmenu="showItemMenu(event,'${item.id}','todo')">
@@ -717,7 +753,7 @@
             }
             el.innerHTML = dashboard.missionList.map(item => {
                 const assignLabel = item.assignedBot != null && item.assignedBot !== ''
-                    ? getEntityLabel(parseInt(item.assignedBot))
+                    ? String(item.assignedBot).split(',').map(id => getEntityLabel(parseInt(id.trim()))).join(', ')
                     : '';
                 return `
                 <div class="mc-item" onclick="showEditItem('${item.id}','mission')" oncontextmenu="showItemMenu(event,'${item.id}','mission')">
@@ -814,6 +850,13 @@
                 html += `<div class="dialog-field-label">${f.label}</div>`;
                 if (f.type === 'textarea') {
                     html += `<textarea id="dlg_${f.key}" placeholder="${f.label}">${esc(f.value || '')}</textarea>`;
+                } else if (f.type === 'multiselect') {
+                    const selected = (f.value || '').split(',').map(s => s.trim()).filter(Boolean);
+                    html += `<div id="dlg_${f.key}" class="dlg-multiselect" style="display:flex;flex-wrap:wrap;gap:6px;">
+                        ${f.options.filter(o => o.value !== '').map(o => `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;">
+                            <input type="checkbox" data-val="${o.value}" ${selected.includes(String(o.value)) ? 'checked' : ''}> ${o.label}
+                        </label>`).join('')}
+                    </div>`;
                 } else if (f.type === 'select') {
                     html += `<select id="dlg_${f.key}">
                         ${f.options.map(o => `<option value="${o.value}" ${o.value == f.value ? 'selected' : ''}>${o.label}</option>`).join('')}
@@ -834,7 +877,14 @@
 
             document.getElementById('dlgSaveBtn').onclick = () => {
                 const vals = {};
-                fields.forEach(f => vals[f.key] = document.getElementById('dlg_' + f.key).value);
+                fields.forEach(f => {
+                    if (f.type === 'multiselect') {
+                        const checks = document.querySelectorAll(`#dlg_${f.key} input[type="checkbox"]:checked`);
+                        vals[f.key] = Array.from(checks).map(cb => cb.dataset.val).join(',');
+                    } else {
+                        vals[f.key] = document.getElementById('dlg_' + f.key).value;
+                    }
+                });
                 onSave(vals);
                 closeDialog();
             };
@@ -860,7 +910,7 @@
                 { key: 'title', label: i18n.t('mc_dlg_title'), value: '' },
                 { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: '' },
                 { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: 2, options: priorityOpts },
-                { key: 'assignedEntity', label: i18n.t('mc_dlg_assign') || '指派實體', type: 'select', value: '', options: getEntityOptions() }
+                { key: 'assignedEntity', label: i18n.t('mc_dlg_assign') || '指派實體', type: 'multiselect', value: '', options: getEntityOptions() }
             ], vals => {
                 if (!vals.title.trim()) return;
                 const item = {
@@ -899,7 +949,7 @@
                 { key: 'title', label: i18n.t('mc_dlg_title'), value: item.title },
                 { key: 'description', label: i18n.t('mc_dlg_desc'), type: 'textarea', value: item.description },
                 { key: 'priority', label: i18n.t('mc_dlg_priority'), type: 'select', value: pv, options: priorityOpts },
-                { key: 'assignedEntity', label: i18n.t('mc_dlg_assign') || '指派實體', type: 'select', value: item.assignedBot || '', options: getEntityOptions() }
+                { key: 'assignedEntity', label: i18n.t('mc_dlg_assign') || '指派實體', type: 'multiselect', value: item.assignedBot || '', options: getEntityOptions() }
             ], vals => {
                 if (!vals.title.trim()) return;
                 item.title = vals.title.trim();
@@ -1180,7 +1230,7 @@
         function showRuleDialog(id, rule) {
             const isEdit = rule !== null;
             const c = document.getElementById('dialogContainer');
-            const types = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC'];
+            const types = ['WORKFLOW', 'CODE_REVIEW', 'COMMUNICATION', 'DEPLOYMENT', 'SYNC', 'HEARTBEAT'];
             const rt = isEdit ? (rule.ruleType?.name || rule.ruleType || 'WORKFLOW') : 'WORKFLOW';
 
             const typeOptions = types.map(t =>

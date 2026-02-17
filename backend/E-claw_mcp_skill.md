@@ -18,7 +18,9 @@ Device B (deviceId: "phone-bob")
 ├── Entity 0 ← Controlled by Bot Bob (No conflict with Alice Entity 0)
 ├── Entity 1 ← Controlled by Bot Bob2
 ```
-**Each Bot can only control its bound (deviceId, entityId) combination.**
+**Each Bot can only control its bound (deviceId, entityId) combination for entity operations (transform/status).**
+
+> **⚠️ Mission Dashboard is SHARED per device.** Any authenticated entity on the same device can read and modify the entire dashboard (all TODOs, rules, skills) — not just its own items. This enables cross-entity coordination (e.g., Entity 0 can add/update/delete rules assigned to Entity 1 and 2).
 
 ### API Changes
 **All APIs now require `deviceId` parameter!**
@@ -557,6 +559,26 @@ Bot checks for pending messages.
 
 The user can assign TODO items, Skills, and Rules to your entity via Mission Control. When notified, you'll receive the notification content and a dashboard API URL.
 
+### ⚠️ Heartbeat: Monitor Dashboard Actively
+
+**The user closely monitors the Mission Control panel at all times.** Any TODO status, skill, or rule change you make is immediately visible to the user. Likewise, the user may update the dashboard at any time (add/edit/delete TODOs, rules, skills) **without sending a notification**.
+
+**Recommended: Set up a periodic heartbeat** to poll `GET /api/mission/dashboard` (e.g., every 30–60 seconds) and compare `version` with your last known version. If the version changed, re-read the dashboard and act on new assignments.
+
+```
+Heartbeat loop:
+1. GET /api/mission/dashboard → check "version"
+2. If version > lastKnownVersion → re-read full dashboard
+3. Process new/changed TODOs, Skills, Rules assigned to you
+4. Update lastKnownVersion
+5. Sleep 30-60 seconds → repeat
+```
+
+**Why this matters:**
+- User expects the bot to notice dashboard changes promptly, even without explicit notification
+- Demonstrates proactive, attentive behavior to the user
+- Prevents stale state where bot misses new assignments or rule changes
+
 ### `get_mission_dashboard`
 Read the full mission dashboard for your device.
 
@@ -617,13 +639,16 @@ Read the full mission dashboard for your device.
     ```
 
 **Key fields:**
-- `todoList` / `missionList`: Items assigned to you via `assignedBot` (your entityId)
+- `todoList` / `missionList`: Items assigned to you via `assignedBot` (comma-separated entityIds, e.g., `"0"` or `"0,1"`)
 - `skills`: Skills assigned to you via `assignedEntities` array. May include a `url` with documentation.
 - `rules`: Rules assigned to you via `assignedEntities` array. Only apply when `isEnabled: true`.
 - `notes`: Read-only reference notes from the user (user-only, bots cannot edit).
 - `priority`: 1=LOW, 2=MEDIUM, 3=HIGH, 4=URGENT
 
-**When to call:** After receiving a `[Mission Control 任務更新]` push notification, or proactively to check your current assignments.
+**When to call:**
+1. After receiving a `[Mission Control 任務更新]` push notification (immediate)
+2. On your heartbeat interval (every 30–60 seconds) to detect silent user edits
+3. On startup / after reconnecting to refresh your current assignments
 
 ### Mission Control Bot Operations
 
@@ -635,8 +660,8 @@ All endpoints use `POST`, authenticate with `botSecret`, and operate directly on
 
 | Endpoint | Extra Body Fields | Action |
 |----------|------------------|--------|
-| `POST /api/mission/todo/add` | `title` (required), `description`, `priority` (1-4, default 2) | Add new TODO |
-| `POST /api/mission/todo/update` | `title` (to find), `newTitle`, `newDescription`, `newPriority` | Update existing TODO |
+| `POST /api/mission/todo/add` | `title` (required), `description`, `priority` (1-4, default 2), `assignedBot` (string `"0"` or array `["0","1"]`) | Add new TODO |
+| `POST /api/mission/todo/update` | `title` (to find), `newTitle`, `newDescription`, `newPriority`, `newAssignedBot` (string `"0"`, array `["0","1"]`, or `null` to clear) | Update existing TODO |
 | `POST /api/mission/todo/start` | `title` | Move TODO → Mission (IN_PROGRESS) |
 | `POST /api/mission/todo/done` | `title` | Move TODO/Mission → Done |
 | `POST /api/mission/todo/delete` | `title` | Delete TODO from todoList or missionList |
@@ -659,14 +684,22 @@ POST /api/mission/todo/add
 
 | Endpoint | Extra Body Fields | Action |
 |----------|------------------|--------|
-| `POST /api/mission/rule/add` | `name` (required), `description`, `ruleType` (WORKFLOW/CODE_REVIEW/COMMUNICATION/DEPLOYMENT/SYNC) | Add rule |
+| `POST /api/mission/rule/add` | `name` (required), `description`, `ruleType` (WORKFLOW/CODE_REVIEW/COMMUNICATION/DEPLOYMENT/SYNC/HEARTBEAT), `assignedEntities` (string array, e.g. `["0","1","2"]`) | Add rule |
+| `POST /api/mission/rule/update` | `name` (to find), `newName`, `newDescription`, `newRuleType`, `newAssignedEntities` (string array or `[]`), `newIsEnabled` (bool) | Update rule |
 | `POST /api/mission/rule/delete` | `name` | Delete rule by name |
 
-**Example - Add rule:**
+**Example - Add rule assigned to multiple entities:**
 ```json
 POST /api/mission/rule/add
-{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"禁止回覆英文","description":"所有回覆必須使用繁體中文","ruleType":"COMMUNICATION"}
-→ {"success":true,"message":"Rule \"禁止回覆英文\" added","version":8}
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"全中文回覆","description":"所有回覆必須使用繁體中文","ruleType":"COMMUNICATION","assignedEntities":["0","1","2"]}
+→ {"success":true,"message":"Rule \"全中文回覆\" added","version":8}
+```
+
+**Example - Update rule (reassign entities):**
+```json
+POST /api/mission/rule/update
+{"deviceId":"xxx","botSecret":"xxx","entityId":0,"name":"全中文回覆","newAssignedEntities":["0","1","2"],"newDescription":"所有實體必須使用繁體中文回覆"}
+→ {"success":true,"message":"Rule \"全中文回覆\" updated","version":9}
 ```
 
 #### SKILL Operations
@@ -704,7 +737,7 @@ POST /api/mission/skill/add
 | POST /api/entity/broadcast | Entity Broadcast | ✅ | ✅ (Sender) |
 | GET /api/mission/dashboard | Mission Dashboard | ✅ | ✅ |
 | POST /api/mission/todo/* | TODO Operations | ✅ | ✅ |
-| POST /api/mission/rule/* | Rule Operations | ✅ | ✅ |
+| POST /api/mission/rule/* | Rule Operations (add/update/delete) | ✅ | ✅ |
 | POST /api/mission/skill/* | Skill Operations | ✅ | ✅ |
 
 ---
@@ -735,4 +768,4 @@ Bot Bob receives on bind:
 }
 ```
 
-Each Bot can only control its bound (deviceId, entityId) combination.
+Each Bot can only control its bound (deviceId, entityId) for entity operations. Mission Dashboard is shared per device — any entity can modify all items.
