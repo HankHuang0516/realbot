@@ -75,7 +75,7 @@ class MessageActivity : AppCompatActivity() {
             if (msg.isNotEmpty()) {
                 sendMessageToSelectedEntities(msg)
             } else {
-                Toast.makeText(this, "Please enter a message", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.enter_message), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -162,7 +162,7 @@ class MessageActivity : AppCompatActivity() {
         val selectedIds = getSelectedEntityIds()
 
         if (selectedIds.isEmpty()) {
-            Toast.makeText(this, "Please select at least one entity", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.select_one_entity), Toast.LENGTH_SHORT).show()
             return
         }
 

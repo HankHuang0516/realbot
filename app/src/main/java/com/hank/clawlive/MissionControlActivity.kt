@@ -233,7 +233,7 @@ class MissionControlActivity : AppCompatActivity() {
 
         // Error
         if (state.error != null) {
-            Toast.makeText(this, state.error, Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, state.error ?: getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -474,7 +474,7 @@ class MissionControlActivity : AppCompatActivity() {
         }
         if (checkboxes.isEmpty()) {
             val tv = TextView(this).apply {
-                text = "No bound entities"
+                text = getString(R.string.no_bound_entities)
                 setTextColor(0xFF666666.toInt())
                 textSize = 12f
             }
@@ -601,7 +601,7 @@ class MissionControlActivity : AppCompatActivity() {
                 // Fire-and-forget, then navigate to chat
                 viewModel.notifyEntities(notifications) { _, _ -> }
                 startActivity(Intent(this, ChatActivity::class.java))
-                Toast.makeText(this, "通知已發送", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.notification_sent), Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("跳過", null)
             .show()

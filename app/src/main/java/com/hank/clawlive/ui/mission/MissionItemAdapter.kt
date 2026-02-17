@@ -75,7 +75,7 @@ class MissionItemAdapter(
                 ListMode.TODO -> {
                     if (item.assignedBot != null) {
                         detailsRow.visibility = View.VISIBLE
-                        tvBot.text = "🤖 ${getEntityDisplayLabel(item.assignedBot)}"
+                        tvBot.text = itemView.context.getString(R.string.bot_label, getEntityDisplayLabel(item.assignedBot))
                         tvEta.visibility = View.GONE
                     } else {
                         detailsRow.visibility = View.GONE
@@ -84,7 +84,7 @@ class MissionItemAdapter(
                 }
                 ListMode.MISSION -> {
                     detailsRow.visibility = View.VISIBLE
-                    tvBot.text = "🤖 ${getEntityDisplayLabel(item.assignedBot)}"
+                    tvBot.text = itemView.context.getString(R.string.bot_label, getEntityDisplayLabel(item.assignedBot))
                     tvEta.visibility = View.VISIBLE
                     tvEta.text = if (item.eta != null) "⏰ ${formatDateTime(item.eta)}" else "⏰ -"
                     tvCompletedAt.visibility = View.GONE
@@ -92,7 +92,7 @@ class MissionItemAdapter(
                 ListMode.DONE -> {
                     detailsRow.visibility = View.GONE
                     if (item.completedAt != null) {
-                        tvCompletedAt.text = "✓ ${formatDateTime(item.completedAt)}"
+                        tvCompletedAt.text = itemView.context.getString(R.string.mission_completed_at, formatDateTime(item.completedAt))
                         tvCompletedAt.visibility = View.VISIBLE
                     } else {
                         tvCompletedAt.visibility = View.GONE

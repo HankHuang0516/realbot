@@ -233,7 +233,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     waitForWebhookTest(selectedEntityId)
                 } else {
                     hideLoading()
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, response.error ?: response.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, response.error ?: response.message ?: getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
                     updateButtonStates()
                 }
             } catch (e: Exception) {
@@ -276,7 +276,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     loadBorrowStatus()
                 } else {
                     hideLoading()
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.unbind_failed, response.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.unbind_failed, response.message ?: getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
                     updateButtonStates()
                 }
             } catch (e: Exception) {
@@ -311,7 +311,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     updateButtonStates()
                 } else {
                     hideLoading()
-                    Toast.makeText(this@OfficialBorrowActivity, response.error ?: response.message ?: "Unknown", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@OfficialBorrowActivity, response.error ?: response.message ?: getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
                     updateButtonStates()
                 }
             } catch (e: retrofit2.HttpException) {
@@ -358,7 +358,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
 
                 if (!slotResponse.success) {
                     hideLoading()
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, slotResponse.error ?: "Failed to add slot"), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, slotResponse.error ?: getString(R.string.failed_add_slot)), Toast.LENGTH_SHORT).show()
                     updateButtonStates()
                     return@launch
                 }
@@ -376,7 +376,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     onBindSuccess(entityId)
                 } else {
                     hideLoading()
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, bindResponse.error ?: bindResponse.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, bindResponse.error ?: bindResponse.message ?: getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
                     updateButtonStates()
                 }
             } catch (e: Exception) {

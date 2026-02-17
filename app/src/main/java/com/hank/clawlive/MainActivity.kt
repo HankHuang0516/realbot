@@ -334,7 +334,7 @@ class MainActivity : AppCompatActivity() {
         nameView.setOnClickListener { showRenameDialog(entity) }
 
         // ID
-        view.findViewById<TextView>(R.id.tvEntityId).text = "#${entity.entityId}"
+        view.findViewById<TextView>(R.id.tvEntityId).text = getString(R.string.entity_id_format, entity.entityId)
 
         // State Badge
         val badgeView = view.findViewById<TextView>(R.id.tvStateBadge)

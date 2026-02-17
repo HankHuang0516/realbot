@@ -188,7 +188,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                     setOnCompletionListener { stopAudio() }
                 }
             } catch (e: Exception) {
-                Toast.makeText(itemView.context, "Playback failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(itemView.context, R.string.playback_failed, Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -307,7 +307,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                     setOnCompletionListener { stopAudio() }
                 }
             } catch (e: Exception) {
-                Toast.makeText(itemView.context, "Playback failed", Toast.LENGTH_SHORT).show()
+                Toast.makeText(itemView.context, R.string.playback_failed, Toast.LENGTH_SHORT).show()
             }
         }
 

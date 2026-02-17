@@ -115,6 +115,23 @@
     <string name="assign_entity">Assign Entity</string>
     <string name="assign_entity_multi">Assign Entity (Multiple)</string>
     <string name="rule_type">Rule Type</string>
+    <string name="background_set">Background set</string>
+    <string name="background_set_failed">Failed to set background</string>
+    <string name="settings_reset">Settings reset</string>
+    <string name="background_disabled">Background disabled</string>
+    <string name="error_open_picker">Cannot open photo picker</string>
+    <string name="error_open_settings">Cannot open wallpaper settings</string>
+    <string name="bot_label">🤖 %s</string>
+    <string name="mission_completed_at">✓ %s</string>
+    <string name="playback_failed">Playback failed</string>
+    <string name="confirm_copy">Copied to clipboard</string>
+    <string name="unknown_error">Unknown error</string>
+    <string name="failed_add_slot">Failed to add slot</string>
+    <string name="no_bound_entities">No bound entities</string>
+    <string name="notification_sent">Notification sent</string>
+    <string name="enter_message">Please enter a message</string>
+    <string name="select_one_entity">Please select at least one entity</string>
+    <string name="entity_id_format">#%d</string>
 
     <!-- Bot Avatar -->
     <string name="bot_avatar">Bot Avatar</string>
