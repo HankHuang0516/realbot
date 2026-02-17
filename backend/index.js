@@ -39,31 +39,33 @@ const devices = {};
 // Pending binding codes (code -> { deviceId, entityId, expires })
 const pendingBindings = {};
 
-// Bot-to-bot loop prevention: track message timestamps per entity
-// Key: "deviceId:entityId" -> array of timestamps
-const botToBotTracker = {};
-const BOT2BOT_WINDOW_MS = 2 * 60 * 1000; // 2 minute window
-const BOT2BOT_MAX_MESSAGES = 5; // max messages per entity in window
+// Bot-to-bot loop prevention: counter resets ONLY when a human message arrives
+// Key: "deviceId:entityId" -> count of bot-to-bot messages since last human message
+const botToBotCounter = {};
+const BOT2BOT_MAX_MESSAGES = 3; // max bot-to-bot messages before human must intervene
 
 function checkBotToBotRateLimit(deviceId, entityId) {
     const key = `${deviceId}:${entityId}`;
-    const now = Date.now();
-    if (!botToBotTracker[key]) botToBotTracker[key] = [];
-    // Prune old entries
-    botToBotTracker[key] = botToBotTracker[key].filter(t => now - t < BOT2BOT_WINDOW_MS);
-    if (botToBotTracker[key].length >= BOT2BOT_MAX_MESSAGES) {
-        return false; // rate limited
+    if (!botToBotCounter[key]) botToBotCounter[key] = 0;
+    if (botToBotCounter[key] >= BOT2BOT_MAX_MESSAGES) {
+        return false; // rate limited - needs human message to reset
     }
-    botToBotTracker[key].push(now);
+    botToBotCounter[key]++;
     return true; // allowed
 }
 
 function getBotToBotRemaining(deviceId, entityId) {
     const key = `${deviceId}:${entityId}`;
-    const now = Date.now();
-    if (!botToBotTracker[key]) return BOT2BOT_MAX_MESSAGES;
-    const recent = botToBotTracker[key].filter(t => now - t < BOT2BOT_WINDOW_MS);
-    return Math.max(0, BOT2BOT_MAX_MESSAGES - recent.length);
+    const used = botToBotCounter[key] || 0;
+    return Math.max(0, BOT2BOT_MAX_MESSAGES - used);
+}
+
+// Reset bot-to-bot counter when human sends a message (called from /api/client/speak)
+function resetBotToBotCounter(deviceId) {
+    for (let i = 0; i < 4; i++) {
+        const key = `${deviceId}:${i}`;
+        if (botToBotCounter[key]) botToBotCounter[key] = 0;
+    }
 }
 
 // Official bot pool (loaded from DB on startup)
@@ -1551,6 +1553,9 @@ app.post('/api/client/speak', async (req, res) => {
         entity.messageQueue.push(messageObj);
         saveChatMessage(deviceId, eId, text, source, true, false, mediaType || null, mediaUrl || null);
 
+        // Reset bot-to-bot counter: human message breaks the loop
+        resetBotToBotCounter(deviceId);
+
         console.log(`[Client] Device ${deviceId} -> Entity ${eId}: "${text}" (source: ${source})`);
 
         // Push to bot if webhook is registered
@@ -1669,12 +1674,12 @@ app.post('/api/entity/speak-to', async (req, res) => {
         return res.status(400).json({ success: false, message: `Entity ${toId} is not bound` });
     }
 
-    // Bot-to-bot loop prevention: rate limit per sending entity
+    // Bot-to-bot loop prevention: rate limit per sending entity (resets only on human message)
     if (!checkBotToBotRateLimit(deviceId, fromId)) {
         console.warn(`[Entity] RATE LIMITED: Device ${deviceId} Entity ${fromId} -> Entity ${toId} (bot-to-bot loop prevention)`);
         return res.status(429).json({
             success: false,
-            message: `Entity ${fromId} has sent too many bot-to-bot messages. Max ${BOT2BOT_MAX_MESSAGES} per ${BOT2BOT_WINDOW_MS / 60000} minutes. Please wait before sending again.`,
+            message: `Entity ${fromId} bot-to-bot limit reached (${BOT2BOT_MAX_MESSAGES}). Counter resets when a human sends a message.`,
             rateLimited: true
         });
     }
@@ -1721,7 +1726,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         const toRemaining = getBotToBotRemaining(deviceId, toId);
         pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}`;
         if (toRemaining <= 2) {
-            pushMsg += `\n⚠️ 警告: 配額即將用盡，請不要自動回覆此訊息，避免無限循環。只在用戶主動要求時才回覆其他實體。`;
+            pushMsg += `\n⚠️ 警告: 配額即將用盡（需要人類用戶發送訊息才會重置），請勿自動回覆，避免無限循環。`;
         }
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
@@ -1802,12 +1807,12 @@ app.post('/api/entity/broadcast', async (req, res) => {
         return res.status(403).json({ success: false, message: "Invalid botSecret for sending entity" });
     }
 
-    // Bot-to-bot loop prevention: rate limit per sending entity
+    // Bot-to-bot loop prevention: rate limit per sending entity (resets only on human message)
     if (!checkBotToBotRateLimit(deviceId, fromId)) {
         console.warn(`[Broadcast] RATE LIMITED: Device ${deviceId} Entity ${fromId} (bot-to-bot loop prevention)`);
         return res.status(429).json({
             success: false,
-            message: `Entity ${fromId} has sent too many bot-to-bot messages. Max ${BOT2BOT_MAX_MESSAGES} per ${BOT2BOT_WINDOW_MS / 60000} minutes. Please wait before sending again.`,
+            message: `Entity ${fromId} bot-to-bot limit reached (${BOT2BOT_MAX_MESSAGES}). Counter resets when a human sends a message.`,
             rateLimited: true
         });
     }
@@ -1879,7 +1884,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
             const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
             pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}`;
             if (toRemainingBcast <= 2) {
-                pushMsg += `\n⚠️ 警告: 配額即將用盡，請不要自動回覆此廣播，避免無限循環。只在用戶主動要求時才回覆其他實體。`;
+                pushMsg += `\n⚠️ 警告: 配額即將用盡（需要人類用戶發送訊息才會重置），請勿自動回覆此廣播，避免無限循環。`;
             }
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {
