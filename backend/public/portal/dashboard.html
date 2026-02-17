@@ -918,7 +918,7 @@
             // Auto-refresh every 10 seconds
             refreshInterval = setInterval(async () => {
                 await loadEntities();
-                if (isBorrowExpanded) await loadBorrowStatus();
+                await loadBorrowStatus();
             }, 10000);
         });
 

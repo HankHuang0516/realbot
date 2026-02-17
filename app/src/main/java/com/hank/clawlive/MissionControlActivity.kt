@@ -66,6 +66,13 @@ class MissionControlActivity : AppCompatActivity() {
         loadEntityOptions()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Re-download dashboard to pick up changes made by bots or web portal
+        viewModel.downloadDashboard()
+        loadEntityOptions()
+    }
+
     private fun loadEntityOptions() {
         lifecycleScope.launch {
             try {
@@ -299,7 +306,7 @@ class MissionControlActivity : AppCompatActivity() {
 
         etTitle.setText(item.title)
         etDescription.setText(item.description)
-        spinnerPriority.setSelection(priorities.indexOf(item.priority))
+        spinnerPriority.setSelection(priorities.indexOf(item.priority ?: Priority.MEDIUM))
         setupEntitySpinner(spinnerEntity, item.assignedBot)
 
         AlertDialog.Builder(this)
@@ -547,7 +554,7 @@ class MissionControlActivity : AppCompatActivity() {
         // TODO items with assigned entity (any priority)
         state.todoList.forEach { item ->
             if (item.assignedBot != null) {
-                items.add(NotifyItem("TODO", item.title, item.priority.value, listOf(item.assignedBot)))
+                items.add(NotifyItem("TODO", item.title, (item.priority ?: Priority.MEDIUM).value, listOf(item.assignedBot)))
             }
         }
 

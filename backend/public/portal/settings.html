@@ -414,6 +414,9 @@
 
             document.getElementById('pageContent').style.display = '';
             initTapPay();
+
+            // Auto-refresh subscription status every 15 seconds
+            setInterval(loadSubscriptionStatus, 15000);
         });
 
         // ============================================

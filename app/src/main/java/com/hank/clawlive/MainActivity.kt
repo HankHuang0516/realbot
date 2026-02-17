@@ -105,11 +105,23 @@ class MainActivity : AppCompatActivity() {
         setupEdgeToEdgeInsets()
         setupClickListeners()
         observeUiState()
+        startEntityPolling()
     }
 
     override fun onResume() {
         super.onResume()
         loadBoundEntities()
+    }
+
+    private fun startEntityPolling() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    delay(15_000)
+                    loadBoundEntities()
+                }
+            }
+        }
     }
 
     private fun initViews() {

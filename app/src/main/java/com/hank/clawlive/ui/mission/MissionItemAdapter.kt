@@ -52,9 +52,9 @@ class MissionItemAdapter(
         private val tvCompletedAt: TextView = itemView.findViewById(R.id.tvCompletedAt)
 
         fun bind(item: MissionItem) {
-            tvPriority.text = item.priority.label.take(2) // emoji only
+            tvPriority.text = (item.priority?.label ?: "🟡 中").take(2) // emoji only
             tvTitle.text = item.title
-            tvStatus.text = item.status.label
+            tvStatus.text = item.status?.label ?: "待處理"
 
             // Description
             if (item.description.isNotBlank()) {

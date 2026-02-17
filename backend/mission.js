@@ -83,6 +83,13 @@ async function initMissionDatabase() {
  * Factory function - receives the in-memory devices object from index.js
  * Returns { router, initMissionDatabase }
  */
+// Priority value → enum name mapping (matches Android Priority enum)
+const PRIORITY_MAP = { 1: 'LOW', 2: 'MEDIUM', 3: 'HIGH', 4: 'CRITICAL' };
+function toPriorityName(val) {
+    if (typeof val === 'string' && Object.values(PRIORITY_MAP).includes(val)) return val;
+    return PRIORITY_MAP[parseInt(val)] || 'MEDIUM';
+}
+
 module.exports = function(devices) {
     const router = express.Router();
 
@@ -794,7 +801,7 @@ module.exports = function(devices) {
                 id: crypto.randomUUID(),
                 title: title.trim(),
                 description: (description || '').trim(),
-                priority: parseInt(priority) || 2,
+                priority: toPriorityName(priority),
                 status: 'PENDING',
                 assignedBot: entityId != null ? String(entityId) : null,
                 createdAt: Date.now(),
@@ -864,7 +871,7 @@ module.exports = function(devices) {
 
             if (newTitle) item.title = newTitle.trim();
             if (newDescription !== undefined) item.description = newDescription.trim();
-            if (newPriority !== undefined) item.priority = parseInt(newPriority) || item.priority;
+            if (newPriority !== undefined) item.priority = toPriorityName(newPriority);
             item.updatedAt = Date.now();
 
             const updateResult = await client.query(

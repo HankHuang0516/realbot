@@ -159,10 +159,18 @@
         .entity-label[data-entity="3"] { color: #FFB6C1; }
 
         /* ── Read Receipts ── */
+        .chat-receipt {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            line-height: 1.6;
+        }
+
         .read-receipt {
             font-size: 10px;
             color: var(--text-muted);
-            margin-left: 6px;
+            display: inline-block;
+            margin-right: 8px;
         }
 
         /* ── Target Bar (checkboxes) ── */
@@ -614,9 +622,16 @@
                 return allMessages.filter(m => m.is_from_user);
             }
 
-            // entity-N filter
+            // entity-N filter: also include mission_notify messages that target this entity
             const entityId = parseInt(currentFilter.split('-')[1]);
-            return allMessages.filter(m => m.entity_id === entityId);
+            return allMessages.filter(m => {
+                if (m.entity_id === entityId) return true;
+                if (m.source && m.source.startsWith('mission_notify:')) {
+                    const targets = m.source.split(':')[1].split(',').map(Number);
+                    return targets.includes(entityId);
+                }
+                return false;
+            });
         }
 
         // ── Render Messages ──
@@ -658,7 +673,8 @@
                                 ? `<span class="read-receipt">${getEntityLabel(id)} \u2713 已讀</span>`
                                 : `<span class="read-receipt" style="opacity:0.5">${getEntityLabel(id)} ...</span>`
                         ).join(' ');
-                        receipt = (sendTo ? `<div style="font-size:11px;opacity:0.7;margin-bottom:2px">${sendTo}</div>` : '') + statusBadges;
+                        receipt = (sendTo ? `<div style="opacity:0.7;margin-bottom:2px">${sendTo}</div>` : '')
+                            + `<div>${statusBadges}</div>`;
                     } else if (msg.read_at) {
                         receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
                     } else if (msg.is_delivered) {
@@ -672,7 +688,8 @@
                     <div class="chat-msg ${msgClass}">
                         <div class="chat-source">${sourceLabel}</div>
                         <div class="chat-bubble">${text}</div>
-                        <div class="chat-meta">${time}${receipt}</div>
+                        <div class="chat-meta">${time}</div>
+                        ${receipt ? `<div class="chat-receipt">${receipt}</div>` : ''}
                     </div>`;
             }).join('');
 
