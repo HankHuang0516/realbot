@@ -166,6 +166,12 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="rebind_free">重新綁定（免費）</string>
     <string name="remaining_bots">剩餘 %d 個</string>
     <string name="sold_out">已售罄</string>
+    <string name="loading_status">載入中…</string>
+    <string name="connecting_bot">正在連接機器人…</string>
+    <string name="handshaking_bot">正在與機器人交握中…</string>
+    <string name="bind_success_returning">連接成功！返回中…</string>
+    <string name="processing_payment">付款處理中…</string>
+    <string name="adding_slot">新增配額中…</string>
     <string name="already_bound_free">已綁定 (免費版)</string>
     <string name="already_bound_personal">已綁定 (月租版)</string>
     <string name="unbind">解除綁定</string>

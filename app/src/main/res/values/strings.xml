@@ -162,6 +162,12 @@
     <string name="rebind_free">Rebind (Free)</string>
     <string name="remaining_bots">%d remaining</string>
     <string name="sold_out">Sold Out</string>
+    <string name="loading_status">Loading…</string>
+    <string name="connecting_bot">Connecting to bot…</string>
+    <string name="handshaking_bot">Handshaking with bot…</string>
+    <string name="bind_success_returning">Connected! Returning…</string>
+    <string name="processing_payment">Processing payment…</string>
+    <string name="adding_slot">Adding paid slot…</string>
     <string name="already_bound_free">Bound (Free)</string>
     <string name="already_bound_personal">Bound (Monthly)</string>
     <string name="unbind">Unbind</string>

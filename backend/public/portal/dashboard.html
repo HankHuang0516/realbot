@@ -1522,8 +1522,10 @@
 
         async function bindFree() {
             const btn = document.getElementById('btnBindFree');
+            const btnPersonal = document.getElementById('btnBindPersonal');
             btn.disabled = true;
-            btn.textContent = i18n.t('borrow_btn_binding');
+            btnPersonal.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_handshaking');
 
             try {
                 const result = await apiCall('POST', '/api/official-borrow/bind-free', {
@@ -1533,15 +1535,17 @@
                 });
 
                 if (result.success) {
+                    btn.textContent = i18n.t('borrow_btn_connected');
                     showToast(i18n.t('borrow_bind_success'), 'success');
                     await loadBorrowStatus();
                     await loadEntities();
                 } else {
                     showToast(result.error || result.message || 'Bind failed', 'error');
+                    btn.disabled = false;
+                    updateBorrowButtons();
                 }
             } catch (e) {
                 showToast(e.message || 'Bind failed', 'error');
-            } finally {
                 btn.disabled = false;
                 updateBorrowButtons();
             }
@@ -1690,8 +1694,10 @@
         async function bindPersonal() {
             // Step 1: Try to bind - backend checks paid slots
             const btn = document.getElementById('btnBindPersonal');
+            const btnFree = document.getElementById('btnBindFree');
             btn.disabled = true;
-            btn.textContent = i18n.t('borrow_btn_binding');
+            btnFree.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_handshaking');
             try {
                 const result = await apiCall('POST', '/api/official-borrow/bind-personal', {
                     deviceId: currentUser.deviceId,
@@ -1700,6 +1706,7 @@
                 });
                 if (result.success) {
                     // Had available slot - bound without payment
+                    btn.textContent = i18n.t('borrow_btn_connected');
                     showToast(i18n.t('borrow_bind_success'), 'success');
                     await loadBorrowStatus();
                     await loadEntities();

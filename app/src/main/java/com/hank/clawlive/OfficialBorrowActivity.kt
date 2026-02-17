@@ -23,6 +23,7 @@ import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.model.BorrowBinding
 import com.hank.clawlive.data.model.OfficialBorrowStatusResponse
 import com.hank.clawlive.data.remote.NetworkModule
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -34,11 +35,15 @@ class OfficialBorrowActivity : AppCompatActivity() {
     private val billingManager by lazy { BillingManager.getInstance(this) }
 
     private lateinit var chipGroupEntity: ChipGroup
+    private lateinit var loadingOverlay: View
     private lateinit var progressLoading: ProgressBar
+    private lateinit var tvLoadingStatus: TextView
     private lateinit var btnBindFree: MaterialButton
     private lateinit var btnBindPersonal: MaterialButton
     private lateinit var tvAvailability: TextView
     private lateinit var tvPersonalPrice: TextView
+    private lateinit var cardFree: View
+    private lateinit var cardPersonal: View
 
     private var selectedEntityId = 0
     private var borrowStatus: OfficialBorrowStatusResponse? = null
@@ -79,11 +84,15 @@ class OfficialBorrowActivity : AppCompatActivity() {
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener { finish() }
 
         chipGroupEntity = findViewById(R.id.chipGroupEntity)
+        loadingOverlay = findViewById(R.id.loadingOverlay)
         progressLoading = findViewById(R.id.progressLoading)
+        tvLoadingStatus = findViewById(R.id.tvLoadingStatus)
         btnBindFree = findViewById(R.id.btnBindFree)
         btnBindPersonal = findViewById(R.id.btnBindPersonal)
         tvAvailability = findViewById(R.id.tvAvailability)
         tvPersonalPrice = findViewById(R.id.tvPersonalPrice)
+        cardFree = findViewById(R.id.cardFree)
+        cardPersonal = findViewById(R.id.cardPersonal)
 
         // Entity chip selection
         chipGroupEntity.setOnCheckedStateChangeListener { _, checkedIds ->
@@ -115,10 +124,23 @@ class OfficialBorrowActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadBorrowStatus() {
-        progressLoading.visibility = View.VISIBLE
+    private fun showLoading(statusText: String) {
+        tvLoadingStatus.text = statusText
+        loadingOverlay.visibility = View.VISIBLE
+        cardFree.visibility = View.GONE
+        cardPersonal.visibility = View.GONE
         btnBindFree.isEnabled = false
         btnBindPersonal.isEnabled = false
+    }
+
+    private fun hideLoading() {
+        loadingOverlay.visibility = View.GONE
+        cardFree.visibility = View.VISIBLE
+        cardPersonal.visibility = View.VISIBLE
+    }
+
+    private fun loadBorrowStatus() {
+        showLoading(getString(R.string.loading_status))
 
         lifecycleScope.launch {
             try {
@@ -134,12 +156,12 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     tvAvailability.setTextColor(0xFFFF5252.toInt())
                 }
 
+                hideLoading()
                 updateButtonStates()
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load borrow status")
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.failed_format, e.message), Toast.LENGTH_SHORT).show()
-            } finally {
-                progressLoading.visibility = View.GONE
+                hideLoading()
             }
         }
     }
@@ -204,11 +226,12 @@ class OfficialBorrowActivity : AppCompatActivity() {
     }
 
     private fun bindFree() {
-        btnBindFree.isEnabled = false
-        progressLoading.visibility = View.VISIBLE
+        showLoading(getString(R.string.connecting_bot))
 
         lifecycleScope.launch {
             try {
+                tvLoadingStatus.text = getString(R.string.handshaking_bot)
+
                 val response = api.bindFreeBorrow(mapOf(
                     "deviceId" to deviceManager.deviceId,
                     "deviceSecret" to deviceManager.deviceSecret,
@@ -217,19 +240,20 @@ class OfficialBorrowActivity : AppCompatActivity() {
 
                 if (response.success) {
                     layoutPrefs.addRegisteredEntity(selectedEntityId)
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_success), Toast.LENGTH_SHORT).show()
+                    tvLoadingStatus.text = getString(R.string.bind_success_returning)
+                    delay(1200)
                     setResult(RESULT_OK)
                     finish()
                 } else {
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, response.error ?: response.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
-                    btnBindFree.isEnabled = true
+                    updateButtonStates()
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to bind free bot")
+                hideLoading()
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
-                btnBindFree.isEnabled = true
-            } finally {
-                progressLoading.visibility = View.GONE
+                updateButtonStates()
             }
         }
     }
@@ -247,9 +271,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
     }
 
     private fun unbindEntity() {
-        progressLoading.visibility = View.VISIBLE
-        btnBindFree.isEnabled = false
-        btnBindPersonal.isEnabled = false
+        showLoading(getString(R.string.loading_status))
 
         lifecycleScope.launch {
             try {
@@ -266,25 +288,26 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     // Reload status to refresh UI
                     loadBorrowStatus()
                 } else {
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.unbind_failed, response.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
                     updateButtonStates()
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to unbind official bot")
+                hideLoading()
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.unbind_failed, e.message), Toast.LENGTH_SHORT).show()
                 updateButtonStates()
-            } finally {
-                progressLoading.visibility = View.GONE
             }
         }
     }
 
     private fun bindPersonal() {
-        btnBindPersonal.isEnabled = false
-        progressLoading.visibility = View.VISIBLE
+        showLoading(getString(R.string.connecting_bot))
 
         lifecycleScope.launch {
             try {
+                tvLoadingStatus.text = getString(R.string.handshaking_bot)
+
                 // Step 1: Try to bind - backend will check paid slots
                 val response = api.bindPersonalBorrow(mapOf(
                     "deviceId" to deviceManager.deviceId,
@@ -296,30 +319,30 @@ class OfficialBorrowActivity : AppCompatActivity() {
                     // Had available slot - bound without payment
                     onBindSuccess(selectedEntityId)
                 } else if (response.error == "sold_out") {
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.sold_out), Toast.LENGTH_SHORT).show()
-                    btnBindPersonal.isEnabled = true
-                    progressLoading.visibility = View.GONE
+                    updateButtonStates()
                 } else {
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, response.error ?: response.message ?: "Unknown", Toast.LENGTH_SHORT).show()
-                    btnBindPersonal.isEnabled = true
-                    progressLoading.visibility = View.GONE
+                    updateButtonStates()
                 }
             } catch (e: retrofit2.HttpException) {
                 if (e.code() == 402) {
                     // payment_required - need to purchase a new slot
-                    progressLoading.visibility = View.GONE
+                    hideLoading()
                     launchPaymentFlow(selectedEntityId)
                 } else {
                     Timber.e(e, "Failed to bind personal bot")
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
-                    btnBindPersonal.isEnabled = true
-                    progressLoading.visibility = View.GONE
+                    updateButtonStates()
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to bind personal bot")
+                hideLoading()
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
-                btnBindPersonal.isEnabled = true
-                progressLoading.visibility = View.GONE
+                updateButtonStates()
             }
         }
     }
@@ -336,8 +359,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
     }
 
     private fun addPaidSlotAndBind(entityId: Int) {
-        btnBindPersonal.isEnabled = false
-        progressLoading.visibility = View.VISIBLE
+        showLoading(getString(R.string.adding_slot))
 
         lifecycleScope.launch {
             try {
@@ -348,13 +370,15 @@ class OfficialBorrowActivity : AppCompatActivity() {
                 ))
 
                 if (!slotResponse.success) {
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, slotResponse.error ?: "Failed to add slot"), Toast.LENGTH_SHORT).show()
-                    btnBindPersonal.isEnabled = true
-                    progressLoading.visibility = View.GONE
+                    updateButtonStates()
                     return@launch
                 }
 
                 // Step 3: Retry bind (now has available slot)
+                tvLoadingStatus.text = getString(R.string.handshaking_bot)
+
                 val bindResponse = api.bindPersonalBorrow(mapOf(
                     "deviceId" to deviceManager.deviceId,
                     "deviceSecret" to deviceManager.deviceSecret,
@@ -364,15 +388,15 @@ class OfficialBorrowActivity : AppCompatActivity() {
                 if (bindResponse.success) {
                     onBindSuccess(entityId)
                 } else {
+                    hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, bindResponse.error ?: bindResponse.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
-                    btnBindPersonal.isEnabled = true
-                    progressLoading.visibility = View.GONE
+                    updateButtonStates()
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to add slot and bind")
+                hideLoading()
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
-                btnBindPersonal.isEnabled = true
-                progressLoading.visibility = View.GONE
+                updateButtonStates()
             }
         }
     }
@@ -380,7 +404,7 @@ class OfficialBorrowActivity : AppCompatActivity() {
     private fun onBindSuccess(entityId: Int) {
         layoutPrefs.addRegisteredEntity(entityId)
 
-        // Verify subscription on backend
+        // Verify subscription on backend (fire-and-forget)
         lifecycleScope.launch {
             try {
                 api.verifyBorrowSubscription(mapOf(
@@ -391,9 +415,13 @@ class OfficialBorrowActivity : AppCompatActivity() {
             } catch (_: Exception) { }
         }
 
-        Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_success), Toast.LENGTH_SHORT).show()
+        // Show success status briefly so user sees confirmation
+        tvLoadingStatus.text = getString(R.string.bind_success_returning)
         setResult(RESULT_OK)
-        progressLoading.visibility = View.GONE
-        finish()
+
+        lifecycleScope.launch {
+            delay(1200)
+            finish()
+        }
     }
 }
