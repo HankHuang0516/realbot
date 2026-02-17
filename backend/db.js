@@ -520,6 +520,29 @@ async function updateSubscriptionVerified(deviceId, entityId) {
     }
 }
 
+async function loadAllOfficialBindings() {
+    if (!pool) return [];
+    try {
+        const client = await pool.connect();
+        const result = await client.query(
+            `SELECT b.*, o.bot_type FROM official_bot_bindings b
+             JOIN official_bots o ON b.bot_id = o.bot_id`
+        );
+        client.release();
+        return result.rows.map(row => ({
+            bot_id: row.bot_id,
+            device_id: row.device_id,
+            entity_id: parseInt(row.entity_id),
+            session_key: row.session_key,
+            bound_at: row.bound_at ? parseInt(row.bound_at) : null,
+            bot_type: row.bot_type
+        }));
+    } catch (err) {
+        console.error('[DB] Failed to load all official bindings:', err.message);
+        return [];
+    }
+}
+
 async function getExpiredPersonalBindings(maxAgeMs) {
     if (!pool) return [];
     try {
@@ -572,5 +595,6 @@ module.exports = {
     getOfficialBinding,
     getDeviceOfficialBindings,
     updateSubscriptionVerified,
+    loadAllOfficialBindings,
     getExpiredPersonalBindings
 };

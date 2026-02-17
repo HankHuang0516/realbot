@@ -142,6 +142,13 @@ async function initPersistence() {
         const loadedBots = await db.loadOfficialBots();
         Object.assign(officialBots, loadedBots);
         console.log(`[Persistence] Official bots loaded: ${Object.keys(officialBots).length}`);
+
+        // Load official bindings cache from DB
+        const loadedBindings = await db.loadAllOfficialBindings();
+        for (const b of loadedBindings) {
+            officialBindingsCache[getBindingCacheKey(b.device_id, b.entity_id)] = b;
+        }
+        console.log(`[Persistence] Official bindings cache loaded: ${loadedBindings.length}`);
     }
 }
 
@@ -391,10 +398,10 @@ app.get('/api/admin/bindings', adminAuth, adminCheck, async (req, res) => {
                 botId: r.bot_id,
                 botType: r.bot_type,
                 deviceId: r.device_id,
-                entityId: r.entity_id,
+                entityId: r.entity_id != null ? parseInt(r.entity_id) : null,
                 userEmail: r.user_email || '(APP user)',
-                boundAt: r.bound_at,
-                subscriptionVerifiedAt: r.subscription_verified_at,
+                boundAt: r.bound_at ? parseInt(r.bound_at) : null,
+                subscriptionVerifiedAt: r.subscription_verified_at ? parseInt(r.subscription_verified_at) : null,
                 botStatus: r.bot_status
             }))
         });
@@ -421,10 +428,10 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
                 emailVerified: r.email_verified,
                 deviceId: r.device_id,
                 subscriptionStatus: r.subscription_status,
-                subscriptionExpiresAt: r.subscription_expires_at,
+                subscriptionExpiresAt: r.subscription_expires_at ? parseInt(r.subscription_expires_at) : null,
                 isAdmin: r.is_admin,
-                createdAt: r.created_at,
-                lastLoginAt: r.last_login_at
+                createdAt: r.created_at ? parseInt(r.created_at) : null,
+                lastLoginAt: r.last_login_at ? parseInt(r.last_login_at) : null
             }))
         });
     } catch (err) {
