@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background-color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        canvas { background-color: #222; border: 1px solid #555; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 3; // Scale up for visibility
+        ctx.translate(20, 20);
+        ctx.scale(scale, scale);
+
+        // Colors
+        const coralBright = "#FF7F50";
+        const coralDark = "#CD5B45";
+
+        // Body Gradient
+        const gradient = ctx.createLinearGradient(0, 0, 120, 120);
+        gradient.addColorStop(0, coralBright);
+        gradient.addColorStop(1, coralDark);
+
+        ctx.fillStyle = gradient;
+        ctx.strokeStyle = coralBright;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+
+        // Body Path
+        ctx.beginPath();
+        ctx.moveTo(60, 10);
+        ctx.bezierCurveTo(30, 10, 15, 35, 15, 55);
+        ctx.bezierCurveTo(15, 75, 30, 95, 45, 100);
+        ctx.lineTo(45, 110);
+        ctx.lineTo(55, 110);
+        ctx.lineTo(55, 100);
+        ctx.bezierCurveTo(55, 100, 60, 102, 65, 100);
+        ctx.lineTo(65, 110);
+        ctx.lineTo(75, 110);
+        ctx.lineTo(75, 100);
+        ctx.bezierCurveTo(90, 95, 105, 75, 105, 55);
+        ctx.bezierCurveTo(105, 35, 90, 10, 60, 10);
+        ctx.closePath();
+        ctx.fill();
+
+        // Left Claw (NO ROTATION for base shape check, or add default)
+        ctx.save();
+        // ctx.translate(20, 55); ctx.rotate(0); ctx.translate(-20, -55);
+        ctx.beginPath();
+        ctx.moveTo(20, 45);
+        ctx.bezierCurveTo(5, 40, 0, 50, 5, 60);
+        ctx.bezierCurveTo(10, 70, 20, 65, 25, 55);
+        ctx.bezierCurveTo(28, 48, 25, 45, 20, 45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Right Claw
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(100, 45);
+        ctx.bezierCurveTo(115, 40, 120, 50, 115, 60);
+        ctx.bezierCurveTo(110, 70, 100, 65, 95, 55);
+        ctx.bezierCurveTo(92, 48, 95, 45, 100, 45);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        // Antennae
+        ctx.beginPath();
+        ctx.moveTo(45, 15);
+        ctx.quadraticCurveTo(35, 5, 30, 8);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(75, 15);
+        ctx.quadraticCurveTo(85, 5, 90, 8);
+        ctx.stroke();
+
+        // Eyes
+        ctx.fillStyle = "#1a1a2e";
+        ctx.beginPath(); ctx.arc(45, 35, 6, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(75, 35, 6, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = "cyan";
+        ctx.beginPath(); ctx.arc(46, 34, 2, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(76, 34, 2, 0, Math.PI*2); ctx.fill();
+
+    </script>
+</body>
+</html>

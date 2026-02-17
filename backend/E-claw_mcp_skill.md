@@ -600,14 +600,14 @@ When users send photos/voice from the Android app or Web portal, the **pending m
 **Webhook push notification** includes structured media lines that can be parsed:
 
 ```
-[Device device-xxx Entity 0 收到新訊息]
-來源: web_chat
-內容: Look at this photo!
-[附件: 照片]
+[Device device-xxx Entity 0 received message]
+Source: web_chat
+Content: Look at this photo!
+[Attachment: Photo]
 media_type: photo
 media_url: https://live.staticflickr.com/65535/xxxxx_large.jpg
 backup_url: https://eclaw.up.railway.app/api/media/1234567890_abc12345
-注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息
+Note: Use update_claw_status (POST /api/transform) to reply to this message
 ```
 
 **Parsing media from push notifications:**
@@ -672,7 +672,7 @@ The user can assign TODO items, Skills, and Rules to your entity via Mission Con
 
 **The user closely monitors the Mission Control panel at all times.** Any TODO status, skill, or rule change you make is immediately visible to the user. Likewise, the user may update the dashboard at any time (add/edit/delete TODOs, rules, skills) **without sending a notification**.
 
-**Recommended: Set up a periodic heartbeat** to poll `GET /api/mission/dashboard` (e.g., every 30–60 seconds) and compare `version` with your last known version. If the version changed, re-read the dashboard and act on new assignments.
+**Recommended: Set up a periodic heartbeat** to poll `GET /api/mission/dashboard` (e.g., every 15 minutes) and compare `version` with your last known version. If the version changed, re-read the dashboard and act on new assignments.
 
 ```
 Heartbeat loop:
@@ -680,7 +680,7 @@ Heartbeat loop:
 2. If version > lastKnownVersion → re-read full dashboard
 3. Process new/changed TODOs, Skills, Rules assigned to you
 4. Update lastKnownVersion
-5. Sleep 30-60 seconds → repeat
+5. Sleep 15 minutes → repeat
 ```
 
 **Why this matters:**
@@ -756,7 +756,7 @@ Read the full mission dashboard for your device.
 
 **When to call:**
 1. After receiving a `[Mission Control 任務更新]` push notification (immediate)
-2. On your heartbeat interval (every 30–60 seconds) to detect silent user edits
+2. On your heartbeat interval (every 15 minutes) to detect silent user edits
 3. On startup / after reconnecting to refresh your current assignments
 
 ### Mission Control Bot Operations

@@ -1,0 +1,59 @@
+============================================================
+ENTITY DELETION STRESS TEST
+============================================================
+Setting up 10 devices with 4 entities each...
+Total entities to create: 40
+
+Device 0: E0✓ E1✓ E2✓ E3✓ 
+Device 1: E0✓ E1✓ E2✓ E3✓ 
+Device 2: E0✓ E1✓ E2✓ E3✓ 
+Device 3: E0✓ E1✓ E2✓ E3✓ 
+Device 4: E0✓ E1✓ E2✓ E3✓ 
+Device 5: E0✓ E1✓ E2✓ E3✓ 
+Device 6: E0✓ E1✓ E2✓ E3✓ 
+Device 7: E0✓ E1✓ E2✓ E3✓ 
+Device 8: E0✓ E1✓ E2✓ E3✓ 
+Device 9: E0✓ E1✓ E2✓ E3✓ 
+
+Setup complete: 40 entities bound across 10 devices
+
+============================================================
+DELETION TESTS
+============================================================
+
+--- Test 1: Verify initial entity count ---
+✅ Initial count correct: 40
+
+--- Test 2: Random entity deletions ---
+Deleting 15 random entities...
+............... (15 deleted)
+
+--- Test 3: Verify count after deletions ---
+✅ Count correct after deletion: 25
+
+--- Test 4: Delete already deleted entity ---
+✅ Correctly rejected re-deletion: Entity 2 is not bound
+
+--- Test 5: Delete entity 0 (protected) ---
+ℹ️ Entity 0 deletion allowed (not protected)
+
+--- Test 6: Delete with wrong botSecret ---
+✅ Correctly rejected wrong botSecret (403)
+
+--- Test 7: Delete all remaining non-zero entities ---
+Deleting 15 remaining entities...
+✅ All 15 entities deleted successfully
+
+--- Test 8: Final entity count ---
+✅ Final count correct: 9 (only entity 0s remain)
+
+============================================================
+TEST SUMMARY
+============================================================
+Devices created: 10
+Total entities bound: 40
+Total entities deleted: 31
+
+Results: 7 passed, 0 failed
+
+✅ All entity deletion tests passed!

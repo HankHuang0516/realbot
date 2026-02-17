@@ -28,3 +28,23 @@ automation/
 playwright-report/
 test-results/
 release_v*
+
+# Signing keys & secrets
+*.jks
+keystore.properties
+found_secrets.json
+tappay_dump.txt
+
+# Build artifacts
+app/build/
+*.aab
+*.apk
+
+# IDE & tools
+.idea/
+.vscode/
+.claude/
+.agent/
+nul
+compile_log.txt
+logs/

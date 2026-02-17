@@ -1,0 +1,14 @@
+# Android App
+app/
+gradle/
+.gradle/
+build/
+*.iml
+local.properties
+
+# IDE
+.idea/
+.vscode/
+
+# Git
+.git/
