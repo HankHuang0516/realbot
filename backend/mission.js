@@ -594,7 +594,7 @@ module.exports = function(devices) {
                 return { entityId: eId, pushed: false, reason: 'not_bound' };
             }
 
-            const dashboardApi = `GET https://eclaw.up.railway.app/api/mission/dashboard?deviceId=${deviceId}&botSecret=${entity.botSecret}&entityId=${eId}`;
+            const dashboardApi = `GET /api/mission/dashboard?deviceId=xxx&botSecret=xxx&entityId=x`;
             const pushMessage = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}`;
 
             if (!entity.webhook) {
