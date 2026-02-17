@@ -596,8 +596,10 @@ module.exports = function(devices) {
                 return { entityId: eId, pushed: false, reason: 'not_bound' };
             }
 
-            const dashboardApi = `GET /api/mission/dashboard?deviceId=xxx&botSecret=xxx&entityId=x`;
-            const pushMessage = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}`;
+            const botSecret = entity.botSecret || 'xxx';
+            const dashboardApi = `GET /api/mission/dashboard?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${eId}`;
+            const todoDoneApi = `POST /api/mission/todo/done  body: {"deviceId":"${deviceId}","botSecret":"${botSecret}","entityId":${eId},"title":"<TODO標題>"}`;
+            const pushMessage = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}\n標記TODO完成: ${todoDoneApi}`;
 
             if (!entity.webhook) {
                 return { entityId: eId, pushed: false, reason: 'no_webhook' };
@@ -657,6 +659,89 @@ module.exports = function(devices) {
             total: pushResults.length,
             chatMessageId: chatMsgId
         });
+    });
+
+    // ============================================
+    // POST /todo/done
+    // Bot marks a TODO as done by title
+    // ============================================
+    router.post('/todo/done', async (req, res) => {
+        if (!authenticate(req, res)) return;
+        const { deviceId, title } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ success: false, error: 'Missing title' });
+        }
+
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            const result = await client.query(
+                'SELECT * FROM mission_dashboard WHERE device_id = $1 FOR UPDATE',
+                [deviceId]
+            );
+
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: 'Dashboard not found' });
+            }
+
+            const row = result.rows[0];
+            const todoList = row.todo_list || [];
+            const missionList = row.mission_list || [];
+            const doneList = row.done_list || [];
+
+            // Search in todoList first, then missionList
+            const titleLower = title.trim().toLowerCase();
+            let foundIdx = todoList.findIndex(i => i.title && i.title.trim().toLowerCase() === titleLower);
+            let fromList = 'todo';
+            let sourceArr = todoList;
+
+            if (foundIdx < 0) {
+                foundIdx = missionList.findIndex(i => i.title && i.title.trim().toLowerCase() === titleLower);
+                fromList = 'mission';
+                sourceArr = missionList;
+            }
+
+            if (foundIdx < 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, error: `TODO not found: "${title}"` });
+            }
+
+            // Move to doneList
+            const item = sourceArr.splice(foundIdx, 1)[0];
+            item.status = 'DONE';
+            item.completedAt = Date.now();
+            item.updatedAt = Date.now();
+            doneList.unshift(item);
+
+            // Save dashboard (trigger auto-increments version)
+            const updateResult = await client.query(
+                `UPDATE mission_dashboard
+                 SET todo_list = $2, mission_list = $3, done_list = $4, last_synced_at = NOW()
+                 WHERE device_id = $1
+                 RETURNING version`,
+                [deviceId, JSON.stringify(todoList), JSON.stringify(missionList), JSON.stringify(doneList)]
+            );
+
+            await client.query('COMMIT');
+
+            console.log(`[Mission] TODO marked done: "${item.title}" (from ${fromList}) by bot, device ${deviceId}`);
+            res.json({
+                success: true,
+                message: `TODO "${item.title}" marked as done`,
+                item,
+                version: updateResult.rows[0].version
+            });
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('[Mission] Error marking TODO done:', error);
+            res.status(500).json({ success: false, error: error.message });
+        } finally {
+            client.release();
+        }
     });
 
     return { router, initMissionDatabase };
