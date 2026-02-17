@@ -6,4 +6,4 @@ dependsOn = ["setup"]
 cmds = ["cd backend && npm install"]
 
 [start]
-cmd = "cd backend && node server.js"
+cmd = "cd backend && node index.js"

@@ -3707,7 +3707,7 @@ app.listen(port, async () => {
     // Initialize Flickr client
     flickr.initFlickr();
 });
-// Force redeploy Sat Feb 14 09:53:10 UTC 2026
+// Force redeploy Mon Feb 17 2026 - fix nixpacks.toml server.js->index.js
 
 // ============================================
 // BOT MESSAGE SYNC - Save Bot responses to device

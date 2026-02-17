@@ -5,7 +5,7 @@ Track git commits for each release to enable changelog generation via `git diff`
 ---
 
 ## Latest
-v1.0.9 | c9d0574 | 2026-02-17
+v1.0.8 | 55a17a5 | 2026-02-17
 
 ---
 
@@ -13,7 +13,6 @@ v1.0.9 | c9d0574 | 2026-02-17
 
 | Version | Commit | Date | Notes |
 |---------|--------|------|-------|
-| v1.0.8 | 55a17a5 | 2026-02-17 | Push error UX, webhook test, skill doc |
 | v1.0.7 | b78ee97 | 2026-02-17 | Fix duplicate chat, update Flickr SDK |
 | v1.0.6 | 18f9131 | 2026-02-14 | App name fix (E-Claw) |
 | v1.0.5 | ebf662c | 2026-02-13 | Privacy Policy, Crash fixes, UI improvements |

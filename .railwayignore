@@ -6,9 +6,32 @@ build/
 *.iml
 local.properties
 
+# Root build files (prevent Nixpacks confusion with backend)
+package.json
+Procfile
+build.gradle.kts
+settings.gradle.kts
+gradlew.bat
+*.py
+*.aab
+*.apk
+*.jks
+keystore.properties
+start.sh
+
+# Non-backend content
+picture/
+google_play/
+release_v*/
+scripts/
+*.md
+!backend/**/*.md
+
 # IDE
 .idea/
 .vscode/
+.claude/
+.agent/
 
 # Git
 .git/
