@@ -1472,8 +1472,12 @@
                 btnFree.disabled = !borrowStatus.free.available;
             }
 
-            // Personal
-            btnPersonal.textContent = i18n.t('borrow_btn_bind_personal');
+            // Personal - show "Rebind (Free)" if user has available paid slots
+            if (borrowStatus.availableSlots > 0) {
+                btnPersonal.textContent = i18n.t('borrow_btn_rebind_free');
+            } else {
+                btnPersonal.textContent = i18n.t('borrow_btn_bind_personal');
+            }
             btnPersonal.disabled = borrowStatus.personal.available <= 0;
 
             // Check if entity slot is occupied by regular binding (not official)
@@ -1638,7 +1642,13 @@
                     // Step 1: Pay via TapPay (borrow type = NT$288)
                     await apiCall('POST', '/api/subscription/tappay/pay', { prime: result.card.prime, type: 'borrow' });
 
-                    // Step 2: Now bind the personal bot
+                    // Step 2: Add paid slot after successful payment
+                    await apiCall('POST', '/api/official-borrow/add-paid-slot', {
+                        deviceId: currentUser.deviceId,
+                        deviceSecret: currentUser.deviceSecret
+                    });
+
+                    // Step 3: Now bind the personal bot (has available slot)
                     const bindResult = await apiCall('POST', '/api/official-borrow/bind-personal', {
                         deviceId: currentUser.deviceId,
                         deviceSecret: currentUser.deviceSecret,
@@ -1646,7 +1656,7 @@
                     });
 
                     if (bindResult.success) {
-                        // Step 3: Verify subscription
+                        // Step 4: Verify subscription
                         try {
                             await apiCall('POST', '/api/official-borrow/verify-subscription', {
                                 deviceId: currentUser.deviceId,
@@ -1678,8 +1688,37 @@
         }
 
         async function bindPersonal() {
-            // Always require payment per entity - show TapPay dialog
-            showTapPayDialog();
+            // Step 1: Try to bind - backend checks paid slots
+            const btn = document.getElementById('btnBindPersonal');
+            btn.disabled = true;
+            btn.textContent = i18n.t('borrow_btn_binding');
+            try {
+                const result = await apiCall('POST', '/api/official-borrow/bind-personal', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: selectedBorrowEntity
+                });
+                if (result.success) {
+                    // Had available slot - bound without payment
+                    showToast(i18n.t('borrow_bind_success'), 'success');
+                    await loadBorrowStatus();
+                    await loadEntities();
+                    return;
+                }
+                // Other error
+                showToast(result.error || result.message || 'Bind failed', 'error');
+                btn.disabled = false;
+                updateBorrowButtons();
+            } catch (e) {
+                if (e.message && e.message.includes('payment_required')) {
+                    // No available paid slots - show TapPay dialog for payment
+                    showTapPayDialog();
+                } else {
+                    showToast(e.message || 'Bind failed', 'error');
+                }
+                btn.disabled = false;
+                updateBorrowButtons();
+            }
         }
 
         function confirmUnbind(entityId, botType) {

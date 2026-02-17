@@ -58,11 +58,11 @@ class OfficialBorrowActivity : AppCompatActivity() {
         super.onResume()
         billingManager.refreshState()
 
-        // After purchase completes, auto-bind the pending entity
+        // After purchase completes, add paid slot and bind
         val entityId = pendingBindEntityId
         if (entityId != null && billingManager.subscriptionState.value.hasBorrowSubscription) {
             pendingBindEntityId = null
-            completePersonalBind(entityId)
+            addPaidSlotAndBind(entityId)
         }
     }
 
@@ -184,7 +184,11 @@ class OfficialBorrowActivity : AppCompatActivity() {
                 btnBindFree.isEnabled = status.free.available
             }
 
-            btnBindPersonal.text = getString(R.string.subscribe_and_bind)
+            if (status.availableSlots > 0) {
+                btnBindPersonal.text = getString(R.string.rebind_free)
+            } else {
+                btnBindPersonal.text = getString(R.string.subscribe_and_bind)
+            }
             btnBindPersonal.isEnabled = status.personal.available > 0
         }
 
@@ -276,58 +280,120 @@ class OfficialBorrowActivity : AppCompatActivity() {
     }
 
     private fun bindPersonal() {
-        if (BuildConfig.DEBUG) {
-            // Test mode: skip payment, bind directly
-            completePersonalBind(selectedEntityId)
-            return
-        }
-        // Production: require payment per entity
-        pendingBindEntityId = selectedEntityId
-        billingManager.launchBorrowPurchaseFlow(this)
-    }
-
-    private fun completePersonalBind(entityId: Int) {
         btnBindPersonal.isEnabled = false
         progressLoading.visibility = View.VISIBLE
 
         lifecycleScope.launch {
             try {
+                // Step 1: Try to bind - backend will check paid slots
                 val response = api.bindPersonalBorrow(mapOf(
                     "deviceId" to deviceManager.deviceId,
                     "deviceSecret" to deviceManager.deviceSecret,
-                    "entityId" to entityId
+                    "entityId" to selectedEntityId
                 ))
 
                 if (response.success) {
-                    layoutPrefs.addRegisteredEntity(entityId)
-
-                    // Verify subscription on backend
-                    try {
-                        api.verifyBorrowSubscription(mapOf(
-                            "deviceId" to deviceManager.deviceId,
-                            "deviceSecret" to deviceManager.deviceSecret,
-                            "entityId" to entityId
-                        ))
-                    } catch (_: Exception) { }
-
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_success), Toast.LENGTH_SHORT).show()
-                    setResult(RESULT_OK)
-                    finish()
-                } else {
-                    val errorMsg = when (response.error) {
-                        "sold_out" -> getString(R.string.sold_out)
-                        else -> response.error ?: response.message ?: "Unknown"
-                    }
-                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, errorMsg), Toast.LENGTH_SHORT).show()
+                    // Had available slot - bound without payment
+                    onBindSuccess(selectedEntityId)
+                } else if (response.error == "sold_out") {
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.sold_out), Toast.LENGTH_SHORT).show()
                     btnBindPersonal.isEnabled = true
+                    progressLoading.visibility = View.GONE
+                } else {
+                    Toast.makeText(this@OfficialBorrowActivity, response.error ?: response.message ?: "Unknown", Toast.LENGTH_SHORT).show()
+                    btnBindPersonal.isEnabled = true
+                    progressLoading.visibility = View.GONE
+                }
+            } catch (e: retrofit2.HttpException) {
+                if (e.code() == 402) {
+                    // payment_required - need to purchase a new slot
+                    progressLoading.visibility = View.GONE
+                    launchPaymentFlow(selectedEntityId)
+                } else {
+                    Timber.e(e, "Failed to bind personal bot")
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
+                    btnBindPersonal.isEnabled = true
+                    progressLoading.visibility = View.GONE
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to bind personal bot")
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
                 btnBindPersonal.isEnabled = true
-            } finally {
                 progressLoading.visibility = View.GONE
             }
         }
+    }
+
+    private fun launchPaymentFlow(entityId: Int) {
+        if (BuildConfig.DEBUG) {
+            // Test mode: skip payment, add slot directly
+            addPaidSlotAndBind(entityId)
+            return
+        }
+        // Production: require Google Play payment
+        pendingBindEntityId = entityId
+        billingManager.launchBorrowPurchaseFlow(this)
+    }
+
+    private fun addPaidSlotAndBind(entityId: Int) {
+        btnBindPersonal.isEnabled = false
+        progressLoading.visibility = View.VISIBLE
+
+        lifecycleScope.launch {
+            try {
+                // Step 2: Add paid slot after payment
+                val slotResponse = api.addPaidSlot(mapOf(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret
+                ))
+
+                if (!slotResponse.success) {
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, slotResponse.error ?: "Failed to add slot"), Toast.LENGTH_SHORT).show()
+                    btnBindPersonal.isEnabled = true
+                    progressLoading.visibility = View.GONE
+                    return@launch
+                }
+
+                // Step 3: Retry bind (now has available slot)
+                val bindResponse = api.bindPersonalBorrow(mapOf(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "entityId" to entityId
+                ))
+
+                if (bindResponse.success) {
+                    onBindSuccess(entityId)
+                } else {
+                    Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, bindResponse.error ?: bindResponse.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
+                    btnBindPersonal.isEnabled = true
+                    progressLoading.visibility = View.GONE
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to add slot and bind")
+                Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
+                btnBindPersonal.isEnabled = true
+                progressLoading.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun onBindSuccess(entityId: Int) {
+        layoutPrefs.addRegisteredEntity(entityId)
+
+        // Verify subscription on backend
+        lifecycleScope.launch {
+            try {
+                api.verifyBorrowSubscription(mapOf(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "entityId" to entityId
+                ))
+            } catch (_: Exception) { }
+        }
+
+        Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_success), Toast.LENGTH_SHORT).show()
+        setResult(RESULT_OK)
+        progressLoading.visibility = View.GONE
+        finish()
     }
 }

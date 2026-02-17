@@ -2111,10 +2111,20 @@ app.get('/api/official-borrow/status', async (req, res) => {
         }
     }
 
+    // Get paid borrow slots info
+    let paidSlots = 0;
+    if (usePostgreSQL) {
+        paidSlots = await db.getPaidBorrowSlots(deviceId);
+    }
+    const usedPersonalSlots = validBindings.filter(b => (b.bot_type ?? b.botType) === 'personal').length;
+
     res.json({
         success: true,
         free: { available: freeAvailable },
         personal: { available: personalAvailable, total: personalTotal },
+        paidSlots: paidSlots,
+        usedSlots: usedPersonalSlots,
+        availableSlots: paidSlots - usedPersonalSlots,
         bindings: validBindings.map(b => ({
             entityId: b.entity_id ?? b.entityId,
             botType: b.bot_type ?? b.botType,
@@ -2273,6 +2283,34 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         return res.status(400).json({ success: false, error: `Entity ${eId} is already bound. Remove it first.` });
     }
 
+    // Check paid_borrow_slots: if user has unused paid slots, allow free rebind
+    let usedSlot = false;
+    if (usePostgreSQL) {
+        const paidSlots = await db.getPaidBorrowSlots(deviceId);
+        // Count current personal bindings (used slots)
+        const currentPersonalBindings = Object.values(officialBindingsCache).filter(b => {
+            if (b.device_id !== deviceId) return false;
+            const bot = officialBots[b.bot_id];
+            return bot && bot.bot_type === 'personal';
+        }).length;
+        const availableSlots = paidSlots - currentPersonalBindings;
+
+        if (availableSlots > 0) {
+            // Has unused paid slot - bind without payment
+            usedSlot = true;
+            console.log(`[Borrow] Device ${deviceId} using paid slot (${currentPersonalBindings + 1}/${paidSlots})`);
+        } else {
+            // No available slots - payment required
+            return res.status(402).json({
+                success: false,
+                error: 'payment_required',
+                message: 'No available paid slots. Payment required for new personal bot.',
+                paidSlots: paidSlots,
+                usedSlots: currentPersonalBindings
+            });
+        }
+    }
+
     // Find first available personal bot
     const personalBot = Object.values(officialBots).find(b => b.bot_type === 'personal' && b.status === 'available');
     if (!personalBot) {
@@ -2334,7 +2372,7 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
 
     await saveData();
 
-    console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId} (session: ${sessionKey})`);
+    console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId} (session: ${sessionKey}, usedSlot: ${usedSlot})`);
 
     // Fire-and-forget: send credentials + skill doc to bot
     sendBindCredentialsToBot(personalBot.webhook_url, personalBot.token, sessionKey, deviceId, eId, botSecret, 'personal');
@@ -2344,7 +2382,50 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
         entityId: eId,
         botType: 'personal',
         botId: personalBot.bot_id,
-        message: 'Personal bot bound successfully'
+        usedSlot: usedSlot,
+        message: usedSlot ? 'Personal bot bound using existing paid slot' : 'Personal bot bound successfully'
+    });
+});
+
+/**
+ * POST /api/official-borrow/add-paid-slot
+ * Increment paid_borrow_slots for a device after successful payment.
+ * Called by client after Google Play / TapPay payment completes.
+ * Body: { deviceId, deviceSecret }
+ */
+app.post('/api/official-borrow/add-paid-slot', async (req, res) => {
+    const { deviceId, deviceSecret } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const device = getOrCreateDevice(deviceId, deviceSecret);
+    if (device.deviceSecret && device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    }
+
+    if (!usePostgreSQL) {
+        return res.status(500).json({ success: false, error: 'Database not available' });
+    }
+
+    const newSlotCount = await db.incrementPaidBorrowSlots(deviceId);
+
+    // Count current personal bindings
+    const currentPersonalBindings = Object.values(officialBindingsCache).filter(b => {
+        if (b.device_id !== deviceId) return false;
+        const bot = officialBots[b.bot_id];
+        return bot && bot.bot_type === 'personal';
+    }).length;
+
+    console.log(`[Borrow] Device ${deviceId} added paid slot: now ${newSlotCount} total, ${currentPersonalBindings} used`);
+
+    res.json({
+        success: true,
+        paidSlots: newSlotCount,
+        usedSlots: currentPersonalBindings,
+        availableSlots: newSlotCount - currentPersonalBindings,
+        message: `Paid slot added. Total: ${newSlotCount}`
     });
 });
 

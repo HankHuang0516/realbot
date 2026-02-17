@@ -110,6 +110,11 @@ async function createTables() {
             ALTER TABLE official_bots ADD COLUMN IF NOT EXISTS bot_secret TEXT
         `);
 
+        // Add paid_borrow_slots column to devices table (tracks how many personal bots a device has paid for)
+        await client.query(`
+            ALTER TABLE devices ADD COLUMN IF NOT EXISTS paid_borrow_slots INTEGER DEFAULT 0
+        `);
+
         // Official bot bindings (free bot multi-device tracking)
         await client.query(`
             CREATE TABLE IF NOT EXISTS official_bot_bindings (
@@ -570,6 +575,43 @@ async function getExpiredPersonalBindings(maxAgeMs) {
     }
 }
 
+// ============================================
+// Paid Borrow Slots Functions
+// ============================================
+
+async function getPaidBorrowSlots(deviceId) {
+    if (!pool) return 0;
+    try {
+        const client = await pool.connect();
+        const result = await client.query(
+            'SELECT paid_borrow_slots FROM devices WHERE device_id = $1',
+            [deviceId]
+        );
+        client.release();
+        return result.rows.length > 0 ? (result.rows[0].paid_borrow_slots || 0) : 0;
+    } catch (err) {
+        console.error(`[DB] Failed to get paid_borrow_slots for ${deviceId}:`, err.message);
+        return 0;
+    }
+}
+
+async function incrementPaidBorrowSlots(deviceId) {
+    if (!pool) return 0;
+    try {
+        const client = await pool.connect();
+        const result = await client.query(
+            `UPDATE devices SET paid_borrow_slots = COALESCE(paid_borrow_slots, 0) + 1
+             WHERE device_id = $1 RETURNING paid_borrow_slots`,
+            [deviceId]
+        );
+        client.release();
+        return result.rows.length > 0 ? result.rows[0].paid_borrow_slots : 0;
+    } catch (err) {
+        console.error(`[DB] Failed to increment paid_borrow_slots for ${deviceId}:`, err.message);
+        return 0;
+    }
+}
+
 // Close database connection
 async function closeDatabase() {
     if (pool) {
@@ -596,5 +638,8 @@ module.exports = {
     getDeviceOfficialBindings,
     updateSubscriptionVerified,
     loadAllOfficialBindings,
-    getExpiredPersonalBindings
+    getExpiredPersonalBindings,
+    // Paid borrow slots
+    getPaidBorrowSlots,
+    incrementPaidBorrowSlots
 };

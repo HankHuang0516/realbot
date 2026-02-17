@@ -84,6 +84,9 @@ interface ClawApiService {
     @POST("api/official-borrow/bind-personal")
     suspend fun bindPersonalBorrow(@Body body: Map<String, @JvmSuppressWildcards Any>): OfficialBindResponse
 
+    @POST("api/official-borrow/add-paid-slot")
+    suspend fun addPaidSlot(@Body body: Map<String, String>): AddPaidSlotResponse
+
     @POST("api/official-borrow/unbind")
     suspend fun unbindBorrow(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
