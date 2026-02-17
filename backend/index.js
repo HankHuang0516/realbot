@@ -149,6 +149,33 @@ async function initPersistence() {
             officialBindingsCache[getBindingCacheKey(b.device_id, b.entity_id)] = b;
         }
         console.log(`[Persistence] Official bindings cache loaded: ${loadedBindings.length}`);
+
+        // Startup cleanup: release stale bot assignments where entity is no longer bound
+        let staleCount = 0;
+        for (const bot of Object.values(officialBots)) {
+            if (bot.status === 'assigned' && bot.assigned_device_id) {
+                const staleDeviceId = bot.assigned_device_id;
+                const staleEntityId = bot.assigned_entity_id;
+                const device = devices[staleDeviceId];
+                const entity = device?.entities?.[staleEntityId];
+                if (!entity || !entity.isBound) {
+                    console.log(`[Startup Cleanup] Releasing stale bot ${bot.bot_id}: device ${staleDeviceId} E${staleEntityId} no longer bound`);
+                    bot.status = 'available';
+                    bot.assigned_device_id = null;
+                    bot.assigned_entity_id = null;
+                    bot.assigned_at = null;
+                    await db.saveOfficialBot(bot);
+                    if (staleEntityId != null) {
+                        delete officialBindingsCache[getBindingCacheKey(staleDeviceId, staleEntityId)];
+                        await db.removeOfficialBinding(staleDeviceId, staleEntityId);
+                    }
+                    staleCount++;
+                }
+            }
+        }
+        if (staleCount > 0) {
+            console.log(`[Startup Cleanup] Released ${staleCount} stale bot assignments`);
+        }
     }
 }
 
