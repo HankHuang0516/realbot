@@ -114,6 +114,10 @@
     <!-- System Messages -->
     <string name="webhook_error_title">推播通知失敗</string>
     <string name="webhook_error_message">請將以下訊息貼給OpenClaw：\"webhook綁定有錯誤或是沒有使用POST /api/bot/register，請重新讀取\'公開webhook URL\'(gateway config) 以及重新讀取\'gateway token\'，立即呼叫 /api/bot/register: 用剛綁到的 deviceId/entityId/botSecret 再帶上 webhook_url、gateway token 把推播註冊好。\"</string>
+    <string name="push_error_free_title">Bot 連線中斷</string>
+    <string name="push_error_free_message">免費 Bot 連線暫時中斷，請嘗試重新綁定免費 Bot。</string>
+    <string name="push_error_rental_title">Bot 連線中斷</string>
+    <string name="push_error_rental_message">Bot 連線暫時中斷，您的租用次數會保留不用擔心。請嘗試重新綁定，並等待裝置 webhook 設置成功後再發送訊息。</string>
     <string name="message_copied">訊息已複製</string>
 
     <!-- Feedback -->
@@ -169,6 +173,8 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="loading_status">載入中…</string>
     <string name="connecting_bot">正在連接機器人…</string>
     <string name="handshaking_bot">正在與機器人交握中…</string>
+    <string name="webhook_testing">Webhook 測試中… 在測試成功之前先不要透過 Eclaw 傳訊息給我呦~</string>
+    <string name="webhook_test_success">Webhook 測試通過！Bot 已就緒~</string>
     <string name="bind_success_returning">連接成功！返回中…</string>
     <string name="processing_payment">付款處理中…</string>
     <string name="adding_slot">新增配額中…</string>

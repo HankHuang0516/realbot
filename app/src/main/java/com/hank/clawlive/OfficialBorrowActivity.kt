@@ -229,10 +229,8 @@ class OfficialBorrowActivity : AppCompatActivity() {
 
                 if (response.success) {
                     layoutPrefs.addRegisteredEntity(selectedEntityId)
-                    tvLoadingStatus.text = getString(R.string.bind_success_returning)
-                    delay(1200)
-                    setResult(RESULT_OK)
-                    finish()
+                    // Wait for webhook test to complete
+                    waitForWebhookTest(selectedEntityId)
                 } else {
                     hideLoading()
                     Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, response.error ?: response.message ?: "Unknown"), Toast.LENGTH_SHORT).show()
@@ -404,13 +402,52 @@ class OfficialBorrowActivity : AppCompatActivity() {
             } catch (_: Exception) { }
         }
 
-        // Show success status briefly so user sees confirmation
-        tvLoadingStatus.text = getString(R.string.bind_success_returning)
-        setResult(RESULT_OK)
-
+        // Wait for webhook test to complete
         lifecycleScope.launch {
-            delay(1200)
-            finish()
+            waitForWebhookTest(entityId)
         }
+    }
+
+    /**
+     * Poll entity status to wait for the bot's webhook test to complete.
+     * Shows "Webhook testing..." loading status while polling.
+     * Finishes after bot confirms (state changes to IDLE) or after timeout.
+     */
+    private suspend fun waitForWebhookTest(entityId: Int) {
+        tvLoadingStatus.text = getString(R.string.webhook_testing)
+
+        val maxAttempts = 20  // Poll up to 20 times (every 1s = ~20s max)
+        var webhookConfirmed = false
+        var sawBusy = false  // Must see BUSY first (bot started webhook test)
+
+        for (i in 1..maxAttempts) {
+            delay(1000)
+            try {
+                val status = api.getAgentStatus(deviceManager.deviceId, entityId)
+                Timber.d("Webhook poll #$i: state=${status.state}, isBound=${status.isBound}")
+
+                if (status.state == com.hank.clawlive.data.model.CharacterState.BUSY) {
+                    // Phase 1: Bot received credentials and is testing webhook
+                    sawBusy = true
+                } else if (sawBusy && status.state == com.hank.clawlive.data.model.CharacterState.IDLE) {
+                    // Phase 2: Bot confirmed webhook test passed (BUSY → IDLE)
+                    webhookConfirmed = true
+                    break
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Webhook test poll failed, attempt $i")
+            }
+        }
+
+        if (webhookConfirmed) {
+            tvLoadingStatus.text = getString(R.string.webhook_test_success)
+        } else {
+            tvLoadingStatus.text = getString(R.string.bind_success_returning)
+            Timber.w("Webhook test polling timed out for entity $entityId (sawBusy=$sawBusy)")
+        }
+
+        setResult(RESULT_OK)
+        delay(1200)
+        finish()
     }
 }

@@ -6,9 +6,183 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="portal_login_title">E-Claw - Login</title>
     <link rel="stylesheet" href="shared/style.css">
+    <style>
+        /* Terms dialog specific styles */
+        .terms-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .terms-dialog {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            width: 90vw;
+            max-width: 520px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .terms-header {
+            padding: 20px 24px 12px;
+            border-bottom: 1px solid var(--card-border);
+            flex-shrink: 0;
+        }
+
+        .terms-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .terms-header p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .terms-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 24px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .terms-content h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+            margin: 16px 0 8px;
+        }
+
+        .terms-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .terms-content p {
+            margin-bottom: 8px;
+        }
+
+        .terms-content ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .terms-content li {
+            margin-bottom: 4px;
+        }
+
+        .terms-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .terms-footer .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .terms-scroll-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .terms-dialog {
+                max-height: 90vh;
+                width: 95vw;
+            }
+            .terms-header { padding: 16px 16px 10px; }
+            .terms-content { padding: 12px 16px; }
+            .terms-footer { padding: 12px 16px; flex-direction: column; }
+        }
+    </style>
 </head>
 
 <body>
+    <!-- Terms & Privacy Dialog -->
+    <div id="termsOverlay" class="terms-overlay" style="display:none">
+        <div class="terms-dialog">
+            <div class="terms-header">
+                <h2 data-i18n="terms_title">Terms of Service & Privacy Policy</h2>
+                <p data-i18n="terms_subtitle">Please read and agree before creating an account</p>
+            </div>
+            <div class="terms-content" id="termsContent">
+                <h3 data-i18n="terms_section_tos">Terms of Service</h3>
+                <p data-i18n="terms_tos_welcome">Welcome to E-Claw. By creating an account and using our services, you agree to the following terms:</p>
+                <ul>
+                    <li data-i18n="terms_tos_1">You must be at least 13 years old to create an account.</li>
+                    <li data-i18n="terms_tos_2">You are responsible for maintaining the security of your account credentials.</li>
+                    <li data-i18n="terms_tos_3">You agree not to use the service for any unlawful or prohibited activities.</li>
+                    <li data-i18n="terms_tos_4">We reserve the right to suspend or terminate accounts that violate these terms.</li>
+                    <li data-i18n="terms_tos_5">The service is provided "as is" without warranty of any kind.</li>
+                    <li data-i18n="terms_tos_6">We may modify the service or these terms at any time with prior notice.</li>
+                </ul>
+
+                <h3 data-i18n="terms_section_privacy">Privacy Policy</h3>
+                <p data-i18n="terms_privacy_intro">We take your privacy seriously. This policy describes how we collect, use, and protect your personal information:</p>
+
+                <h3 data-i18n="terms_section_collect">Information We Collect</h3>
+                <ul>
+                    <li data-i18n="terms_collect_1">Account information: email address and encrypted password.</li>
+                    <li data-i18n="terms_collect_2">Device information: device identifiers for service binding.</li>
+                    <li data-i18n="terms_collect_3">Usage data: interaction logs to improve service quality.</li>
+                </ul>
+
+                <h3 data-i18n="terms_section_use">How We Use Your Information</h3>
+                <ul>
+                    <li data-i18n="terms_use_1">To provide and maintain the E-Claw service.</li>
+                    <li data-i18n="terms_use_2">To communicate important service updates and notices.</li>
+                    <li data-i18n="terms_use_3">To improve and personalize your experience.</li>
+                    <li data-i18n="terms_use_4">To prevent fraud and ensure platform security.</li>
+                </ul>
+
+                <h3 data-i18n="terms_section_protect">Data Protection</h3>
+                <ul>
+                    <li data-i18n="terms_protect_1">Your password is stored using industry-standard encryption.</li>
+                    <li data-i18n="terms_protect_2">We do not sell or share your personal information with third parties for marketing purposes.</li>
+                    <li data-i18n="terms_protect_3">You may request deletion of your account and associated data at any time.</li>
+                    <li data-i18n="terms_protect_4">We implement reasonable security measures to protect your data from unauthorized access.</li>
+                </ul>
+
+                <h3 data-i18n="terms_section_liability">Limitation of Liability</h3>
+                <p data-i18n="terms_liability_text">To the maximum extent permitted by law, E-Claw and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the service, including but not limited to loss of data, service interruption, or unauthorized access to your account.</p>
+
+                <h3 data-i18n="terms_section_contact">Contact</h3>
+                <p data-i18n="terms_contact_text">If you have any questions about these terms or our privacy practices, please contact us through the app's support channel.</p>
+            </div>
+            <div class="terms-footer">
+                <button class="btn btn-outline" onclick="closeTerms()" data-i18n="terms_btn_decline">Decline</button>
+                <button class="btn btn-primary" onclick="acceptTerms()" data-i18n="terms_btn_agree">I Agree</button>
+            </div>
+        </div>
+    </div>
+
     <div class="auth-container">
         <div class="auth-logo">
             <h1 data-i18n="portal_app_title">E-Claw</h1>
@@ -139,6 +313,7 @@
     <script src="../shared/i18n.js"></script>
     <script>
         let resetToken = null;
+        let termsAccepted = false;
 
         // Check URL params
         window.addEventListener('DOMContentLoaded', async () => {
@@ -164,6 +339,16 @@
         });
 
         function showTab(tab) {
+            // If switching to register and terms not yet accepted, show terms dialog first
+            if (tab === 'register' && !termsAccepted) {
+                showTermsDialog();
+                // Still highlight the register tab
+                document.querySelectorAll('.auth-tab').forEach((t, i) => {
+                    t.classList.toggle('active', i === 1);
+                });
+                return;
+            }
+
             document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
             document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
             document.getElementById('deviceForm').style.display = tab === 'device' ? '' : 'none';
@@ -180,6 +365,25 @@
             // Show tabs only for login/register/device
             document.querySelector('.auth-tabs').style.display =
                 (tab === 'forgot' || tab === 'reset') ? 'none' : '';
+        }
+
+        function showTermsDialog() {
+            document.getElementById('termsOverlay').style.display = 'flex';
+            // Scroll terms content to top
+            document.getElementById('termsContent').scrollTop = 0;
+        }
+
+        function closeTerms() {
+            document.getElementById('termsOverlay').style.display = 'none';
+            // Go back to login tab since user declined
+            showTab('login');
+        }
+
+        function acceptTerms() {
+            termsAccepted = true;
+            document.getElementById('termsOverlay').style.display = 'none';
+            // Now actually show the register form
+            showTab('register');
         }
 
         function showMsg(id, msg, type = 'error') {
@@ -325,326 +529,6 @@
             } finally {
                 btn.disabled = false;
                 btn.textContent = i18n.t('login_btn_device');
-            }
-        }
-
-        async function resendVerification(email) {
-            try {
-                await apiCall('POST', '/api/auth/resend-verification', { email });
-                showMsg('loginError', 'Verification email sent! Check your inbox.', 'success');
-            } catch (e) {
-                showMsg('loginError', e.message);
-            }
-        }
-    </script>
-</body>
-
-</html>
-<link rel="stylesheet" href="shared/style.css">
-</head>
-
-<body>
-    <div class="auth-container">
-        <div class="auth-logo">
-            <h1>E-Claw</h1>
-            <p>Live Wallpaper Companion</p>
-        </div>
-
-        <!-- Tabs -->
-        <div class="auth-tabs">
-            <div class="auth-tab active" onclick="showTab('login')">Login</div>
-            <div class="auth-tab" onclick="showTab('register')">Register</div>
-            <div class="auth-tab" onclick="showTab('device')">Device</div>
-        </div>
-
-        <!-- Login Form -->
-        <div id="loginForm">
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="loginEmail" placeholder="your@email.com">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-input" id="loginPassword" placeholder="Enter password"
-                    onkeydown="if(event.key==='Enter')doLogin()">
-            </div>
-            <div id="loginError" class="error-text" style="display:none"></div>
-            <button class="btn btn-primary btn-block" onclick="doLogin()" id="loginBtn"
-                style="margin-top:16px">Login</button>
-            <p style="text-align:center;margin-top:16px;font-size:13px;">
-                <a href="#" onclick="showTab('forgot');return false;">Forgot password?</a>
-            </p>
-        </div>
-
-        <!-- Register Form -->
-        <div id="registerForm" style="display:none">
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="regEmail" placeholder="your@email.com">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-input" id="regPassword" placeholder="At least 6 characters">
-                <div class="password-hint">Must contain both letters and numbers</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <input type="password" class="form-input" id="regPasswordConfirm" placeholder="Confirm password"
-                    onkeydown="if(event.key==='Enter')doRegister()">
-            </div>
-            <div id="regError" class="error-text" style="display:none"></div>
-            <div id="regSuccess" class="success-text" style="display:none"></div>
-            <button class="btn btn-primary btn-block" onclick="doRegister()" id="regBtn" style="margin-top:16px">Create
-                Account</button>
-        </div>
-
-        <!-- Device Login Form -->
-        <div id="deviceForm" style="display:none">
-            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
-                Already have the Android app? Enter your device credentials from Settings > Web Portal.
-            </p>
-            <div class="form-group">
-                <label class="form-label">Device ID</label>
-                <input type="text" class="form-input" id="deviceId" placeholder="e.g. abc12345-...">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Device Secret</label>
-                <input type="password" class="form-input" id="deviceSecret" placeholder="Enter device secret"
-                    onkeydown="if(event.key==='Enter')doDeviceLogin()">
-            </div>
-            <div id="deviceError" class="error-text" style="display:none"></div>
-            <button class="btn btn-primary btn-block" onclick="doDeviceLogin()" id="deviceBtn"
-                style="margin-top:16px">Login with Device</button>
-        </div>
-
-        <!-- Forgot Password Form -->
-        <div id="forgotForm" style="display:none">
-            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
-                Enter your email and we'll send you a reset link.
-            </p>
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="forgotEmail" placeholder="your@email.com"
-                    onkeydown="if(event.key==='Enter')doForgot()">
-            </div>
-            <div id="forgotMsg" style="display:none"></div>
-            <button class="btn btn-primary btn-block" onclick="doForgot()" id="forgotBtn" style="margin-top:16px">Send
-                Reset Link</button>
-            <p style="text-align:center;margin-top:16px;font-size:13px;">
-                <a href="#" onclick="showTab('login');return false;">Back to login</a>
-            </p>
-        </div>
-
-        <!-- Reset Password Form -->
-        <div id="resetForm" style="display:none">
-            <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;">
-                Enter your new password.
-            </p>
-            <div class="form-group">
-                <label class="form-label">New Password</label>
-                <input type="password" class="form-input" id="resetPassword" placeholder="At least 6 characters">
-                <div class="password-hint">Must contain both letters and numbers</div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Confirm Password</label>
-                <input type="password" class="form-input" id="resetPasswordConfirm" placeholder="Confirm password"
-                    onkeydown="if(event.key==='Enter')doReset()">
-            </div>
-            <div id="resetMsg" style="display:none"></div>
-            <button class="btn btn-primary btn-block" onclick="doReset()" id="resetBtn" style="margin-top:16px">Reset
-                Password</button>
-        </div>
-    </div>
-
-    <script src="shared/api.js"></script>
-    <script>
-        let resetToken = null;
-
-        // Check URL params
-        window.addEventListener('DOMContentLoaded', async () => {
-            const params = new URLSearchParams(window.location.search);
-
-            if (params.get('verified') === 'true') {
-                showTab('login');
-                showMsg('loginError', 'Email verified! You can now log in.', 'success');
-            }
-
-            if (params.get('reset')) {
-                resetToken = params.get('reset');
-                showTab('reset');
-            }
-
-            // Check if already logged in
-            try {
-                const data = await apiCall('GET', '/api/auth/me');
-                if (data.success) {
-                    window.location.href = 'dashboard.html';
-                }
-            } catch (e) { }
-        });
-
-        function showTab(tab) {
-            document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
-            document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
-            document.getElementById('deviceForm').style.display = tab === 'device' ? '' : 'none';
-            document.getElementById('forgotForm').style.display = tab === 'forgot' ? '' : 'none';
-            document.getElementById('resetForm').style.display = tab === 'reset' ? '' : 'none';
-
-            document.querySelectorAll('.auth-tab').forEach((t, i) => {
-                t.classList.toggle('active',
-                    (i === 0 && tab === 'login') ||
-                    (i === 1 && tab === 'register') ||
-                    (i === 2 && tab === 'device'));
-            });
-
-            // Show tabs only for login/register/device
-            document.querySelector('.auth-tabs').style.display =
-                (tab === 'forgot' || tab === 'reset') ? 'none' : '';
-        }
-
-        function showMsg(id, msg, type = 'error') {
-            const el = document.getElementById(id);
-            el.textContent = msg;
-            el.className = type === 'success' ? 'success-text' : 'error-text';
-            el.style.display = '';
-        }
-
-        function hideMsg(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        function validatePassword(pw) {
-            if (pw.length < 6) return 'Password must be at least 6 characters';
-            if (!/[a-zA-Z]/.test(pw)) return 'Password must contain letters';
-            if (!/[0-9]/.test(pw)) return 'Password must contain numbers';
-            return null;
-        }
-
-        async function doLogin() {
-            hideMsg('loginError');
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            if (!email || !password) {
-                return showMsg('loginError', 'Please fill in all fields');
-            }
-
-            const btn = document.getElementById('loginBtn');
-            btn.disabled = true;
-            btn.textContent = 'Logging in...';
-
-            try {
-                const data = await apiCall('POST', '/api/auth/login', { email, password });
-                window.location.href = 'dashboard.html';
-            } catch (e) {
-                showMsg('loginError', e.message);
-                if (e.message.includes('not verified')) {
-                    document.getElementById('loginError').innerHTML +=
-                        ' <a href="#" onclick="resendVerification(\'' + email + '\');return false;">Resend</a>';
-                }
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Login';
-            }
-        }
-
-        async function doRegister() {
-            hideMsg('regError');
-            hideMsg('regSuccess');
-            const email = document.getElementById('regEmail').value.trim();
-            const password = document.getElementById('regPassword').value;
-            const confirm = document.getElementById('regPasswordConfirm').value;
-
-            if (!email || !password || !confirm) {
-                return showMsg('regError', 'Please fill in all fields');
-            }
-
-            const pwErr = validatePassword(password);
-            if (pwErr) return showMsg('regError', pwErr);
-
-            if (password !== confirm) {
-                return showMsg('regError', 'Passwords do not match');
-            }
-
-            const btn = document.getElementById('regBtn');
-            btn.disabled = true;
-            btn.textContent = 'Creating account...';
-
-            try {
-                await apiCall('POST', '/api/auth/register', { email, password });
-                showMsg('regSuccess', 'Account created! Check your email for verification link.', 'success');
-                document.getElementById('regEmail').value = '';
-                document.getElementById('regPassword').value = '';
-                document.getElementById('regPasswordConfirm').value = '';
-            } catch (e) {
-                showMsg('regError', e.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Create Account';
-            }
-        }
-
-        async function doForgot() {
-            const email = document.getElementById('forgotEmail').value.trim();
-            if (!email) return showMsg('forgotMsg', 'Please enter your email');
-
-            const btn = document.getElementById('forgotBtn');
-            btn.disabled = true;
-
-            try {
-                await apiCall('POST', '/api/auth/forgot-password', { email });
-                showMsg('forgotMsg', 'If the email exists, a reset link has been sent. Check your inbox.', 'success');
-            } catch (e) {
-                showMsg('forgotMsg', e.message);
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function doReset() {
-            hideMsg('resetMsg');
-            const password = document.getElementById('resetPassword').value;
-            const confirm = document.getElementById('resetPasswordConfirm').value;
-
-            const pwErr = validatePassword(password);
-            if (pwErr) return showMsg('resetMsg', pwErr);
-            if (password !== confirm) return showMsg('resetMsg', 'Passwords do not match');
-
-            const btn = document.getElementById('resetBtn');
-            btn.disabled = true;
-
-            try {
-                await apiCall('POST', '/api/auth/reset-password', { token: resetToken, newPassword: password });
-                showMsg('resetMsg', 'Password reset! You can now log in.', 'success');
-                setTimeout(() => { showTab('login'); }, 2000);
-            } catch (e) {
-                showMsg('resetMsg', e.message);
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        async function doDeviceLogin() {
-            hideMsg('deviceError');
-            const deviceId = document.getElementById('deviceId').value.trim();
-            const deviceSecret = document.getElementById('deviceSecret').value.trim();
-
-            if (!deviceId || !deviceSecret) {
-                return showMsg('deviceError', 'Please fill in both fields');
-            }
-
-            const btn = document.getElementById('deviceBtn');
-            btn.disabled = true;
-            btn.textContent = 'Logging in...';
-
-            try {
-                await apiCall('POST', '/api/auth/device-login', { deviceId, deviceSecret });
-                window.location.href = 'dashboard.html';
-            } catch (e) {
-                showMsg('deviceError', e.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Login with Device';
             }
         }
 

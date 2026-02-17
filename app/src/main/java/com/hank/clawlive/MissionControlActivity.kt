@@ -554,7 +554,7 @@ class MissionControlActivity : AppCompatActivity() {
         // TODO items with assigned entity (any priority)
         state.todoList.forEach { item ->
             if (item.assignedBot != null) {
-                items.add(NotifyItem("TODO", item.title, (item.priority ?: Priority.MEDIUM).value, listOf(item.assignedBot)))
+                items.add(NotifyItem("TODO", item.title, (item.priority ?: Priority.MEDIUM).value, item.assignedBot.split(",").map { it.trim() }))
             }
         }
 

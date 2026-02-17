@@ -27,3 +27,4 @@ view_icon.html
 automation/
 playwright-report/
 test-results/
+release_v*

@@ -132,6 +132,10 @@
     <!-- System Messages -->
     <string name="webhook_error_title">Push Notification Failed</string>
     <string name="webhook_error_message">Please paste the following message to OpenClaw: \"Webhook binding error or POST /api/bot/register was not called. Please re-read the \'public webhook URL\' (gateway config) and re-read the \'gateway token\', then immediately call /api/bot/register with the deviceId/entityId/botSecret along with webhook_url and gateway token to register push notifications.\"</string>
+    <string name="push_error_free_title">Bot Connection Interrupted</string>
+    <string name="push_error_free_message">The free bot connection was interrupted. Please try rebinding the free bot.</string>
+    <string name="push_error_rental_title">Bot Connection Interrupted</string>
+    <string name="push_error_rental_message">The bot connection was interrupted. Your rental usage will be preserved, so don\'t worry. Please try rebinding and wait for the webhook setup to succeed before sending messages.</string>
     <string name="message_copied">Message copied</string>
 
     <!-- Feedback -->
@@ -165,6 +169,8 @@
     <string name="loading_status">Loading…</string>
     <string name="connecting_bot">Connecting to bot…</string>
     <string name="handshaking_bot">Handshaking with bot…</string>
+    <string name="webhook_testing">Webhook testing… Please don\'t send messages through Eclaw until the test succeeds~</string>
+    <string name="webhook_test_success">Webhook test passed! Bot is ready~</string>
     <string name="bind_success_returning">Connected! Returning…</string>
     <string name="processing_payment">Processing payment…</string>
     <string name="adding_slot">Adding paid slot…</string>

@@ -28,7 +28,10 @@ class MissionItemAdapter(
 
     private fun getEntityDisplayLabel(entityId: String?): String {
         if (entityId.isNullOrEmpty()) return "-"
-        return entityNames[entityId] ?: "Entity $entityId"
+        return entityId.split(",").joinToString(", ") { id ->
+            val trimmed = id.trim()
+            entityNames[trimmed] ?: "Entity $trimmed"
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {

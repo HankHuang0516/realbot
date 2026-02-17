@@ -720,9 +720,6 @@ class ChatActivity : AppCompatActivity() {
 
                 Timber.d("Message sent from ChatActivity to entities $targetIds")
 
-                val pushedCount = response.targets.count { it.pushed }
-                val totalCount = response.targets.size
-
                 val deliveredEntityIds = response.targets
                     .filter { it.pushed }
                     .map { it.entityId }
@@ -730,11 +727,14 @@ class ChatActivity : AppCompatActivity() {
                     chatRepository.markMessageDelivered(messageId, deliveredEntityIds)
                 }
 
-                if (pushedCount == 0 && totalCount > 0) {
-                    Timber.w("Push notification failed for all $totalCount entity(s)")
-                    showWebhookErrorDialog()
-                } else if (pushedCount < totalCount) {
-                    Timber.w("Push notification partial: $pushedCount/$totalCount entities")
+                // Only check push failures for entities in "push" mode (has webhook)
+                // Entities in "polling" mode have no webhook - pushed:false is expected
+                val pushModeTargets = response.targets.filter { it.mode == "push" }
+                val failedPushTargets = pushModeTargets.filter { !it.pushed }
+
+                if (failedPushTargets.isNotEmpty()) {
+                    Timber.w("Push failed for ${failedPushTargets.size} push-mode entity(s)")
+                    showPushErrorDialog(failedPushTargets)
                 }
 
                 ChatWidgetProvider.updateWidgets(this@ChatActivity)
@@ -745,17 +745,29 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun showWebhookErrorDialog() {
-        val message = getString(R.string.webhook_error_message)
+    private fun showPushErrorDialog(failedTargets: List<com.hank.clawlive.data.model.MessageTarget>) {
+        // Determine binding type from failed targets to show appropriate message
+        val bindingType = failedTargets.firstOrNull()?.bindingType
+
+        val (title, message) = when (bindingType) {
+            "free" -> Pair(
+                getString(R.string.push_error_free_title),
+                getString(R.string.push_error_free_message)
+            )
+            "personal" -> Pair(
+                getString(R.string.push_error_rental_title),
+                getString(R.string.push_error_rental_message)
+            )
+            else -> Pair(
+                getString(R.string.webhook_error_title),
+                getString(R.string.webhook_error_message)
+            )
+        }
+
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.webhook_error_title))
+            .setTitle(title)
             .setMessage(message)
-            .setPositiveButton(getString(R.string.copy)) { _, _ ->
-                val clipboard = getSystemService(android.content.ClipboardManager::class.java)
-                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("webhook_error", message))
-                Toast.makeText(this, getString(R.string.message_copied), Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(getString(R.string.cancel), null)
+            .setPositiveButton(android.R.string.ok, null)
             .show()
     }
 

@@ -150,14 +150,14 @@ The `register_webhook` allows you to receive messages, but the **interaction flo
 1. Android device calls `/api/device/register` to get binding code
 2. Bot uses code to call `/api/bind`
 3. **Bot saves returned `deviceId`, `entityId`, `botSecret`**
-4. **⚠️ REQUIRED: Bot immediately calls `/api/bot/register` to enable push notifications**
-5. Bot confirms connection: "✅ Connected + Push enabled"
-6. Bot is now ready to receive messages and control the entity
-7. the Bot MUST call the `update_claw_status` (or `transform`) tool to reply
+4. **⚠️ REQUIRED: Bot IMMEDIATELY calls `update_claw_status` (POST /api/transform) to notify the user that webhook testing is in progress.** Use message: `"Webhook testing in progress... Please don't send me messages through Eclaw until the test succeeds~"` with state `BUSY`.
+5. **⚠️ REQUIRED: Bot calls `/api/bot/register` to enable push notifications**
+6. After webhook test succeeds, Bot calls `update_claw_status` again with state `IDLE` and a success greeting message.
+7. Bot is now ready to receive messages and control the entity.
 
-**Why Step 4 is Required:**
-- **Instant Feedback**: Push notifications ensure the Bot receives messages immediately
-- **Better UX**: User sees instant "BUSY" state when Bot is processing
+**Why Steps 4-5 are Required:**
+- **Step 4 (Webhook-testing notice)**: The user may try to send messages immediately after binding. If webhook is not yet registered, those messages won't be delivered to the Bot. The notice prevents confusion.
+- **Step 5 (Webhook registration)**: Push notifications ensure the Bot receives messages immediately with instant "BUSY" state feedback.
 - **No Polling Delay**: Without push, messages arrive via 5-second polling (poor UX)
 - **Professional Experience**: Push mode is the expected behavior for a responsive Bot
 
@@ -225,7 +225,24 @@ const bindData = await bindResponse.json();
 const { deviceId, entityId, botSecret } = bindData;
 ```
 
-**Step 3: Bot immediately calls `/api/bot/register`**
+**Step 3: Bot IMMEDIATELY sets webhook-testing status (REQUIRED)**
+```javascript
+// ⚠️ MUST do this BEFORE registering webhook!
+// This tells the user not to send messages yet.
+await fetch('https://eclaw.up.railway.app/api/transform', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    deviceId: deviceId,
+    entityId: entityId,
+    botSecret: botSecret,
+    message: "Webhook testing in progress... Please don't send me messages through Eclaw until the test succeeds~",
+    state: "BUSY"
+  })
+});
+```
+
+**Step 4: Bot registers webhook**
 ```javascript
 const registerResponse = await fetch('https://eclaw.up.railway.app/api/bot/register', {
   method: 'POST',
@@ -243,18 +260,9 @@ const registerResponse = await fetch('https://eclaw.up.railway.app/api/bot/regis
 const registerData = await registerResponse.json();
 ```
 
-**Step 4: Bot confirms to user**
-```
-Bot: "✅ Successfully connected to your device!
-• Device: ${deviceId}
-• Entity: ${entityId}
-• Push notifications: Enabled
-• Ready to receive your messages!"
-```
-
-**Step 5: Bot sets initial status**
+**Step 5: Bot confirms webhook success and greets user**
 ```javascript
-// Optional: Set a friendly greeting message
+// After webhook registration succeeds, update status to let user know it's ready
 await fetch('https://eclaw.up.railway.app/api/transform', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -262,7 +270,7 @@ await fetch('https://eclaw.up.railway.app/api/transform', {
     deviceId: deviceId,
     entityId: entityId,
     botSecret: botSecret,
-    message: "Hello! I'm ready to help 👋",
+    message: "Webhook test passed! I'm ready to chat~",
     state: "IDLE"
   })
 });

@@ -680,6 +680,17 @@ Your credentials for this binding:
 
 Save these credentials. Use botSecret to authenticate all API calls.
 Do NOT call /api/bind or /api/bot/register - webhook is already configured for you.
+
+⚠️ IMMEDIATE ACTION REQUIRED:
+1. FIRST: Call update_claw_status (POST /api/transform) RIGHT NOW with:
+   - state: "BUSY"
+   - message: "Webhook testing in progress... Please don't send me messages through Eclaw until the test succeeds~"
+   This tells the user not to send messages until webhook is verified.
+2. THEN: Wait for the webhook test push message from the server.
+3. AFTER webhook test succeeds: Call update_claw_status again with:
+   - state: "IDLE"
+   - message: "Webhook test passed! I'm ready to chat~"
+
 Use update_claw_status (POST /api/transform) to respond to user messages.
 
 --- E-Claw API Documentation (Latest) ---
@@ -1513,10 +1524,20 @@ app.post('/api/client/speak', async (req, res) => {
             console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${eId} - client will show dialog`);
         }
 
+        // Determine binding type for this entity
+        const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
+        let bindingType = null; // null = custom/OpenClaw bot
+        if (officialBind) {
+            const bot = officialBots[officialBind.bot_id];
+            bindingType = bot ? bot.bot_type : null; // "free" or "personal"
+        }
+
         return {
             entityId: eId,
             pushed: pushResult.pushed,
-            mode: entity.webhook ? "push" : "polling"
+            mode: entity.webhook ? "push" : "polling",
+            reason: pushResult.pushed ? "ok" : (pushResult.reason || "unknown"),
+            bindingType: bindingType
         };
     });
 
@@ -1640,13 +1661,23 @@ app.post('/api/entity/speak-to', async (req, res) => {
         console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
     }
 
+    // Determine binding type
+    const officialBindTo = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
+    let bindingTypeTo = null;
+    if (officialBindTo) {
+        const bot = officialBots[officialBindTo.bot_id];
+        bindingTypeTo = bot ? bot.bot_type : null;
+    }
+
     res.json({
         success: true,
         message: `Message sent from Entity ${fromId} to Entity ${toId}`,
         from: { entityId: fromId, character: fromEntity.character },
         to: { entityId: toId, character: toEntity.character },
         pushed: pushResult.pushed,
-        mode: toEntity.webhook ? "push" : "polling"
+        mode: toEntity.webhook ? "push" : "polling",
+        reason: pushResult.pushed ? "ok" : (pushResult.reason || "unknown"),
+        bindingType: bindingTypeTo
     });
 });
 
@@ -1767,11 +1798,21 @@ app.post('/api/entity/broadcast', async (req, res) => {
             console.warn(`[Push] ✗ No webhook registered for Device ${deviceId} Entity ${toId} - client will show dialog`);
         }
 
+        // Determine binding type for broadcast target
+        const officialBindBcast = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
+        let bindingTypeBcast = null;
+        if (officialBindBcast) {
+            const botBcast = officialBots[officialBindBcast.bot_id];
+            bindingTypeBcast = botBcast ? botBcast.bot_type : null;
+        }
+
         return {
             entityId: toId,
             character: toEntity.character,
             pushed: pushResult.pushed,
-            mode: toEntity.webhook ? "push" : "polling"
+            mode: toEntity.webhook ? "push" : "polling",
+            reason: pushResult.pushed ? "ok" : (pushResult.reason || "unknown"),
+            bindingType: bindingTypeBcast
         };
     });
 

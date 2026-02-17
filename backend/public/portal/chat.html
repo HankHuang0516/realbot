@@ -753,15 +753,23 @@
             // Show "All" only if more than 1 entity
             allLabel.style.display = boundEntities.length > 1 ? '' : 'none';
 
+            // Restore last selected targets (null = first time, default all checked)
+            const saved = localStorage.getItem('chat_last_targets');
+            const savedTargets = saved ? new Set(saved.split(',').map(Number)) : null;
+
             boundEntities.forEach(e => {
                 const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
                 const name = e.name || char.name;
+                const isChecked = savedTargets ? savedTargets.has(e.entityId) : true;
                 const label = document.createElement('label');
                 label.className = 'target-check target-entity-check';
-                label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" checked onchange="updateTargetAll()">
+                label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" ${isChecked ? 'checked' : ''} onchange="updateTargetAll()">
                     <span>${char.emoji} ${escapeHtml(name)} (#${e.entityId})</span>`;
                 bar.appendChild(label);
             });
+
+            // Sync "All" checkbox state
+            updateTargetAll();
         }
 
         function toggleTargetAll(checkbox) {
@@ -1065,6 +1073,9 @@
                 }
 
                 await apiCall('POST', '/api/client/speak', payload);
+
+                // Save selected targets for next session
+                localStorage.setItem('chat_last_targets', targets.join(','));
 
                 // Clear pending photo
                 if (hasPhoto) clearPendingPhoto();
