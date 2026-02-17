@@ -649,14 +649,14 @@
                     url: items[idx].url || ''
                 }));
 
-                // Fire-and-forget: user can check chat for read receipts
+                // Fire-and-forget, then navigate to chat page
                 apiCall('POST', '/api/mission/notify', {
                     deviceId: currentUser.deviceId,
                     deviceSecret: currentUser.deviceSecret,
                     notifications
                 }).catch(() => {});
-                showToast('通知已發送', 'success');
                 closeDialog();
+                window.location.href = 'chat.html';
             };
         }
 

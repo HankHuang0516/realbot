@@ -123,6 +123,14 @@ interface ClawApiService {
     suspend fun uploadMissionDashboard(
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): MissionDashboardResponse
+
+    /**
+     * 發送任務更新通知給實體
+     */
+    @POST("api/mission/notify")
+    suspend fun notifyMissionUpdate(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): MissionNotifyResponse
 }
 
 // ============ Mission Control Response Models ============
@@ -156,6 +164,13 @@ data class MissionNotesResponse(
 data class MissionRulesResponse(
     val success: Boolean,
     val rules: List<MissionRule>,
+    val error: String? = null
+)
+
+data class MissionNotifyResponse(
+    val success: Boolean,
+    val delivered: Int? = null,
+    val total: Int? = null,
     val error: String? = null
 )
 

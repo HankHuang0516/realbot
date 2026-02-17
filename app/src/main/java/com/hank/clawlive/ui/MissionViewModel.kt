@@ -23,6 +23,7 @@ data class MissionUiState(
     val doneList: List<MissionItem> = emptyList(),
     val notes: List<MissionNote> = emptyList(),
     val rules: List<MissionRule> = emptyList(),
+    val skills: List<MissionSkill> = emptyList(),
     val version: Int = 1,
     val lastSyncedAt: Long? = null,
     val error: String? = null,
@@ -48,11 +49,12 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
         val snapshot = missionPrefs.loadDashboard() ?: return
         _uiState.update {
             it.copy(
-                todoList = snapshot.todoList,
-                missionList = snapshot.missionList,
-                doneList = snapshot.doneList,
-                notes = snapshot.notes,
-                rules = snapshot.rules,
+                todoList = snapshot.todoList ?: emptyList(),
+                missionList = snapshot.missionList ?: emptyList(),
+                doneList = snapshot.doneList ?: emptyList(),
+                notes = snapshot.notes ?: emptyList(),
+                rules = snapshot.rules ?: emptyList(),
+                skills = snapshot.skills ?: emptyList(),
                 version = snapshot.version,
                 lastSyncedAt = snapshot.lastSyncedAt
             )
@@ -72,11 +74,12 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            todoList = d.todoList,
-                            missionList = d.missionList,
-                            doneList = d.doneList,
-                            notes = d.notes,
-                            rules = d.rules,
+                            todoList = d.todoList ?: emptyList(),
+                            missionList = d.missionList ?: emptyList(),
+                            doneList = d.doneList ?: emptyList(),
+                            notes = d.notes ?: emptyList(),
+                            rules = d.rules ?: emptyList(),
+                            skills = d.skills ?: emptyList(),
                             version = d.version,
                             lastSyncedAt = d.lastSyncedAt,
                             hasLocalChanges = false
@@ -95,7 +98,7 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun uploadDashboard(onConflict: ((Int, Int) -> Unit)? = null) {
+    fun uploadDashboard(onConflict: ((Int, Int) -> Unit)? = null, onSuccess: (() -> Unit)? = null) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSyncing = true, error = null) }
             try {
@@ -109,7 +112,8 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
                         "missionList" to state.missionList,
                         "doneList" to state.doneList,
                         "notes" to state.notes,
-                        "rules" to state.rules
+                        "rules" to state.rules,
+                        "skills" to state.skills
                     )
                 )
                 val response = api.uploadMissionDashboard(body)
@@ -126,6 +130,7 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
                     // Save updated version locally
                     saveToLocal()
                     Timber.d("Dashboard uploaded, version: $newVersion")
+                    onSuccess?.invoke()
                 } else if (response.error == "VERSION_CONFLICT") {
                     _uiState.update { it.copy(isSyncing = false) }
                     onConflict?.invoke(state.version, response.version ?: 0)
@@ -150,6 +155,7 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
                 doneList = state.doneList,
                 notes = state.notes,
                 rules = state.rules,
+                skills = state.skills,
                 version = state.version,
                 lastSyncedAt = state.lastSyncedAt ?: System.currentTimeMillis()
             )
@@ -278,19 +284,19 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
     // Rules CRUD
     // ============================================
 
-    fun addRule(name: String, description: String, ruleType: RuleType) {
-        val rule = MissionRule(name = name, description = description, ruleType = ruleType)
+    fun addRule(name: String, description: String, ruleType: RuleType, assignedEntities: List<String> = emptyList()) {
+        val rule = MissionRule(name = name, description = description, ruleType = ruleType, assignedEntities = assignedEntities)
         _uiState.update {
             it.copy(rules = it.rules + rule, hasLocalChanges = true)
         }
         saveToLocal()
     }
 
-    fun editRule(ruleId: String, name: String, description: String, ruleType: RuleType) {
+    fun editRule(ruleId: String, name: String, description: String, ruleType: RuleType, assignedEntities: List<String> = emptyList()) {
         _uiState.update { state ->
             state.copy(
                 rules = state.rules.map {
-                    if (it.id == ruleId) it.copy(name = name, description = description, ruleType = ruleType, updatedAt = System.currentTimeMillis()) else it
+                    if (it.id == ruleId) it.copy(name = name, description = description, ruleType = ruleType, assignedEntities = assignedEntities, updatedAt = System.currentTimeMillis()) else it
                 },
                 hasLocalChanges = true
             )
@@ -318,5 +324,64 @@ class MissionViewModel(application: Application) : AndroidViewModel(application)
             )
         }
         saveToLocal()
+    }
+
+    // ============================================
+    // Skills CRUD
+    // ============================================
+
+    fun addSkill(title: String, url: String = "", assignedEntities: List<String> = emptyList()) {
+        val skill = MissionSkill(title = title, url = url, assignedEntities = assignedEntities)
+        _uiState.update {
+            it.copy(skills = it.skills + skill, hasLocalChanges = true)
+        }
+        saveToLocal()
+    }
+
+    fun editSkill(skillId: String, title: String, url: String, assignedEntities: List<String>) {
+        _uiState.update { state ->
+            state.copy(
+                skills = state.skills.map {
+                    if (it.id == skillId) it.copy(title = title, url = url, assignedEntities = assignedEntities, updatedAt = System.currentTimeMillis()) else it
+                },
+                hasLocalChanges = true
+            )
+        }
+        saveToLocal()
+    }
+
+    fun deleteSkill(skillId: String) {
+        _uiState.update { state ->
+            state.copy(
+                skills = state.skills.filter { it.id != skillId },
+                hasLocalChanges = true
+            )
+        }
+        saveToLocal()
+    }
+
+    // ============================================
+    // Mission Notify
+    // ============================================
+
+    fun notifyEntities(notifications: List<Map<String, Any>>, onResult: (Int, Int) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "notifications" to notifications
+                )
+                val response = api.notifyMissionUpdate(body)
+                if (response.success) {
+                    onResult(response.delivered ?: 0, response.total ?: 0)
+                } else {
+                    onResult(0, 0)
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to notify entities")
+                onResult(0, 0)
+            }
+        }
     }
 }

@@ -645,7 +645,14 @@
                 // Read receipt for sent messages
                 let receipt = '';
                 if (isSent) {
-                    if (msg.read_at) {
+                    if (msg.source === 'mission_notify' && msg.delivered_to) {
+                        // Per-entity delivery status for mission notifications
+                        const deliveredIds = new Set(msg.delivered_to.split(',').map(id => id.trim()));
+                        const badges = Array.from(deliveredIds).map(id =>
+                            `<span class="read-receipt">${getEntityLabel(parseInt(id))} \u2713</span>`
+                        ).join(' ');
+                        receipt = badges;
+                    } else if (msg.read_at) {
                         receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
                     } else if (msg.is_delivered) {
                         receipt = `<span class="read-receipt">\u2713 已讀</span>`;
@@ -687,6 +694,10 @@
             const entityHtml = `<span class="entity-label" data-entity="${entityId}">${getEntityLabel(entityId)}</span>`;
 
             if (msg.is_from_user) {
+                // Mission notify: consolidated notification bubble
+                if (msg.source === 'mission_notify') {
+                    return 'Mission Control';
+                }
                 // Determine source tag
                 const src = msg.source || 'client';
                 let sourceTag = src;

@@ -539,32 +539,54 @@ module.exports = function(devices) {
             return res.status(404).json({ success: false, error: 'Device not found' });
         }
 
-        const results = [];
-
-        // Group notifications by target entity
-        const entityMessages = {};
+        // Build consolidated notification lines with entity labels
+        const entityMessages = {};  // entityId -> [lines]
+        const allLines = [];        // for the consolidated chat message
         for (const n of notifications) {
             const entityIds = n.entityIds || [];
-            let line = '';
+            let typeTag = '';
             if (n.type === 'TODO') {
                 const urgency = (n.priority >= 3) ? '⚠️ 立刻執行' : '📋 待處理';
-                line = `[TODO ${urgency}] ${n.title}`;
+                typeTag = `[TODO ${urgency}]`;
             } else if (n.type === 'SKILL') {
-                line = `[SKILL 必須安裝] ${n.title}${n.url ? ' - ' + n.url : ''}`;
+                typeTag = '[SKILL 必須安裝]';
             } else if (n.type === 'RULE') {
-                line = `[RULE 必須遵守] ${n.title}`;
+                typeTag = '[RULE 必須遵守]';
             } else {
-                line = `[${n.type}] ${n.title}`;
+                typeTag = `[${n.type}]`;
             }
+
+            const entityLabels = entityIds.map(id => {
+                const e = device.entities[parseInt(id)];
+                return e ? `Entity ${id}` : `Entity ${id}`;
+            }).join(', ');
+            const line = `${typeTag} ${n.title}${n.url ? ' - ' + n.url : ''} → ${entityLabels}`;
+            allLines.push(line);
 
             for (const eId of entityIds) {
                 const id = parseInt(eId);
                 if (!entityMessages[id]) entityMessages[id] = [];
-                entityMessages[id].push(line);
+                const perEntityLine = `${typeTag} ${n.title}${n.url ? ' - ' + n.url : ''}`;
+                entityMessages[id].push(perEntityLine);
             }
         }
 
-        // Push to each entity
+        // Save ONE consolidated chat message (user bubble)
+        const chatText = `📢 任務通知\n${allLines.join('\n')}`;
+        const allEntityIds = [...new Set(notifications.flatMap(n => (n.entityIds || []).map(Number)))];
+        let chatMsgId = null;
+        try {
+            const insertResult = await pool.query(
+                `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
+                 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+                [deviceId, null, chatText, 'mission_notify', true, false]
+            );
+            chatMsgId = insertResult.rows[0]?.id;
+        } catch (dbErr) {
+            console.warn('[Mission] Failed to save consolidated chat message:', dbErr.message);
+        }
+
+        // Push to each entity via webhook
         const pushPromises = Object.entries(entityMessages).map(async ([eIdStr, lines]) => {
             const eId = parseInt(eIdStr);
             const entity = device.entities[eId];
@@ -573,50 +595,25 @@ module.exports = function(devices) {
             }
 
             const dashboardApi = `GET https://eclaw.up.railway.app/api/mission/dashboard?deviceId=${deviceId}&botSecret=${entity.botSecret}&entityId=${eId}`;
-            const message = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}`;
+            const pushMessage = `[Mission Control 任務更新]\n${lines.join('\n')}\n\n取得完整任務面板: ${dashboardApi}`;
 
-            // Save chat message for tracking
-            try {
-                const saveChatMessage = require('./index.js').saveChatMessage;
-                if (typeof saveChatMessage === 'function') {
-                    saveChatMessage(deviceId, eId, message, 'mission_control', true, false);
-                }
-            } catch (e) {
-                // saveChatMessage may not be directly importable, use pool instead
-                try {
-                    await pool.query(
-                        `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot)
-                         VALUES ($1, $2, $3, $4, $5, $6)`,
-                        [deviceId, eId, message, 'mission_control', true, false]
-                    );
-                } catch (dbErr) {
-                    console.warn('[Mission] Failed to save chat message:', dbErr.message);
-                }
-            }
-
-            // Push via webhook
             if (!entity.webhook) {
                 return { entityId: eId, pushed: false, reason: 'no_webhook' };
             }
 
             const { url, token, sessionKey } = entity.webhook;
-            let effectiveSessionKey = sessionKey;
-
             const requestPayload = {
                 tool: "sessions_send",
                 args: {
-                    sessionKey: effectiveSessionKey,
-                    message: `[Device ${deviceId} Entity ${eId} - Mission Control 更新]\n${message}\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`
+                    sessionKey: sessionKey,
+                    message: `[Device ${deviceId} Entity ${eId} - Mission Control 更新]\n${pushMessage}\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`
                 }
             };
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestPayload)
                 });
 
@@ -625,20 +622,9 @@ module.exports = function(devices) {
                     if (responseText && responseText.includes('No session found')) {
                         return { entityId: eId, pushed: false, reason: 'session_not_found' };
                     }
-                    // Mark chat message as delivered
-                    try {
-                        await pool.query(
-                            `UPDATE chat_messages SET is_delivered = true, delivered_to = $3
-                             WHERE device_id = $1 AND entity_id = $2 AND source = 'mission_control'
-                             AND is_delivered = false
-                             ORDER BY created_at DESC LIMIT 1`,
-                            [deviceId, eId, `entity_${eId}`]
-                        );
-                    } catch (e) { /* ignore */ }
                     console.log(`[Mission] ✓ Notify pushed to Device ${deviceId} Entity ${eId}`);
                     return { entityId: eId, pushed: true };
                 } else {
-                    const errorText = await response.text().catch(() => '');
                     console.error(`[Mission] ✗ Notify push failed for Entity ${eId}: ${response.status}`);
                     return { entityId: eId, pushed: false, reason: `http_${response.status}` };
                 }
@@ -650,12 +636,24 @@ module.exports = function(devices) {
 
         const pushResults = await Promise.all(pushPromises);
         const delivered = pushResults.filter(r => r.pushed).length;
+        const deliveredIds = pushResults.filter(r => r.pushed).map(r => r.entityId);
+
+        // Update consolidated chat message with delivery status
+        if (chatMsgId && deliveredIds.length > 0) {
+            try {
+                await pool.query(
+                    `UPDATE chat_messages SET is_delivered = true, delivered_to = $2 WHERE id = $1`,
+                    [chatMsgId, deliveredIds.join(',')]
+                );
+            } catch (e) { /* ignore */ }
+        }
 
         res.json({
             success: true,
             results: pushResults,
             delivered,
-            total: pushResults.length
+            total: pushResults.length,
+            chatMessageId: chatMsgId
         });
     });
 

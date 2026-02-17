@@ -309,6 +309,14 @@
             </div>
         </div>
 
+        <!-- Feedback Card -->
+        <div class="card" onclick="showFeedbackDialog()" style="cursor:pointer; margin-bottom: 20px;">
+            <div class="card-title" data-i18n="settings_feedback_title">Feedback</div>
+            <div style="font-size:14px;color:var(--text-secondary);margin-top:4px;" data-i18n="settings_feedback_desc">
+                Found a bug or have a suggestion? Let us know!
+            </div>
+        </div>
+
         <!-- Logout -->
         <div class="actions-section">
             <button class="logout-btn" onclick="doLogout()" data-i18n="nav_logout">Logout</button>
@@ -349,6 +357,24 @@
             </div>
             <div class="dialog-actions">
                 <button class="btn btn-primary" onclick="closePrivacyDialog()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Dialog -->
+    <div class="dialog-overlay" id="feedbackDialog" style="display:none">
+        <div class="dialog">
+            <div class="dialog-title" data-i18n="settings_feedback_title">Feedback</div>
+            <p data-i18n="settings_feedback_desc" style="margin-bottom:10px;">Found a bug or have a suggestion? Let us
+                know!</p>
+            <textarea id="feedbackText" class="form-input" rows="5" data-i18n="settings_feedback_hint"
+                placeholder="Enter your feedback here..."
+                style="width: 100%; resize: vertical; margin-bottom: 1rem; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary);"></textarea>
+            <div class="dialog-actions">
+                <button class="btn btn-outline" onclick="closeFeedbackDialog()"
+                    data-i18n="settings_feedback_cancel">Cancel</button>
+                <button class="btn btn-primary" onclick="sendFeedback()" id="btnSendFeedback"
+                    data-i18n="settings_btn_send_feedback">Send</button>
             </div>
         </div>
     </div>
@@ -666,6 +692,49 @@
         function setLanguageChip(lang) {
             document.getElementById('chipEn').classList.toggle('active', lang === 'en');
             document.getElementById('chipZh').classList.toggle('active', lang === 'zh');
+        }
+
+        // ============================================
+        // Feedback
+        // ============================================
+        function showFeedbackDialog() {
+            document.getElementById('feedbackDialog').style.display = '';
+            document.getElementById('feedbackText').value = '';
+            setTimeout(() => document.getElementById('feedbackText').focus(), 100);
+        }
+
+        function closeFeedbackDialog() {
+            document.getElementById('feedbackDialog').style.display = 'none';
+        }
+
+        async function sendFeedback() {
+            const message = document.getElementById('feedbackText').value.trim();
+            if (!message) {
+                showToast(i18n.t('chat_enter_message'), 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSendFeedback');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = i18n.t('chat_btn_sending');
+
+            try {
+                const user = await checkAuth();
+                await apiCall('POST', '/api/feedback', {
+                    deviceId: user?.deviceId || 'web-portal',
+                    message: message,
+                    appVersion: 'Portal v' + PORTAL_VERSION
+                });
+
+                showToast(i18n.t('settings_feedback_sent'), 'success');
+                closeFeedbackDialog();
+            } catch (e) {
+                showToast(e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
         }
 
         // ============================================

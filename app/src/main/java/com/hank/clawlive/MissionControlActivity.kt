@@ -1,5 +1,6 @@
 package com.hank.clawlive
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -599,8 +600,9 @@ class MissionControlActivity : AppCompatActivity() {
                     )
                 }
 
-                // Fire-and-forget: user can check chat for read receipts
+                // Fire-and-forget, then navigate to chat
                 viewModel.notifyEntities(notifications) { _, _ -> }
+                startActivity(Intent(this, ChatActivity::class.java))
                 Toast.makeText(this, "通知已發送", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("跳過", null)
