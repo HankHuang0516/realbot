@@ -128,6 +128,17 @@ async function createTables() {
             )
         `);
 
+        // Feedback table
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS feedback (
+                id SERIAL PRIMARY KEY,
+                device_id TEXT NOT NULL,
+                message TEXT NOT NULL,
+                app_version TEXT DEFAULT '',
+                created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+            )
+        `);
+
         console.log('[DB] Database tables ready');
         client.release();
     } catch (err) {
@@ -612,6 +623,18 @@ async function incrementPaidBorrowSlots(deviceId) {
     }
 }
 
+// Save user feedback
+async function saveFeedback(deviceId, message, appVersion) {
+    try {
+        await pool.query(
+            `INSERT INTO feedback (device_id, message, app_version, created_at) VALUES ($1, $2, $3, $4)`,
+            [deviceId, message, appVersion || '', Date.now()]
+        );
+    } catch (err) {
+        console.error(`[DB] Failed to save feedback:`, err.message);
+    }
+}
+
 // Close database connection
 async function closeDatabase() {
     if (pool) {
@@ -641,5 +664,7 @@ module.exports = {
     getExpiredPersonalBindings,
     // Paid borrow slots
     getPaidBorrowSlots,
-    incrementPaidBorrowSlots
+    incrementPaidBorrowSlots,
+    // Feedback
+    saveFeedback
 };
