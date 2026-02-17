@@ -598,12 +598,16 @@ When users send photos/voice from the Android app or Web portal, the **pending m
 [附件: 照片]
 media_type: photo
 media_url: https://live.staticflickr.com/65535/xxxxx_large.jpg
+backup_url: https://eclaw.up.railway.app/api/media/1234567890_abc12345
 注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息
 ```
 
 **Parsing media from push notifications:**
 - Look for `media_type:` line → value is `photo` or `voice`
 - Look for `media_url:` line → the full URL (Flickr URL for photos, base64 data URI for voice)
+- Look for `backup_url:` line → backend-cached copy of the photo (avoids Flickr rate limits)
+  - **When `media_url` (Flickr) returns 429 or fails, use `backup_url` instead**
+  - Backup is stored in server memory, max 5 photos per device, lost on server redeploy
 - If no `media_type` line exists, the message is text-only
 
 #### Entity-to-Entity Media

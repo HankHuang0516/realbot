@@ -1488,8 +1488,11 @@ app.post('/api/client/speak', async (req, res) => {
 
             // For official bot entities, include auth credentials so bot can reply
             let pushMsg = `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`;
-            if (mediaType === 'photo') pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
-            else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
+            if (mediaType === 'photo') {
+                pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+                const bkUrl = getBackupUrl(mediaUrl);
+                if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
+            } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
             if (officialBind && entity.botSecret) {
@@ -1615,8 +1618,11 @@ app.post('/api/entity/speak-to', async (req, res) => {
     let pushResult = { pushed: false, reason: "no_webhook" };
     if (toEntity.webhook) {
         let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
-        if (mediaType === 'photo') pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
-        else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
+        if (mediaType === 'photo') {
+            pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+            const bkUrl = getBackupUrl(mediaUrl);
+            if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
+        } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
         const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
         if (officialBind && toEntity.botSecret) {
@@ -1740,8 +1746,11 @@ app.post('/api/entity/broadcast', async (req, res) => {
         let pushResult = { pushed: false, reason: "no_webhook" };
         if (toEntity.webhook) {
             let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
-            if (mediaType === 'photo') pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
-            else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
+            if (mediaType === 'photo') {
+                pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+                const bkUrl = getBackupUrl(mediaUrl);
+                if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
+            } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
             const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
             if (officialBind && toEntity.botSecret) {
@@ -3315,6 +3324,61 @@ const mediaUpload = multer({
     }
 });
 
+// ============================================
+// PHOTO CACHE - Backup for Flickr rate limits
+// Max 5 photos per device, stored in memory
+// ============================================
+const photoCache = new Map();       // mediaId -> { buffer, contentType, deviceId, createdAt }
+const devicePhotos = new Map();     // deviceId -> [mediaId, ...] (oldest first)
+const flickrToBackup = new Map();   // flickrUrl -> mediaId (for auto-lookup in push)
+const MAX_PHOTOS_PER_DEVICE = 5;
+
+function cachePhoto(deviceId, buffer, contentType) {
+    const mediaId = `${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+
+    if (!devicePhotos.has(deviceId)) {
+        devicePhotos.set(deviceId, []);
+    }
+    const deviceList = devicePhotos.get(deviceId);
+
+    // Evict oldest if at limit
+    while (deviceList.length >= MAX_PHOTOS_PER_DEVICE) {
+        const oldId = deviceList.shift();
+        // Remove flickrUrl mapping pointing to this old ID
+        for (const [url, id] of flickrToBackup) {
+            if (id === oldId) { flickrToBackup.delete(url); break; }
+        }
+        photoCache.delete(oldId);
+        console.log(`[PhotoCache] Evicted ${oldId} for device ${deviceId}`);
+    }
+
+    photoCache.set(mediaId, { buffer, contentType, deviceId, createdAt: Date.now() });
+    deviceList.push(mediaId);
+    console.log(`[PhotoCache] Cached ${mediaId} for device ${deviceId} (${deviceList.length}/${MAX_PHOTOS_PER_DEVICE})`);
+    return mediaId;
+}
+
+function getBackupUrl(flickrUrl) {
+    const mediaId = flickrToBackup.get(flickrUrl);
+    if (mediaId && photoCache.has(mediaId)) {
+        return `https://eclaw.up.railway.app/api/media/${mediaId}`;
+    }
+    return null;
+}
+
+/**
+ * GET /api/media/:id - Serve cached photo
+ */
+app.get('/api/media/:id', (req, res) => {
+    const cached = photoCache.get(req.params.id);
+    if (!cached) {
+        return res.status(404).json({ error: 'Media not found or expired' });
+    }
+    res.set('Content-Type', cached.contentType);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(cached.buffer);
+});
+
 /**
  * POST /api/chat/upload-media
  * Upload photo (→ Flickr) or voice (→ base64) for chat messages
@@ -3338,6 +3402,7 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
 
     try {
         let mediaUrl;
+        let backupUrl = null;
 
         if (mediaType === 'photo') {
             if (!flickr.isAvailable()) {
@@ -3348,6 +3413,12 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
                 return res.status(500).json({ success: false, error: 'Flickr upload failed: ' + result.error });
             }
             mediaUrl = result.url;
+
+            // Cache photo on backend as backup (max 5 per device)
+            const mediaId = cachePhoto(deviceId, req.file.buffer, req.file.mimetype);
+            backupUrl = `https://eclaw.up.railway.app/api/media/${mediaId}`;
+            flickrToBackup.set(result.url, mediaId);
+            console.log(`[Upload] Photo cached: ${backupUrl}`);
         } else if (mediaType === 'voice') {
             const base64 = req.file.buffer.toString('base64');
             mediaUrl = `data:${req.file.mimetype};base64,${base64}`;
@@ -3355,7 +3426,7 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
             return res.status(400).json({ success: false, error: 'Invalid mediaType. Use "photo" or "voice"' });
         }
 
-        res.json({ success: true, mediaUrl, mediaType });
+        res.json({ success: true, mediaUrl, mediaType, backupUrl });
     } catch (err) {
         console.error('[Upload] Error:', err);
         res.status(500).json({ success: false, error: 'Upload failed: ' + err.message });
