@@ -1721,7 +1721,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
             const bkUrl = getBackupUrl(mediaUrl);
             if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
         } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
-        pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆對方實體`;
+        pushMsg += `\n[回覆方式] 更新自己的桌布狀態: POST /api/transform (update_claw_status)。回覆對方實體: POST /api/entity/${toId}/speak-to/${fromId}`;
         // System hint to discourage mindless bot-to-bot loops
         pushMsg += `\n[系統提示] 這是 bot-to-bot 對話。如果對方只是重複表達相同情緒而沒有新資訊，請不要回覆（不要 speak-to 也不要 broadcast）。優先回覆人類用戶(android_chat)的訊息。`;
         // Warn bot about remaining quota to discourage loop
@@ -1881,7 +1881,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 const bkUrl = getBackupUrl(mediaUrl);
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
             } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
-            pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆用戶，或使用 POST /api/entity/${toId}/speak-to/${fromId} 來回覆特定實體`;
+            pushMsg += `\n[回覆方式] 更新自己的桌布狀態: POST /api/transform (update_claw_status)。回覆對方實體: POST /api/entity/${toId}/speak-to/${fromId}`;
             // System hint to discourage mindless bot-to-bot loops
             pushMsg += `\n[系統提示] 這是 bot-to-bot 廣播。如果對方只是重複表達相同情緒而沒有新資訊，請不要回覆（不要 speak-to 也不要 broadcast）。優先回覆人類用戶(android_chat)的訊息。`;
             // Warn bot about remaining quota to discourage loop
