@@ -96,6 +96,13 @@ interface ClawApiService {
     suspend fun verifyBorrowSubscription(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
     // ============================================
+    // SUBSCRIPTION
+    // ============================================
+
+    @POST("api/subscription/verify-google")
+    suspend fun verifyGoogleSubscription(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
+    // ============================================
     // CHAT HISTORY (Backend PostgreSQL)
     // ============================================
 
