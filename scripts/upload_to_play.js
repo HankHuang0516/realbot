@@ -2,11 +2,14 @@
  * Upload AAB to Google Play Console
  *
  * Usage:
- *   node scripts/upload_to_play.js [--track=TRACK] [path-to-aab]
+ *   node scripts/upload_to_play.js [--track=TRACK] [--promote] [path-to-aab]
  *
  * Tracks:
  *   --track=internal     Internal testing (default)
  *   --track=production   Production (submit for Google review)
+ *
+ * Options:
+ *   --promote            Skip upload, promote latest internal version to target track
  *
  * If no AAB path is given, it looks for:
  *   app/build/outputs/bundle/release/app-release.aab
@@ -30,10 +33,13 @@ const TRACK_CONFIG = {
 function parseArgs() {
     let track = 'internal';
     let aabPath = DEFAULT_AAB_PATH;
+    let promote = false;
 
     for (const arg of process.argv.slice(2)) {
         if (arg.startsWith('--track=')) {
             track = arg.split('=')[1];
+        } else if (arg === '--promote') {
+            promote = true;
         } else if (!arg.startsWith('--')) {
             aabPath = arg;
         }
@@ -44,32 +50,26 @@ function parseArgs() {
         process.exit(1);
     }
 
-    return { track, aabPath };
+    return { track, aabPath, promote };
 }
 
 async function main() {
-    const { track, aabPath } = parseArgs();
+    const { track, aabPath, promote } = parseArgs();
     const config = TRACK_CONFIG[track];
 
-    // Validate files exist
+    // Validate service account
     if (!fs.existsSync(SERVICE_ACCOUNT_PATH)) {
         console.error('ERROR: play-service-account.json not found in project root');
         process.exit(1);
     }
-    if (!fs.existsSync(aabPath)) {
-        console.error(`ERROR: AAB file not found at ${aabPath}`);
-        console.error('Run ./gradlew.bat bundleRelease first');
-        process.exit(1);
-    }
-
-    const aabSize = (fs.statSync(aabPath).size / 1024 / 1024).toFixed(1);
-    console.log(`\n=== Google Play Upload ===`);
-    console.log(`Package:  ${PACKAGE_NAME}`);
-    console.log(`AAB:      ${aabPath} (${aabSize} MB)`);
-    console.log(`Track:    ${config.label}`);
-    console.log();
 
     // Authenticate
+    console.log(`\n=== Google Play ${promote ? 'Promote' : 'Upload'} ===`);
+    console.log(`Package:  ${PACKAGE_NAME}`);
+    console.log(`Track:    ${config.label}`);
+    console.log(`Mode:     ${promote ? 'Promote (no upload)' : 'Upload + Assign'}`);
+    console.log();
+
     console.log('[1/4] Authenticating with service account...');
     const auth = new google.auth.GoogleAuth({
         keyFile: SERVICE_ACCOUNT_PATH,
@@ -86,17 +86,44 @@ async function main() {
     const editId = edit.id;
     console.log(`       Edit ID: ${editId}`);
 
-    // Upload AAB
-    console.log('[3/4] Uploading AAB (this may take a minute)...');
-    const { data: bundle } = await play.edits.bundles.upload({
-        packageName: PACKAGE_NAME,
-        editId,
-        media: {
-            mimeType: 'application/octet-stream',
-            body: fs.createReadStream(aabPath),
-        },
-    });
-    console.log(`       Version code: ${bundle.versionCode}`);
+    let versionCode;
+
+    if (promote) {
+        // Get latest version from internal track
+        console.log('[3/4] Reading internal track for latest version...');
+        const { data: trackData } = await play.edits.tracks.get({
+            packageName: PACKAGE_NAME,
+            editId,
+            track: 'internal',
+        });
+        const releases = trackData.releases || [];
+        const activeRelease = releases.find(r => r.status === 'completed') || releases[0];
+        if (!activeRelease || !activeRelease.versionCodes || activeRelease.versionCodes.length === 0) {
+            console.error('ERROR: No active release found on internal track. Upload to internal first.');
+            process.exit(1);
+        }
+        versionCode = activeRelease.versionCodes[activeRelease.versionCodes.length - 1];
+        console.log(`       Found version code: ${versionCode}`);
+    } else {
+        // Upload AAB
+        if (!fs.existsSync(aabPath)) {
+            console.error(`ERROR: AAB file not found at ${aabPath}`);
+            console.error('Run ./gradlew.bat bundleRelease first');
+            process.exit(1);
+        }
+        const aabSize = (fs.statSync(aabPath).size / 1024 / 1024).toFixed(1);
+        console.log(`[3/4] Uploading AAB (${aabSize} MB)...`);
+        const { data: bundle } = await play.edits.bundles.upload({
+            packageName: PACKAGE_NAME,
+            editId,
+            media: {
+                mimeType: 'application/octet-stream',
+                body: fs.createReadStream(aabPath),
+            },
+        });
+        versionCode = bundle.versionCode;
+        console.log(`       Version code: ${versionCode}`);
+    }
 
     // Assign to track
     console.log(`[4/4] Assigning to ${track} track...`);
@@ -107,7 +134,7 @@ async function main() {
         requestBody: {
             track,
             releases: [{
-                versionCodes: [bundle.versionCode],
+                versionCodes: [versionCode],
                 status: config.status,
             }],
         },
@@ -120,7 +147,7 @@ async function main() {
     });
 
     console.log(`\n=== SUCCESS ===`);
-    console.log(`Version code ${bundle.versionCode} → ${config.label}`);
+    console.log(`Version code ${versionCode} → ${config.label}`);
     if (track === 'production') {
         console.log(`Google will review your app. Check status in Google Play Console.`);
     }
