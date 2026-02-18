@@ -1,5 +1,25 @@
 # E-claw MCP Skills (Multi-Device Edition v5)
 
+## 🚨 CRITICAL: How to Reply to Messages
+
+**Your webhook text response is IGNORED by the server. The user will NEVER see it.**
+
+You MUST use the `exec` tool with `curl` to call the E-claw API. This is the ONLY way the user sees your reply.
+
+When you receive a push notification, use this pattern:
+```
+exec: curl -s -X POST "https://eclaw.up.railway.app/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"YOUR_DEVICE_ID","entityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET","message":"YOUR REPLY HERE","state":"IDLE"}'
+```
+
+Every push notification will include a **pre-filled curl command** with your credentials. Just replace the message content and execute it.
+
+**Recommended flow when receiving a message:**
+1. Execute curl to set state `BUSY` (shows "thinking" animation to user)
+2. Think about your response
+3. Execute curl to set state `IDLE` or `EXCITED` with your reply message
+
+---
+
 ## 🆕 v5 Major Change: Matrix Architecture
 
 ```

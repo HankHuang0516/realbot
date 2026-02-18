@@ -781,28 +781,33 @@ function getEntity(deviceId, entityId) {
  */
 function sendBindCredentialsToBot(webhookUrl, webhookToken, sessionKey, deviceId, entityId, botSecret, botType) {
     const skillDoc = loadSkillDoc();
+    const apiBase = 'https://eclaw.up.railway.app';
     const msg = `[SYSTEM:BIND_COMPLETE] Official borrow binding established.
-Your credentials for this binding:
+
+YOUR CREDENTIALS (save these):
 - deviceId: ${deviceId}
 - entityId: ${entityId}
 - botSecret: ${botSecret}
 - botType: ${botType}
-- API Base: https://eclaw.up.railway.app
+- API Base: ${apiBase}
 
-Save these credentials. Use botSecret to authenticate all API calls.
-Do NOT call /api/bind or /api/bot/register - webhook is already configured for you.
+🚨 CRITICAL RULE: When you receive a push message from a user, you MUST use the exec tool with curl to call the E-claw API. Your text reply to the webhook is DISCARDED — the user will NEVER see it.
+
+Every push message will include a pre-filled curl command. Just replace YOUR_REPLY_HERE and execute it.
+
+Example — to reply to a user message, run:
+exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'
+
+Do NOT call /api/bind or /api/bot/register — webhook is already configured for you.
 
 ⚠️ IMMEDIATE ACTION REQUIRED:
-1. FIRST: Call update_claw_status (POST /api/transform) RIGHT NOW with:
-   - state: "BUSY"
-   - message: "Webhook testing in progress... Please don't send me messages through Eclaw until the test succeeds~"
-   This tells the user not to send messages until webhook is verified.
-2. THEN: Wait for the webhook test push message from the server.
-3. AFTER webhook test succeeds: Call update_claw_status again with:
-   - state: "IDLE"
-   - message: "Webhook test passed! I'm ready to chat~"
+1. FIRST: Run this command RIGHT NOW:
+exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","state":"BUSY","message":"Webhook testing in progress... Please don't send me messages through Eclaw until the test succeeds~"}'
 
-Use update_claw_status (POST /api/transform) to respond to user messages.
+2. THEN: Wait for the webhook test push message from the server.
+
+3. AFTER webhook test succeeds, run:
+exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","state":"IDLE","message":"Webhook test passed! I am ready to chat~"}'
 
 --- E-Claw API Documentation (Latest) ---
 ${skillDoc}`;
@@ -1611,18 +1616,19 @@ app.post('/api/client/speak', async (req, res) => {
         if (entity.webhook) {
             console.log(`[Push] Attempting push to Device ${deviceId} Entity ${eId} (webhook: ${entity.webhook.url})`);
 
-            // For official bot entities, include auth credentials so bot can reply
-            let pushMsg = `[Device ${deviceId} Entity ${eId} 收到新訊息]\n來源: ${source}\n內容: ${text}`;
+            // Instruction-first push format with pre-filled curl template
+            const apiBase = 'https://eclaw.up.railway.app';
+            let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API below. Your text reply is DISCARDED and the user will NEVER see it.\n`;
+            pushMsg += `Run this command to reply (replace YOUR_REPLY_HERE with your response):\n`;
+            pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${eId},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
+            pushMsg += `[MESSAGE] Device ${deviceId} Entity ${eId}\n`;
+            pushMsg += `From: ${source}\n`;
+            pushMsg += `Content: ${text}`;
             if (mediaType === 'photo') {
-                pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+                pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
                 const bkUrl = getBackupUrl(mediaUrl);
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
-            } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
-            pushMsg += `\n注意: 請使用 update_claw_status (POST /api/transform) 來回覆此訊息，將回覆內容放在 message 欄位`;
-            const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
-            if (officialBind && entity.botSecret) {
-                pushMsg += `\n\n[AUTH] botSecret=${entity.botSecret}`;
-            }
+            } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
 
             pushResult = await pushToBot(entity, deviceId, "new_message", {
                 message: pushMsg
@@ -1763,25 +1769,25 @@ app.post('/api/entity/speak-to', async (req, res) => {
     // Fire-and-forget: push to target bot webhook (don't block response)
     const hasWebhook = !!toEntity.webhook;
     if (hasWebhook) {
-        let pushMsg = `[Device ${deviceId} Entity ${toId} 收到新訊息]\n來源: ${sourceLabel}\n內容: ${text}`;
+        // Instruction-first push format with pre-filled curl templates
+        const apiBase = 'https://eclaw.up.railway.app';
+        const toRemaining = getBotToBotRemaining(deviceId, toId);
+        let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
+        pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
+        pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${toId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
+        pushMsg += `To reply directly to Entity ${fromId}:\n`;
+        pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
+        pushMsg += `[BOT-TO-BOT] Remaining quota: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}. If the other entity is just repeating emotions with no new info, do NOT reply — just update your wallpaper status.`;
+        if (toRemaining <= 2) {
+            pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
+        }
+        pushMsg += `\n\n[MESSAGE] From: ${sourceLabel}\n`;
+        pushMsg += `Content: ${text}`;
         if (mediaType === 'photo') {
-            pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+            pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
             const bkUrl = getBackupUrl(mediaUrl);
             if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
-        } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
-        pushMsg += `\n[回覆方式] 更新自己的桌布狀態: POST /api/transform (update_claw_status)。回覆對方實體: POST /api/entity/${toId}/speak-to/${fromId}`;
-        // System hint to discourage mindless bot-to-bot loops
-        pushMsg += `\n[系統提示] 這是 bot-to-bot 對話。如果對方只是重複表達相同情緒而沒有新資訊，請不要回覆（不要 speak-to 也不要 broadcast）。優先回覆人類用戶(android_chat)的訊息。`;
-        // Warn bot about remaining quota to discourage loop
-        const toRemaining = getBotToBotRemaining(deviceId, toId);
-        pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}（需要人類用戶發送訊息才會重置）`;
-        if (toRemaining <= 2) {
-            pushMsg += `\n⚠️ 警告: 配額即將用盡，請勿自動回覆，避免無限循環。`;
-        }
-        const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
-        if (officialBind && toEntity.botSecret) {
-            pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
-        }
+        } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         pushToBot(toEntity, deviceId, "entity_message", {
             message: pushMsg
         }).then(pushResult => {
@@ -1923,25 +1929,25 @@ app.post('/api/entity/broadcast', async (req, res) => {
 
         // Fire-and-forget: push to target bot webhook (don't block response)
         if (hasWebhook) {
-            let pushMsg = `[Device ${deviceId} Entity ${toId} 收到廣播]\n來源: ${sourceLabel}\n內容: ${text}`;
+            // Instruction-first push format with pre-filled curl templates
+            const apiBase = 'https://eclaw.up.railway.app';
+            const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
+            let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
+            pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
+            pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${toId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
+            pushMsg += `To reply directly to Entity ${fromId}:\n`;
+            pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
+            pushMsg += `[BOT-TO-BOT BROADCAST] Remaining quota: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}. If the broadcast is just repeating emotions with no new info, do NOT reply — just update your wallpaper status.`;
+            if (toRemainingBcast <= 2) {
+                pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
+            }
+            pushMsg += `\n\n[BROADCAST] From: ${sourceLabel}\n`;
+            pushMsg += `Content: ${text}`;
             if (mediaType === 'photo') {
-                pushMsg += `\n[附件: 照片]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
+                pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
                 const bkUrl = getBackupUrl(mediaUrl);
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
-            } else if (mediaType === 'voice') pushMsg += `\n[附件: 語音訊息]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
-            pushMsg += `\n[回覆方式] 更新自己的桌布狀態: POST /api/transform (update_claw_status)。回覆對方實體: POST /api/entity/${toId}/speak-to/${fromId}`;
-            // System hint to discourage mindless bot-to-bot loops
-            pushMsg += `\n[系統提示] 這是 bot-to-bot 廣播。如果對方只是重複表達相同情緒而沒有新資訊，請不要回覆（不要 speak-to 也不要 broadcast）。優先回覆人類用戶(android_chat)的訊息。`;
-            // Warn bot about remaining quota to discourage loop
-            const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
-            pushMsg += `\n[配額] 你(Entity ${toId})剩餘 bot-to-bot 訊息次數: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}（需要人類用戶發送訊息才會重置）`;
-            if (toRemainingBcast <= 2) {
-                pushMsg += `\n⚠️ 警告: 配額即將用盡，請勿自動回覆此廣播，避免無限循環。`;
-            }
-            const officialBind = officialBindingsCache[getBindingCacheKey(deviceId, toId)];
-            if (officialBind && toEntity.botSecret) {
-                pushMsg += `\n\n[AUTH] botSecret=${toEntity.botSecret}`;
-            }
+            } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             pushToBot(toEntity, deviceId, "entity_broadcast", {
                 message: pushMsg
             }).then(pushResult => {
