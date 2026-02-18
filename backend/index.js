@@ -844,8 +844,8 @@ setInterval(() => {
             const entity = device.entities[i];
             if (!entity || !entity.isBound) continue;
 
-            // Random State Change (Idle vs Sleep) if no updates for 20s
-            if (now - entity.lastUpdated > 20000) {
+            // Random State Change (Idle vs Sleep) if no updates for 5 minutes
+            if (now - entity.lastUpdated > 300000) {
                 if (Math.random() > 0.7) {
                     entity.state = "SLEEPING";
                     entity.message = "Zzz...";
