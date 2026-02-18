@@ -153,9 +153,17 @@ class ChatRepository private constructor(
         val timestampBucket = entity.lastUpdated / DEDUP_WINDOW_MS
         val deduplicationKey = "${entity.entityId}:${entity.message.hashCode()}:$timestampBucket"
 
-        // Check if we already have this message
+        // Check if we already have this message (same dedup key)
         if (chatDao.existsByDeduplicationKey(deduplicationKey)) {
-            // Already stored, skip
+            return
+        }
+
+        // Cross-source dedup: also check if syncFromBackend() already stored this message
+        // (same text + same entity within the dedup window, but with a different key like "backend_123")
+        val (_, cleanedTextForCheck) = parseEntityMessage(entity.message)
+        val sinceTimestamp = entity.lastUpdated - DEDUP_WINDOW_MS
+        if (chatDao.existsByContentAndEntity(entity.entityId, cleanedTextForCheck, sinceTimestamp)) {
+            Timber.d("Skipping duplicate entity message (already synced from backend): Entity ${entity.entityId}")
             return
         }
 

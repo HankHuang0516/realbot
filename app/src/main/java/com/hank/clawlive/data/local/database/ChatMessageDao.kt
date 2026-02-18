@@ -93,6 +93,21 @@ interface ChatMessageDao {
     suspend fun getLastEntityMessage(entityId: Int): ChatMessage?
 
     /**
+     * Check if a message with the same content from the same entity already exists
+     * within a time window. Used for cross-source deduplication (entity polling vs backend sync).
+     */
+    @Query("""
+        SELECT EXISTS(
+            SELECT 1 FROM chat_messages
+            WHERE fromEntityId = :entityId
+              AND text = :text
+              AND isFromUser = 0
+              AND timestamp > :sinceTimestamp
+        )
+    """)
+    suspend fun existsByContentAndEntity(entityId: Int, text: String, sinceTimestamp: Long): Boolean
+
+    /**
      * Mark message as synced after API success
      */
     @Query("UPDATE chat_messages SET isSynced = 1 WHERE id = :messageId")
