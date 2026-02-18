@@ -24,6 +24,9 @@ const TEST_FILES = [
     'test_webhook.js',              // Feature: Webhook push
     'test_entity_delete.js',        // Feature: Entity deletion (40 entities stress test)
     'test_widget_ux.js',            // Widget: Chat dialog flow, broadcast
+    'test_chat_monitoring.js',      // Chat: Multi-entity speak-to, broadcast, dedup, rate limit
+    'test_usage_limit.js',          // Usage: 15-message limit, premium bypass
+    'test_mission_publish.js',      // Mission: TODO/RULE CRUD, incremental notify, delta publish
 ];
 
 // Manual UI tests (run on device, not automated):
