@@ -302,10 +302,12 @@ setInterval(async () => {
                 await db.saveOfficialBot(bot);
             }
 
-            // Reset entity if device still exists
+            // Reset entity if device still exists (preserve user-set name)
             const device = devices[binding.device_id];
             if (device && device.entities[binding.entity_id]) {
+                const preservedEntityName = device.entities[binding.entity_id].name;
                 device.entities[binding.entity_id] = createDefaultEntity(binding.entity_id);
+                device.entities[binding.entity_id].name = preservedEntityName || null;
             }
 
             delete officialBindingsCache[getBindingCacheKey(binding.device_id, binding.entity_id)];
@@ -1335,8 +1337,10 @@ app.delete('/api/entity', async (req, res) => {
         }
     }
 
-    // Reset entity to unbound state
+    // Reset entity to unbound state (preserve user-set name)
+    const removedEntityName = device.entities[eId]?.name;
     device.entities[eId] = createDefaultEntity(eId);
+    device.entities[eId].name = removedEntityName || null;
 
     console.log(`[Remove] Device ${deviceId} Entity ${eId} unbound`);
 
@@ -1437,8 +1441,10 @@ app.delete('/api/device/entity', async (req, res) => {
         }
     }
 
-    // Reset entity to unbound state
+    // Reset entity to unbound state (preserve user-set name)
+    const removedEntityName2 = device.entities[eId]?.name;
     device.entities[eId] = createDefaultEntity(eId);
+    device.entities[eId].name = removedEntityName2 || null;
 
     console.log(`[Device Remove] Device ${deviceId} Entity ${eId} unbound by device owner`);
 
@@ -2302,8 +2308,10 @@ async function autoUnbindEntity(deviceId, eId, device) {
         if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
     }
 
-    // Reset entity to default
+    // Reset entity to default (preserve user-set name)
+    const preservedName = device.entities[eId]?.name;
     device.entities[eId] = createDefaultEntity(eId);
+    device.entities[eId].name = preservedName || null;
 }
 
 /**
@@ -2464,12 +2472,13 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     // Use bot's stored botSecret so the bot can authenticate with E-Claw API
     const botSecret = freeBot.bot_secret || (() => { const crypto = require('crypto'); return crypto.randomBytes(16).toString('hex'); })();
 
-    // Set up entity with official bot's webhook
+    // Set up entity with official bot's webhook (preserve user-set name)
+    const existingNameFree = device.entities[eId]?.name;
     device.entities[eId] = {
         ...createDefaultEntity(eId),
         botSecret: botSecret,
         isBound: true,
-        name: '免費版',
+        name: existingNameFree || '免費版',
         state: 'IDLE',
         message: 'Connected!',
         lastUpdated: Date.now(),
@@ -2594,12 +2603,13 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
     // Use bot's stored botSecret so the bot can authenticate with E-Claw API
     const botSecret = personalBot.bot_secret || (() => { const crypto = require('crypto'); return crypto.randomBytes(16).toString('hex'); })();
 
-    // Set up entity
+    // Set up entity (preserve user-set name)
+    const existingNamePersonal = device.entities[eId]?.name;
     device.entities[eId] = {
         ...createDefaultEntity(eId),
         botSecret: botSecret,
         isBound: true,
-        name: '月租版',
+        name: existingNamePersonal || '月租版',
         state: 'IDLE',
         message: 'Connected!',
         lastUpdated: Date.now(),
