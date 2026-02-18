@@ -3,7 +3,9 @@ package com.hank.clawlive.billing
 import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.*
+import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.UsageManager
+import com.hank.clawlive.data.remote.NetworkModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +39,8 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
     private val scope = CoroutineScope(Dispatchers.Main)
     private val usageManager = UsageManager.getInstance(context)
+    private val deviceManager = DeviceManager.getInstance(context)
+    private val api = NetworkModule.api
 
     private val _subscriptionState = MutableStateFlow(SubscriptionState())
     val subscriptionState: StateFlow<SubscriptionState> = _subscriptionState.asStateFlow()
@@ -91,10 +95,11 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
             billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                    val hasActiveSubscription = purchases.any { purchase ->
+                    val premiumPurchase = purchases.firstOrNull { purchase ->
                         purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
                         purchase.products.contains(SUBSCRIPTION_ID)
                     }
+                    val hasActiveSubscription = premiumPurchase != null
 
                     val hasBorrowSub = purchases.any { purchase ->
                         purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
@@ -106,6 +111,11 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                         hasBorrowSubscription = hasBorrowSub
                     )
                     updateState()
+
+                    // Sync premium status with server (ensures server-side limit is lifted)
+                    if (hasActiveSubscription) {
+                        syncPremiumWithServer(premiumPurchase?.purchaseToken, SUBSCRIPTION_ID)
+                    }
 
                     // Acknowledge any unacknowledged purchases
                     purchases.filter { !it.isAcknowledged }.forEach { purchase ->
@@ -212,6 +222,7 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
                         }
                         if (purchase.products.contains(SUBSCRIPTION_ID)) {
                             usageManager.isPremium = true
+                            syncPremiumWithServer(purchase.purchaseToken, SUBSCRIPTION_ID)
                         }
                         if (purchase.products.contains(BORROW_SUBSCRIPTION_ID)) {
                             _subscriptionState.value = _subscriptionState.value.copy(
@@ -261,6 +272,26 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
 
         val result = billingClient.launchBillingFlow(activity, billingFlowParams)
         Timber.tag(TAG).d("Launch borrow purchase flow result: ${result.responseCode}")
+    }
+
+    /**
+     * Sync premium status with the backend server so usage limits are lifted server-side.
+     */
+    private fun syncPremiumWithServer(purchaseToken: String?, productId: String?) {
+        scope.launch(Dispatchers.IO) {
+            try {
+                val body = mutableMapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret
+                )
+                if (purchaseToken != null) body["purchaseToken"] = purchaseToken
+                if (productId != null) body["productId"] = productId
+                api.verifyGoogleSubscription(body)
+                Timber.tag(TAG).d("Premium status synced with server")
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Failed to sync premium status with server")
+            }
+        }
     }
 
     /**
