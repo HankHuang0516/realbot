@@ -545,28 +545,32 @@
             html += '</tbody></table></div></div>';
 
             // === Users & Devices ===
-            const registeredUsers = (usersData.users || []).filter(u => u.source === 'registered');
-            const appDevices = (usersData.users || []).filter(u => u.source === 'app_device');
-            const totalAll = (usersData.users || []).length;
+            const allUsers = usersData.users || [];
+            const realUsers = allUsers.filter(u => !u.isTestDevice);
+            const testUsers = allUsers.filter(u => u.isTestDevice);
+            const registeredUsers = realUsers.filter(u => u.source === 'registered');
+            const appDevices = realUsers.filter(u => u.source === 'app_device');
             html += '<div class="section-card">';
-            html += '<div class="section-title">' + i18n.t('admin_sec_users') + ' (' + totalAll + ') &mdash; ' + i18n.t('admin_registered') + ': ' + registeredUsers.length + ' / ' + i18n.t('admin_app_device') + ': ' + appDevices.length + '</div>';
+            html += '<div class="section-title">' + i18n.t('admin_sec_users') + ' (' + realUsers.length + ') &mdash; ' + i18n.t('admin_registered') + ': ' + registeredUsers.length + ' / ' + i18n.t('admin_app_device') + ': ' + appDevices.length + (testUsers.length > 0 ? ' / <span style="color:var(--text-secondary);font-weight:400;">' + i18n.t('admin_test_devices') + ': ' + testUsers.length + '</span>' : '') + '</div>';
             html += '<div class="table-scroll">';
             html += '<table class="data-table">';
             html += '<thead><tr><th>' + i18n.t('admin_col_source') + '</th><th>' + i18n.t('admin_col_email') + '</th><th>' + i18n.t('admin_col_verified') + '</th><th>' + i18n.t('admin_col_sub') + '</th><th>' + i18n.t('admin_col_role') + '</th><th>' + i18n.t('admin_col_device') + '</th><th>' + i18n.t('admin_col_registered') + '</th><th>' + i18n.t('admin_col_last_login') + '</th></tr></thead>';
             html += '<tbody>';
-            if (usersData.users && usersData.users.length > 0) {
-                for (const u of usersData.users) {
+            if (allUsers.length > 0) {
+                for (const u of allUsers) {
                     const subCls = u.subscriptionStatus === 'premium' ? 'type-premium' :
                         u.subscriptionStatus === 'expired' ? 'type-expired' : '';
                     const isApp = u.source === 'app_device';
+                    const testBadge = u.isTestDevice ? ' <span class="type-badge" style="background:rgba(255,152,0,0.2);color:#FF9800;font-size:10px;">TEST</span>' : '';
                     const sourceBadge = isApp
                         ? '<span class="type-badge" style="background:rgba(33,150,243,0.2);color:#2196F3;">APP</span>'
                         : '<span class="type-badge type-active">' + i18n.t('admin_source_web') + '</span>';
                     const emailDisplay = isApp
                         ? '<span style="color:var(--text-secondary);font-style:italic;">(' + i18n.t('admin_app_only') + ')</span>'
                         : escapeHtml(u.email);
-                    html += '<tr>' +
-                        '<td>' + sourceBadge + '</td>' +
+                    const rowStyle = u.isTestDevice ? ' style="opacity:0.5;"' : '';
+                    html += '<tr' + rowStyle + '>' +
+                        '<td>' + sourceBadge + testBadge + '</td>' +
                         '<td>' + emailDisplay + '</td>' +
                         '<td>' + (isApp ? '-' : (u.emailVerified ? '<span style="color:var(--success)">Yes</span>' : '<span style="color:var(--text-muted)">No</span>')) + '</td>' +
                         '<td><span class="type-badge ' + subCls + '">' + escapeHtml(u.subscriptionStatus) + '</span></td>' +

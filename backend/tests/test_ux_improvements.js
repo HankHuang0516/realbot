@@ -111,7 +111,8 @@ async function runTests() {
         const response = await api('POST', '/api/device/register', {
             deviceId: testDeviceId,
             deviceSecret: testDeviceSecret,
-            entityId: 0
+            entityId: 0,
+            isTestDevice: true
         });
 
         if (response.success && (response.code || response.bindingCode)) {

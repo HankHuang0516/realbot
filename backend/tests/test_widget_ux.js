@@ -27,7 +27,8 @@ async function setup() {
                 deviceId: TEST_DEVICE_ID,
                 deviceSecret: TEST_DEVICE_SECRET,
                 entityId: entityId,
-                appVersion: '1.0.3'
+                appVersion: '1.0.3',
+                isTestDevice: true
             })
         });
         const registerData = await registerRes.json();

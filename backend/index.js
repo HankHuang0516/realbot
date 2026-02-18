@@ -227,9 +227,18 @@ const CLEANUP_INTERVAL = 60 * 60 * 1000; // 1 hour
 const TEST_DEVICE_MAX_AGE = 60 * 60 * 1000; // 1 hour for test devices
 const ZOMBIE_DEVICE_MAX_AGE = 90 * 24 * 60 * 60 * 1000; // 90 days for real devices
 
-const TEST_DEVICE_PATTERNS = ['test-', 'stress-test-', 'webhook-test-'];
+// Fallback patterns for devices created before isTestDevice flag existed
+const TEST_DEVICE_PATTERNS = [
+    'test-', 'stress-test-', 'webhook-test-', 'persist-test-',
+    'anim-test-', 'emotion-test-', 'eye-test-', 'device-A-',
+    'device-B-', 'device-A1-', 'device-A2-', 'test-widget-',
+    'ux-coverage-', 'test-ux-'
+];
 
-function isTestDevice(deviceId) {
+function isTestDeviceCheck(deviceId, device) {
+    // Explicit flag takes priority
+    if (device && device.isTestDevice) return true;
+    // Fallback: pattern matching for legacy devices
     return TEST_DEVICE_PATTERNS.some(p => deviceId.startsWith(p));
 }
 
@@ -242,7 +251,7 @@ setInterval(async () => {
         const device = devices[deviceId];
 
         // 1. Remove stale test devices (older than 1 hour)
-        if (isTestDevice(deviceId)) {
+        if (isTestDeviceCheck(deviceId, device)) {
             const age = now - (device.createdAt || 0);
             if (age > TEST_DEVICE_MAX_AGE) {
                 delete devices[deviceId];
@@ -516,6 +525,7 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
         const registeredDeviceIds = new Set();
         const users = result.rows.map(r => {
             if (r.device_id) registeredDeviceIds.add(r.device_id);
+            const dev = r.device_id ? devices[r.device_id] : null;
             return {
                 id: r.id,
                 email: r.email,
@@ -526,7 +536,8 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
                 isAdmin: r.is_admin,
                 createdAt: r.created_at ? parseInt(r.created_at) : null,
                 lastLoginAt: r.last_login_at ? parseInt(r.last_login_at) : null,
-                source: 'registered'
+                source: 'registered',
+                isTestDevice: dev ? isTestDeviceCheck(r.device_id, dev) : false
             };
         });
 
@@ -549,7 +560,8 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
                 createdAt: device.createdAt || null,
                 lastLoginAt: null,
                 source: 'app_device',
-                boundEntities: boundCount
+                boundEntities: boundCount,
+                isTestDevice: isTestDeviceCheck(deviceId, device)
             });
         }
 
@@ -734,19 +746,23 @@ function compareVersions(v1, v2) {
 }
 
 // Helper: Get or create device
-function getOrCreateDevice(deviceId, deviceSecret = null) {
+function getOrCreateDevice(deviceId, deviceSecret = null, opts = {}) {
     if (!devices[deviceId]) {
         devices[deviceId] = {
             deviceId: deviceId,
             deviceSecret: deviceSecret,
             createdAt: Date.now(),
+            isTestDevice: opts.isTestDevice || false,
             entities: {}
         };
         // Initialize 4 entity slots
         for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
             devices[deviceId].entities[i] = createDefaultEntity(i);
         }
-        console.log(`[Device] New device registered: ${deviceId}`);
+        console.log(`[Device] New device registered: ${deviceId}${opts.isTestDevice ? ' (TEST)' : ''}`);
+    } else if (opts.isTestDevice && !devices[deviceId].isTestDevice) {
+        // Mark existing device as test if requested
+        devices[deviceId].isTestDevice = true;
     }
     return devices[deviceId];
 }
@@ -892,7 +908,7 @@ app.get('/api/version', (req, res) => {
  * NEW: Each device now has its own 4 entity slots!
  */
 app.post('/api/device/register', (req, res) => {
-    const { entityId, deviceId, deviceSecret, appVersion } = req.body;
+    const { entityId, deviceId, deviceSecret, appVersion, isTestDevice } = req.body;
 
     // Validate entityId
     const eId = parseInt(entityId);
@@ -911,7 +927,7 @@ app.post('/api/device/register', (req, res) => {
     }
 
     // Get or create device
-    const device = getOrCreateDevice(deviceId, deviceSecret);
+    const device = getOrCreateDevice(deviceId, deviceSecret, { isTestDevice: !!isTestDevice });
 
     // Verify device secret if device already exists
     if (device.deviceSecret && device.deviceSecret !== deviceSecret) {

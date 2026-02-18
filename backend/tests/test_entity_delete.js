@@ -45,7 +45,8 @@ async function setupDevices() {
             const regRes = await api('POST', '/api/device/register', {
                 deviceId,
                 deviceSecret,
-                entityId: e
+                entityId: e,
+                isTestDevice: true
             });
 
             if (!regRes.data.success) {

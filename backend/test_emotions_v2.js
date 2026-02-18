@@ -59,7 +59,8 @@ async function setupAuth() {
     const registerRes = await api('POST', '/api/device/register', {
         entityId: entityId,
         deviceId: deviceId,
-        deviceSecret: deviceSecret
+        deviceSecret: deviceSecret,
+        isTestDevice: true
     });
 
     if (!registerRes.data.success) {

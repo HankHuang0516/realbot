@@ -26,7 +26,7 @@ const ENDPOINTS = [
 
     // Device registration flow (MainActivity -> EntityManager)
     { method: 'POST', path: '/api/device/register', name: 'Device Register',
-      body: () => ({ deviceId: TEST_DEVICE_ID, deviceSecret: TEST_DEVICE_SECRET, entityId: 0 }) },
+      body: () => ({ deviceId: TEST_DEVICE_ID, deviceSecret: TEST_DEVICE_SECRET, entityId: 0, isTestDevice: true }) },
 
     // Device status (MainActivity Agent Cards)
     { method: 'POST', path: '/api/device/status', name: 'Device Status',

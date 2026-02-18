@@ -55,7 +55,7 @@ async function setupTestEntity() {
     // Register device
     const regRes = await request('/api/device/register', {
         method: 'POST',
-        body: { deviceId, deviceSecret, entityId, appVersion: '1.0.3' }
+        body: { deviceId, deviceSecret, entityId, appVersion: '1.0.3', isTestDevice: true }
     });
 
     if (!regRes.ok) {

@@ -35,7 +35,8 @@ async function runTest() {
     const reg0 = await api('POST', '/api/device/register', {
         entityId: 0,
         deviceId: deviceId,
-        deviceSecret: deviceSecret
+        deviceSecret: deviceSecret,
+        isTestDevice: true
     });
     console.log(`   Binding code: ${reg0.data.bindingCode}`);
 
@@ -48,7 +49,8 @@ async function runTest() {
     const reg1 = await api('POST', '/api/device/register', {
         entityId: 1,
         deviceId: deviceId,
-        deviceSecret: deviceSecret
+        deviceSecret: deviceSecret,
+        isTestDevice: true
     });
     console.log(`   Binding code: ${reg1.data.bindingCode}`);
 

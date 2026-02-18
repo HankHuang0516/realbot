@@ -52,7 +52,8 @@ async function runE2ETest() {
     const registerResult = await api('POST', '/api/device/register', {
         entityId: entityId,
         deviceId: deviceId,
-        deviceSecret: deviceSecret
+        deviceSecret: deviceSecret,
+        isTestDevice: true
     });
 
     if (registerResult.data.success) {
