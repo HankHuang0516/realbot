@@ -503,7 +503,7 @@ app.get('/api/admin/bindings', adminAuth, adminCheck, async (req, res) => {
     }
 });
 
-// GET /api/admin/users - User list
+// GET /api/admin/users - User list (registered + APP-only devices)
 app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
     try {
         const pg = authModule.pool;
@@ -512,9 +512,11 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
              FROM user_accounts ORDER BY created_at DESC LIMIT 200`
         );
 
-        res.json({
-            success: true,
-            users: result.rows.map(r => ({
+        // Registered users
+        const registeredDeviceIds = new Set();
+        const users = result.rows.map(r => {
+            if (r.device_id) registeredDeviceIds.add(r.device_id);
+            return {
                 id: r.id,
                 email: r.email,
                 emailVerified: r.email_verified,
@@ -523,8 +525,38 @@ app.get('/api/admin/users', adminAuth, adminCheck, async (req, res) => {
                 subscriptionExpiresAt: r.subscription_expires_at ? parseInt(r.subscription_expires_at) : null,
                 isAdmin: r.is_admin,
                 createdAt: r.created_at ? parseInt(r.created_at) : null,
-                lastLoginAt: r.last_login_at ? parseInt(r.last_login_at) : null
-            }))
+                lastLoginAt: r.last_login_at ? parseInt(r.last_login_at) : null,
+                source: 'registered'
+            };
+        });
+
+        // APP-only devices (not linked to any user_accounts)
+        for (const [deviceId, device] of Object.entries(devices)) {
+            if (registeredDeviceIds.has(deviceId)) continue;
+            // Count bound entities
+            let boundCount = 0;
+            for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+                if (device.entities[i]?.isBound) boundCount++;
+            }
+            users.push({
+                id: null,
+                email: null,
+                emailVerified: false,
+                deviceId: deviceId,
+                subscriptionStatus: 'none',
+                subscriptionExpiresAt: null,
+                isAdmin: false,
+                createdAt: device.createdAt || null,
+                lastLoginAt: null,
+                source: 'app_device',
+                boundEntities: boundCount
+            });
+        }
+
+        res.json({
+            success: true,
+            users: users,
+            totalDevices: Object.keys(devices).length
         });
     } catch (err) {
         console.error('[Admin] Users error:', err);
