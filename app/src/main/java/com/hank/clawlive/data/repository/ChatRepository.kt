@@ -149,11 +149,11 @@ class ChatRepository private constructor(
             return
         }
 
-        // Skip broadcast echo messages — these are set on receiving entities by the backend
-        // (format: "entity:{ID}:{CHAR}: [廣播] ..."). The broadcast is already tracked
-        // via syncFromBackend() as a single record under the sender entity.
-        val broadcastEchoPattern = Regex("^entity:\\d+:[A-Z]+:\\s*\\[廣播]")
-        if (broadcastEchoPattern.containsMatchIn(entity.message)) {
+        // Skip all entity-to-entity messages (broadcast + speak-to).
+        // Format: "entity:{ID}:{CHAR}: ..." — these are set on RECEIVING entities by the backend.
+        // The actual message is already tracked via syncFromBackend() as a single record
+        // under the SENDER entity with correct fromEntityId and delivery tracking.
+        if (entity.message.matches(Regex("^entity:\\d+:[A-Z]+:.*"))) {
             return
         }
 
