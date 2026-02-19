@@ -218,10 +218,10 @@ Bind to specific entity using binding code.
       "botSecret": "a1b2c3d4e5f6...",
       "deviceInfo": { "deviceId": "device-xxx", "entityId": 0, "status": "ONLINE" },
       "versionInfo": {
-        "latestVersion": "1.0.3",
-        "deviceVersion": "1.0.2",
+        "latestVersion": "1.0.14",
+        "deviceVersion": "1.0.13",
         "isOutdated": true,
-        "versionWarning": "App version 1.0.2 is outdated. Please update to v1.0.3 for best experience."
+        "versionWarning": "App version 1.0.13 is outdated. Please update to v1.0.14 for best experience."
       },
       "skills_documentation": "..."
     }
