@@ -619,12 +619,12 @@ async function runTests() {
     console.log('--- Scenario 13: Transform on one entity does not affect others ---\n');
 
     {
-        // Use the original device
+        // Re-setup all entities to ensure fresh botSecrets
+        // (previous scenarios like bind-free may have replaced botSecrets)
         for (let i = 0; i < 4; i++) {
-            const st = await getEntityStatus(deviceId, i);
-            if (!st.isBound) {
-                botSecrets[i] = await setupEntity(deviceId, deviceSecret, i);
-            }
+            // Always unbind + rebind to get fresh botSecret
+            try { await api('DELETE', '/api/entity/' + i, { deviceId, botSecret: botSecrets[i] }); } catch {}
+            botSecrets[i] = await setupEntity(deviceId, deviceSecret, i);
             await renameEntity(deviceId, deviceSecret, i, customNames[i]);
         }
 
@@ -664,7 +664,7 @@ async function runTests() {
     console.log('');
 
     if (failed === 0) {
-        console.log('✅ All entity name preservation tests passed!');
+        console.log('✅ All tests passed!');
     } else {
         console.log(`❌ ${failed} test(s) failed!`);
     }
