@@ -149,6 +149,14 @@ class ChatRepository private constructor(
             return
         }
 
+        // Skip broadcast echo messages — these are set on receiving entities by the backend
+        // (format: "entity:{ID}:{CHAR}: [廣播] ..."). The broadcast is already tracked
+        // via syncFromBackend() as a single record under the sender entity.
+        val broadcastEchoPattern = Regex("^entity:\\d+:[A-Z]+:\\s*\\[廣播]")
+        if (broadcastEchoPattern.containsMatchIn(entity.message)) {
+            return
+        }
+
         // Generate deduplication key: entityId + message hash + timestamp bucket
         val timestampBucket = entity.lastUpdated / DEDUP_WINDOW_MS
         val deduplicationKey = "${entity.entityId}:${entity.message.hashCode()}:$timestampBucket"
@@ -303,6 +311,11 @@ class ChatRepository private constructor(
             val deduplicationKey = "backend_${msg.id}"
 
             if (chatDao.existsByDeduplicationKey(deduplicationKey)) {
+                // Message already exists — but delivery status may have been updated
+                // (broadcast pushes are fire-and-forget, so is_delivered may change after initial sync)
+                if (msg.is_delivered && !msg.delivered_to.isNullOrBlank()) {
+                    chatDao.updateDeliveryByDedupKey(deduplicationKey, true, msg.delivered_to)
+                }
                 continue
             }
 
