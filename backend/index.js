@@ -1519,6 +1519,142 @@ app.delete('/api/device/entity', async (req, res) => {
 });
 
 /**
+ * POST /api/device/reorder-entities
+ * Swap entity slot assignments. Atomically moves entity data between slots
+ * and updates all references (bindings, webhook, bot notifications).
+ * Body: { deviceId, deviceSecret, order: [2, 0, 1, 3] }
+ *   where index = new slot, value = old slot
+ *   (e.g. [2,0,1,3] means: old slot 2 → new slot 0, old slot 0 → new slot 1, etc.)
+ */
+app.post('/api/device/reorder-entities', async (req, res) => {
+    const { deviceId, deviceSecret, order } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid device credentials' });
+    }
+
+    if (!Array.isArray(order) || order.length !== MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: `order must be array of ${MAX_ENTITIES_PER_DEVICE} slot indices` });
+    }
+
+    // Validate order is a valid permutation of [0..MAX_ENTITIES_PER_DEVICE-1]
+    const sorted = [...order].sort();
+    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+        if (sorted[i] !== i) {
+            return res.status(400).json({ success: false, error: 'order must be a valid permutation of [0,1,2,3]' });
+        }
+    }
+
+    // Check if anything actually changed
+    const isIdentity = order.every((v, i) => v === i);
+    if (isIdentity) {
+        return res.json({ success: true, message: 'No changes' });
+    }
+
+    console.log(`[Reorder] Device ${deviceId} reorder: ${JSON.stringify(order)}`);
+
+    // Step 1: Snapshot current entities and bindings
+    const oldEntities = [];
+    const oldBindings = {};
+    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+        oldEntities[i] = device.entities[i] ? { ...device.entities[i] } : createDefaultEntity(i);
+        const cacheKey = getBindingCacheKey(deviceId, i);
+        if (officialBindingsCache[cacheKey]) {
+            oldBindings[i] = { ...officialBindingsCache[cacheKey] };
+        }
+    }
+
+    // Step 2: Apply the permutation
+    // order[newSlot] = oldSlot → entity from oldSlot goes to newSlot
+    const botsToNotify = [];
+
+    for (let newSlot = 0; newSlot < MAX_ENTITIES_PER_DEVICE; newSlot++) {
+        const oldSlot = order[newSlot];
+        const entity = { ...oldEntities[oldSlot] };
+        entity.entityId = newSlot; // Update entity ID to new slot
+        device.entities[newSlot] = entity;
+
+        // Update official binding cache
+        const newCacheKey = getBindingCacheKey(deviceId, newSlot);
+        const oldBinding = oldBindings[oldSlot];
+        if (oldBinding) {
+            const updatedBinding = { ...oldBinding, entity_id: newSlot };
+            officialBindingsCache[newCacheKey] = updatedBinding;
+        } else {
+            delete officialBindingsCache[newCacheKey];
+        }
+
+        // Track bots that need notification (only if entity moved AND is bound)
+        if (oldSlot !== newSlot && entity.isBound && entity.webhook) {
+            botsToNotify.push({
+                entity,
+                oldSlot,
+                newSlot,
+                binding: oldBinding
+            });
+        }
+    }
+
+    // Step 3: Persist binding changes to DB
+    if (usePostgreSQL) {
+        // Remove all old bindings for this device, re-insert with new entity IDs
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            await db.removeOfficialBinding(deviceId, i);
+        }
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            const cacheKey = getBindingCacheKey(deviceId, i);
+            const binding = officialBindingsCache[cacheKey];
+            if (binding) {
+                await db.saveOfficialBinding(binding);
+            }
+        }
+
+        // Update personal bot assignments
+        for (const info of botsToNotify) {
+            if (info.binding) {
+                const bot = officialBots[info.binding.bot_id];
+                if (bot && bot.bot_type === 'personal' && bot.assigned_device_id === deviceId) {
+                    bot.assigned_entity_id = info.newSlot;
+                    await db.saveOfficialBot(bot);
+                }
+            }
+        }
+    }
+
+    await saveData();
+
+    // Step 4: Notify bots of their new entity IDs (fire-and-forget)
+    for (const info of botsToNotify) {
+        const { entity, oldSlot, newSlot } = info;
+        const apiBase = 'https://eclaw.up.railway.app';
+        const notifyMsg = `[SYSTEM:ENTITY_MOVED] Your entity slot has changed from #${oldSlot} to #${newSlot}.
+
+UPDATED CREDENTIALS:
+- entityId: ${newSlot} (was ${oldSlot})
+- deviceId: ${deviceId}
+- botSecret: ${entity.botSecret}
+
+⚠️ IMPORTANT: Update your entityId in ALL future API calls:
+exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${newSlot},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'`;
+
+        sendToSession(entity.webhook.url, entity.webhook.token, entity.webhook.sessionKey, notifyMsg)
+            .then(r => {
+                if (r.success) console.log(`[Reorder] ✓ Notified bot at entity ${newSlot} (was ${oldSlot})`);
+                else console.warn(`[Reorder] ✗ Failed to notify bot at entity ${newSlot}: ${r.error}`);
+            })
+            .catch(e => console.warn(`[Reorder] ✗ Error notifying bot: ${e.message}`));
+    }
+
+    console.log(`[Reorder] ✓ Device ${deviceId} reorder complete`);
+    res.json({ success: true, message: 'Entities reordered', order });
+});
+
+/**
  * PUT /api/device/entity/name
  * Device owner renames an entity.
  * Body: { deviceId, deviceSecret, entityId, name }

@@ -110,6 +110,11 @@
     <string name="refresh_cooldown">請等待 %d 秒後再試</string>
     <string name="refreshing">刷新中…</string>
     <string name="rebind">重新綁定</string>
+    <string name="edit_entities">編輯</string>
+    <string name="drag_to_reorder">拖曳以重新排序</string>
+    <string name="reorder_saving">正在儲存新順序…</string>
+    <string name="reorder_success">實體順序已更新！</string>
+    <string name="reorder_failed">更新順序失敗</string>
     <string name="entity_count_format">%1$d/%2$d 個實體</string>
     <string name="entities_label">個實體</string>
 
