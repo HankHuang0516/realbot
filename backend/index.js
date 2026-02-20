@@ -10,6 +10,7 @@ const path = require('path');
 const db = require('./db');
 const flickr = require('./flickr');
 const gatekeeper = require('./gatekeeper');
+const telemetry = require('./device-telemetry');
 const multer = require('multer');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +23,15 @@ app.use(cookieParser());
 app.use('/mission', express.static(path.join(__dirname, 'public')));
 app.use('/portal', express.static(path.join(__dirname, 'public/portal')));
 app.use('/shared', express.static(path.join(__dirname, 'public/shared')));
+
+// Telemetry auto-capture middleware (pool linked lazily after chatPool init)
+let _telemetryPool = null;
+const telemetryPoolProxy = {
+    query: function (...args) {
+        return _telemetryPool ? _telemetryPool.query(...args) : Promise.resolve({ rows: [] });
+    }
+};
+app.use(telemetry.createMiddleware(telemetryPoolProxy, (deviceId) => devices[deviceId]));
 
 // ============================================
 // MATRIX ARCHITECTURE: devices[deviceId].entities[0-3]
@@ -3636,6 +3646,10 @@ const chatPool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
 });
 
+// Link telemetry middleware to the real pool
+_telemetryPool = chatPool;
+telemetry.initTelemetryTable(chatPool);
+
 // Auto-migrate: add delivery tracking + media columns
 chatPool.query(`
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_delivered BOOLEAN DEFAULT FALSE;
@@ -3772,6 +3786,77 @@ app.get('/api/logs', async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
+});
+
+// ============================================
+// DEVICE TELEMETRY API — structured debug buffer (~1 MB / device)
+// ============================================
+
+// POST /api/device-telemetry — Device pushes telemetry entries
+app.post('/api/device-telemetry', async (req, res) => {
+    const { deviceId, deviceSecret, entries } = req.body;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    if (!Array.isArray(entries) || entries.length === 0) {
+        return res.status(400).json({ success: false, error: 'entries array required' });
+    }
+    // Cap batch size to 100 entries per request
+    const batch = entries.slice(0, 100);
+    const result = await telemetry.appendEntries(chatPool, deviceId, batch);
+    res.json({
+        success: true,
+        accepted: result.accepted,
+        dropped: result.dropped,
+        bufferUsed: result.bufferUsed,
+        maxBuffer: telemetry.MAX_BUFFER_BYTES
+    });
+});
+
+// GET /api/device-telemetry — Read telemetry for debugging
+app.get('/api/device-telemetry', async (req, res) => {
+    const { deviceId, deviceSecret, type, page, action, since, until, limit } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    const entries = await telemetry.getEntries(chatPool, deviceId, { type, page, action, since, until, limit });
+    res.json({ success: true, count: entries.length, entries });
+});
+
+// GET /api/device-telemetry/summary — Quick overview of a device's buffer
+app.get('/api/device-telemetry/summary', async (req, res) => {
+    const { deviceId, deviceSecret } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    const summary = await telemetry.getSummary(chatPool, deviceId);
+    res.json({ success: true, ...summary });
+});
+
+// DELETE /api/device-telemetry — Clear a device's telemetry buffer
+app.delete('/api/device-telemetry', async (req, res) => {
+    const { deviceId, deviceSecret } = req.body;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    await telemetry.clearEntries(chatPool, deviceId);
+    res.json({ success: true, message: 'Telemetry buffer cleared' });
 });
 
 // Mark user messages as read when bot responds
