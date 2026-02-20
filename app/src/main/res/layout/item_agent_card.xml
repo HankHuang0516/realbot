@@ -16,12 +16,23 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: Icon + Name + State Badge -->
+        <!-- Header: Drag Handle + Icon + Name + State Badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
+
+            <!-- Drag Handle (visible only in edit mode) -->
+            <ImageView
+                android:id="@+id/ivDragHandle"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                android:contentDescription="@string/drag_to_reorder"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"
+                app:tint="#666666"/>
 
             <!-- Entity Avatar (tap to change) -->
             <TextView
@@ -110,19 +121,47 @@
 
         </LinearLayout>
 
-        <!-- Remove Entity Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRemoveEntity"
+        <!-- Action Buttons Row (visible only in edit mode) -->
+        <LinearLayout
+            android:id="@+id/editActionsRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="@string/remove_entity"
-            android:textColor="#FF6B6B"
-            app:iconTint="#FF6B6B"
-            app:strokeColor="#FF6B6B"
-            app:rippleColor="#33FF6B6B"
-            app:cornerRadius="8dp"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <!-- Refresh Connection Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRefreshEntity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/refresh_connection"
+                android:textColor="#4FC3F7"
+                app:icon="@android:drawable/ic_popup_sync"
+                app:iconTint="#4FC3F7"
+                app:strokeColor="#4FC3F7"
+                app:rippleColor="#334FC3F7"
+                app:cornerRadius="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <!-- Remove Entity Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRemoveEntity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="@string/remove_entity"
+                android:textColor="#FF6B6B"
+                app:iconTint="#FF6B6B"
+                app:strokeColor="#FF6B6B"
+                app:rippleColor="#33FF6B6B"
+                app:cornerRadius="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

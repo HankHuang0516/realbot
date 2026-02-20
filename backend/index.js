@@ -10,6 +10,7 @@ const path = require('path');
 const db = require('./db');
 const flickr = require('./flickr');
 const gatekeeper = require('./gatekeeper');
+const telemetry = require('./device-telemetry');
 const multer = require('multer');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +23,15 @@ app.use(cookieParser());
 app.use('/mission', express.static(path.join(__dirname, 'public')));
 app.use('/portal', express.static(path.join(__dirname, 'public/portal')));
 app.use('/shared', express.static(path.join(__dirname, 'public/shared')));
+
+// Telemetry auto-capture middleware (pool linked lazily after chatPool init)
+let _telemetryPool = null;
+const telemetryPoolProxy = {
+    query: function (...args) {
+        return _telemetryPool ? _telemetryPool.query(...args) : Promise.resolve({ rows: [] });
+    }
+};
+app.use(telemetry.createMiddleware(telemetryPoolProxy, (deviceId) => devices[deviceId]));
 
 // ============================================
 // MATRIX ARCHITECTURE: devices[deviceId].entities[0-3]
@@ -1509,6 +1519,142 @@ app.delete('/api/device/entity', async (req, res) => {
 });
 
 /**
+ * POST /api/device/reorder-entities
+ * Swap entity slot assignments. Atomically moves entity data between slots
+ * and updates all references (bindings, webhook, bot notifications).
+ * Body: { deviceId, deviceSecret, order: [2, 0, 1, 3] }
+ *   where index = new slot, value = old slot
+ *   (e.g. [2,0,1,3] means: old slot 2 → new slot 0, old slot 0 → new slot 1, etc.)
+ */
+app.post('/api/device/reorder-entities', async (req, res) => {
+    const { deviceId, deviceSecret, order } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid device credentials' });
+    }
+
+    if (!Array.isArray(order) || order.length !== MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: `order must be array of ${MAX_ENTITIES_PER_DEVICE} slot indices` });
+    }
+
+    // Validate order is a valid permutation of [0..MAX_ENTITIES_PER_DEVICE-1]
+    const sorted = [...order].sort();
+    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+        if (sorted[i] !== i) {
+            return res.status(400).json({ success: false, error: 'order must be a valid permutation of [0,1,2,3]' });
+        }
+    }
+
+    // Check if anything actually changed
+    const isIdentity = order.every((v, i) => v === i);
+    if (isIdentity) {
+        return res.json({ success: true, message: 'No changes' });
+    }
+
+    console.log(`[Reorder] Device ${deviceId} reorder: ${JSON.stringify(order)}`);
+
+    // Step 1: Snapshot current entities and bindings
+    const oldEntities = [];
+    const oldBindings = {};
+    for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+        oldEntities[i] = device.entities[i] ? { ...device.entities[i] } : createDefaultEntity(i);
+        const cacheKey = getBindingCacheKey(deviceId, i);
+        if (officialBindingsCache[cacheKey]) {
+            oldBindings[i] = { ...officialBindingsCache[cacheKey] };
+        }
+    }
+
+    // Step 2: Apply the permutation
+    // order[newSlot] = oldSlot → entity from oldSlot goes to newSlot
+    const botsToNotify = [];
+
+    for (let newSlot = 0; newSlot < MAX_ENTITIES_PER_DEVICE; newSlot++) {
+        const oldSlot = order[newSlot];
+        const entity = { ...oldEntities[oldSlot] };
+        entity.entityId = newSlot; // Update entity ID to new slot
+        device.entities[newSlot] = entity;
+
+        // Update official binding cache
+        const newCacheKey = getBindingCacheKey(deviceId, newSlot);
+        const oldBinding = oldBindings[oldSlot];
+        if (oldBinding) {
+            const updatedBinding = { ...oldBinding, entity_id: newSlot };
+            officialBindingsCache[newCacheKey] = updatedBinding;
+        } else {
+            delete officialBindingsCache[newCacheKey];
+        }
+
+        // Track bots that need notification (only if entity moved AND is bound)
+        if (oldSlot !== newSlot && entity.isBound && entity.webhook) {
+            botsToNotify.push({
+                entity,
+                oldSlot,
+                newSlot,
+                binding: oldBinding
+            });
+        }
+    }
+
+    // Step 3: Persist binding changes to DB
+    if (usePostgreSQL) {
+        // Remove all old bindings for this device, re-insert with new entity IDs
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            await db.removeOfficialBinding(deviceId, i);
+        }
+        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
+            const cacheKey = getBindingCacheKey(deviceId, i);
+            const binding = officialBindingsCache[cacheKey];
+            if (binding) {
+                await db.saveOfficialBinding(binding);
+            }
+        }
+
+        // Update personal bot assignments
+        for (const info of botsToNotify) {
+            if (info.binding) {
+                const bot = officialBots[info.binding.bot_id];
+                if (bot && bot.bot_type === 'personal' && bot.assigned_device_id === deviceId) {
+                    bot.assigned_entity_id = info.newSlot;
+                    await db.saveOfficialBot(bot);
+                }
+            }
+        }
+    }
+
+    await saveData();
+
+    // Step 4: Notify bots of their new entity IDs (fire-and-forget)
+    for (const info of botsToNotify) {
+        const { entity, oldSlot, newSlot } = info;
+        const apiBase = 'https://eclaw.up.railway.app';
+        const notifyMsg = `[SYSTEM:ENTITY_MOVED] Your entity slot has changed from #${oldSlot} to #${newSlot}.
+
+UPDATED CREDENTIALS:
+- entityId: ${newSlot} (was ${oldSlot})
+- deviceId: ${deviceId}
+- botSecret: ${entity.botSecret}
+
+⚠️ IMPORTANT: Update your entityId in ALL future API calls:
+exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${newSlot},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'`;
+
+        sendToSession(entity.webhook.url, entity.webhook.token, entity.webhook.sessionKey, notifyMsg)
+            .then(r => {
+                if (r.success) console.log(`[Reorder] ✓ Notified bot at entity ${newSlot} (was ${oldSlot})`);
+                else console.warn(`[Reorder] ✗ Failed to notify bot at entity ${newSlot}: ${r.error}`);
+            })
+            .catch(e => console.warn(`[Reorder] ✗ Error notifying bot: ${e.message}`));
+    }
+
+    console.log(`[Reorder] ✓ Device ${deviceId} reorder complete`);
+    res.json({ success: true, message: 'Entities reordered', order });
+});
+
+/**
  * PUT /api/device/entity/name
  * Device owner renames an entity.
  * Body: { deviceId, deviceSecret, entityId, name }
@@ -2987,6 +3133,170 @@ app.post('/api/official-borrow/verify-subscription', async (req, res) => {
 });
 
 // ============================================
+// ENTITY REFRESH (In-Place Rebind)
+// ============================================
+
+/**
+ * Refresh cooldown: 1 minute per entity per device.
+ * Key: "deviceId:entityId" → timestamp of last refresh
+ */
+const refreshCooldowns = {};
+
+/**
+ * POST /api/entity/refresh
+ * Refresh an entity's connection in-place without unbinding.
+ * - Official bots: re-handshake + update session key + resend skills
+ * - Non-official bots: verify webhook connectivity
+ * - 1-minute cooldown per entity
+ * Body: { deviceId, deviceSecret, entityId }
+ */
+app.post('/api/entity/refresh', async (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid device credentials' });
+    }
+
+    const entity = device.entities[eId];
+    if (!entity || !entity.isBound) {
+        return res.status(400).json({ success: false, error: 'Entity is not bound' });
+    }
+
+    // Cooldown check: 1 minute
+    const cooldownKey = `${deviceId}:${eId}`;
+    const lastRefresh = refreshCooldowns[cooldownKey] || 0;
+    const elapsed = Date.now() - lastRefresh;
+    const COOLDOWN_MS = 60000; // 1 minute
+    if (elapsed < COOLDOWN_MS) {
+        const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+        return res.status(429).json({
+            success: false,
+            error: `請等待 ${remaining} 秒後再試`,
+            cooldown_remaining: remaining
+        });
+    }
+
+    // Check if this is an official bot binding
+    const cacheKey = getBindingCacheKey(deviceId, eId);
+    let binding = officialBindingsCache[cacheKey];
+    if (!binding && usePostgreSQL) {
+        binding = await db.getOfficialBinding(deviceId, eId);
+        if (binding) officialBindingsCache[cacheKey] = binding;
+    }
+
+    if (binding) {
+        // ---- Official bot: re-handshake + update session key ----
+        const bot = officialBots[binding.bot_id];
+        if (!bot) {
+            return res.status(404).json({ success: false, error: 'Official bot no longer exists', webhookBroken: true });
+        }
+
+        // Personal bot: verify still assigned to this device
+        if (bot.bot_type === 'personal' && bot.assigned_device_id !== deviceId) {
+            return res.status(409).json({ success: false, error: 'Personal bot is no longer assigned to this device', webhookBroken: true });
+        }
+
+        // Attempt handshake
+        const preferredKey = binding.session_key || bot.session_key_template || 'default';
+        const handshake = await handshakeWithBot(bot.webhook_url, bot.token, preferredKey, deviceId, eId, bot.bot_type);
+
+        if (!handshake.success) {
+            // Set cooldown even on failure to prevent spamming
+            refreshCooldowns[cooldownKey] = Date.now();
+            return res.json({
+                success: false,
+                webhookBroken: true,
+                error: `無法與機器人建立連線。${handshake.error || ''}`,
+                hint: 'Bot gateway may not have active sessions. A full rebind may be required.'
+            });
+        }
+
+        const newSessionKey = handshake.sessionKey;
+
+        // Update entity webhook
+        entity.webhook = {
+            url: bot.webhook_url,
+            token: bot.token,
+            sessionKey: newSessionKey,
+            registeredAt: Date.now()
+        };
+        entity.lastUpdated = Date.now();
+
+        // Update binding cache + DB
+        binding.session_key = newSessionKey;
+        if (usePostgreSQL) await db.saveOfficialBinding(binding);
+
+        await saveData();
+
+        // Fire-and-forget: resend credentials + skills doc
+        sendBindCredentialsToBot(bot.webhook_url, bot.token, newSessionKey, deviceId, eId, entity.botSecret, bot.bot_type);
+
+        // Set cooldown
+        refreshCooldowns[cooldownKey] = Date.now();
+
+        console.log(`[Refresh] Official bot ${bot.bot_id} refreshed for device ${deviceId} entity ${eId} (session: ${newSessionKey})`);
+        return res.json({
+            success: true,
+            message: '連線已刷新',
+            botType: bot.bot_type,
+            sessionRefreshed: true
+        });
+
+    } else {
+        // ---- Non-official (user-bound) bot: verify webhook ----
+        if (!entity.webhook || !entity.webhook.url) {
+            // Polling mode bot — no webhook to refresh
+            refreshCooldowns[cooldownKey] = Date.now();
+            return res.json({
+                success: true,
+                message: 'Polling mode bot — no webhook to refresh',
+                webhookBroken: false,
+                pollingMode: true
+            });
+        }
+
+        // Test webhook connectivity
+        const testResult = await sendToSession(
+            entity.webhook.url,
+            entity.webhook.token,
+            entity.webhook.sessionKey,
+            `[SYSTEM:REFRESH] Connection refresh from device ${deviceId}, entity ${eId}. Reply OK to confirm.`
+        );
+
+        refreshCooldowns[cooldownKey] = Date.now();
+
+        if (testResult.success) {
+            entity.lastUpdated = Date.now();
+            await saveData();
+            console.log(`[Refresh] User bot webhook OK for device ${deviceId} entity ${eId}`);
+            return res.json({
+                success: true,
+                message: '連線正常',
+                webhookBroken: false
+            });
+        } else {
+            console.warn(`[Refresh] User bot webhook FAILED for device ${deviceId} entity ${eId}: ${testResult.error}`);
+            return res.json({
+                success: false,
+                webhookBroken: true,
+                error: `Webhook 連線失敗: ${testResult.error || 'unknown'}`,
+                hint: 'Bot webhook may be down. Consider re-binding.'
+            });
+        }
+    }
+});
+
+// ============================================
 // BOT WEBHOOK REGISTRATION (Push Mode)
 // ============================================
 
@@ -3636,6 +3946,10 @@ const chatPool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/realbot'
 });
 
+// Link telemetry middleware to the real pool
+_telemetryPool = chatPool;
+telemetry.initTelemetryTable(chatPool);
+
 // Auto-migrate: add delivery tracking + media columns
 chatPool.query(`
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_delivered BOOLEAN DEFAULT FALSE;
@@ -3772,6 +4086,77 @@ app.get('/api/logs', async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
+});
+
+// ============================================
+// DEVICE TELEMETRY API — structured debug buffer (~1 MB / device)
+// ============================================
+
+// POST /api/device-telemetry — Device pushes telemetry entries
+app.post('/api/device-telemetry', async (req, res) => {
+    const { deviceId, deviceSecret, entries } = req.body;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    if (!Array.isArray(entries) || entries.length === 0) {
+        return res.status(400).json({ success: false, error: 'entries array required' });
+    }
+    // Cap batch size to 100 entries per request
+    const batch = entries.slice(0, 100);
+    const result = await telemetry.appendEntries(chatPool, deviceId, batch);
+    res.json({
+        success: true,
+        accepted: result.accepted,
+        dropped: result.dropped,
+        bufferUsed: result.bufferUsed,
+        maxBuffer: telemetry.MAX_BUFFER_BYTES
+    });
+});
+
+// GET /api/device-telemetry — Read telemetry for debugging
+app.get('/api/device-telemetry', async (req, res) => {
+    const { deviceId, deviceSecret, type, page, action, since, until, limit } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    const entries = await telemetry.getEntries(chatPool, deviceId, { type, page, action, since, until, limit });
+    res.json({ success: true, count: entries.length, entries });
+});
+
+// GET /api/device-telemetry/summary — Quick overview of a device's buffer
+app.get('/api/device-telemetry/summary', async (req, res) => {
+    const { deviceId, deviceSecret } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    const summary = await telemetry.getSummary(chatPool, deviceId);
+    res.json({ success: true, ...summary });
+});
+
+// DELETE /api/device-telemetry — Clear a device's telemetry buffer
+app.delete('/api/device-telemetry', async (req, res) => {
+    const { deviceId, deviceSecret } = req.body;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    await telemetry.clearEntries(chatPool, deviceId);
+    res.json({ success: true, message: 'Telemetry buffer cleared' });
 });
 
 // Mark user messages as read when bot responds
