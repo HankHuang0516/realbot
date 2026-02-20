@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const db = require('./db');
 const flickr = require('./flickr');
+const gatekeeper = require('./gatekeeper');
 const multer = require('multer');
 const app = express();
 const port = process.env.PORT || 3000;
@@ -398,6 +399,40 @@ const subscriptionModule = require('./subscription')(devices, authModule.authMid
 app.use('/api/subscription', subscriptionModule.router);
 // Load premium status after persistence is ready
 setTimeout(() => subscriptionModule.loadPremiumStatus(), 5000);
+
+// ============================================
+// GATEKEEPER - Free Bot Abuse Prevention
+// ============================================
+gatekeeper.initGatekeeperTable();
+setTimeout(() => gatekeeper.loadBlockedDevices(), 3000);
+
+// --- Free Bot TOS API ---
+
+// GET /api/free-bot-tos - Get TOS content
+app.get('/api/free-bot-tos', (req, res) => {
+    const lang = req.query.lang || 'en';
+    const deviceId = req.query.deviceId;
+    const tos = gatekeeper.getFreeBotTOS(lang);
+    const agreed = deviceId ? gatekeeper.hasAgreedToTOS(deviceId) : false;
+    res.json({ success: true, tos, agreed });
+});
+
+// POST /api/free-bot-tos/agree - Record TOS agreement
+app.post('/api/free-bot-tos/agree', async (req, res) => {
+    const { deviceId, deviceSecret, tosVersion } = req.body;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || (device.deviceSecret && device.deviceSecret !== deviceSecret)) {
+        return res.status(403).json({ success: false, error: 'Invalid credentials' });
+    }
+    if (tosVersion !== gatekeeper.FREE_BOT_TOS_VERSION) {
+        return res.status(400).json({ success: false, error: 'Invalid TOS version' });
+    }
+    await gatekeeper.recordTOSAgreement(deviceId);
+    res.json({ success: true, message: 'TOS agreement recorded', version: tosVersion });
+});
 
 // ============================================
 // ADMIN API (PostgreSQL, admin-only)
@@ -1238,19 +1273,35 @@ app.post('/api/transform', (req, res) => {
 
     if (character) entity.character = character;
     if (state) entity.state = state;
-    if (message !== undefined) entity.message = message;
+
+    // Gatekeeper Second Lock: detect and mask token/info leaks in bot responses (free bots only)
+    let finalMessage = message;
+    if (message !== undefined && message) {
+        const binding = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
+        const isFreeBotTransform = binding && officialBots[binding.bot_id] && officialBots[binding.bot_id].bot_type === 'free';
+
+        if (isFreeBotTransform) {
+            const leakCheck = gatekeeper.detectAndMaskLeaks(message, deviceId, entity.botSecret);
+            if (leakCheck.leaked) {
+                finalMessage = leakCheck.maskedText;
+                console.warn(`[Gatekeeper] Second lock: masked ${leakCheck.leakTypes.join(', ')} in transform from device ${deviceId} entity ${eId}`);
+                serverLog('warn', 'gatekeeper', `Second lock: ${leakCheck.leakTypes.join(', ')}`, { deviceId, entityId: eId, metadata: { leakTypes: leakCheck.leakTypes } });
+            }
+        }
+    }
+    if (finalMessage !== undefined) entity.message = finalMessage;
     if (parts) entity.parts = { ...entity.parts, ...parts };
 
     entity.lastUpdated = Date.now();
 
     // Save bot message to chat history so it appears in Chat page
-    if (message) {
-        saveChatMessage(deviceId, eId, message, entity.name || `Entity ${eId}`, false, true);
+    if (finalMessage) {
+        saveChatMessage(deviceId, eId, finalMessage, entity.name || `Entity ${eId}`, false, true);
         markMessagesAsRead(deviceId, eId);
     }
 
-    console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${message || entity.message}"`);
-    serverLog('info', 'transform', `${state || entity.state}: ${(message || entity.message || '').slice(0, 100)}`, { deviceId, entityId: eId, metadata: { state: state || entity.state } });
+    console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${finalMessage || entity.message}"`);
+    serverLog('info', 'transform', `${state || entity.state}: ${(finalMessage || entity.message || '').slice(0, 100)}`, { deviceId, entityId: eId, metadata: { state: state || entity.state } });
 
     res.json({
         success: true,
@@ -1573,6 +1624,67 @@ app.post('/api/client/speak', async (req, res) => {
         console.warn('[Usage] Enforcement check failed, allowing:', usageErr.message);
     }
 
+    // Gatekeeper First Lock: check if device is blocked from free bots
+    if (gatekeeper.isDeviceBlocked(deviceId)) {
+        // Check if ANY target entity is a free bot
+        const hasFreeBot = (() => {
+            const eIds = entityId === "all"
+                ? Object.keys(device.entities).map(Number)
+                : Array.isArray(entityId)
+                    ? entityId.map(id => parseInt(id))
+                    : [parseInt(entityId) || 0];
+            return eIds.some(eId => {
+                const binding = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
+                if (!binding) return false;
+                const bot = officialBots[binding.bot_id];
+                return bot && bot.bot_type === 'free';
+            });
+        })();
+        if (hasFreeBot) {
+            return res.status(403).json({
+                success: false,
+                message: '您的免費機器人使用權已被封鎖（違規次數已達上限）。',
+                error: 'GATEKEEPER_BLOCKED'
+            });
+        }
+    }
+
+    // Gatekeeper First Lock: detect malicious messages targeting free bots
+    if (text) {
+        const hasFreeBotTarget = (() => {
+            const eIds = entityId === "all"
+                ? Object.keys(device.entities).map(Number).filter(i => device.entities[i] && device.entities[i].isBound)
+                : Array.isArray(entityId)
+                    ? entityId.map(id => parseInt(id))
+                    : [parseInt(entityId) || 0];
+            return eIds.some(eId => {
+                const binding = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
+                if (!binding) return false;
+                const bot = officialBots[binding.bot_id];
+                return bot && bot.bot_type === 'free';
+            });
+        })();
+
+        if (hasFreeBotTarget) {
+            const detection = gatekeeper.detectMaliciousMessage(text);
+            if (detection.blocked) {
+                // Record violation and check for block
+                const strike = await gatekeeper.recordViolation(deviceId, detection.category, text);
+                console.warn(`[Gatekeeper] BLOCKED message from device ${deviceId}: ${detection.category} (strike ${strike.count}/${gatekeeper.MAX_STRIKES})`);
+                serverLog('warn', 'gatekeeper', `First lock: ${detection.category} - "${text.slice(0, 80)}"`, { deviceId, metadata: { strike: strike.count } });
+
+                return res.status(403).json({
+                    success: false,
+                    message: detection.reason,
+                    error: 'GATEKEEPER_BLOCKED_MESSAGE',
+                    strikes: strike.count,
+                    maxStrikes: gatekeeper.MAX_STRIKES,
+                    blocked: strike.blocked
+                });
+            }
+        }
+    }
+
     // Determine target entity IDs
     let targetIds = [];
     if (entityId === "all") {
@@ -1743,6 +1855,19 @@ app.post('/api/entity/speak-to', async (req, res) => {
         return res.status(400).json({ success: false, message: `Entity ${toId} is not bound` });
     }
 
+    // Gatekeeper Second Lock: mask leaked tokens in speak-to from free bot
+    let speakToText = text;
+    const fromBindingST = officialBindingsCache[getBindingCacheKey(deviceId, fromId)];
+    const isFreeBotSpeakTo = fromBindingST && officialBots[fromBindingST.bot_id] && officialBots[fromBindingST.bot_id].bot_type === 'free';
+    if (isFreeBotSpeakTo && speakToText) {
+        const leakCheck = gatekeeper.detectAndMaskLeaks(speakToText, deviceId, fromEntity.botSecret);
+        if (leakCheck.leaked) {
+            speakToText = leakCheck.maskedText;
+            console.warn(`[Gatekeeper] Second lock (speak-to): masked ${leakCheck.leakTypes.join(', ')} from device ${deviceId} entity ${fromId}`);
+            serverLog('warn', 'gatekeeper', `Second lock (speak-to): ${leakCheck.leakTypes.join(', ')}`, { deviceId, entityId: fromId });
+        }
+    }
+
     // Bot-to-bot loop prevention: rate limit per sending entity (resets only on human message)
     if (!checkBotToBotRateLimit(deviceId, fromId)) {
         console.warn(`[Entity] RATE LIMITED: Device ${deviceId} Entity ${fromId} -> Entity ${toId} (bot-to-bot loop prevention)`);
@@ -1757,11 +1882,11 @@ app.post('/api/entity/speak-to', async (req, res) => {
     // Create message source identifier
     const sourceLabel = `entity:${fromId}:${fromEntity.character}`;
 
-    toEntity.message = `From Entity ${fromId}: "${text}"`;
+    toEntity.message = `From Entity ${fromId}: "${speakToText}"`;
     toEntity.lastUpdated = Date.now();
 
     const messageObj = {
-        text: text,
+        text: speakToText,
         from: sourceLabel,
         fromEntityId: fromId,
         fromCharacter: fromEntity.character,
@@ -1771,14 +1896,14 @@ app.post('/api/entity/speak-to', async (req, res) => {
         mediaUrl: mediaUrl || null
     };
     toEntity.messageQueue.push(messageObj);
-    const chatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${toId}`, false, true, mediaType || null, mediaUrl || null);
+    const chatMsgId = await saveChatMessage(deviceId, fromId, speakToText, `${sourceLabel}->${toId}`, false, true, mediaType || null, mediaUrl || null);
     markMessagesAsRead(deviceId, toId);
 
-    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${text}" (b2b remaining: ${b2bRemaining})`);
+    console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${speakToText}" (b2b remaining: ${b2bRemaining})`);
 
     // Update entity.message so Android app can display it
     // Format must match Android's parseEntityMessage regex: "entity:{ID}:{CHARACTER}: {message}"
-    toEntity.message = `entity:${fromId}:${fromEntity.character}: ${text}`;
+    toEntity.message = `entity:${fromId}:${fromEntity.character}: ${speakToText}`;
     toEntity.lastUpdated = Date.now();
 
     // Fire-and-forget: push to target bot webhook (don't block response)
@@ -1797,7 +1922,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
             pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
         }
         pushMsg += `\n\n[MESSAGE] From: ${sourceLabel}\n`;
-        pushMsg += `Content: ${text}`;
+        pushMsg += `Content: ${speakToText}`;
         if (mediaType === 'photo') {
             pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
             const bkUrl = getBackupUrl(mediaUrl);
@@ -1883,6 +2008,19 @@ app.post('/api/entity/broadcast', async (req, res) => {
         return res.status(403).json({ success: false, message: "Invalid botSecret for sending entity" });
     }
 
+    // Gatekeeper Second Lock: mask leaked tokens in broadcast from free bot
+    let broadcastText = text;
+    const fromBinding = officialBindingsCache[getBindingCacheKey(deviceId, fromId)];
+    const isFreeBotBroadcast = fromBinding && officialBots[fromBinding.bot_id] && officialBots[fromBinding.bot_id].bot_type === 'free';
+    if (isFreeBotBroadcast && broadcastText) {
+        const leakCheck = gatekeeper.detectAndMaskLeaks(broadcastText, deviceId, fromEntity.botSecret);
+        if (leakCheck.leaked) {
+            broadcastText = leakCheck.maskedText;
+            console.warn(`[Gatekeeper] Second lock (broadcast): masked ${leakCheck.leakTypes.join(', ')} from device ${deviceId} entity ${fromId}`);
+            serverLog('warn', 'gatekeeper', `Second lock (broadcast): ${leakCheck.leakTypes.join(', ')}`, { deviceId, entityId: fromId });
+        }
+    }
+
     // Bot-to-bot loop prevention: rate limit per sending entity (resets only on human message)
     if (!checkBotToBotRateLimit(deviceId, fromId)) {
         console.warn(`[Broadcast] RATE LIMITED: Device ${deviceId} Entity ${fromId} (bot-to-bot loop prevention)`);
@@ -1916,21 +2054,21 @@ app.post('/api/entity/broadcast', async (req, res) => {
         });
     }
 
-    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${text}" (b2b remaining: ${b2bRemaining})`);
-    serverLog('info', 'broadcast', `Entity ${fromId} -> [${targetIds.join(',')}]: "${text.slice(0, 80)}"`, { deviceId, entityId: fromId, metadata: { targets: targetIds, b2bRemaining } });
+    console.log(`[Broadcast] Device ${deviceId} Entity ${fromId} -> Entities [${targetIds.join(',')}]: "${broadcastText}" (b2b remaining: ${b2bRemaining})`);
+    serverLog('info', 'broadcast', `Entity ${fromId} -> [${targetIds.join(',')}]: "${broadcastText.slice(0, 80)}"`, { deviceId, entityId: fromId, metadata: { targets: targetIds, b2bRemaining } });
 
     // Save ONE chat message for the broadcast (sender's perspective, all targets)
-    const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, text, `${sourceLabel}->${targetIds.join(',')}`, false, true, mediaType || null, mediaUrl || null);
+    const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, broadcastText, `${sourceLabel}->${targetIds.join(',')}`, false, true, mediaType || null, mediaUrl || null);
 
     // Queue messages synchronously, then fire-and-forget webhook pushes
     const results = targetIds.map((toId) => {
         const toEntity = device.entities[toId];
 
-        toEntity.message = `From Entity ${fromId}: "${text}"`;
+        toEntity.message = `From Entity ${fromId}: "${broadcastText}"`;
         toEntity.lastUpdated = Date.now();
 
         const messageObj = {
-            text: text,
+            text: broadcastText,
             from: sourceLabel,
             fromEntityId: fromId,
             fromCharacter: fromEntity.character,
@@ -1944,7 +2082,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
 
         // Update entity.message so Android app can display it
         // Format must match Android's parseEntityMessage regex: "entity:{ID}:{CHARACTER}: {message}"
-        toEntity.message = `entity:${fromId}:${fromEntity.character}: [廣播] ${text}`;
+        toEntity.message = `entity:${fromId}:${fromEntity.character}: [廣播] ${broadcastText}`;
         toEntity.lastUpdated = Date.now();
 
         const hasWebhook = !!toEntity.webhook;
@@ -1964,7 +2102,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
             }
             pushMsg += `\n\n[BROADCAST] From: ${sourceLabel}\n`;
-            pushMsg += `Content: ${text}`;
+            pushMsg += `Content: ${broadcastText}`;
             if (mediaType === 'photo') {
                 pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
                 const bkUrl = getBackupUrl(mediaUrl);
@@ -2414,7 +2552,9 @@ app.get('/api/official-borrow/status', async (req, res) => {
             entityId: b.entity_id ?? b.entityId,
             botType: b.bot_type ?? b.botType,
             botId: b.bot_id ?? b.botId
-        }))
+        })),
+        tosAgreed: gatekeeper.hasAgreedToTOS(deviceId),
+        tosVersion: gatekeeper.FREE_BOT_TOS_VERSION
     });
 });
 
@@ -2433,6 +2573,30 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     const eId = parseInt(entityId);
     if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
         return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
+    }
+
+    // Gatekeeper: check if device is blocked from free bot usage
+    if (gatekeeper.isDeviceBlocked(deviceId)) {
+        const strikeInfo = gatekeeper.getStrikeInfo(deviceId);
+        console.warn(`[Gatekeeper] Blocked device ${deviceId} attempted to bind free bot (strikes: ${strikeInfo.count})`);
+        return res.status(403).json({
+            success: false,
+            error: '您的免費機器人使用權已被封鎖，因為違規次數已達上限。如有疑問請聯繫客服。',
+            gatekeeper_blocked: true,
+            strikes: strikeInfo.count
+        });
+    }
+
+    // Gatekeeper: check if device has agreed to free bot TOS
+    if (!gatekeeper.hasAgreedToTOS(deviceId)) {
+        const lang = req.body.lang || 'en';
+        const tos = gatekeeper.getFreeBotTOS(lang);
+        return res.status(451).json({
+            success: false,
+            error: 'TOS_NOT_AGREED',
+            message: '使用免費版機器人前，請先閱讀並同意使用規範。',
+            tos: tos
+        });
     }
 
     // Auto-create device if missing (e.g. after server redeploy)
