@@ -2997,6 +2997,170 @@ app.post('/api/official-borrow/verify-subscription', async (req, res) => {
 });
 
 // ============================================
+// ENTITY REFRESH (In-Place Rebind)
+// ============================================
+
+/**
+ * Refresh cooldown: 1 minute per entity per device.
+ * Key: "deviceId:entityId" → timestamp of last refresh
+ */
+const refreshCooldowns = {};
+
+/**
+ * POST /api/entity/refresh
+ * Refresh an entity's connection in-place without unbinding.
+ * - Official bots: re-handshake + update session key + resend skills
+ * - Non-official bots: verify webhook connectivity
+ * - 1-minute cooldown per entity
+ * Body: { deviceId, deviceSecret, entityId }
+ */
+app.post('/api/entity/refresh', async (req, res) => {
+    const { deviceId, deviceSecret, entityId } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId (0-3)' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid device credentials' });
+    }
+
+    const entity = device.entities[eId];
+    if (!entity || !entity.isBound) {
+        return res.status(400).json({ success: false, error: 'Entity is not bound' });
+    }
+
+    // Cooldown check: 1 minute
+    const cooldownKey = `${deviceId}:${eId}`;
+    const lastRefresh = refreshCooldowns[cooldownKey] || 0;
+    const elapsed = Date.now() - lastRefresh;
+    const COOLDOWN_MS = 60000; // 1 minute
+    if (elapsed < COOLDOWN_MS) {
+        const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+        return res.status(429).json({
+            success: false,
+            error: `請等待 ${remaining} 秒後再試`,
+            cooldown_remaining: remaining
+        });
+    }
+
+    // Check if this is an official bot binding
+    const cacheKey = getBindingCacheKey(deviceId, eId);
+    let binding = officialBindingsCache[cacheKey];
+    if (!binding && usePostgreSQL) {
+        binding = await db.getOfficialBinding(deviceId, eId);
+        if (binding) officialBindingsCache[cacheKey] = binding;
+    }
+
+    if (binding) {
+        // ---- Official bot: re-handshake + update session key ----
+        const bot = officialBots[binding.bot_id];
+        if (!bot) {
+            return res.status(404).json({ success: false, error: 'Official bot no longer exists', webhookBroken: true });
+        }
+
+        // Personal bot: verify still assigned to this device
+        if (bot.bot_type === 'personal' && bot.assigned_device_id !== deviceId) {
+            return res.status(409).json({ success: false, error: 'Personal bot is no longer assigned to this device', webhookBroken: true });
+        }
+
+        // Attempt handshake
+        const preferredKey = binding.session_key || bot.session_key_template || 'default';
+        const handshake = await handshakeWithBot(bot.webhook_url, bot.token, preferredKey, deviceId, eId, bot.bot_type);
+
+        if (!handshake.success) {
+            // Set cooldown even on failure to prevent spamming
+            refreshCooldowns[cooldownKey] = Date.now();
+            return res.json({
+                success: false,
+                webhookBroken: true,
+                error: `無法與機器人建立連線。${handshake.error || ''}`,
+                hint: 'Bot gateway may not have active sessions. A full rebind may be required.'
+            });
+        }
+
+        const newSessionKey = handshake.sessionKey;
+
+        // Update entity webhook
+        entity.webhook = {
+            url: bot.webhook_url,
+            token: bot.token,
+            sessionKey: newSessionKey,
+            registeredAt: Date.now()
+        };
+        entity.lastUpdated = Date.now();
+
+        // Update binding cache + DB
+        binding.session_key = newSessionKey;
+        if (usePostgreSQL) await db.saveOfficialBinding(binding);
+
+        await saveData();
+
+        // Fire-and-forget: resend credentials + skills doc
+        sendBindCredentialsToBot(bot.webhook_url, bot.token, newSessionKey, deviceId, eId, entity.botSecret, bot.bot_type);
+
+        // Set cooldown
+        refreshCooldowns[cooldownKey] = Date.now();
+
+        console.log(`[Refresh] Official bot ${bot.bot_id} refreshed for device ${deviceId} entity ${eId} (session: ${newSessionKey})`);
+        return res.json({
+            success: true,
+            message: '連線已刷新',
+            botType: bot.bot_type,
+            sessionRefreshed: true
+        });
+
+    } else {
+        // ---- Non-official (user-bound) bot: verify webhook ----
+        if (!entity.webhook || !entity.webhook.url) {
+            // Polling mode bot — no webhook to refresh
+            refreshCooldowns[cooldownKey] = Date.now();
+            return res.json({
+                success: true,
+                message: 'Polling mode bot — no webhook to refresh',
+                webhookBroken: false,
+                pollingMode: true
+            });
+        }
+
+        // Test webhook connectivity
+        const testResult = await sendToSession(
+            entity.webhook.url,
+            entity.webhook.token,
+            entity.webhook.sessionKey,
+            `[SYSTEM:REFRESH] Connection refresh from device ${deviceId}, entity ${eId}. Reply OK to confirm.`
+        );
+
+        refreshCooldowns[cooldownKey] = Date.now();
+
+        if (testResult.success) {
+            entity.lastUpdated = Date.now();
+            await saveData();
+            console.log(`[Refresh] User bot webhook OK for device ${deviceId} entity ${eId}`);
+            return res.json({
+                success: true,
+                message: '連線正常',
+                webhookBroken: false
+            });
+        } else {
+            console.warn(`[Refresh] User bot webhook FAILED for device ${deviceId} entity ${eId}: ${testResult.error}`);
+            return res.json({
+                success: false,
+                webhookBroken: true,
+                error: `Webhook 連線失敗: ${testResult.error || 'unknown'}`,
+                hint: 'Bot webhook may be down. Consider re-binding.'
+            });
+        }
+    }
+});
+
+// ============================================
 // BOT WEBHOOK REGISTRATION (Push Mode)
 // ============================================
 

@@ -110,19 +110,45 @@
 
         </LinearLayout>
 
-        <!-- Remove Entity Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnRemoveEntity"
+        <!-- Action Buttons Row -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="@string/remove_entity"
-            android:textColor="#FF6B6B"
-            app:iconTint="#FF6B6B"
-            app:strokeColor="#FF6B6B"
-            app:rippleColor="#33FF6B6B"
-            app:cornerRadius="8dp"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            android:orientation="horizontal">
+
+            <!-- Refresh Connection Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRefreshEntity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="@string/refresh_connection"
+                android:textColor="#4FC3F7"
+                app:icon="@android:drawable/ic_popup_sync"
+                app:iconTint="#4FC3F7"
+                app:strokeColor="#4FC3F7"
+                app:rippleColor="#334FC3F7"
+                app:cornerRadius="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <!-- Remove Entity Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRemoveEntity"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="@string/remove_entity"
+                android:textColor="#FF6B6B"
+                app:iconTint="#FF6B6B"
+                app:strokeColor="#FF6B6B"
+                app:rippleColor="#33FF6B6B"
+                app:cornerRadius="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

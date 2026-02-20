@@ -18,6 +18,18 @@ data class RegisterResponse(
     @SerializedName("expiresIn") val expiresIn: Int // seconds
 )
 
+// Response from entity refresh
+data class RefreshEntityResponse(
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("message") val message: String? = null,
+    @SerializedName("error") val error: String? = null,
+    @SerializedName("webhookBroken") val webhookBroken: Boolean = false,
+    @SerializedName("cooldown_remaining") val cooldownRemaining: Int? = null,
+    @SerializedName("botType") val botType: String? = null,
+    @SerializedName("pollingMode") val pollingMode: Boolean = false,
+    @SerializedName("hint") val hint: String? = null
+)
+
 // Request to get device status
 data class DeviceStatusRequest(
     @SerializedName("entityId") val entityId: Int = 0,

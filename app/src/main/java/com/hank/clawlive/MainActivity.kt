@@ -43,6 +43,7 @@ import com.hank.clawlive.data.repository.StateRepository
 import com.hank.clawlive.ui.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -353,10 +354,103 @@ class MainActivity : AppCompatActivity() {
         val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         view.findViewById<TextView>(R.id.tvMessageTime).text = timeFormat.format(Date(entity.lastUpdated))
 
+        // Refresh Connection Button
+        view.findViewById<MaterialButton>(R.id.btnRefreshEntity).setOnClickListener {
+            refreshEntity(entity, it as MaterialButton)
+        }
+
         // Remove Entity Button
         view.findViewById<MaterialButton>(R.id.btnRemoveEntity).setOnClickListener {
             showRemoveConfirmDialog(entity)
         }
+    }
+
+    private fun refreshEntity(entity: EntityStatus, button: MaterialButton) {
+        val originalText = button.text
+        button.isEnabled = false
+        button.text = getString(R.string.refreshing)
+
+        TelemetryHelper.trackAction("refresh_entity", mapOf("entityId" to entity.entityId))
+
+        lifecycleScope.launch {
+            try {
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "entityId" to entity.entityId
+                )
+                val response = api.refreshEntity(body)
+
+                if (response.success) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.refresh_success),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    delay(500)
+                    loadBoundEntities()
+                } else if (response.webhookBroken) {
+                    // Webhook is broken — offer to rebind
+                    TelemetryHelper.trackAction("refresh_webhook_broken", mapOf(
+                        "entityId" to entity.entityId,
+                        "error" to (response.error ?: "unknown")
+                    ))
+                    showWebhookBrokenDialog(entity, response.error)
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        response.error ?: getString(R.string.failed_format, "Unknown"),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: HttpException) {
+                if (e.code() == 429) {
+                    // Cooldown
+                    try {
+                        val errorBody = e.response()?.errorBody()?.string() ?: ""
+                        val remaining = Regex(""""cooldown_remaining"\s*:\s*(\d+)""")
+                            .find(errorBody)?.groupValues?.get(1)?.toIntOrNull() ?: 60
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.refresh_cooldown, remaining),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } catch (_: Exception) {
+                        Toast.makeText(this@MainActivity, getString(R.string.refresh_cooldown, 60), Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    TelemetryHelper.trackError(e, mapOf("action" to "refresh_entity"))
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.failed_format, e.message),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                TelemetryHelper.trackError(e, mapOf("action" to "refresh_entity"))
+                Timber.e(e, "Failed to refresh entity")
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.failed_format, e.message),
+                    Toast.LENGTH_LONG
+                ).show()
+            } finally {
+                button.isEnabled = true
+                button.text = originalText
+            }
+        }
+    }
+
+    private fun showWebhookBrokenDialog(entity: EntityStatus, errorMsg: String?) {
+        val displayName = entity.name ?: getString(R.string.entity_format, entity.entityId)
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.refresh_webhook_broken_title))
+            .setMessage("${getString(R.string.refresh_webhook_broken_message)}\n\n${errorMsg ?: ""}")
+            .setPositiveButton(getString(R.string.rebind)) { _, _ ->
+                startActivity(Intent(this, OfficialBorrowActivity::class.java))
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
     }
 
     private fun getStateBadgeColor(state: CharacterState): Int {
