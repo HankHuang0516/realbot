@@ -16,12 +16,23 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: Icon + Name + State Badge -->
+        <!-- Header: Drag Handle + Icon + Name + State Badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
+
+            <!-- Drag Handle (visible only in edit mode) -->
+            <ImageView
+                android:id="@+id/ivDragHandle"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                android:contentDescription="@string/drag_to_reorder"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"
+                app:tint="#666666"/>
 
             <!-- Entity Avatar (tap to change) -->
             <TextView
@@ -110,12 +121,14 @@
 
         </LinearLayout>
 
-        <!-- Action Buttons Row -->
+        <!-- Action Buttons Row (visible only in edit mode) -->
         <LinearLayout
+            android:id="@+id/editActionsRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <!-- Refresh Connection Button -->
             <com.google.android.material.button.MaterialButton

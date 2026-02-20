@@ -25,29 +25,26 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
-import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
-import com.hank.clawlive.data.model.UsageInfo
-import com.hank.clawlive.data.model.UsageStatus
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.remote.TelemetryHelper
 import com.hank.clawlive.data.repository.StateRepository
+import com.hank.clawlive.ui.EntityCardAdapter
 import com.hank.clawlive.ui.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import timber.log.Timber
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -68,7 +65,8 @@ class MainActivity : AppCompatActivity() {
 
     // UI elements
     private lateinit var btnSettings: ImageButton
-    private lateinit var agentCardsContainer: LinearLayout
+    private lateinit var btnEditMode: ImageButton
+    private lateinit var agentCardsContainer: RecyclerView
     private lateinit var emptyStateContainer: LinearLayout
     private lateinit var cardAddEntity: MaterialCardView
     private lateinit var addEntityHeader: LinearLayout
@@ -94,6 +92,11 @@ class MainActivity : AppCompatActivity() {
 
     private var boundEntities: List<EntityStatus> = emptyList()
     private var isAddEntityExpanded = false
+    private var isEditMode = false
+
+    // RecyclerView adapter + drag helper
+    private lateinit var entityAdapter: EntityCardAdapter
+    private lateinit var itemTouchHelper: ItemTouchHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -132,6 +135,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initViews() {
         btnSettings = findViewById(R.id.btnSettings)
+        btnEditMode = findViewById(R.id.btnEditMode)
         agentCardsContainer = findViewById(R.id.agentCardsContainer)
         emptyStateContainer = findViewById(R.id.emptyStateContainer)
         cardAddEntity = findViewById(R.id.cardAddEntity)
@@ -155,6 +159,37 @@ class MainActivity : AppCompatActivity() {
         progressUsage = findViewById(R.id.progressUsage)
         tvUsageStatus = findViewById(R.id.tvUsageStatus)
         btnOfficialBorrow = findViewById(R.id.btnOfficialBorrow)
+
+        // Set up RecyclerView with adapter
+        entityAdapter = EntityCardAdapter(
+            getAvatar = { entityId -> avatarManager.getAvatar(entityId) },
+            getEntityLabel = { entity -> entity.name ?: getString(R.string.entity_format, entity.entityId) },
+            getEntityIdLabel = { entityId -> getString(R.string.entity_id_format, entityId) },
+            onAvatarClick = { entity, iconView -> showAvatarPicker(entity.entityId, iconView) },
+            onNameClick = { entity -> showRenameDialog(entity) },
+            onRefreshClick = { entity, btn -> refreshEntity(entity, btn) },
+            onRemoveClick = { entity -> showRemoveConfirmDialog(entity) }
+        )
+
+        val dragCallback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            override fun isLongPressDragEnabled() = false // drag only via handle
+
+            override fun onMove(rv: RecyclerView, vh: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                entityAdapter.moveItem(vh.adapterPosition, target.adapterPosition)
+                return true
+            }
+
+            override fun onSwiped(vh: RecyclerView.ViewHolder, direction: Int) {}
+        }
+
+        itemTouchHelper = ItemTouchHelper(dragCallback)
+        itemTouchHelper.attachToRecyclerView(agentCardsContainer)
+        entityAdapter.itemTouchHelper = itemTouchHelper
+
+        agentCardsContainer.layoutManager = LinearLayoutManager(this)
+        agentCardsContainer.adapter = entityAdapter
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -184,6 +219,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
+        btnEditMode.setOnClickListener {
+            toggleEditMode()
+        }
+
         btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
@@ -305,63 +344,104 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateAgentCards() {
-        agentCardsContainer.removeAllViews()
-
         if (boundEntities.isEmpty()) {
+            agentCardsContainer.visibility = View.GONE
             emptyStateContainer.visibility = View.VISIBLE
+            btnEditMode.visibility = View.GONE
             // Auto-expand add entity section when empty
             if (!isAddEntityExpanded) {
                 toggleAddEntitySection()
             }
         } else {
+            agentCardsContainer.visibility = View.VISIBLE
             emptyStateContainer.visibility = View.GONE
-
-            boundEntities.forEach { entity ->
-                val cardView = LayoutInflater.from(this)
-                    .inflate(R.layout.item_agent_card, agentCardsContainer, false)
-                bindAgentCard(cardView, entity)
-                agentCardsContainer.addView(cardView)
+            btnEditMode.visibility = View.VISIBLE
+            // Only update adapter data if NOT in edit mode (to preserve drag state)
+            if (!isEditMode) {
+                entityAdapter.submitList(boundEntities)
             }
         }
     }
 
-    private fun bindAgentCard(view: View, entity: EntityStatus) {
-        // Avatar Icon (tap to change)
-        val iconView = view.findViewById<TextView>(R.id.tvEntityIcon)
-        iconView.text = avatarManager.getAvatar(entity.entityId)
-        iconView.setOnClickListener {
-            showAvatarPicker(entity.entityId, iconView)
+    private fun toggleEditMode() {
+        if (isEditMode) {
+            // Closing edit mode — persist reorder if changed
+            if (entityAdapter.hasOrderChanged()) {
+                persistReorder()
+            }
+            isEditMode = false
+        } else {
+            isEditMode = true
         }
 
-        // Name (tap to rename)
-        val displayName = entity.name ?: getString(R.string.entity_format, entity.entityId)
-        val nameView = view.findViewById<TextView>(R.id.tvEntityName)
-        nameView.text = displayName
-        nameView.setOnClickListener { showRenameDialog(entity) }
+        entityAdapter.isEditMode = isEditMode
+        // Visual feedback: tint edit button when active
+        btnEditMode.setColorFilter(
+            if (isEditMode) Color.parseColor("#4FC3F7") else Color.parseColor("#888888")
+        )
 
-        // ID
-        view.findViewById<TextView>(R.id.tvEntityId).text = getString(R.string.entity_id_format, entity.entityId)
+        TelemetryHelper.trackAction(
+            if (isEditMode) "edit_mode_on" else "edit_mode_off"
+        )
+    }
 
-        // State Badge
-        val badgeView = view.findViewById<TextView>(R.id.tvStateBadge)
-        badgeView.text = entity.state.name
-        badgeView.setBackgroundColor(getStateBadgeColor(entity.state))
+    private fun persistReorder() {
+        val currentOrder = entityAdapter.getCurrentOrder()
 
-        // Last Message
-        view.findViewById<TextView>(R.id.tvLastMessage).text = entity.message
-
-        // Message Time
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
-        view.findViewById<TextView>(R.id.tvMessageTime).text = timeFormat.format(Date(entity.lastUpdated))
-
-        // Refresh Connection Button
-        view.findViewById<MaterialButton>(R.id.btnRefreshEntity).setOnClickListener {
-            refreshEntity(entity, it as MaterialButton)
+        // Build the permutation array: order[newSlot] = oldSlot
+        // currentOrder contains entity IDs in their new visual order
+        // We need to map: for each of 4 slots, which old slot goes there
+        val order = IntArray(FREE_ENTITY_LIMIT) { it } // identity
+        for (i in currentOrder.indices) {
+            order[i] = currentOrder[i]
+        }
+        // Fill remaining slots with identity mapping
+        val usedSlots = currentOrder.toSet()
+        var fillIdx = currentOrder.size
+        for (slot in 0 until FREE_ENTITY_LIMIT) {
+            if (slot !in usedSlots && fillIdx < FREE_ENTITY_LIMIT) {
+                order[fillIdx] = slot
+                fillIdx++
+            }
         }
 
-        // Remove Entity Button
-        view.findViewById<MaterialButton>(R.id.btnRemoveEntity).setOnClickListener {
-            showRemoveConfirmDialog(entity)
+        TelemetryHelper.trackAction("reorder_entities", mapOf("order" to currentOrder.toString()))
+
+        lifecycleScope.launch {
+            try {
+                Toast.makeText(this@MainActivity, getString(R.string.reorder_saving), Toast.LENGTH_SHORT).show()
+
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "order" to order.toList()
+                )
+                val response = api.reorderEntities(body)
+
+                if (response.success) {
+                    // Update local avatar mappings to match new order
+                    val oldAvatars = mutableMapOf<Int, String>()
+                    for (i in currentOrder.indices) {
+                        oldAvatars[currentOrder[i]] = avatarManager.getAvatar(currentOrder[i])
+                    }
+                    for (i in currentOrder.indices) {
+                        avatarManager.setAvatar(i, oldAvatars[currentOrder[i]] ?: avatarManager.getAvatar(currentOrder[i]))
+                    }
+
+                    entityAdapter.markOrderSaved()
+                    Toast.makeText(this@MainActivity, getString(R.string.reorder_success), Toast.LENGTH_SHORT).show()
+                    delay(500)
+                    loadBoundEntities()
+                } else {
+                    Toast.makeText(this@MainActivity, getString(R.string.reorder_failed), Toast.LENGTH_SHORT).show()
+                    loadBoundEntities() // reload to reset visual order
+                }
+            } catch (e: Exception) {
+                TelemetryHelper.trackError(e, mapOf("action" to "reorder_entities"))
+                Timber.e(e, "Failed to reorder entities")
+                Toast.makeText(this@MainActivity, getString(R.string.reorder_failed), Toast.LENGTH_SHORT).show()
+                loadBoundEntities() // reload to reset visual order
+            }
         }
     }
 
@@ -451,16 +531,6 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(getString(R.string.cancel), null)
             .show()
-    }
-
-    private fun getStateBadgeColor(state: CharacterState): Int {
-        return when (state) {
-            CharacterState.IDLE -> Color.parseColor("#4CAF50")
-            CharacterState.BUSY -> Color.parseColor("#2196F3")
-            CharacterState.EATING -> Color.parseColor("#FF9800")
-            CharacterState.SLEEPING -> Color.parseColor("#607D8B")
-            CharacterState.EXCITED -> Color.parseColor("#E91E63")
-        }
     }
 
     private fun showAvatarPicker(entityId: Int, iconView: TextView) {
