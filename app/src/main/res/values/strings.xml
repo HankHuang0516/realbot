@@ -142,6 +142,18 @@
     <string name="remove_confirm_title">Remove Entity?</string>
     <string name="remove_confirm_message">Are you sure you want to remove %1$s (#%2$d)? This will unbind it from the wallpaper.</string>
     <string name="entity_removed">%s removed</string>
+    <string name="refresh_connection">Refresh</string>
+    <string name="refresh_success">Connection refreshed!</string>
+    <string name="refresh_webhook_broken_title">Connection Failed</string>
+    <string name="refresh_webhook_broken_message">Unable to connect to bot. Would you like to rebind?</string>
+    <string name="refresh_cooldown">Please wait %d seconds</string>
+    <string name="edit_entities">Edit</string>
+    <string name="drag_to_reorder">Drag to reorder</string>
+    <string name="reorder_saving">Saving new order…</string>
+    <string name="reorder_success">Entity order updated!</string>
+    <string name="reorder_failed">Failed to update order</string>
+    <string name="refreshing">Refreshing…</string>
+    <string name="rebind">Rebind</string>
     <string name="entity_count_format">%1$d/%2$d entities</string>
     <string name="entities_label">entities</string>
 

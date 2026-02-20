@@ -95,6 +95,12 @@ interface ClawApiService {
     @POST("api/official-borrow/verify-subscription")
     suspend fun verifyBorrowSubscription(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
+    @POST("api/entity/refresh")
+    suspend fun refreshEntity(@Body body: Map<String, @JvmSuppressWildcards Any>): RefreshEntityResponse
+
+    @POST("api/device/reorder-entities")
+    suspend fun reorderEntities(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
     @GET("api/free-bot-tos")
     suspend fun getFreeBotTos(
         @Query("lang") lang: String,
