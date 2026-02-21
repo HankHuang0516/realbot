@@ -288,6 +288,13 @@ const TRANSLATIONS = {
         "feedback_track_title": "Track Your Feedback",
         "feedback_track_desc": "View the status and updates of your submitted feedback.",
         "feedback_github_issue_desc": "Track progress on GitHub",
+        "feedback_photo_label": "Attach Photos (Optional)",
+        "feedback_photo_hint": "Add up to 5 photos to help illustrate the issue",
+        "feedback_photo_add": "Add Photos",
+        "feedback_photo_uploading": "Uploading photos...",
+        "feedback_photo_uploaded": "%d photo(s) uploaded",
+        "feedback_photo_count": "%d photo(s) attached",
+        "feedback_photo_remove": "Remove",
         "feedback_history_title": "My Feedback",
 
         // Chat (chat.html)
@@ -731,6 +738,13 @@ const TRANSLATIONS = {
         "feedback_track_title": "追蹤您的回饋",
         "feedback_track_desc": "查看已提交回饋的狀態與更新。",
         "feedback_github_issue_desc": "在 GitHub 上追蹤進度",
+        "feedback_photo_label": "附加照片（選用）",
+        "feedback_photo_hint": "最多可上傳 5 張照片來說明問題",
+        "feedback_photo_add": "新增照片",
+        "feedback_photo_uploading": "照片上傳中...",
+        "feedback_photo_uploaded": "已上傳 %d 張照片",
+        "feedback_photo_count": "已附加 %d 張照片",
+        "feedback_photo_remove": "移除",
         "feedback_history_title": "我的回饋",
 
         // Chat (chat.html)
