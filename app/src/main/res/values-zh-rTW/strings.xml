@@ -219,6 +219,15 @@
     <string name="bind_email_open_portal">開啟網頁入口</string>
     <string name="bind_email_copy_credentials">複製裝置憑證</string>
 
+    <!-- Account Login -->
+    <string name="account_login">帳號登入</string>
+    <string name="account_login_hint">使用已綁定的信箱登入，可在重新安裝後恢復裝置資料。</string>
+    <string name="account_login_btn">登入</string>
+    <string name="account_login_logging_in">登入中…</string>
+    <string name="account_login_success_title">登入成功</string>
+    <string name="account_login_success_msg">帳號已恢復：%s\nApp 將重新啟動以載入您的資料。</string>
+    <string name="account_login_restart">立即重啟</string>
+
     <!-- Privacy Policy -->
     <string name="privacy_policy_title">隱私權政策</string>
     <string name="web_portal">網頁入口</string>

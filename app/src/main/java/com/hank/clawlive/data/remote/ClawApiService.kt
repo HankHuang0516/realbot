@@ -229,6 +229,9 @@ interface ClawApiService {
         @Query("deviceSecret") deviceSecret: String
     ): BindEmailStatusResponse
 
+    @POST("api/auth/app-login")
+    suspend fun appLogin(@Body body: Map<String, String>): AppLoginResponse
+
     // ============================================
     // SCHEDULE
     // ============================================
@@ -373,5 +376,13 @@ data class BindEmailStatusResponse(
     val bound: Boolean = false,
     val email: String? = null,
     val emailVerified: Boolean = false,
+    val error: String? = null
+)
+
+data class AppLoginResponse(
+    val success: Boolean,
+    val deviceId: String? = null,
+    val deviceSecret: String? = null,
+    val email: String? = null,
     val error: String? = null
 )
