@@ -321,4 +321,43 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="file_time_week">本週</string>
     <string name="file_time_month">本月</string>
     <string name="file_broadcast">廣播</string>
+
+    <!-- Schedule -->
+    <string name="schedule_title">排程</string>
+    <string name="schedule_add">+ 新增</string>
+    <string name="schedule_upcoming">即將執行 &amp; 進行中</string>
+    <string name="schedule_history">歷史紀錄</string>
+    <string name="schedule_empty_upcoming">沒有即將執行的排程</string>
+    <string name="schedule_empty_history">沒有執行紀錄</string>
+    <string name="schedule_create_title">新增排程</string>
+    <string name="schedule_create">建立</string>
+    <string name="schedule_label_entity">目標實體</string>
+    <string name="schedule_label_message">訊息</string>
+    <string name="schedule_label_time">排程時間</string>
+    <string name="schedule_label_repeat">重複</string>
+    <string name="schedule_label_label">標籤（選填）</string>
+    <string name="schedule_placeholder_message">輸入要發送的訊息…</string>
+    <string name="schedule_placeholder_label">例如：早安問候</string>
+    <string name="schedule_tap_time">點擊選擇時間</string>
+    <string name="schedule_once">單次</string>
+    <string name="schedule_repeat_daily">每日</string>
+    <string name="schedule_repeat_weekly">每週</string>
+    <string name="schedule_repeat_hourly">每小時</string>
+    <string name="schedule_5min">5分</string>
+    <string name="schedule_15min">15分</string>
+    <string name="schedule_30min">30分</string>
+    <string name="schedule_1hr">1時</string>
+    <string name="schedule_3hr">3時</string>
+    <string name="schedule_created_ok">排程已建立！</string>
+    <string name="schedule_confirm_delete">確定要刪除此排程？</string>
+    <string name="schedule_deleted">排程已刪除</string>
+    <string name="schedule_err_message">請輸入訊息</string>
+    <string name="schedule_no_entities">沒有已綁定的實體，請先綁定實體。</string>
+    <string name="schedule_status_pending">等待中</string>
+    <string name="schedule_status_active">進行中</string>
+    <string name="schedule_status_completed">已完成</string>
+    <string name="schedule_status_failed">失敗</string>
+    <string name="schedule_created">建立時間</string>
+    <string name="schedule_executed">執行時間</string>
+    <string name="schedule_push_ok">已推送至 Bot</string>
 </resources>
