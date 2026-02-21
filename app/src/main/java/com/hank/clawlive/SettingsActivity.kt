@@ -2,6 +2,7 @@ package com.hank.clawlive
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -23,8 +24,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import com.hank.clawlive.billing.BillingManager
 import com.hank.clawlive.billing.SubscriptionState
 import com.hank.clawlive.data.local.DeviceManager
@@ -56,6 +55,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var tvMarkStatus: TextView
     private lateinit var btnPrivacyPolicy: MaterialButton
     private lateinit var btnWebPortal: MaterialButton
+    private lateinit var tvViewFeedbackHistory: TextView
     private lateinit var chipGroupLanguage: ChipGroup
     private lateinit var chipLangEn: Chip
     private lateinit var chipLangZh: Chip
@@ -127,6 +127,7 @@ class SettingsActivity : AppCompatActivity() {
         tvMarkStatus = findViewById(R.id.tvMarkStatus)
         btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy)
         btnWebPortal = findViewById(R.id.btnWebPortal)
+        tvViewFeedbackHistory = findViewById(R.id.tvViewFeedbackHistory)
     }
 
     private fun setupClickListeners() {
@@ -139,7 +140,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         btnFeedback.setOnClickListener {
-            showFeedbackDialog()
+            startActivity(Intent(this, FeedbackActivity::class.java))
         }
 
         btnMarkBug.setOnClickListener {
@@ -152,6 +153,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnWebPortal.setOnClickListener {
             showWebPortalDialog()
+        }
+
+        tvViewFeedbackHistory.setOnClickListener {
+            startActivity(Intent(this, FeedbackHistoryActivity::class.java))
         }
 
         // Language selection
@@ -281,99 +286,6 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
-    }
-
-    private var feedbackCategory = "bug"
-
-    private fun showFeedbackDialog() {
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dpToPx(20), dpToPx(12), dpToPx(20), 0)
-        }
-
-        // Description text
-        val descText = TextView(this).apply {
-            text = getString(R.string.feedback_auto_log_hint)
-            setTextColor(0xFF888888.toInt())
-            textSize = 13f
-        }
-        container.addView(descText)
-
-        // Category chips
-        val chipGroup = ChipGroup(this).apply {
-            isSingleSelection = true
-            isSelectionRequired = true
-            setPadding(0, dpToPx(8), 0, dpToPx(4))
-        }
-
-        val categories = listOf(
-            "bug" to getString(R.string.feedback_cat_bug),
-            "feature" to getString(R.string.feedback_cat_feature),
-            "question" to getString(R.string.feedback_cat_question)
-        )
-
-        feedbackCategory = "bug"
-
-        categories.forEach { (value, label) ->
-            val chip = Chip(this).apply {
-                text = label
-                isCheckable = true
-                isChecked = (value == "bug")
-                setOnCheckedChangeListener { _, isChecked ->
-                    if (isChecked) feedbackCategory = value
-                }
-            }
-            chipGroup.addView(chip)
-        }
-        container.addView(chipGroup)
-
-        // Text input
-        val inputLayout = TextInputLayout(this).apply {
-            hint = getString(R.string.feedback_hint)
-            boxBackgroundMode = TextInputLayout.BOX_BACKGROUND_OUTLINE
-        }
-        val input = TextInputEditText(this).apply {
-            maxLines = 5
-            minLines = 3
-        }
-        inputLayout.addView(input)
-        container.addView(inputLayout)
-
-        AlertDialog.Builder(this)
-            .setTitle(R.string.feedback)
-            .setView(container)
-            .setPositiveButton(R.string.send) { _, _ ->
-                val message = input.text?.toString()?.trim() ?: ""
-                if (message.isEmpty()) {
-                    Toast.makeText(this, R.string.feedback_empty, Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                sendFeedback(message, feedbackCategory)
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    private fun sendFeedback(message: String, category: String) {
-        lifecycleScope.launch {
-            try {
-                val body = mapOf(
-                    "deviceId" to deviceManager.deviceId,
-                    "deviceSecret" to deviceManager.deviceSecret,
-                    "message" to message,
-                    "category" to category,
-                    "appVersion" to (packageManager.getPackageInfo(packageName, 0).versionName ?: "")
-                )
-                NetworkModule.api.sendFeedback(body)
-                Toast.makeText(this@SettingsActivity, R.string.feedback_sent, Toast.LENGTH_SHORT).show()
-                // Hide mark status after successful submit
-                tvMarkStatus.visibility = View.GONE
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to send feedback")
-                TelemetryHelper.trackError(e, mapOf("action" to "send_feedback"))
-                Toast.makeText(this@SettingsActivity, "Failed: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
     }
 
     private fun markBugMoment() {
