@@ -33,6 +33,8 @@ async function initFeedbackTable(pool) {
         await pool.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS github_issue_url TEXT`);
         await pool.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS mark_ts BIGINT`);
         await pool.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS device_secret TEXT`);
+        await pool.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS debug_status VARCHAR(16)`);
+        await pool.query(`ALTER TABLE feedback ADD COLUMN IF NOT EXISTS debug_result JSONB`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_feedback_device ON feedback(device_id)`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status)`);
         console.log('[Feedback] Table migration complete');
@@ -378,18 +380,21 @@ async function saveFeedback(pool, { deviceId, deviceSecret, message, category, a
 
     const triage = autoTriage(logSnapshot);
 
+    const effectiveCategory = category || 'bug';
+    const debugStatus = effectiveCategory === 'bug' ? 'pending' : null;
+
     try {
         const result = await pool.query(
             `INSERT INTO feedback
              (device_id, device_secret, message, category, app_version, log_snapshot, device_state,
-              severity, status, tags, ai_diagnosis, mark_ts, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open', $9, $10, $11, $12)
+              severity, status, tags, ai_diagnosis, mark_ts, debug_status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open', $9, $10, $11, $12, $13)
              RETURNING id, severity, tags, ai_diagnosis`,
             [
                 deviceId,
                 deviceSecret || null,
                 message,
-                category || 'bug',
+                effectiveCategory,
                 appVersion || '',
                 JSON.stringify(logSnapshot),
                 JSON.stringify(deviceState),
@@ -397,6 +402,7 @@ async function saveFeedback(pool, { deviceId, deviceSecret, message, category, a
                 triage.tags,
                 triage.diagnosis,
                 markTs || null,
+                debugStatus,
                 Date.now()
             ]
         );
@@ -463,7 +469,7 @@ async function getFeedbackById(pool, id) {
  */
 async function updateFeedback(pool, id, updates) {
     if (!pool) return false;
-    const allowed = ['status', 'resolution', 'github_issue_url', 'ai_diagnosis', 'severity'];
+    const allowed = ['status', 'resolution', 'github_issue_url', 'ai_diagnosis', 'severity', 'debug_status', 'debug_result'];
     const sets = [];
     const params = [];
 
@@ -481,6 +487,48 @@ async function updateFeedback(pool, id, updates) {
         return true;
     } catch (err) {
         console.error('[Feedback] Update error:', err.message);
+        return false;
+    }
+}
+
+// ============================================
+// YANHUI DEBUG INTEGRATION
+// ============================================
+
+/**
+ * Get bug feedback pending yanhui debug processing.
+ */
+async function getPendingDebugFeedback(pool, limit = 20) {
+    if (!pool) return [];
+    try {
+        const result = await pool.query(
+            `SELECT id, device_id, message, category, severity, tags, ai_diagnosis, created_at
+             FROM feedback
+             WHERE debug_status = 'pending' AND category = 'bug'
+             ORDER BY created_at DESC
+             LIMIT $1`,
+            [Math.min(parseInt(limit) || 20, 100)]
+        );
+        return result.rows;
+    } catch (err) {
+        console.error('[Feedback] Pending debug query error:', err.message);
+        return [];
+    }
+}
+
+/**
+ * Save yanhui debug search/analyze result for a feedback entry.
+ */
+async function saveDebugResult(pool, id, debugStatus, debugResult) {
+    if (!pool) return false;
+    try {
+        await pool.query(
+            `UPDATE feedback SET debug_status = $1, debug_result = $2 WHERE id = $3`,
+            [debugStatus, JSON.stringify(debugResult), id]
+        );
+        return true;
+    } catch (err) {
+        console.error('[Feedback] Save debug result error:', err.message);
         return false;
     }
 }
@@ -709,6 +757,8 @@ module.exports = {
     getFeedbackById,
     updateFeedback,
     createGithubIssue,
+    getPendingDebugFeedback,
+    saveDebugResult,
     setMark,
     getMark,
     clearMark,

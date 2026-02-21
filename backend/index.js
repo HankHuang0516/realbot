@@ -4093,6 +4093,45 @@ app.post('/api/feedback/mark', (req, res) => {
     res.json({ success: true, markTs: ts });
 });
 
+// GET /api/feedback/pending-debug — List bug feedback pending yanhui debug processing
+app.get('/api/feedback/pending-debug', async (req, res) => {
+    const { deviceId, deviceSecret, limit } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const list = await feedbackModule.getPendingDebugFeedback(chatPool, limit);
+    res.json({ success: true, count: list.length, feedback: list });
+});
+
+// POST /api/feedback/:id/debug-result — Save yanhui debug search/analyze result
+app.post('/api/feedback/:id/debug-result', async (req, res) => {
+    const { deviceId, deviceSecret } = req.body;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const { debugStatus, debugResult } = req.body;
+    if (!debugStatus || !['searched', 'analyzed'].includes(debugStatus)) {
+        return res.status(400).json({ success: false, message: "debugStatus must be 'searched' or 'analyzed'" });
+    }
+
+    const ok = await feedbackModule.saveDebugResult(chatPool, req.params.id, debugStatus, debugResult || {});
+    if (ok) {
+        res.json({ success: true });
+    } else {
+        res.status(500).json({ success: false, message: "Failed to save debug result" });
+    }
+});
+
 // GET /api/feedback — List feedback with filters
 app.get('/api/feedback', async (req, res) => {
     const { deviceId, deviceSecret, status, severity, limit, offset } = req.query;
