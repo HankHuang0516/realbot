@@ -378,27 +378,79 @@
     <div class="dialog-overlay" id="feedbackDialog" style="display:none">
         <div class="dialog">
             <div class="dialog-title" data-i18n="settings_feedback_title">Feedback</div>
-            <p style="margin-bottom:10px;font-size:14px;color:var(--text-secondary);">
+            <p style="margin-bottom:10px;font-size:13px;color:var(--text-secondary);" data-i18n="feedback_auto_log_hint">
                 Logs from the last 5 minutes will be automatically captured to help diagnose the issue.
             </p>
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <button class="feedback-cat-btn active" data-cat="bug" onclick="setFeedbackCategory('bug')">Bug</button>
-                <button class="feedback-cat-btn" data-cat="feature" onclick="setFeedbackCategory('feature')">Feature</button>
-                <button class="feedback-cat-btn" data-cat="question" onclick="setFeedbackCategory('question')">Question</button>
+            <div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;" data-i18n="feedback_category_label">Category</div>
+            <div style="display:flex;gap:10px;margin-bottom:16px;">
+                <div class="feedback-cat-card selected-bug" data-cat="bug" onclick="setFeedbackCategory('bug')">
+                    <span style="font-size:22px;">🐛</span>
+                    <span class="cat-label" data-i18n="feedback_cat_bug">Bug</span>
+                </div>
+                <div class="feedback-cat-card" data-cat="feature" onclick="setFeedbackCategory('feature')">
+                    <span style="font-size:22px;">💡</span>
+                    <span class="cat-label" data-i18n="feedback_cat_feature">Feature</span>
+                </div>
+                <div class="feedback-cat-card" data-cat="question" onclick="setFeedbackCategory('question')">
+                    <span style="font-size:22px;">❓</span>
+                    <span class="cat-label" data-i18n="feedback_cat_question">Question</span>
+                </div>
             </div>
             <style>
-                .feedback-cat-btn {
-                    padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border-color);
-                    background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; font-size: 13px;
+                .feedback-cat-card {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 14px 8px;
+                    border-radius: 12px;
+                    border: 1px solid var(--card-border, #333);
+                    background: var(--bg-secondary, #1a1a1a);
+                    cursor: pointer;
+                    transition: all 0.2s;
                 }
-                .feedback-cat-btn.active {
-                    background: var(--accent); color: #fff; border-color: var(--accent);
+                .feedback-cat-card:hover {
+                    border-color: var(--text-secondary);
+                }
+                .feedback-cat-card .cat-label {
+                    font-size: 13px;
+                    color: var(--text-secondary);
+                    margin-top: 6px;
+                    transition: all 0.2s;
+                }
+                .feedback-cat-card.selected-bug {
+                    border-color: #F44336;
+                    border-width: 2px;
+                    background: rgba(244, 67, 54, 0.1);
+                }
+                .feedback-cat-card.selected-bug .cat-label {
+                    color: #F44336;
+                    font-weight: 600;
+                }
+                .feedback-cat-card.selected-feature {
+                    border-color: #2196F3;
+                    border-width: 2px;
+                    background: rgba(33, 150, 243, 0.1);
+                }
+                .feedback-cat-card.selected-feature .cat-label {
+                    color: #2196F3;
+                    font-weight: 600;
+                }
+                .feedback-cat-card.selected-question {
+                    border-color: #9C27B0;
+                    border-width: 2px;
+                    background: rgba(156, 39, 176, 0.1);
+                }
+                .feedback-cat-card.selected-question .cat-label {
+                    color: #9C27B0;
+                    font-weight: 600;
                 }
             </style>
             <textarea id="feedbackText" class="form-input" rows="5"
                 placeholder="Describe the issue or suggestion..."
-                style="width: 100%; resize: vertical; margin-bottom: 1rem; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary);"></textarea>
-            <div id="feedbackResult" style="display:none;margin-bottom:12px;padding:10px;border-radius:8px;background:var(--bg-secondary);font-size:13px;"></div>
+                data-i18n-placeholder="feedback_hint"
+                style="width: 100%; resize: vertical; margin-bottom: 1rem; padding: 12px; border-radius: 12px; border: 1px solid var(--card-border, #333); background: var(--bg-secondary, #1a1a1a); color: var(--text); font-size: 14px; font-family: inherit;"></textarea>
+            <div id="feedbackResult" style="display:none;margin-bottom:12px;padding:14px;border-radius:12px;border:1px solid #2E7D32;background:rgba(17,26,17,0.8);font-size:13px;"></div>
             <div class="dialog-actions">
                 <button class="btn btn-outline" onclick="closeFeedbackDialog()"
                     data-i18n="settings_feedback_cancel">Cancel</button>
@@ -734,8 +786,11 @@
 
         function setFeedbackCategory(cat) {
             feedbackCategory = cat;
-            document.querySelectorAll('.feedback-cat-btn').forEach(b => {
-                b.classList.toggle('active', b.dataset.cat === cat);
+            document.querySelectorAll('.feedback-cat-card').forEach(card => {
+                card.className = 'feedback-cat-card';
+                if (card.dataset.cat === cat) {
+                    card.classList.add('selected-' + cat);
+                }
             });
         }
 
@@ -743,6 +798,11 @@
             document.getElementById('feedbackDialog').style.display = '';
             document.getElementById('feedbackText').value = '';
             document.getElementById('feedbackResult').style.display = 'none';
+            const btn = document.getElementById('btnSendFeedback');
+            btn.disabled = false;
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.textContent = i18n.t('settings_btn_send_feedback') || 'Send';
             setFeedbackCategory('bug');
             setTimeout(() => document.getElementById('feedbackText').focus(), 100);
         }
@@ -789,30 +849,44 @@
                     appVersion: 'Portal v' + PORTAL_VERSION
                 });
 
-                // Show triage result
+                // Show triage result with improved styling
                 const resultEl = document.getElementById('feedbackResult');
                 const logs = result.logsCaptured || {};
-                let html = `<strong>Feedback #${result.feedbackId || '?'}</strong> received<br>`;
-                html += `Severity: <strong>${result.severity || '?'}</strong> | `;
-                html += `Logs captured: ${logs.telemetry || 0} API calls, ${logs.serverLogs || 0} server logs<br>`;
+                const sevColor = {critical:'#F44336',high:'#FF9800',medium:'#FFC107',low:'#4CAF50'}[result.severity] || '#4CAF50';
+
+                let html = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">`;
+                html += `<span style="color:#4CAF50;font-size:18px;font-weight:bold;">✓</span>`;
+                html += `<span style="color:#4CAF50;font-size:15px;font-weight:600;">${i18n.t('feedback_result_title').replace('%d', result.feedbackId || '?')}</span>`;
+                html += `</div>`;
+                html += `<div style="color:${sevColor};margin-bottom:4px;">${i18n.t('feedback_result_severity').replace('%s', result.severity || '?')}</div>`;
+                html += `<div style="color:var(--text-secondary);margin-bottom:4px;">${i18n.t('feedback_result_logs').replace('%d', logs.telemetry || 0).replace('%d', logs.serverLogs || 0)}</div>`;
                 if (result.tags && result.tags.length > 0) {
-                    html += `Tags: ${result.tags.map(t => '<code>' + t + '</code>').join(' ')}<br>`;
-                }
-                if (result.diagnosis) {
-                    html += `<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">${result.diagnosis.replace(/\n/g, '<br>')}</div>`;
+                    html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">`;
+                    result.tags.forEach(t => {
+                        html += `<span style="padding:2px 8px;border-radius:8px;font-size:10px;color:var(--warning);border:1px solid var(--warning);background:rgba(255,210,63,0.1);">${t}</span>`;
+                    });
+                    html += `</div>`;
                 }
                 if (result.githubIssue) {
-                    html += `<div style="margin-top:6px;"><a href="${result.githubIssue.url}" target="_blank">GitHub Issue #${result.githubIssue.number}</a></div>`;
+                    html += `<a href="${result.githubIssue.url}" target="_blank" style="display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px;border-radius:10px;border:1px solid var(--card-border);background:var(--card-bg);text-decoration:none;color:var(--warning);">`;
+                    html += `<span>⊙</span><span style="flex:1;"><div style="font-weight:600;">${i18n.t('feedback_result_issue').replace('%d', result.githubIssue.number)}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${i18n.t('feedback_github_issue_desc')}</div></span><span style="color:var(--text-muted);">→</span>`;
+                    html += `</a>`;
                 }
+                html += `<a href="feedback.html" style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:10px;border-radius:10px;border:1px solid var(--card-border);background:var(--card-bg);text-decoration:none;color:var(--warning);">`;
+                html += `<span>📋</span><span style="flex:1;"><div style="font-weight:600;">${i18n.t('feedback_track_title')}</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${i18n.t('feedback_track_desc')}</div></span><span style="color:var(--text-muted);">→</span>`;
+                html += `</a>`;
+
                 resultEl.innerHTML = html;
                 resultEl.style.display = '';
 
+                btn.textContent = i18n.t('feedback_sent_short') || 'Sent';
+                btn.style.background = '#2E7D32';
+                btn.style.color = '#fff';
+
                 showToast(i18n.t('settings_feedback_sent'), 'success');
-                // Hide mark status
                 document.getElementById('markStatus').style.display = 'none';
             } catch (e) {
                 showToast(e.message, 'error');
-            } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
             }

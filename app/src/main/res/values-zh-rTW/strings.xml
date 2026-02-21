@@ -179,6 +179,9 @@
     <string name="feedback_view_issue">查看 GitHub Issue</string>
     <string name="feedback_history_title">我的回饋</string>
     <string name="feedback_history_empty">尚未提交任何回饋。\n您提交的回饋將顯示於此。</string>
+    <string name="feedback_track_title">追蹤您的回饋</string>
+    <string name="feedback_track_desc">查看已提交回饋的狀態與更新。</string>
+    <string name="feedback_github_issue_desc">在 GitHub 上追蹤進度</string>
     <string name="submit">送出</string>
     <string name="app_version">版本：%s</string>
 
