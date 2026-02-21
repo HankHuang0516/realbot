@@ -5,6 +5,7 @@ function renderNav(activePage) {
         { id: 'dashboard', i18nKey: 'nav_dashboard', label: 'Dashboard', href: 'dashboard.html', icon: '📊' },
         { id: 'chat', i18nKey: 'nav_chat', label: 'Chat', href: 'chat.html', icon: '💬' },
         { id: 'mission', i18nKey: 'nav_mission', label: 'Mission', href: 'mission.html', icon: '🚀' },
+        { id: 'schedule', i18nKey: 'nav_schedule', label: 'Schedule', href: 'schedule.html', icon: '📅' },
         { id: 'settings', i18nKey: 'nav_settings', label: 'Settings', href: 'settings.html', icon: '⚙️' }
     ];
 
