@@ -254,9 +254,10 @@ function autoTriage(logSnapshot) {
 /**
  * Generate a structured AI diagnostic prompt from a feedback record.
  * @param {object} feedback - Full feedback row from DB
+ * @param {Array} [photos] - Photo metadata array (from getFeedbackPhotos)
  * @returns {string}
  */
-function generateAiPrompt(feedback) {
+function generateAiPrompt(feedback, photos) {
     const lines = [];
 
     lines.push(`## Bug Report #${feedback.id}`);
@@ -339,10 +340,26 @@ function generateAiPrompt(feedback) {
         lines.push(feedback.ai_diagnosis);
     }
 
+    // User-uploaded photos
+    if (photos && photos.length > 0) {
+        lines.push('');
+        lines.push(`### Attached Photos — ${photos.length} file(s)`);
+        lines.push('');
+        photos.forEach((p, i) => {
+            const sizeKB = p.size ? Math.round(parseInt(p.size) / 1024) : '?';
+            lines.push(`- Photo ${i + 1}: [${p.file_name || 'photo'}](${process.env.BASE_URL || 'https://eclaw.up.railway.app'}/api/feedback/photo/${p.id}) (${p.content_type}, ${sizeKB}KB)`);
+        });
+        lines.push('');
+        lines.push('> **Note:** These photos were uploaded by the user to help illustrate the issue. Review them for visual context.');
+    }
+
     lines.push('');
     lines.push('---');
     lines.push('');
     lines.push('**Instructions for AI:** Analyze the above bug report, API call history, server logs, and device state. ');
+    if (photos && photos.length > 0) {
+        lines.push('Also review the attached photos for visual evidence of the issue. ');
+    }
     lines.push('Identify the root cause, the affected code path in the backend (backend/index.js), and suggest a fix. ');
     lines.push('If the issue is client-side (Android app), indicate which Activity/Repository is involved.');
 
@@ -477,12 +494,12 @@ async function updateFeedback(pool, id, updates) {
  * Requires GITHUB_TOKEN and GITHUB_REPO in env.
  * @returns {{ url: string, number: number } | null}
  */
-async function createGithubIssue(feedback) {
+async function createGithubIssue(feedback, photos) {
     const token = process.env.GITHUB_TOKEN;
     const repo = process.env.GITHUB_REPO; // e.g. "HankHuang0516/realbot"
     if (!token || !repo) return null;
 
-    const prompt = generateAiPrompt(feedback);
+    const prompt = generateAiPrompt(feedback, photos);
     const severityLabel = `severity:${feedback.severity || 'medium'}`;
     const labels = ['bug', 'ai-feedback', severityLabel];
     if (feedback.tags) {
@@ -540,11 +557,149 @@ function clearMark(deviceId) {
 }
 
 // ============================================
+// FEEDBACK PHOTOS
+// ============================================
+
+const MAX_PHOTOS_PER_FEEDBACK = 5;
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB per photo
+
+/**
+ * Create feedback_photos table (called during init).
+ */
+async function initFeedbackPhotosTable(pool) {
+    if (!pool) return;
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS feedback_photos (
+                id SERIAL PRIMARY KEY,
+                feedback_id INTEGER NOT NULL,
+                photo_data BYTEA NOT NULL,
+                content_type VARCHAR(64) NOT NULL,
+                file_name TEXT,
+                created_at BIGINT DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000
+            )
+        `);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_feedback_photos_fid ON feedback_photos(feedback_id)`);
+        console.log('[Feedback] Photos table ready');
+    } catch (err) {
+        console.error('[Feedback] Photos table error:', err.message);
+    }
+}
+
+/**
+ * Save a photo for a feedback entry.
+ * @returns {{ id: number, feedback_id: number, file_name: string } | null}
+ */
+async function saveFeedbackPhoto(pool, feedbackId, photoBuffer, contentType, fileName) {
+    if (!pool) return null;
+    try {
+        // Check existing photo count
+        const countResult = await pool.query(
+            'SELECT COUNT(*) FROM feedback_photos WHERE feedback_id = $1',
+            [feedbackId]
+        );
+        if (parseInt(countResult.rows[0].count) >= MAX_PHOTOS_PER_FEEDBACK) {
+            return { error: `Maximum ${MAX_PHOTOS_PER_FEEDBACK} photos per feedback` };
+        }
+
+        const result = await pool.query(
+            `INSERT INTO feedback_photos (feedback_id, photo_data, content_type, file_name, created_at)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, feedback_id, file_name, created_at`,
+            [feedbackId, photoBuffer, contentType, fileName || 'photo', Date.now()]
+        );
+        return result.rows[0];
+    } catch (err) {
+        console.error('[Feedback] Save photo error:', err.message);
+        return null;
+    }
+}
+
+/**
+ * Get photo metadata list for a feedback (without binary data).
+ */
+async function getFeedbackPhotos(pool, feedbackId) {
+    if (!pool) return [];
+    try {
+        const result = await pool.query(
+            `SELECT id, feedback_id, content_type, file_name, length(photo_data) as size, created_at
+             FROM feedback_photos WHERE feedback_id = $1 ORDER BY id`,
+            [feedbackId]
+        );
+        return result.rows;
+    } catch (err) {
+        console.error('[Feedback] Get photos error:', err.message);
+        return [];
+    }
+}
+
+/**
+ * Get a single photo by ID (with binary data for serving).
+ */
+async function getFeedbackPhoto(pool, photoId) {
+    if (!pool) return null;
+    try {
+        const result = await pool.query(
+            'SELECT id, feedback_id, photo_data, content_type, file_name FROM feedback_photos WHERE id = $1',
+            [photoId]
+        );
+        return result.rows[0] || null;
+    } catch (err) {
+        console.error('[Feedback] Get photo error:', err.message);
+        return null;
+    }
+}
+
+/**
+ * Delete all photos for a feedback entry (called on bug resolved/closed).
+ * @returns {number} Number of photos deleted
+ */
+async function deleteFeedbackPhotos(pool, feedbackId) {
+    if (!pool) return 0;
+    try {
+        const result = await pool.query(
+            'DELETE FROM feedback_photos WHERE feedback_id = $1',
+            [feedbackId]
+        );
+        if (result.rowCount > 0) {
+            console.log(`[Feedback] Deleted ${result.rowCount} photos for feedback #${feedbackId}`);
+        }
+        return result.rowCount;
+    } catch (err) {
+        console.error('[Feedback] Delete photos error:', err.message);
+        return 0;
+    }
+}
+
+/**
+ * Cleanup photos for all resolved/closed feedback entries.
+ * Called periodically or on status change.
+ */
+async function cleanupResolvedFeedbackPhotos(pool) {
+    if (!pool) return 0;
+    try {
+        const result = await pool.query(
+            `DELETE FROM feedback_photos WHERE feedback_id IN (
+                SELECT id FROM feedback WHERE status IN ('resolved', 'closed')
+            )`
+        );
+        if (result.rowCount > 0) {
+            console.log(`[Feedback] Cleanup: removed ${result.rowCount} photos from resolved/closed feedback`);
+        }
+        return result.rowCount;
+    } catch (err) {
+        console.error('[Feedback] Cleanup photos error:', err.message);
+        return 0;
+    }
+}
+
+// ============================================
 // EXPORTS
 // ============================================
 
 module.exports = {
     initFeedbackTable,
+    initFeedbackPhotosTable,
     captureLogSnapshot,
     captureDeviceState,
     autoTriage,
@@ -557,5 +712,13 @@ module.exports = {
     setMark,
     getMark,
     clearMark,
-    LOG_WINDOW_MS
+    LOG_WINDOW_MS,
+    // Photos
+    MAX_PHOTOS_PER_FEEDBACK,
+    MAX_PHOTO_SIZE,
+    saveFeedbackPhoto,
+    getFeedbackPhotos,
+    getFeedbackPhoto,
+    deleteFeedbackPhotos,
+    cleanupResolvedFeedbackPhotos
 };

@@ -4107,8 +4107,9 @@ app.get('/api/feedback/:id/ai-prompt', async (req, res) => {
         return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    const prompt = feedbackModule.generateAiPrompt(fb);
-    res.json({ success: true, feedbackId: fb.id, prompt });
+    const photos = await feedbackModule.getFeedbackPhotos(chatPool, fb.id);
+    const prompt = feedbackModule.generateAiPrompt(fb, photos);
+    res.json({ success: true, feedbackId: fb.id, prompt, photoCount: photos.length });
 });
 
 // POST /api/feedback/:id/create-issue — Create GitHub issue from feedback
@@ -4171,7 +4172,123 @@ app.patch('/api/feedback/:id', async (req, res) => {
     if (severity) updates.severity = severity;
 
     const updated = await feedbackModule.updateFeedback(chatPool, fb.id, updates);
-    res.json({ success: updated, message: updated ? "Updated" : "No changes" });
+
+    // Auto-delete photos when feedback is resolved or closed
+    let photosDeleted = 0;
+    if (updated && (status === 'resolved' || status === 'closed')) {
+        photosDeleted = await feedbackModule.deleteFeedbackPhotos(chatPool, fb.id);
+    }
+
+    res.json({ success: updated, message: updated ? "Updated" : "No changes", photosDeleted });
+});
+
+// ============================================
+// FEEDBACK PHOTOS
+// ============================================
+
+const feedbackPhotoUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: feedbackModule.MAX_PHOTO_SIZE },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Unsupported file type: ' + file.mimetype));
+        }
+    }
+});
+
+// POST /api/feedback/:id/photos — Upload photos for a feedback entry
+app.post('/api/feedback/:id/photos', feedbackPhotoUpload.array('photos', feedbackModule.MAX_PHOTOS_PER_FEEDBACK), async (req, res) => {
+    try {
+        const { deviceId, deviceSecret } = req.body;
+        if (!deviceId || !deviceSecret) {
+            return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+        }
+        const device = devices[deviceId];
+        if (!device || device.deviceSecret !== deviceSecret) {
+            return res.status(401).json({ success: false, message: "Invalid credentials" });
+        }
+
+        const feedbackId = parseInt(req.params.id);
+        const fb = await feedbackModule.getFeedbackById(chatPool, feedbackId);
+        if (!fb) {
+            return res.status(404).json({ success: false, message: "Feedback not found" });
+        }
+        if (fb.device_id !== deviceId) {
+            return res.status(403).json({ success: false, message: "Access denied" });
+        }
+
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, message: "No photos provided" });
+        }
+
+        const saved = [];
+        for (const file of req.files) {
+            const result = await feedbackModule.saveFeedbackPhoto(
+                chatPool, feedbackId, file.buffer, file.mimetype, file.originalname
+            );
+            if (result && result.error) {
+                return res.status(400).json({ success: false, message: result.error });
+            }
+            if (result) {
+                saved.push({ id: result.id, fileName: result.file_name });
+            }
+        }
+
+        console.log(`[Feedback] ${saved.length} photo(s) uploaded for feedback #${feedbackId}`);
+        res.json({ success: true, photos: saved, count: saved.length });
+    } catch (err) {
+        console.error('[Feedback] Photo upload error:', err.message);
+        res.status(500).json({ success: false, message: "Upload failed" });
+    }
+});
+
+// GET /api/feedback/:id/photos — List photos for a feedback entry
+app.get('/api/feedback/:id/photos', async (req, res) => {
+    const { deviceId, deviceSecret } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const feedbackId = parseInt(req.params.id);
+    const fb = await feedbackModule.getFeedbackById(chatPool, feedbackId);
+    if (!fb) {
+        return res.status(404).json({ success: false, message: "Feedback not found" });
+    }
+    if (fb.device_id !== deviceId) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    const photos = await feedbackModule.getFeedbackPhotos(chatPool, feedbackId);
+    res.json({
+        success: true,
+        photos: photos.map(p => ({
+            id: p.id,
+            feedbackId: p.feedback_id,
+            contentType: p.content_type,
+            fileName: p.file_name,
+            size: parseInt(p.size),
+            url: `/api/feedback/photo/${p.id}`
+        }))
+    });
+});
+
+// GET /api/feedback/photo/:photoId — Serve a feedback photo (binary)
+app.get('/api/feedback/photo/:photoId', async (req, res) => {
+    const photo = await feedbackModule.getFeedbackPhoto(chatPool, parseInt(req.params.photoId));
+    if (!photo) {
+        return res.status(404).json({ success: false, message: "Photo not found" });
+    }
+
+    res.set('Content-Type', photo.content_type);
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(photo.photo_data);
 });
 
 // Error Handling
@@ -4194,6 +4311,7 @@ const chatPool = new Pool({
 _telemetryPool = chatPool;
 telemetry.initTelemetryTable(chatPool);
 feedbackModule.initFeedbackTable(chatPool);
+feedbackModule.initFeedbackPhotosTable(chatPool);
 
 // Auto-migrate: add delivery tracking + media columns
 chatPool.query(`

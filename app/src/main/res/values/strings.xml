@@ -199,6 +199,11 @@
     <string name="feedback_track_title">Track Your Feedback</string>
     <string name="feedback_track_desc">View the status and updates of your submitted feedback.</string>
     <string name="feedback_github_issue_desc">Track progress on GitHub</string>
+    <string name="feedback_photo_add">Add Photos</string>
+    <string name="feedback_photo_hint">Add up to 5 photos to help illustrate the issue (optional)</string>
+    <string name="feedback_photo_uploading">Uploading photos…</string>
+    <string name="feedback_photo_uploaded">%d photo(s) uploaded</string>
+    <string name="feedback_photo_max">Maximum 5 photos allowed</string>
     <string name="submit">Submit</string>
     <string name="app_version">Version: %s</string>
 

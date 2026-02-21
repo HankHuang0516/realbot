@@ -40,3 +40,29 @@ data class FeedbackItem(
     val github_issue_url: String? = null,
     val created_at: String? = null
 )
+
+data class FeedbackPhotoUploadResponse(
+    val success: Boolean,
+    val photos: List<FeedbackPhotoSaved>? = null,
+    val count: Int = 0,
+    val message: String? = null
+)
+
+data class FeedbackPhotoSaved(
+    val id: Int,
+    val fileName: String? = null
+)
+
+data class FeedbackPhotosResponse(
+    val success: Boolean,
+    val photos: List<FeedbackPhotoInfo> = emptyList()
+)
+
+data class FeedbackPhotoInfo(
+    val id: Int,
+    val feedbackId: Int,
+    val contentType: String? = null,
+    val fileName: String? = null,
+    val size: Int = 0,
+    val url: String? = null
+)

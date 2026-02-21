@@ -182,6 +182,11 @@
     <string name="feedback_track_title">追蹤您的回饋</string>
     <string name="feedback_track_desc">查看已提交回饋的狀態與更新。</string>
     <string name="feedback_github_issue_desc">在 GitHub 上追蹤進度</string>
+    <string name="feedback_photo_add">新增照片</string>
+    <string name="feedback_photo_hint">最多可上傳 5 張照片來說明問題（選用）</string>
+    <string name="feedback_photo_uploading">照片上傳中…</string>
+    <string name="feedback_photo_uploaded">已上傳 %d 張照片</string>
+    <string name="feedback_photo_max">最多允許 5 張照片</string>
     <string name="submit">送出</string>
     <string name="app_version">版本：%s</string>
 
