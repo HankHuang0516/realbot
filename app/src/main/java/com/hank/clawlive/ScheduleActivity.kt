@@ -264,7 +264,7 @@ class ScheduleActivity : AppCompatActivity() {
                 val response = api.createSchedule(body)
                 if (response.success) {
                     Toast.makeText(this@ScheduleActivity, getString(R.string.schedule_created_ok), Toast.LENGTH_SHORT).show()
-                    TelemetryHelper.trackAction(this@ScheduleActivity, "schedule_create", "repeatType=$repeatType")
+                    TelemetryHelper.trackAction("schedule_create", mapOf("repeatType" to repeatType))
                     loadSchedules()
                 } else {
                     Toast.makeText(this@ScheduleActivity, response.error ?: "Failed", Toast.LENGTH_SHORT).show()
