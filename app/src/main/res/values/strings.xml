@@ -287,6 +287,15 @@
     <string name="bind_email_open_portal">Open Portal</string>
     <string name="bind_email_copy_credentials">Copy Credentials</string>
 
+    <!-- Account Login -->
+    <string name="account_login">Account Login</string>
+    <string name="account_login_hint">Log in with your bound email to restore your device data after reinstalling.</string>
+    <string name="account_login_btn">Login</string>
+    <string name="account_login_logging_in">Logging in…</string>
+    <string name="account_login_success_title">Login Successful</string>
+    <string name="account_login_success_msg">Account restored: %s\nThe app will restart to load your data.</string>
+    <string name="account_login_restart">Restart Now</string>
+
     <!-- Privacy Policy -->
     <string name="privacy_policy_title">Privacy Policy</string>
     <string name="web_portal">Web Portal</string>

@@ -813,5 +813,68 @@ module.exports = function(devices, getOrCreateDevice) {
         }
     });
 
+    // ============================================
+    // POST /app-login (for Android app to recover device credentials via email/password)
+    // ============================================
+    router.post('/app-login', async (req, res) => {
+        try {
+            const { email, password } = req.body;
+
+            if (!email || !password) {
+                return res.status(400).json({ success: false, error: 'Email and password required' });
+            }
+
+            const emailLower = email.toLowerCase().trim();
+
+            const result = await pool.query(
+                'SELECT * FROM user_accounts WHERE email = $1',
+                [emailLower]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(401).json({ success: false, error: 'Invalid email or password' });
+            }
+
+            const user = result.rows[0];
+
+            // Verify password
+            const match = await bcrypt.compare(password, user.password_hash);
+            if (!match) {
+                return res.status(401).json({ success: false, error: 'Invalid email or password' });
+            }
+
+            // Check email verified
+            if (!user.email_verified) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Email not verified. Please check your inbox.',
+                    code: 'EMAIL_NOT_VERIFIED'
+                });
+            }
+
+            // Ensure virtual device exists in memory
+            getOrCreateDevice(user.device_id, user.device_secret);
+
+            // Update last login
+            await pool.query(
+                'UPDATE user_accounts SET last_login_at = NOW() WHERE id = $1',
+                [user.id]
+            );
+
+            console.log(`[Auth] App-login success for ${emailLower}, device ${user.device_id}`);
+
+            // Return device credentials so the app can store them locally
+            res.json({
+                success: true,
+                deviceId: user.device_id,
+                deviceSecret: user.device_secret,
+                email: user.email
+            });
+        } catch (error) {
+            console.error('[Auth] App-login error:', error);
+            res.status(500).json({ success: false, error: 'Login failed' });
+        }
+    });
+
     return { router, authMiddleware, adminMiddleware, initAuthDatabase, pool: pool };
 };
