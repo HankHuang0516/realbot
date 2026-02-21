@@ -124,8 +124,8 @@ class FileManagerActivity : AppCompatActivity() {
         if (isLoading) return
         isLoading = true
 
-        val deviceId = deviceManager.getDeviceId() ?: return
-        val deviceSecret = deviceManager.getDeviceSecret() ?: return
+        val deviceId = deviceManager.deviceId
+        val deviceSecret = deviceManager.deviceSecret
 
         if (!append) {
             allFiles.clear()
