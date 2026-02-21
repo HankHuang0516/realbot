@@ -466,6 +466,145 @@
             color: var(--text-secondary);
         }
 
+        /* Photo upload */
+        .photo-section {
+            margin-bottom: 16px;
+        }
+
+        .photo-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .photo-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .photo-add-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px dashed var(--card-border);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .photo-add-btn:hover {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .photo-previews {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .photo-preview {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+        }
+
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-preview .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            border: none;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .photo-preview .remove-btn:hover {
+            background: #F44336;
+        }
+
+        .photo-upload-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        /* Photo thumbnails in feedback cards */
+        .feedback-photos {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .feedback-photo-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .feedback-photo-thumb:hover {
+            border-color: var(--warning);
+        }
+
+        .feedback-photo-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Photo lightbox */
+        .photo-lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .photo-lightbox.active {
+            display: flex;
+        }
+
+        .photo-lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
         .back-link {
             font-size: 14px;
             color: var(--text-secondary);
@@ -511,6 +650,19 @@
             </div>
 
             <textarea id="submitText" class="submit-textarea" placeholder="Describe the issue or suggestion..." data-i18n-placeholder="feedback_hint"></textarea>
+
+            <!-- Photo upload -->
+            <div class="photo-section">
+                <div class="photo-label" data-i18n="feedback_photo_label">Attach Photos (Optional)</div>
+                <div class="photo-hint" data-i18n="feedback_photo_hint">Add up to 5 photos to help illustrate the issue</div>
+                <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" onchange="onPhotosSelected(event)">
+                <button type="button" class="photo-add-btn" id="photoAddBtn" onclick="document.getElementById('photoInput').click()">
+                    📷 <span data-i18n="feedback_photo_add">Add Photos</span>
+                </button>
+                <div class="photo-previews" id="photoPreviews"></div>
+                <div class="photo-upload-status" id="photoStatus"></div>
+            </div>
+
             <button class="submit-btn" id="submitBtn" onclick="submitFeedback()" data-i18n="settings_btn_send_feedback">Send</button>
 
             <!-- Result (shown after submit) -->
@@ -555,6 +707,11 @@
         <div id="feedbackList"></div>
     </div>
 
+    <!-- Photo lightbox -->
+    <div class="photo-lightbox" id="photoLightbox" onclick="closeLightbox()">
+        <img id="lightboxImg" src="" alt="Photo">
+    </div>
+
     <!-- Shared scripts -->
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
@@ -567,6 +724,7 @@
         let currentFilter = 'all';
         let feedbackCategory = 'bug';
         let currentUser = null;
+        let selectedPhotos = []; // File objects selected for upload
 
         window.addEventListener('DOMContentLoaded', async () => {
             renderNav('settings');
@@ -592,6 +750,90 @@
             });
         }
 
+        // ============================================
+        // PHOTO HANDLING
+        // ============================================
+
+        function onPhotosSelected(event) {
+            const files = Array.from(event.target.files);
+            const maxPhotos = 5;
+            const maxSize = 5 * 1024 * 1024;
+
+            for (const file of files) {
+                if (selectedPhotos.length >= maxPhotos) break;
+                if (file.size > maxSize) continue;
+                if (!file.type.startsWith('image/')) continue;
+                selectedPhotos.push(file);
+            }
+
+            // Reset input so same file can be re-selected
+            event.target.value = '';
+            renderPhotoPreviews();
+        }
+
+        function renderPhotoPreviews() {
+            const container = document.getElementById('photoPreviews');
+            const addBtn = document.getElementById('photoAddBtn');
+            container.innerHTML = '';
+
+            selectedPhotos.forEach((file, idx) => {
+                const wrap = document.createElement('div');
+                wrap.className = 'photo-preview';
+
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+                wrap.appendChild(img);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    selectedPhotos.splice(idx, 1);
+                    renderPhotoPreviews();
+                };
+                wrap.appendChild(removeBtn);
+                container.appendChild(wrap);
+            });
+
+            // Hide add button if at max
+            addBtn.style.display = selectedPhotos.length >= 5 ? 'none' : '';
+        }
+
+        async function uploadPhotos(feedbackId) {
+            if (selectedPhotos.length === 0) return 0;
+
+            const formData = new FormData();
+            formData.append('deviceId', currentUser.deviceId);
+            formData.append('deviceSecret', currentUser.deviceSecret);
+            selectedPhotos.forEach(file => {
+                formData.append('photos', file);
+            });
+
+            const resp = await fetch(`${API_BASE}/api/feedback/${feedbackId}/photos`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (!data.success) throw new Error(data.message || 'Photo upload failed');
+            return data.count || 0;
+        }
+
+        function openLightbox(url) {
+            document.getElementById('lightboxImg').src = url;
+            document.getElementById('photoLightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('photoLightbox').classList.remove('active');
+            document.getElementById('lightboxImg').src = '';
+        }
+
+        // ============================================
+        // SUBMIT FEEDBACK
+        // ============================================
+
         async function submitFeedback() {
             const text = document.getElementById('submitText').value.trim();
             if (!text) return;
@@ -610,17 +852,35 @@
                     appVersion: 'web-portal'
                 });
 
+                // Upload photos if any
+                let photosUploaded = 0;
+                if (selectedPhotos.length > 0 && result.feedbackId) {
+                    const statusEl = document.getElementById('photoStatus');
+                    statusEl.textContent = t('feedback_photo_uploading', 'Uploading photos...');
+                    try {
+                        photosUploaded = await uploadPhotos(result.feedbackId);
+                        statusEl.textContent = t('feedback_photo_uploaded', photosUploaded + ' photo(s) uploaded').replace('%d', photosUploaded);
+                    } catch (photoErr) {
+                        statusEl.textContent = 'Photo upload failed: ' + photoErr.message;
+                        statusEl.style.color = '#F44336';
+                    }
+                }
+
                 btn.textContent = t('feedback_sent_short', 'Sent');
                 btn.style.background = '#2E7D32';
                 btn.style.color = '#fff';
 
-                showSubmitResult(result);
+                // Clear photo selection
+                selectedPhotos = [];
+                renderPhotoPreviews();
+
+                showSubmitResult(result, photosUploaded);
 
                 // Reload feedback list
                 loadFeedback(currentUser);
 
                 if (typeof telemetry !== 'undefined') {
-                    telemetry.trackAction('send_feedback', { category: feedbackCategory });
+                    telemetry.trackAction('send_feedback', { category: feedbackCategory, photos: photosUploaded });
                 }
             } catch (e) {
                 btn.disabled = false;
@@ -633,7 +893,7 @@
             }
         }
 
-        function showSubmitResult(result) {
+        function showSubmitResult(result, photosUploaded) {
             const el = document.getElementById('submitResult');
             const t = (key, fallback) => typeof i18n !== 'undefined' ? i18n.t(key) : fallback;
 
@@ -664,6 +924,10 @@
                 });
                 tagsHtml += '</div>';
                 detailsEl.innerHTML += tagsHtml;
+            }
+
+            if (photosUploaded > 0) {
+                detailsEl.innerHTML += `<div class="result-detail" style="margin-top:6px;">📷 ${t('feedback_photo_uploaded', photosUploaded + ' photo(s) uploaded').replace('%d', photosUploaded)}</div>`;
             }
 
             // Links
@@ -806,7 +1070,45 @@
             }
 
             card.innerHTML = html;
+
+            // Load photos asynchronously
+            loadFeedbackPhotos(card, item.id);
+
             return card;
+        }
+
+        async function loadFeedbackPhotos(cardEl, feedbackId) {
+            try {
+                const data = await apiCall('GET',
+                    `/api/feedback/${feedbackId}/photos?deviceId=${encodeURIComponent(currentUser.deviceId)}&deviceSecret=${encodeURIComponent(currentUser.deviceSecret)}`
+                );
+                if (data.photos && data.photos.length > 0) {
+                    const photosDiv = document.createElement('div');
+                    photosDiv.className = 'feedback-photos';
+                    data.photos.forEach(photo => {
+                        const thumb = document.createElement('div');
+                        thumb.className = 'feedback-photo-thumb';
+                        const img = document.createElement('img');
+                        img.src = API_BASE + photo.url;
+                        img.alt = photo.fileName || 'Photo';
+                        img.loading = 'lazy';
+                        thumb.onclick = () => openLightbox(API_BASE + photo.url);
+                        thumb.appendChild(img);
+                        photosDiv.appendChild(thumb);
+                    });
+                    // Insert before the tags or issue link
+                    const tagsEl = cardEl.querySelector('.feedback-tags');
+                    const issueEl = cardEl.querySelector('.feedback-issue-link');
+                    const insertBefore = tagsEl || issueEl || null;
+                    if (insertBefore) {
+                        cardEl.insertBefore(photosDiv, insertBefore);
+                    } else {
+                        cardEl.appendChild(photosDiv);
+                    }
+                }
+            } catch (e) {
+                // Silently fail - photos are optional
+            }
         }
 
         function formatDate(ts) {
