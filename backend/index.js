@@ -498,6 +498,36 @@ app.get('/api/admin/stats', adminAuth, adminCheck, async (req, res) => {
             "SELECT DATE(created_at) as date, COUNT(*) as count FROM user_accounts WHERE created_at > NOW() - INTERVAL '7 days' GROUP BY DATE(created_at) ORDER BY date ASC"
         );
 
+        // Bot daily conversations (last 7 days, grouped by date and bot_type)
+        const botDailyResult = await pg.query(`
+            SELECT DATE(m.created_at) as date, o.bot_type,
+                   COUNT(*) as msg_count,
+                   COUNT(DISTINCT m.device_id) as unique_devices
+            FROM chat_messages m
+            JOIN official_bot_bindings b ON m.device_id = b.device_id AND m.entity_id = b.entity_id
+            JOIN official_bots o ON b.bot_id = o.bot_id
+            WHERE m.is_from_bot = TRUE AND m.created_at > NOW() - INTERVAL '7 days'
+            GROUP BY DATE(m.created_at), o.bot_type
+            ORDER BY date ASC
+        `);
+
+        // Platform breakdown (registered web users vs APP-only devices)
+        const registeredDeviceIds = new Set();
+        const regResult = await pg.query('SELECT device_id FROM user_accounts WHERE device_id IS NOT NULL');
+        for (const r of regResult.rows) {
+            if (r.device_id) registeredDeviceIds.add(r.device_id);
+        }
+        let appOnlyCount = 0;
+        let webDeviceCount = 0;
+        for (const deviceId of Object.keys(devices)) {
+            if (isTestDeviceCheck(deviceId, devices[deviceId])) continue;
+            if (registeredDeviceIds.has(deviceId)) {
+                webDeviceCount++;
+            } else {
+                appOnlyCount++;
+            }
+        }
+
         res.json({
             success: true,
             users: {
@@ -520,7 +550,18 @@ app.get('/api/admin/stats', adminAuth, adminCheck, async (req, res) => {
                 personal: parseInt(personalBindings.rows[0].total)
             },
             messagesToday: parseInt(msgToday.rows[0].total),
-            recentSignups: recentSignups.rows
+            recentSignups: recentSignups.rows,
+            botConversationsDaily: botDailyResult.rows.map(r => ({
+                date: r.date,
+                botType: r.bot_type,
+                msgCount: parseInt(r.msg_count),
+                uniqueDevices: parseInt(r.unique_devices)
+            })),
+            platformBreakdown: {
+                web: webDeviceCount,
+                app: appOnlyCount,
+                total: webDeviceCount + appOnlyCount
+            }
         });
     } catch (err) {
         console.error('[Admin] Stats error:', err);
