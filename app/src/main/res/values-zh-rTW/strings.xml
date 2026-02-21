@@ -167,6 +167,18 @@
     <string name="feedback_cat_bug">Bug</string>
     <string name="feedback_cat_feature">功能建議</string>
     <string name="feedback_cat_question">提問</string>
+    <string name="feedback_category_label">類別</string>
+    <string name="feedback_sending">傳送中…</string>
+    <string name="feedback_sent_short">已送出</string>
+    <string name="feedback_result_title">意見 #%d 已收到</string>
+    <string name="feedback_result_severity">嚴重程度：%s</string>
+    <string name="feedback_result_logs">已擷取：%d 個 API 請求、%d 筆伺服器紀錄</string>
+    <string name="feedback_result_issue">查看 GitHub Issue #%d</string>
+    <string name="feedback_view_all">查看我的所有回饋</string>
+    <string name="feedback_view_history">查看回饋紀錄</string>
+    <string name="feedback_view_issue">查看 GitHub Issue</string>
+    <string name="feedback_history_title">我的回饋</string>
+    <string name="feedback_history_empty">尚未提交任何回饋。\n您提交的回饋將顯示於此。</string>
     <string name="submit">送出</string>
     <string name="app_version">版本：%s</string>
 
