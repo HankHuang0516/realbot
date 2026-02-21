@@ -61,7 +61,15 @@ class StateRepository(
                 val response = api.getAllEntities(deviceId = deviceManager.deviceId)
 
                 // Additional client-side filter for registered entities
-                val registeredIds = layoutPrefs.getRegisteredEntityIds()
+                // Auto-sync: if server has bound entities not in local registry, add them
+                val registeredIds = layoutPrefs.getRegisteredEntityIds().toMutableSet()
+                response.entities.filter { it.isBound }.forEach { entity ->
+                    if (entity.entityId !in registeredIds) {
+                        layoutPrefs.addRegisteredEntity(entity.entityId)
+                        registeredIds.add(entity.entityId)
+                        Timber.d("Auto-registered server-bound entity ${entity.entityId}")
+                    }
+                }
                 val filteredEntities = if (registeredIds.isEmpty()) {
                     // If no registrations yet, show all entities for this device
                     response.entities
