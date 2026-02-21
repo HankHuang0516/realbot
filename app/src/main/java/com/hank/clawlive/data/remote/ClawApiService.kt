@@ -77,6 +77,22 @@ interface ClawApiService {
         @Query("limit") limit: Int = 50
     ): FeedbackListResponse
 
+    @Multipart
+    @POST("api/feedback/{id}/photos")
+    suspend fun uploadFeedbackPhotos(
+        @Path("id") feedbackId: Int,
+        @Part photos: List<MultipartBody.Part>,
+        @Part("deviceId") deviceId: RequestBody,
+        @Part("deviceSecret") deviceSecret: RequestBody
+    ): FeedbackPhotoUploadResponse
+
+    @GET("api/feedback/{id}/photos")
+    suspend fun getFeedbackPhotos(
+        @Path("id") feedbackId: Int,
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
+    ): FeedbackPhotosResponse
+
     // ============================================
     // BOT POLLING ENDPOINTS
     // ============================================

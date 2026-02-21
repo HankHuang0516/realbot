@@ -2,22 +2,29 @@ package com.hank.clawlive
 
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.textfield.TextInputEditText
@@ -26,6 +33,9 @@ import com.hank.clawlive.data.model.FeedbackResponse
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.remote.TelemetryHelper
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
 
 class FeedbackActivity : AppCompatActivity() {
@@ -38,6 +48,10 @@ class FeedbackActivity : AppCompatActivity() {
     private lateinit var cardCatQuestion: MaterialCardView
     private lateinit var inputMessage: TextInputEditText
     private lateinit var btnSend: MaterialButton
+    private lateinit var btnAddPhoto: MaterialButton
+    private lateinit var tvPhotoCount: TextView
+    private lateinit var rvPhotoPreview: RecyclerView
+    private lateinit var tvPhotoStatus: TextView
     private lateinit var cardResult: MaterialCardView
     private lateinit var layoutResultDetails: LinearLayout
     private lateinit var tvResultTitle: TextView
@@ -50,6 +64,22 @@ class FeedbackActivity : AppCompatActivity() {
     private var selectedCategory = "bug"
     private var feedbackId: Int? = null
     private var githubIssueUrl: String? = null
+    private val selectedPhotoUris = mutableListOf<Uri>()
+    private val MAX_PHOTOS = 5
+
+    private val photoPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            val remaining = MAX_PHOTOS - selectedPhotoUris.size
+            val toAdd = uris.take(remaining)
+            selectedPhotoUris.addAll(toAdd)
+            if (uris.size > remaining) {
+                Toast.makeText(this, getString(R.string.feedback_photo_max), Toast.LENGTH_SHORT).show()
+            }
+            updatePhotoPreview()
+        }
+    }
 
     // Category color mapping
     private val catColors = mapOf(
@@ -81,6 +111,10 @@ class FeedbackActivity : AppCompatActivity() {
         cardCatQuestion = findViewById(R.id.cardCatQuestion)
         inputMessage = findViewById(R.id.inputMessage)
         btnSend = findViewById(R.id.btnSend)
+        btnAddPhoto = findViewById(R.id.btnAddPhoto)
+        tvPhotoCount = findViewById(R.id.tvPhotoCount)
+        rvPhotoPreview = findViewById(R.id.rvPhotoPreview)
+        tvPhotoStatus = findViewById(R.id.tvPhotoStatus)
         cardResult = findViewById(R.id.cardResult)
         layoutResultDetails = findViewById(R.id.layoutResultDetails)
         tvResultTitle = findViewById(R.id.tvResultTitle)
@@ -89,6 +123,8 @@ class FeedbackActivity : AppCompatActivity() {
         cardGithubIssue = findViewById(R.id.cardGithubIssue)
         tvGithubIssueTitle = findViewById(R.id.tvGithubIssueTitle)
         cardViewAll = findViewById(R.id.cardViewAll)
+
+        rvPhotoPreview.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -113,6 +149,14 @@ class FeedbackActivity : AppCompatActivity() {
         cardCatQuestion.setOnClickListener { selectCategory("question") }
 
         btnSend.setOnClickListener { submitFeedback() }
+
+        btnAddPhoto.setOnClickListener {
+            if (selectedPhotoUris.size >= MAX_PHOTOS) {
+                Toast.makeText(this, getString(R.string.feedback_photo_max), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            photoPickerLauncher.launch("image/*")
+        }
 
         cardViewAll.setOnClickListener {
             startActivity(Intent(this, FeedbackHistoryActivity::class.java))
@@ -189,6 +233,25 @@ class FeedbackActivity : AppCompatActivity() {
 
                 feedbackId = result.feedbackId
                 githubIssueUrl = result.githubIssue?.url
+
+                // Upload photos if any
+                var photosUploaded = 0
+                if (selectedPhotoUris.isNotEmpty() && result.feedbackId != null) {
+                    tvPhotoStatus.visibility = View.VISIBLE
+                    tvPhotoStatus.text = getString(R.string.feedback_photo_uploading)
+                    try {
+                        photosUploaded = uploadPhotos(result.feedbackId)
+                        tvPhotoStatus.text = getString(R.string.feedback_photo_uploaded, photosUploaded)
+                    } catch (photoErr: Exception) {
+                        Timber.e(photoErr, "Photo upload failed")
+                        tvPhotoStatus.text = "Photo upload failed: ${photoErr.message}"
+                        tvPhotoStatus.setTextColor(0xFFF44336.toInt())
+                    }
+                }
+
+                // Clear photo selection
+                selectedPhotoUris.clear()
+                updatePhotoPreview()
 
                 showResult(result)
             } catch (e: Exception) {
@@ -312,7 +375,137 @@ class FeedbackActivity : AppCompatActivity() {
         container.addView(tv)
     }
 
+    private fun updatePhotoPreview() {
+        if (selectedPhotoUris.isEmpty()) {
+            rvPhotoPreview.visibility = View.GONE
+            tvPhotoCount.visibility = View.GONE
+            btnAddPhoto.visibility = View.VISIBLE
+            return
+        }
+
+        rvPhotoPreview.visibility = View.VISIBLE
+        tvPhotoCount.visibility = View.VISIBLE
+        tvPhotoCount.text = "${selectedPhotoUris.size}/$MAX_PHOTOS"
+        btnAddPhoto.visibility = if (selectedPhotoUris.size >= MAX_PHOTOS) View.GONE else View.VISIBLE
+
+        rvPhotoPreview.adapter = PhotoPreviewAdapter(selectedPhotoUris) { position ->
+            selectedPhotoUris.removeAt(position)
+            updatePhotoPreview()
+        }
+    }
+
+    private suspend fun uploadPhotos(feedbackId: Int): Int {
+        if (selectedPhotoUris.isEmpty()) return 0
+
+        val parts = mutableListOf<MultipartBody.Part>()
+        for ((index, uri) in selectedPhotoUris.withIndex()) {
+            try {
+                val inputStream = contentResolver.openInputStream(uri) ?: continue
+                val bytes = inputStream.readBytes()
+                inputStream.close()
+
+                val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                val fileName = "photo_${index + 1}.jpg"
+                val requestBody = bytes.toRequestBody(mimeType.toMediaType())
+                parts.add(MultipartBody.Part.createFormData("photos", fileName, requestBody))
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to read photo $index")
+            }
+        }
+
+        if (parts.isEmpty()) return 0
+
+        val deviceIdBody = deviceManager.deviceId.toRequestBody("text/plain".toMediaType())
+        val deviceSecretBody = deviceManager.deviceSecret.toRequestBody("text/plain".toMediaType())
+
+        val response = NetworkModule.api.uploadFeedbackPhotos(
+            feedbackId, parts, deviceIdBody, deviceSecretBody
+        )
+        return response.count
+    }
+
     private fun dpToPx(dp: Int): Int {
         return (dp * resources.displayMetrics.density).toInt()
+    }
+
+    // ============================================
+    // Photo Preview Adapter
+    // ============================================
+
+    private inner class PhotoPreviewAdapter(
+        private val uris: List<Uri>,
+        private val onRemove: (Int) -> Unit
+    ) : RecyclerView.Adapter<PhotoPreviewAdapter.VH>() {
+
+        inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val imageView: ImageView = itemView.findViewById(android.R.id.icon)
+            val removeBtn: View = itemView.findViewById(android.R.id.closeButton)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+            val container = LinearLayout(parent.context).apply {
+                orientation = LinearLayout.VERTICAL
+                val lp = RecyclerView.LayoutParams(dpToPx(76), dpToPx(92))
+                lp.marginEnd = dpToPx(8)
+                layoutParams = lp
+            }
+
+            val card = MaterialCardView(parent.context).apply {
+                layoutParams = LinearLayout.LayoutParams(dpToPx(76), dpToPx(76))
+                radius = dpToPx(10).toFloat()
+                cardElevation = 0f
+                strokeColor = 0xFF333333.toInt()
+                strokeWidth = dpToPx(1)
+                setCardBackgroundColor(0xFF1A1A1A.toInt())
+            }
+
+            val img = ImageView(parent.context).apply {
+                id = android.R.id.icon
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                scaleType = ImageView.ScaleType.CENTER_CROP
+            }
+            card.addView(img)
+            container.addView(card)
+
+            val removeBtn = TextView(parent.context).apply {
+                id = android.R.id.closeButton
+                text = getString(R.string.feedback_photo_max).let { "✕" }
+                textSize = 11f
+                setTextColor(0xFFFF5252.toInt())
+                gravity = Gravity.CENTER
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.topMargin = dpToPx(2)
+                layoutParams = lp
+            }
+            container.addView(removeBtn)
+
+            return VH(container)
+        }
+
+        override fun onBindViewHolder(holder: VH, position: Int) {
+            val uri = uris[position]
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                val options = BitmapFactory.Options().apply { inSampleSize = 4 }
+                val bitmap = BitmapFactory.decodeStream(inputStream, null, options)
+                inputStream?.close()
+                holder.imageView.setImageBitmap(bitmap)
+            } catch (e: Exception) {
+                holder.imageView.setImageResource(android.R.drawable.ic_menu_report_image)
+            }
+
+            holder.removeBtn.setOnClickListener {
+                val pos = holder.adapterPosition
+                if (pos != RecyclerView.NO_POSITION) onRemove(pos)
+            }
+        }
+
+        override fun getItemCount() = uris.size
     }
 }

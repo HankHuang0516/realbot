@@ -232,6 +232,63 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Photo Upload Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/feedback_photo_hint"
+                android:textSize="12sp"
+                android:textColor="#66FFFFFF"
+                android:layout_marginBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddPhoto"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:text="@string/feedback_photo_add"
+                    android:textSize="13sp"
+                    android:textColor="#AAAAAA"
+                    app:icon="@android:drawable/ic_menu_camera"
+                    app:iconTint="#AAAAAA"
+                    app:cornerRadius="10dp"
+                    app:strokeColor="#444444"
+                    app:strokeWidth="1dp"/>
+
+                <TextView
+                    android:id="@+id/tvPhotoCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textSize="12sp"
+                    android:textColor="#66FFFFFF"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPhotoPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/tvPhotoStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#66FFFFFF"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp"/>
+
             <!-- Send Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSend"
