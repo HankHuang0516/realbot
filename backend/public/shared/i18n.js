@@ -256,7 +256,24 @@ const TRANSLATIONS = {
         "settings_feedback_sent": "Feedback sent! Thank you.",
         "settings_btn_send_feedback": "Send",
         "settings_feedback_cancel": "Cancel",
+        "settings_feedback_view_history": "View feedback history",
 
+        // Feedback History (feedback.html)
+        "feedback_title": "My Feedback",
+        "feedback_loading": "Loading feedback...",
+        "feedback_empty": "No feedback submitted yet",
+        "feedback_empty_sub": "Your submitted feedback will appear here.",
+        "feedback_cat_bug": "Bug",
+        "feedback_cat_feature": "Feature",
+        "feedback_cat_question": "Question",
+        "feedback_severity": "Severity",
+        "feedback_status": "Status",
+        "feedback_status_open": "Open",
+        "feedback_status_resolved": "Resolved",
+        "feedback_status_closed": "Closed",
+        "feedback_view_issue": "View GitHub Issue",
+        "feedback_filter_all": "All",
+        "feedback_submitted_at": "Submitted",
 
         // Chat (chat.html)
         "chat_title": "Chat",
@@ -596,7 +613,24 @@ const TRANSLATIONS = {
         "settings_feedback_sent": "回饋已傳送！謝謝您。",
         "settings_btn_send_feedback": "傳送",
         "settings_feedback_cancel": "取消",
+        "settings_feedback_view_history": "查看回饋紀錄",
 
+        // Feedback History (feedback.html)
+        "feedback_title": "我的回饋",
+        "feedback_loading": "載入回饋中...",
+        "feedback_empty": "尚未提交任何回饋",
+        "feedback_empty_sub": "您提交的回饋將顯示於此。",
+        "feedback_cat_bug": "Bug",
+        "feedback_cat_feature": "功能建議",
+        "feedback_cat_question": "提問",
+        "feedback_severity": "嚴重程度",
+        "feedback_status": "狀態",
+        "feedback_status_open": "處理中",
+        "feedback_status_resolved": "已解決",
+        "feedback_status_closed": "已關閉",
+        "feedback_view_issue": "查看 GitHub Issue",
+        "feedback_filter_all": "全部",
+        "feedback_submitted_at": "提交時間",
 
         // Chat (chat.html)
         "chat_title": "聊天",

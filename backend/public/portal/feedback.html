@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="feedback_title">E-Claw - My Feedback</title>
+    <link rel="stylesheet" href="shared/style.css">
+    <style>
+        .feedback-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .page-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Filter bar */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--warning);
+            color: var(--text);
+        }
+
+        .filter-btn.active {
+            background: var(--warning);
+            color: #000;
+            border-color: var(--warning);
+            font-weight: 600;
+        }
+
+        /* Feedback card */
+        .feedback-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .feedback-card:hover {
+            border-color: var(--warning);
+        }
+
+        .feedback-top-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-bug {
+            background: rgba(244, 67, 54, 0.15);
+            color: #F44336;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+
+        .badge-feature {
+            background: rgba(33, 150, 243, 0.15);
+            color: #2196F3;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
+        .badge-question {
+            background: rgba(156, 39, 176, 0.15);
+            color: #9C27B0;
+            border: 1px solid rgba(156, 39, 176, 0.3);
+        }
+
+        .badge-severity {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .severity-critical { color: #F44336; }
+        .severity-high { color: #FF9800; }
+        .severity-medium { color: #FFC107; }
+        .severity-low { color: #4CAF50; }
+
+        .badge-status {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: auto;
+        }
+
+        .status-open {
+            background: rgba(255, 210, 63, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(255, 210, 63, 0.3);
+        }
+
+        .status-resolved {
+            background: rgba(76, 175, 80, 0.15);
+            color: #4CAF50;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .status-closed {
+            background: rgba(102, 102, 102, 0.15);
+            color: #888;
+            border: 1px solid rgba(102, 102, 102, 0.3);
+        }
+
+        .feedback-id {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .feedback-date {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        .feedback-message {
+            font-size: 14px;
+            color: var(--text);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .feedback-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .tag {
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            color: var(--warning);
+            border: 1px solid var(--warning);
+            background: rgba(255, 210, 63, 0.1);
+        }
+
+        .feedback-issue-link {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 13px;
+            color: var(--warning);
+            text-decoration: underline;
+        }
+
+        .feedback-issue-link:hover {
+            color: #fff;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .back-link {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .back-link:hover {
+            color: var(--warning);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="feedback-container">
+        <div class="page-header">
+            <h2 data-i18n="feedback_title">My Feedback</h2>
+            <a href="settings.html" class="back-link">&larr; Settings</a>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="filter-bar">
+            <button class="filter-btn active" data-filter="all" onclick="filterFeedback('all')"
+                data-i18n="feedback_filter_all">All</button>
+            <button class="filter-btn" data-filter="bug" onclick="filterFeedback('bug')"
+                data-i18n="feedback_cat_bug">Bug</button>
+            <button class="filter-btn" data-filter="feature" onclick="filterFeedback('feature')"
+                data-i18n="feedback_cat_feature">Feature</button>
+            <button class="filter-btn" data-filter="question" onclick="filterFeedback('question')"
+                data-i18n="feedback_cat_question">Question</button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loadingState" class="loading-state" data-i18n="feedback_loading">Loading feedback...</div>
+
+        <!-- Empty state -->
+        <div id="emptyState" class="empty-state" style="display:none;">
+            <h3 data-i18n="feedback_empty">No feedback submitted yet</h3>
+            <p data-i18n="feedback_empty_sub">Your submitted feedback will appear here.</p>
+        </div>
+
+        <!-- Feedback list -->
+        <div id="feedbackList"></div>
+    </div>
+
+    <!-- Shared scripts -->
+    <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
+    <script src="shared/auth.js"></script>
+    <script src="../shared/telemetry.js"></script>
+    <script src="../shared/i18n.js"></script>
+
+    <script>
+        let allFeedback = [];
+        let currentFilter = 'all';
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            renderNav('settings');
+
+            if (typeof i18n !== 'undefined') {
+                i18n.apply();
+            }
+
+            const user = await checkAuth();
+            if (!user) return;
+
+            loadFeedback(user);
+        });
+
+        async function loadFeedback(user) {
+            const loadingEl = document.getElementById('loadingState');
+            const emptyEl = document.getElementById('emptyState');
+            const listEl = document.getElementById('feedbackList');
+
+            loadingEl.style.display = '';
+            emptyEl.style.display = 'none';
+            listEl.innerHTML = '';
+
+            try {
+                const data = await apiCall('GET',
+                    `/api/feedback?deviceId=${encodeURIComponent(user.deviceId)}&deviceSecret=${encodeURIComponent(user.deviceSecret)}&limit=100`
+                );
+
+                loadingEl.style.display = 'none';
+                allFeedback = data.feedback || [];
+
+                if (allFeedback.length === 0) {
+                    emptyEl.style.display = '';
+                } else {
+                    renderFeedback();
+                }
+            } catch (e) {
+                loadingEl.style.display = 'none';
+                emptyEl.style.display = '';
+                emptyEl.querySelector('h3').textContent = 'Failed to load: ' + e.message;
+            }
+        }
+
+        function filterFeedback(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            renderFeedback();
+        }
+
+        function renderFeedback() {
+            const listEl = document.getElementById('feedbackList');
+            const emptyEl = document.getElementById('emptyState');
+            listEl.innerHTML = '';
+
+            const filtered = currentFilter === 'all'
+                ? allFeedback
+                : allFeedback.filter(f => f.category === currentFilter);
+
+            if (filtered.length === 0) {
+                emptyEl.style.display = '';
+                return;
+            }
+            emptyEl.style.display = 'none';
+
+            filtered.forEach(item => {
+                listEl.appendChild(createFeedbackCard(item));
+            });
+        }
+
+        function createFeedbackCard(item) {
+            const card = document.createElement('div');
+            card.className = 'feedback-card';
+
+            const t = (key, fallback) => typeof i18n !== 'undefined' ? i18n.t(key) : fallback;
+
+            // Category badge class
+            const catClass = item.category === 'feature' ? 'badge-feature'
+                : item.category === 'question' ? 'badge-question'
+                : 'badge-bug';
+            const catLabel = item.category === 'feature' ? t('feedback_cat_feature', 'Feature')
+                : item.category === 'question' ? t('feedback_cat_question', 'Question')
+                : t('feedback_cat_bug', 'Bug');
+
+            // Severity class
+            const sevClass = 'severity-' + (item.severity || 'low');
+
+            // Status class and label
+            const statusClass = item.status === 'resolved' ? 'status-resolved'
+                : item.status === 'closed' ? 'status-closed'
+                : 'status-open';
+            const statusLabel = item.status === 'resolved' ? t('feedback_status_resolved', 'Resolved')
+                : item.status === 'closed' ? t('feedback_status_closed', 'Closed')
+                : t('feedback_status_open', 'Open');
+
+            // Format date
+            const dateStr = formatDate(item.created_at);
+
+            let html = `
+                <div class="feedback-top-row">
+                    <span class="badge ${catClass}">${catLabel}</span>
+                    <span class="badge-severity ${sevClass}">${item.severity || 'low'}</span>
+                    <span class="feedback-id">#${item.id}</span>
+                    <span class="feedback-date">${dateStr}</span>
+                    <span class="badge-status ${statusClass}">${statusLabel}</span>
+                </div>
+                <div class="feedback-message">${escapeHtml(item.message || '')}</div>
+            `;
+
+            // Tags
+            if (item.tags && item.tags.length > 0) {
+                html += '<div class="feedback-tags">';
+                item.tags.forEach(tag => {
+                    html += `<span class="tag">${escapeHtml(tag)}</span>`;
+                });
+                html += '</div>';
+            }
+
+            // GitHub issue link
+            if (item.github_issue_url) {
+                html += `<a href="${escapeHtml(item.github_issue_url)}" target="_blank" class="feedback-issue-link">${t('feedback_view_issue', 'View GitHub Issue')}</a>`;
+            }
+
+            card.innerHTML = html;
+            return card;
+        }
+
+        function formatDate(ts) {
+            if (!ts) return '';
+            try {
+                const num = parseInt(ts);
+                if (isNaN(num)) return ts;
+                const d = new Date(num);
+                return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                return ts;
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

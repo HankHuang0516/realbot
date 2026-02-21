@@ -62,10 +62,17 @@ interface ClawApiService {
     // ============================================
 
     @POST("api/feedback")
-    suspend fun sendFeedback(@Body body: Map<String, String>): ApiResponse
+    suspend fun sendFeedback(@Body body: Map<String, String>): FeedbackResponse
 
     @POST("api/feedback/mark")
     suspend fun markFeedback(@Body body: Map<String, String>): ApiResponse
+
+    @GET("api/feedback")
+    suspend fun getFeedbackList(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String,
+        @Query("limit") limit: Int = 50
+    ): FeedbackListResponse
 
     // ============================================
     // BOT POLLING ENDPOINTS
