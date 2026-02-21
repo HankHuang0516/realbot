@@ -4134,6 +4134,59 @@ app.post('/api/feedback/mark', (req, res) => {
     res.json({ success: true, markTs: ts });
 });
 
+// POST /api/admin/transfer-device — Transfer all entity bindings from one device to another
+app.post('/api/admin/transfer-device', async (req, res) => {
+    const { sourceDeviceId, sourceDeviceSecret, targetDeviceId, targetDeviceSecret } = req.body;
+
+    // Validate both devices
+    const sourceDevice = devices[sourceDeviceId];
+    if (!sourceDevice || sourceDevice.deviceSecret !== sourceDeviceSecret) {
+        return res.status(401).json({ success: false, message: "Invalid source device credentials" });
+    }
+    const targetDevice = getOrCreateDevice(targetDeviceId, targetDeviceSecret);
+    if (targetDevice.deviceSecret && targetDevice.deviceSecret !== targetDeviceSecret) {
+        return res.status(401).json({ success: false, message: "Invalid target device credentials" });
+    }
+    if (!targetDevice.deviceSecret) targetDevice.deviceSecret = targetDeviceSecret;
+
+    const transferred = [];
+    try {
+        for (let eId = 0; eId < MAX_ENTITIES_PER_DEVICE; eId++) {
+            const srcEntity = sourceDevice.entities[eId];
+            if (!srcEntity || !srcEntity.isBound) continue;
+
+            // Copy entity data to target
+            targetDevice.entities[eId] = { ...srcEntity, entityId: eId };
+
+            // Move official binding cache
+            const srcKey = getBindingCacheKey(sourceDeviceId, eId);
+            const tgtKey = getBindingCacheKey(targetDeviceId, eId);
+            if (officialBindingsCache[srcKey]) {
+                const binding = { ...officialBindingsCache[srcKey], device_id: targetDeviceId };
+                officialBindingsCache[tgtKey] = binding;
+                delete officialBindingsCache[srcKey];
+
+                // Update PostgreSQL
+                if (usePostgreSQL) {
+                    await db.removeOfficialBinding(sourceDeviceId, eId);
+                    await db.saveOfficialBinding(binding);
+                }
+            }
+
+            // Reset source entity
+            sourceDevice.entities[eId] = createDefaultEntity(eId);
+            transferred.push({ entityId: eId, name: srcEntity.name, character: srcEntity.character });
+        }
+
+        await saveData();
+        console.log(`[Transfer] ${transferred.length} entities: ${sourceDeviceId} → ${targetDeviceId}`);
+        res.json({ success: true, transferred, count: transferred.length });
+    } catch (err) {
+        console.error('[Transfer] Error:', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // GET /api/feedback/pending-debug — List bug feedback pending yanhui debug processing
 app.get('/api/feedback/pending-debug', async (req, res) => {
     const { deviceId, deviceSecret, limit } = req.query;
