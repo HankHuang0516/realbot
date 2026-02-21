@@ -19,6 +19,13 @@
         <item name="android:windowMinWidthMinor">90%</item>
     </style>
 
+    <!-- Dark-themed dialog for feedback -->
+    <style name="Theme.ClawLiveCompanion.Dialog" parent="Theme.Material3.Dark.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimAmount">0.7</item>
+        <item name="colorPrimary">#FFD23F</item>
+    </style>
+
     <!-- Floating chat dialog theme - larger than TransparentDialog -->
     <style name="Theme.ClawLiveCompanion.FloatingChat" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
