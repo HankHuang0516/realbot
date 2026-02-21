@@ -13,6 +13,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "googleapis": "^171.4.0"
+    "googleapis": "^171.4.0",
+    "ws": "^8.19.0"
   }
 }
