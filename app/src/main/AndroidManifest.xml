@@ -79,6 +79,12 @@
             android:parentActivityName=".SettingsActivity" />
 
         <activity
+            android:name=".FeedbackActivity"
+            android:exported="false"
+            android:label="@string/feedback"
+            android:parentActivityName=".SettingsActivity" />
+
+        <activity
             android:name=".FeedbackHistoryActivity"
             android:exported="false"
             android:label="@string/feedback_history_title"

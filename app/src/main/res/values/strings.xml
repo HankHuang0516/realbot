@@ -196,6 +196,9 @@
     <string name="feedback_view_issue">View GitHub Issue</string>
     <string name="feedback_history_title">My Feedback</string>
     <string name="feedback_history_empty">No feedback submitted yet.\nYour submitted feedback will appear here.</string>
+    <string name="feedback_track_title">Track Your Feedback</string>
+    <string name="feedback_track_desc">View the status and updates of your submitted feedback.</string>
+    <string name="feedback_github_issue_desc">Track progress on GitHub</string>
     <string name="submit">Submit</string>
     <string name="app_version">Version: %s</string>
 

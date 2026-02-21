@@ -25,6 +25,245 @@
             font-weight: 700;
         }
 
+        /* Submit form section */
+        .submit-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .submit-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .submit-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .category-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        /* Category cards */
+        .category-cards {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .cat-card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .cat-card:hover {
+            border-color: var(--text-secondary);
+        }
+
+        .cat-card .cat-icon {
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        .cat-card .cat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .cat-card.selected-bug {
+            border-color: #F44336;
+            border-width: 2px;
+            background: rgba(244, 67, 54, 0.1);
+        }
+        .cat-card.selected-bug .cat-label {
+            color: #F44336;
+            font-weight: 600;
+        }
+
+        .cat-card.selected-feature {
+            border-color: #2196F3;
+            border-width: 2px;
+            background: rgba(33, 150, 243, 0.1);
+        }
+        .cat-card.selected-feature .cat-label {
+            color: #2196F3;
+            font-weight: 600;
+        }
+
+        .cat-card.selected-question {
+            border-color: #9C27B0;
+            border-width: 2px;
+            background: rgba(156, 39, 176, 0.1);
+        }
+        .cat-card.selected-question .cat-label {
+            color: #9C27B0;
+            font-weight: 600;
+        }
+
+        .submit-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--bg-secondary);
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        .submit-textarea:focus {
+            outline: none;
+            border-color: var(--warning);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: var(--warning);
+            color: #000;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Submit result */
+        .submit-result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #2E7D32;
+            background: rgba(17, 26, 17, 0.8);
+            display: none;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .result-header .check {
+            color: #4CAF50;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .result-header .title {
+            color: #4CAF50;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .result-detail {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .result-links {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .result-link-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            text-decoration: none;
+            color: var(--warning);
+            transition: border-color 0.2s;
+        }
+
+        .result-link-card:hover {
+            border-color: var(--warning);
+            text-decoration: none;
+        }
+
+        .result-link-card .link-icon {
+            font-size: 16px;
+        }
+
+        .result-link-card .link-text {
+            flex: 1;
+        }
+
+        .result-link-card .link-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--warning);
+        }
+
+        .result-link-card .link-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .result-link-card .link-arrow {
+            color: var(--text-muted);
+        }
+
+        /* Section divider */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .section-divider h3 {
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .section-divider .line {
+            flex: 1;
+            height: 1px;
+            background: var(--card-border);
+        }
+
         /* Filter bar */
         .filter-bar {
             display: flex;
@@ -134,6 +373,12 @@
             border: 1px solid rgba(76, 175, 80, 0.3);
         }
 
+        .status-in_progress {
+            background: rgba(33, 150, 243, 0.15);
+            color: #2196F3;
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+
         .status-closed {
             background: rgba(102, 102, 102, 0.15);
             color: #888;
@@ -177,15 +422,24 @@
         }
 
         .feedback-issue-link {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             margin-top: 4px;
+            padding: 6px 12px;
             font-size: 13px;
             color: var(--warning);
-            text-decoration: underline;
+            text-decoration: none;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            transition: all 0.2s;
         }
 
         .feedback-issue-link:hover {
-            color: #fff;
+            border-color: var(--warning);
+            background: rgba(255, 210, 63, 0.1);
+            text-decoration: none;
         }
 
         /* Empty state */
@@ -235,6 +489,47 @@
             <a href="settings.html" class="back-link">&larr; Settings</a>
         </div>
 
+        <!-- Submit new feedback section -->
+        <div class="submit-section" id="submitSection">
+            <h3 data-i18n="settings_feedback_title">Submit Feedback</h3>
+            <div class="submit-desc" data-i18n="feedback_auto_log_hint">Logs from the last 5 minutes will be automatically captured to help diagnose the issue.</div>
+
+            <div class="category-label" data-i18n="feedback_category_label">Category</div>
+            <div class="category-cards">
+                <div class="cat-card selected-bug" data-cat="bug" onclick="selectCategory('bug')">
+                    <span class="cat-icon">🐛</span>
+                    <span class="cat-label" data-i18n="feedback_cat_bug">Bug</span>
+                </div>
+                <div class="cat-card" data-cat="feature" onclick="selectCategory('feature')">
+                    <span class="cat-icon">💡</span>
+                    <span class="cat-label" data-i18n="feedback_cat_feature">Feature</span>
+                </div>
+                <div class="cat-card" data-cat="question" onclick="selectCategory('question')">
+                    <span class="cat-icon">❓</span>
+                    <span class="cat-label" data-i18n="feedback_cat_question">Question</span>
+                </div>
+            </div>
+
+            <textarea id="submitText" class="submit-textarea" placeholder="Describe the issue or suggestion..." data-i18n-placeholder="feedback_hint"></textarea>
+            <button class="submit-btn" id="submitBtn" onclick="submitFeedback()" data-i18n="settings_btn_send_feedback">Send</button>
+
+            <!-- Result (shown after submit) -->
+            <div class="submit-result" id="submitResult">
+                <div class="result-header">
+                    <span class="check">✓</span>
+                    <span class="title" id="resultTitle"></span>
+                </div>
+                <div id="resultDetails"></div>
+                <div class="result-links" id="resultLinks"></div>
+            </div>
+        </div>
+
+        <!-- History section -->
+        <div class="section-divider">
+            <h3 data-i18n="feedback_history_title">My Feedback</h3>
+            <div class="line"></div>
+        </div>
+
         <!-- Filter bar -->
         <div class="filter-bar">
             <button class="filter-btn active" data-filter="all" onclick="filterFeedback('all')"
@@ -270,6 +565,8 @@
     <script>
         let allFeedback = [];
         let currentFilter = 'all';
+        let feedbackCategory = 'bug';
+        let currentUser = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
             renderNav('settings');
@@ -280,9 +577,121 @@
 
             const user = await checkAuth();
             if (!user) return;
+            currentUser = user;
 
             loadFeedback(user);
         });
+
+        function selectCategory(cat) {
+            feedbackCategory = cat;
+            document.querySelectorAll('.cat-card').forEach(card => {
+                card.className = 'cat-card';
+                if (card.dataset.cat === cat) {
+                    card.classList.add('selected-' + cat);
+                }
+            });
+        }
+
+        async function submitFeedback() {
+            const text = document.getElementById('submitText').value.trim();
+            if (!text) return;
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            const t = (key, fallback) => typeof i18n !== 'undefined' ? i18n.t(key) : fallback;
+            btn.textContent = t('feedback_sending', 'Sending...');
+
+            try {
+                const result = await apiCall('POST', '/api/feedback', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    message: text,
+                    category: feedbackCategory,
+                    appVersion: 'web-portal'
+                });
+
+                btn.textContent = t('feedback_sent_short', 'Sent');
+                btn.style.background = '#2E7D32';
+                btn.style.color = '#fff';
+
+                showSubmitResult(result);
+
+                // Reload feedback list
+                loadFeedback(currentUser);
+
+                if (typeof telemetry !== 'undefined') {
+                    telemetry.trackAction('send_feedback', { category: feedbackCategory });
+                }
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = t('settings_btn_send_feedback', 'Send');
+                btn.style.background = '';
+                btn.style.color = '';
+                if (typeof showToast === 'function') {
+                    showToast('Failed: ' + e.message, 'error');
+                }
+            }
+        }
+
+        function showSubmitResult(result) {
+            const el = document.getElementById('submitResult');
+            const t = (key, fallback) => typeof i18n !== 'undefined' ? i18n.t(key) : fallback;
+
+            el.style.display = '';
+
+            document.getElementById('resultTitle').textContent =
+                t('feedback_result_title', 'Feedback #' + (result.feedbackId || '?') + ' received')
+                    .replace('%d', result.feedbackId || '?');
+
+            // Details
+            const detailsEl = document.getElementById('resultDetails');
+            detailsEl.innerHTML = '';
+
+            if (result.severity) {
+                const sevColor = { critical: '#F44336', high: '#FF9800', medium: '#FFC107', low: '#4CAF50' }[result.severity] || '#4CAF50';
+                detailsEl.innerHTML += `<div class="result-detail" style="color:${sevColor}">${t('feedback_result_severity', 'Severity: ' + result.severity).replace('%s', result.severity)}</div>`;
+            }
+
+            if (result.logsCaptured) {
+                const lc = result.logsCaptured;
+                detailsEl.innerHTML += `<div class="result-detail">${t('feedback_result_logs', 'Captured: ' + lc.telemetry + ' API calls, ' + lc.serverLogs + ' server logs').replace('%d', lc.telemetry).replace('%d', lc.serverLogs)}</div>`;
+            }
+
+            if (result.tags && result.tags.length > 0) {
+                let tagsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">';
+                result.tags.forEach(tag => {
+                    tagsHtml += `<span class="tag">${escapeHtml(tag)}</span>`;
+                });
+                tagsHtml += '</div>';
+                detailsEl.innerHTML += tagsHtml;
+            }
+
+            // Links
+            const linksEl = document.getElementById('resultLinks');
+            linksEl.innerHTML = '';
+
+            if (result.githubIssue) {
+                linksEl.innerHTML += `
+                    <a href="${escapeHtml(result.githubIssue.url)}" target="_blank" class="result-link-card">
+                        <span class="link-icon">⊙</span>
+                        <span class="link-text">
+                            <div class="link-title">${t('feedback_result_issue', 'View GitHub Issue #' + result.githubIssue.number).replace('%d', result.githubIssue.number)}</div>
+                            <div class="link-desc">${t('feedback_github_issue_desc', 'Track progress on GitHub')}</div>
+                        </span>
+                        <span class="link-arrow">→</span>
+                    </a>`;
+            }
+
+            linksEl.innerHTML += `
+                <a href="#feedbackList" class="result-link-card" onclick="document.getElementById('feedbackList').scrollIntoView({behavior:'smooth'});return false;">
+                    <span class="link-icon">📋</span>
+                    <span class="link-text">
+                        <div class="link-title">${t('feedback_track_title', 'Track Your Feedback')}</div>
+                        <div class="link-desc">${t('feedback_track_desc', 'View the status and updates of your submitted feedback.')}</div>
+                    </span>
+                    <span class="link-arrow">→</span>
+                </a>`;
+        }
 
         async function loadFeedback(user) {
             const loadingEl = document.getElementById('loadingState');
@@ -360,9 +769,11 @@
 
             // Status class and label
             const statusClass = item.status === 'resolved' ? 'status-resolved'
+                : item.status === 'in_progress' ? 'status-in_progress'
                 : item.status === 'closed' ? 'status-closed'
                 : 'status-open';
             const statusLabel = item.status === 'resolved' ? t('feedback_status_resolved', 'Resolved')
+                : item.status === 'in_progress' ? t('feedback_status_in_progress', 'In Progress')
                 : item.status === 'closed' ? t('feedback_status_closed', 'Closed')
                 : t('feedback_status_open', 'Open');
 
@@ -391,7 +802,7 @@
 
             // GitHub issue link
             if (item.github_issue_url) {
-                html += `<a href="${escapeHtml(item.github_issue_url)}" target="_blank" class="feedback-issue-link">${t('feedback_view_issue', 'View GitHub Issue')}</a>`;
+                html += `<a href="${escapeHtml(item.github_issue_url)}" target="_blank" class="feedback-issue-link">⊙ ${t('feedback_view_issue', 'View GitHub Issue')} →</a>`;
             }
 
             card.innerHTML = html;
