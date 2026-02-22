@@ -35,6 +35,8 @@ keystore.properties
 found_secrets.json
 tappay_dump.txt
 play-service-account.json
+secrets.7z
+.release_*
 
 # Build artifacts
 app/build/
