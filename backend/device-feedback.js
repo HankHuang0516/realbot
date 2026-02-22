@@ -584,6 +584,46 @@ async function createGithubIssue(feedback, photos) {
     }
 }
 
+/**
+ * Sync feedback status with GitHub issue state.
+ * For any open feedback that has a github_issue_url, check if the issue is closed
+ * and auto-update feedback status to 'resolved'.
+ */
+async function syncGithubStatuses(pool, feedbackList) {
+    const token = process.env.GITHUB_TOKEN;
+    const repo = process.env.GITHUB_REPO;
+    if (!token || !repo || !pool) return;
+
+    const openWithIssue = feedbackList.filter(f => f.status === 'open' && f.github_issue_url);
+    if (openWithIssue.length === 0) return;
+
+    for (const fb of openWithIssue) {
+        try {
+            // Extract issue number from URL like https://github.com/owner/repo/issues/42
+            const match = fb.github_issue_url.match(/\/issues\/(\d+)$/);
+            if (!match) continue;
+            const issueNumber = match[1];
+
+            const res = await fetch(`https://api.github.com/repos/${repo}/issues/${issueNumber}`, {
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (!res.ok) continue;
+
+            const issue = await res.json();
+            if (issue.state === 'closed') {
+                await updateFeedback(pool, fb.id, { status: 'resolved', resolution: 'GitHub issue closed' });
+                fb.status = 'resolved'; // Update in-place for current response
+                console.log(`[Feedback] Auto-synced #${fb.id} to resolved (GitHub issue #${issueNumber} closed)`);
+            }
+        } catch (err) {
+            // Silently continue — don't block feedback list for sync errors
+        }
+    }
+}
+
 // ============================================
 // MARK TIMESTAMP (for "mark now, report later")
 // ============================================
@@ -757,6 +797,7 @@ module.exports = {
     getFeedbackById,
     updateFeedback,
     createGithubIssue,
+    syncGithubStatuses,
     getPendingDebugFeedback,
     saveDebugResult,
     setMark,
