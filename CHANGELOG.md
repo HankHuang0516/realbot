@@ -1,3 +1,10 @@
+## [1.5.3](https://github.com/HankHuang0516/realbot/compare/v1.5.2...v1.5.3) (2026-02-22)
+
+
+### Bug Fixes
+
+* increase MAX_ENTITIES_PER_DEVICE to 8 for debug entity support ([21863c5](https://github.com/HankHuang0516/realbot/commit/21863c51d1ccba89fb8e38840d0d7158693351ff))
+
 ## [1.5.2](https://github.com/HankHuang0516/realbot/compare/v1.5.1...v1.5.2) (2026-02-22)
 
 
