@@ -5,7 +5,7 @@ Track git commits for each release to enable changelog generation via `git diff`
 ---
 
 ## Latest
-v1.0.23 | b3e7802 | 2026-02-22
+v1.0.24 | 06016c1 | 2026-02-22
 
 ---
 
@@ -13,6 +13,7 @@ v1.0.23 | b3e7802 | 2026-02-22
 
 | Version | Commit | Date | Notes |
 |---------|--------|------|-------|
+| v1.0.23 | b3e7802 | 2026-02-22 | Entity cards fix, feedback photo upload, file manager UX |
 | v1.0.22 | 5a90ca3 | 2026-02-21 | File management, feedback photo upload, free bot stats |
 | v1.0.21 | 60b9235 | 2026-02-21 | Feedback redesign, gatekeeper fix, entity card fix |
 | v1.0.20 | bca84ac | 2026-02-21 | Feedback UI upgrade, telemetry call fixes |
