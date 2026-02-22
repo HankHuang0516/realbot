@@ -11,12 +11,43 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
 
         .header-actions {
             display: flex;
             gap: 8px;
+        }
+
+        /* Sub-tab navigation */
+        .sub-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .sub-tab {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: color 0.15s, border-color 0.15s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sub-tab:hover {
+            color: var(--text);
+        }
+
+        .sub-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
 
         /* Card sections */
@@ -313,12 +344,17 @@
     <div class="container">
         <!-- Page Header -->
         <div class="page-header">
-            <h1 class="page-title" data-i18n="mc_title">Mission Control</h1>
+            <h1 class="page-title" data-i18n="nav_mission">Mission</h1>
             <div class="header-actions">
-                <button class="btn btn-outline" onclick="window.location.href='schedule.html'" data-i18n="sched_title" style="display:flex;align-items:center;gap:4px;">&#x1F4C5; Schedule</button>
                 <button class="btn btn-outline" onclick="downloadDashboard()" data-i18n="mc_refresh">Refresh</button>
                 <button class="btn btn-primary" id="btnSave" onclick="uploadDashboard()" data-i18n="mc_save">Save to Cloud</button>
             </div>
+        </div>
+
+        <!-- Sub-tab Navigation -->
+        <div class="sub-tabs">
+            <a class="sub-tab active" href="mission.html">🎯 <span data-i18n="mc_title">Mission Control</span></a>
+            <a class="sub-tab" href="schedule.html">📅 <span data-i18n="nav_schedule">Schedule</span></a>
         </div>
 
         <!-- Loading State -->
