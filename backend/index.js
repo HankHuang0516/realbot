@@ -4322,6 +4322,8 @@ app.get('/api/feedback', async (req, res) => {
     }
 
     const list = await feedbackModule.getFeedbackList(chatPool, { deviceId, status, severity, limit, offset });
+    // Lazy sync: check GitHub issue state for open feedback with linked issues
+    await feedbackModule.syncGithubStatuses(chatPool, list);
     res.json({ success: true, count: list.length, feedback: list });
 });
 
