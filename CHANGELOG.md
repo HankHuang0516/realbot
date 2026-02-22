@@ -1,3 +1,10 @@
+## [1.5.2](https://github.com/HankHuang0516/realbot/compare/v1.5.1...v1.5.2) (2026-02-22)
+
+
+### Bug Fixes
+
+* use device timezone for cron schedule execution ([f8d45b1](https://github.com/HankHuang0516/realbot/commit/f8d45b1db8cf7cfc39c2fe04af9874eb5ed83e77))
+
 ## [1.5.1](https://github.com/HankHuang0516/realbot/compare/v1.5.0...v1.5.1) (2026-02-22)
 
 
