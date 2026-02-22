@@ -1,0 +1,44 @@
+name: Railway Preview Cleanup
+
+# Automatically deletes the Railway preview environment when a PR is
+# closed (merged or manually closed). Prevents idle environments from
+# accumulating and consuming Railway usage quota.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]          # fires on both merge and manual close
+
+jobs:
+  cleanup:
+    name: Delete Railway preview environment
+    runs-on: ubuntu-latest
+    # Only run if the PR touched backend files (same condition as preview deploy)
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'backend') ||
+      github.event.pull_request.changed_files > 0
+
+    steps:
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Delete preview environment
+        # `railway environment delete` removes the ephemeral pr-N environment.
+        # --yes skips the interactive confirmation prompt.
+        run: |
+          railway environment delete pr-${{ github.event.number }} \
+            --project ${{ secrets.RAILWAY_PROJECT_ID }} \
+            --yes || echo "Environment pr-${{ github.event.number }} not found or already deleted."
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🧹 Railway preview environment `pr-${{ github.event.number }}` has been deleted.'
+            })
