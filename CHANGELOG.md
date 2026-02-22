@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/HankHuang0516/realbot/compare/v1.5.0...v1.5.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* improve entity chip UI - remove close icons, add avatars, dark theme colors ([8b97b80](https://github.com/HankHuang0516/realbot/commit/8b97b80d431ae455d8cecbb57c2697f4d48ecede))
+
 # [1.5.0](https://github.com/HankHuang0516/realbot/compare/v1.4.1...v1.5.0) (2026-02-22)
 
 
