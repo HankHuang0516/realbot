@@ -1,3 +1,10 @@
+## [1.5.4](https://github.com/HankHuang0516/realbot/compare/v1.5.3...v1.5.4) (2026-02-22)
+
+
+### Reverts
+
+* rollback MAX_ENTITIES_PER_DEVICE to 4 ([1609941](https://github.com/HankHuang0516/realbot/commit/1609941ce2343f1361fa42e5344c676e8d0677e3)), closes [#50](https://github.com/HankHuang0516/realbot/issues/50)
+
 ## [1.5.3](https://github.com/HankHuang0516/realbot/compare/v1.5.2...v1.5.3) (2026-02-22)
 
 
