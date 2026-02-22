@@ -98,6 +98,10 @@ dependencies {
     implementation(libs.glide)
     kapt(libs.glide.compiler)
 
+    // Unit test dependencies
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.google.code.gson:gson:2.10.1")
+
     // AndroidTest dependencies
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test:core:1.5.0")
