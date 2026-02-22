@@ -5,15 +5,13 @@
 - **Direct merge to main**: When work is complete, commit and merge directly to `main` branch. Do NOT create PRs or wait for approval — the user reviews all changes in real-time during the session.
 - **Workflow**: develop on feature branch → commit → merge to main → push
 
-## GitHub Authentication
+## GitHub PR Creation
 
-When interacting with the GitHub API via `gh` CLI, read the token from the `.env` file:
-
+在雲端環境（Claude Code remote）中無法訪問外網，不要嘗試用 `gh` CLI 或 GitHub REST API 建立 PR。
+當需要提供 PR 連結時，直接給出 compare URL：
 ```
-export GH_TOKEN=$(grep GH_TOKEN .env | cut -d'=' -f2)
+https://github.com/HankHuang0516/realbot/compare/main...<branch-name>
 ```
-
-The `.env` file is gitignored and must be configured locally.
 
 ## Feature Parity Rule
 
