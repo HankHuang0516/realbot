@@ -1,3 +1,11 @@
+## [1.4.1](https://github.com/HankHuang0516/realbot/compare/v1.4.0...v1.4.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* add [#48](https://github.com/HankHuang0516/realbot/issues/48) entity visibility diagnosis logging + auto-sync fix ([2952b80](https://github.com/HankHuang0516/realbot/commit/2952b804b89338a3dc2b2545e3f95fa843246752))
+* add PR write permission and make Railway deploy non-blocking ([dd707cb](https://github.com/HankHuang0516/realbot/commit/dd707cb9caa7fcec78975051bd39733e3f3ea621))
+
 # [1.4.0](https://github.com/HankHuang0516/realbot/compare/v1.3.2...v1.4.0) (2026-02-22)
 
 
