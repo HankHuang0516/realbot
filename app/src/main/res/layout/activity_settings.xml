@@ -316,17 +316,129 @@
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/chipLangEn"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/language_en"
-                            style="@style/Widget.Material3.Chip.Filter"/>
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_en"
+                                style="@style/Widget.Material3.Chip.Filter"/>
 
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipLangZh"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/language_zh"
-                            style="@style/Widget.Material3.Chip.Filter"/>
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangZh"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_zh"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangZhCN"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_zh_CN"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangJa"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_ja"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangKo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_ko"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangEs"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_es"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangFr"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_fr"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangDe"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_de"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangPt"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_pt"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangIt"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_it"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangRu"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_ru"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangAr"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_ar"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangHi"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_hi"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangTh"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_th"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangVi"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_vi"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangId"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_id"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangTr"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_tr"
+                                style="@style/Widget.Material3.Chip.Filter"/>
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangMs"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/language_ms"
+                                style="@style/Widget.Material3.Chip.Filter"/>
 
                     </com.google.android.material.chip.ChipGroup>
 

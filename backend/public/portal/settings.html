@@ -303,9 +303,25 @@
         <!-- Language Card -->
         <div class="card">
             <div class="card-title" data-i18n="settings_lang">Language</div>
-            <div class="language-chips">
+            <div class="language-chips" style="flex-wrap:wrap;">
                 <div class="chip" id="chipEn" onclick="setLanguage('en')">English</div>
-                <div class="chip" id="chipZh" onclick="setLanguage('zh')">&#x4E2D;&#x6587;</div>
+                <div class="chip" id="chipZh" onclick="setLanguage('zh')">繁體中文</div>
+                <div class="chip" id="chipZhCN" onclick="setLanguage('zh_CN')">简体中文</div>
+                <div class="chip" id="chipJa" onclick="setLanguage('ja')">日本語</div>
+                <div class="chip" id="chipKo" onclick="setLanguage('ko')">한국어</div>
+                <div class="chip" id="chipEs" onclick="setLanguage('es')">Español</div>
+                <div class="chip" id="chipFr" onclick="setLanguage('fr')">Français</div>
+                <div class="chip" id="chipDe" onclick="setLanguage('de')">Deutsch</div>
+                <div class="chip" id="chipPt" onclick="setLanguage('pt')">Português</div>
+                <div class="chip" id="chipIt" onclick="setLanguage('it')">Italiano</div>
+                <div class="chip" id="chipRu" onclick="setLanguage('ru')">Русский</div>
+                <div class="chip" id="chipAr" onclick="setLanguage('ar')">العربية</div>
+                <div class="chip" id="chipHi" onclick="setLanguage('hi')">हिन्दी</div>
+                <div class="chip" id="chipTh" onclick="setLanguage('th')">ไทย</div>
+                <div class="chip" id="chipVi" onclick="setLanguage('vi')">Tiếng Việt</div>
+                <div class="chip" id="chipId" onclick="setLanguage('id')">Indonesia</div>
+                <div class="chip" id="chipTr" onclick="setLanguage('tr')">Türkçe</div>
+                <div class="chip" id="chipMs" onclick="setLanguage('ms')">Melayu</div>
             </div>
         </div>
 
@@ -775,8 +791,18 @@
         }
 
         function setLanguageChip(lang) {
-            document.getElementById('chipEn').classList.toggle('active', lang === 'en');
-            document.getElementById('chipZh').classList.toggle('active', lang === 'zh');
+            const allChips = document.querySelectorAll('.language-chips .chip');
+            allChips.forEach(c => c.classList.remove('active'));
+            const chipMap = {
+                en: 'chipEn', zh: 'chipZh', zh_CN: 'chipZhCN',
+                ja: 'chipJa', ko: 'chipKo', es: 'chipEs',
+                fr: 'chipFr', de: 'chipDe', pt: 'chipPt',
+                it: 'chipIt', ru: 'chipRu', ar: 'chipAr',
+                hi: 'chipHi', th: 'chipTh', vi: 'chipVi',
+                id: 'chipId', tr: 'chipTr', ms: 'chipMs'
+            };
+            const chipId = chipMap[lang];
+            if (chipId) document.getElementById(chipId).classList.add('active');
         }
 
         // ============================================

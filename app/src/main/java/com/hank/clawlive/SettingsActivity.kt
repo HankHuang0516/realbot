@@ -61,8 +61,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnWebPortal: MaterialButton
     private lateinit var btnAccountLogin: MaterialButton
     private lateinit var chipGroupLanguage: ChipGroup
-    private lateinit var chipLangEn: Chip
-    private lateinit var chipLangZh: Chip
     private lateinit var btnSetWallpaper: MaterialButton
     private lateinit var btnDebugEntityLimit: MaterialButton
     private lateinit var topBar: LinearLayout
@@ -129,8 +127,6 @@ class SettingsActivity : AppCompatActivity() {
         progressUsage = findViewById(R.id.progressUsage)
         btnSubscribe = findViewById(R.id.btnSubscribe)
         chipGroupLanguage = findViewById(R.id.chipGroupLanguage)
-        chipLangEn = findViewById(R.id.chipLangEn)
-        chipLangZh = findViewById(R.id.chipLangZh)
         topBar = findViewById(R.id.topBar)
         btnSetWallpaper = findViewById(R.id.btnSetWallpaper)
         tvEntityCount = findViewById(R.id.tvEntityCount)
@@ -184,14 +180,31 @@ class SettingsActivity : AppCompatActivity() {
         // Language selection
         chipGroupLanguage.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isNotEmpty()) {
-                val localeList = when (checkedIds[0]) {
-                    R.id.chipLangZh -> LocaleListCompat.forLanguageTags("zh-TW")
-                    else -> LocaleListCompat.forLanguageTags("en")
+                val langTag = when (checkedIds[0]) {
+                    R.id.chipLangZh -> "zh-TW"
+                    R.id.chipLangZhCN -> "zh-CN"
+                    R.id.chipLangJa -> "ja"
+                    R.id.chipLangKo -> "ko"
+                    R.id.chipLangEs -> "es"
+                    R.id.chipLangFr -> "fr"
+                    R.id.chipLangDe -> "de"
+                    R.id.chipLangPt -> "pt-BR"
+                    R.id.chipLangIt -> "it"
+                    R.id.chipLangRu -> "ru"
+                    R.id.chipLangAr -> "ar"
+                    R.id.chipLangHi -> "hi"
+                    R.id.chipLangTh -> "th"
+                    R.id.chipLangVi -> "vi"
+                    R.id.chipLangId -> "in"
+                    R.id.chipLangTr -> "tr"
+                    R.id.chipLangMs -> "ms"
+                    else -> "en"
                 }
+                val localeList = LocaleListCompat.forLanguageTags(langTag)
 
                 val current = AppCompatDelegate.getApplicationLocales()
                 if (current.toLanguageTags() != localeList.toLanguageTags()) {
-                     AppCompatDelegate.setApplicationLocales(localeList)
+                    AppCompatDelegate.setApplicationLocales(localeList)
                 }
             }
         }
@@ -199,24 +212,33 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadCurrentLanguage() {
         val locales = AppCompatDelegate.getApplicationLocales()
-        if (!locales.isEmpty) {
-            // App has a specific locale set
-            val tag = locales.toLanguageTags()
-            if (tag.contains("zh")) {
-                chipLangZh.isChecked = true
-            } else {
-                chipLangEn.isChecked = true
-            }
+        val tag = if (!locales.isEmpty) {
+            locales.toLanguageTags()
         } else {
-            // Follow system: Check system locale
-            val systemLocale = LocaleListCompat.getDefault()
-            val systemTag = systemLocale.toLanguageTags()
-            if (systemTag.contains("zh")) {
-                chipLangZh.isChecked = true
-            } else {
-                chipLangEn.isChecked = true
-            }
+            LocaleListCompat.getDefault().toLanguageTags()
         }
+
+        val chipId = when {
+            tag.contains("zh-CN") || tag.contains("zh-Hans") -> R.id.chipLangZhCN
+            tag.contains("zh") -> R.id.chipLangZh
+            tag.startsWith("ja") -> R.id.chipLangJa
+            tag.startsWith("ko") -> R.id.chipLangKo
+            tag.startsWith("es") -> R.id.chipLangEs
+            tag.startsWith("fr") -> R.id.chipLangFr
+            tag.startsWith("de") -> R.id.chipLangDe
+            tag.startsWith("pt") -> R.id.chipLangPt
+            tag.startsWith("it") -> R.id.chipLangIt
+            tag.startsWith("ru") -> R.id.chipLangRu
+            tag.startsWith("ar") -> R.id.chipLangAr
+            tag.startsWith("hi") -> R.id.chipLangHi
+            tag.startsWith("th") -> R.id.chipLangTh
+            tag.startsWith("vi") -> R.id.chipLangVi
+            tag.startsWith("in") || tag.startsWith("id") -> R.id.chipLangId
+            tag.startsWith("tr") -> R.id.chipLangTr
+            tag.startsWith("ms") -> R.id.chipLangMs
+            else -> R.id.chipLangEn
+        }
+        findViewById<Chip>(chipId).isChecked = true
     }
 
     private fun updateUsageDisplay() {
