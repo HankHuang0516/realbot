@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/HankHuang0516/realbot/compare/v1.3.0...v1.3.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* remove schedule tab from web nav, add Chinese translations for Android schedule ([a214fda](https://github.com/HankHuang0516/realbot/commit/a214fda33ae28a47d075ad611b1b1a87b2f42f32))
+
 # [1.3.0](https://github.com/HankHuang0516/realbot/compare/v1.2.0...v1.3.0) (2026-02-22)
 
 
