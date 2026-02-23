@@ -300,13 +300,27 @@
         </div>
     </div>
 
-    <!-- Simple language toggle for login page -->
-    <div style="position:fixed; top:20px; right:20px; display:flex; gap:10px;">
-        <button onclick="i18n.setLanguage('en')"
-            style="background:none;border:none;color:#aaa;cursor:pointer;">EN</button>
-        <button onclick="i18n.setLanguage('zh')"
-            style="background:none;border:none;color:#aaa;cursor:pointer;">中文</button>
+    <!-- Language selector for login page -->
+    <div style="position:fixed; top:20px; right:20px;">
+        <select onchange="i18n.setLanguage(this.value)"
+            style="background:#1a1a2e;border:1px solid #333;color:#aaa;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:13px;">
+            <option value="en">EN</option>
+            <option value="zh">繁中</option>
+            <option value="zh-CN">简中</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="th">ไทย</option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="id">Indonesia</option>
+        </select>
     </div>
+    <script>
+        // Set dropdown to current language
+        document.addEventListener('DOMContentLoaded', () => {
+            const sel = document.querySelector('select');
+            if (sel) sel.value = (localStorage.getItem('eclaw-language') || 'en');
+        });
+    </script>
 
     <script src="shared/api.js"></script>
     <!-- IMPORTANT: Check path for i18n.js relative to portal/index.html. it is in ../shared/i18n.js since index.html is in portal/ -->
