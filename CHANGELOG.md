@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/HankHuang0516/realbot/compare/v1.8.0...v1.9.0) (2026-02-23)
+
+
+### Features
+
+* add multi-language support (8 languages) for Web Portal and Android ([b36248d](https://github.com/HankHuang0516/realbot/commit/b36248dd3952dfe610e5e67a36e0fc33bf9fcef4))
+
 # [1.8.0](https://github.com/HankHuang0516/realbot/compare/v1.7.0...v1.8.0) (2026-02-23)
 
 
