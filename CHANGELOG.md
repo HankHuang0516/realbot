@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/HankHuang0516/realbot/compare/v1.7.0...v1.8.0) (2026-02-23)
+
+
+### Features
+
+* implement issue [#55](https://github.com/HankHuang0516/realbot/issues/55) (task saved toast) and [#54](https://github.com/HankHuang0516/realbot/issues/54) (schedule history + chat annotation) ([b8a8b3c](https://github.com/HankHuang0516/realbot/commit/b8a8b3c1326f473ca7d2288d9ec95394292fee02))
+
 # [1.7.0](https://github.com/HankHuang0516/realbot/compare/v1.6.2...v1.7.0) (2026-02-23)
 
 
