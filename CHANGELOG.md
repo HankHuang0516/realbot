@@ -1,3 +1,17 @@
+# [1.7.0](https://github.com/HankHuang0516/realbot/compare/v1.6.2...v1.7.0) (2026-02-23)
+
+
+### Features
+
+* replace chat photo icon with + button, support multi-file upload (100MB) ([09a1072](https://github.com/HankHuang0516/realbot/commit/09a10726263c226fadc6e13eba409577bd955e76))
+
+## [1.6.2](https://github.com/HankHuang0516/realbot/compare/v1.6.1...v1.6.2) (2026-02-23)
+
+
+### Bug Fixes
+
+* convert ChatActivity to full-screen dark style with bottom nav ([54f4abe](https://github.com/HankHuang0516/realbot/commit/54f4abe3394c5a711f086da7fb8a5f14074b86f2)), closes [#0D0D1A](https://github.com/HankHuang0516/realbot/issues/0D0D1A) [#1A1A2E](https://github.com/HankHuang0516/realbot/issues/1A1A2E)
+
 ## [1.6.1](https://github.com/HankHuang0516/realbot/compare/v1.6.0...v1.6.1) (2026-02-22)
 
 
