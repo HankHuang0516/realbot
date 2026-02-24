@@ -496,7 +496,7 @@
                 Both channels use OpenClaw bots — choose the one that fits your needs, or use both!
             </div>
             <div class="cmp-cta-buttons">
-                <a href="dashboard.html" class="btn btn-primary" data-i18n="cmp_cta_eclaw">Get Started with E-Claw</a>
+                <a href="index.html" class="btn btn-primary" data-i18n="cmp_cta_eclaw">Get Started with E-Claw</a>
                 <a href="https://core.telegram.org/bots" target="_blank" class="btn btn-outline" data-i18n="cmp_cta_telegram">Learn about Telegram Bots</a>
             </div>
         </div>
@@ -504,14 +504,11 @@
     </div>
 
     <script src="shared/api.js"></script>
-    <script src="shared/nav.js"></script>
-    <script src="shared/auth.js"></script>
-    <script src="../shared/telemetry.js"></script>
+    <script src="shared/public-nav.js"></script>
     <script src="../shared/i18n.js"></script>
     <script>
-        window.addEventListener('DOMContentLoaded', async () => {
-            renderNav('');
-            await checkAuth();
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPublicNav('compare');
         });
     </script>
 </body>
