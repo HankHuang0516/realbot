@@ -1,4 +1,4 @@
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 const DELAY = 5000;
 
 function sleep(ms) {

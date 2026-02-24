@@ -5,7 +5,7 @@
  * Verifies critical fields like isBound are present in API responses
  */
 
-const API_BASE = 'https://eclaw.up.railway.app';
+const API_BASE = 'https://eclawbot.com';
 
 // Generate unique IDs for testing
 const testDeviceId = 'test-ux-' + Date.now();

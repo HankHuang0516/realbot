@@ -349,7 +349,7 @@ function generateAiPrompt(feedback, photos) {
         lines.push('');
         photos.forEach((p, i) => {
             const sizeKB = p.size ? Math.round(parseInt(p.size) / 1024) : '?';
-            lines.push(`- Photo ${i + 1}: [${p.file_name || 'photo'}](${process.env.BASE_URL || 'https://eclaw.up.railway.app'}/api/feedback/photo/${p.id}) (${p.content_type}, ${sizeKB}KB)`);
+            lines.push(`- Photo ${i + 1}: [${p.file_name || 'photo'}](${process.env.BASE_URL || 'https://eclawbot.com'}/api/feedback/photo/${p.id}) (${p.content_type}, ${sizeKB}KB)`);
         });
         lines.push('');
         lines.push('> **Note:** These photos were uploaded by the user to help illustrate the issue. Review them for visual context.');

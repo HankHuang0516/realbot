@@ -9,7 +9,7 @@
  * 5. Verify peek mode and wrong secret behavior
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 
 async function api(method, path, body = null) {
     const options = {

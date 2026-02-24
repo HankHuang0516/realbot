@@ -35,7 +35,7 @@ cd backend
 node stress-test.js
 
 # Run against Railway production
-API_BASE=https://eclaw.up.railway.app node stress-test.js
+API_BASE=https://eclawbot.com node stress-test.js
 
 # Verbose mode (shows all requests)
 VERBOSE=true node stress-test.js
@@ -147,7 +147,7 @@ Add to your deployment workflow:
 
 ```bash
 # After deployment
-API_BASE=https://eclaw.up.railway.app node backend/stress-test.js
+API_BASE=https://eclawbot.com node backend/stress-test.js
 
 # If tests fail, rollback deployment
 ```

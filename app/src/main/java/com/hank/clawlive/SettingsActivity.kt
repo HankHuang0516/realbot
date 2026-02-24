@@ -297,7 +297,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun showWebPortalDialog() {
         val deviceId = deviceManager.deviceId
         val deviceSecret = deviceManager.deviceSecret
-        val portalUrl = "https://eclaw.up.railway.app/portal/"
+        val portalUrl = "https://eclawbot.com/portal/"
 
         // Check bind status first, then show appropriate dialog
         lifecycleScope.launch {

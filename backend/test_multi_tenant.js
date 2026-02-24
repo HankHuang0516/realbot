@@ -5,7 +5,7 @@
  * Updated to use current entityId-based architecture.
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

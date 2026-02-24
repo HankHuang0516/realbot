@@ -23,7 +23,7 @@ object TelemetryHelper {
     private const val FLUSH_INTERVAL_MS = 30_000L   // 30 seconds
     private const val MAX_BATCH = 50
     private const val MAX_BUFFER = 200
-    private const val BASE_URL = "https://eclaw.up.railway.app"
+    private const val BASE_URL = "https://eclawbot.com"
 
     private val buffer = mutableListOf<Map<String, Any?>>()
     private var deviceManager: DeviceManager? = null

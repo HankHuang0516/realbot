@@ -20,7 +20,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 // ── .env loader ─────────────────────────────────────────────
 function loadEnvFile() {

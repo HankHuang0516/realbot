@@ -10,7 +10,7 @@
  * 6. Scales entity count X from 2..4 to stress multi-entity
  */
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 const TEST_DEVICE_ID = `test-chat-mon-${Date.now()}`;
 const TEST_DEVICE_SECRET = 'test-secret';

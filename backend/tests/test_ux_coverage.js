@@ -11,7 +11,7 @@
  * - Timeout = backend hung = FAIL
  */
 
-const API_BASE = 'https://eclaw.up.railway.app';
+const API_BASE = 'https://eclawbot.com';
 const TIMEOUT_MS = 5000; // 5 seconds per endpoint
 
 // Generate unique test device ID to ensure proper device registration

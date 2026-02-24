@@ -1,4 +1,4 @@
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 
 async function monitor() {
     console.log(`📡 Monitoring for Incoming Messages on ${BASE_URL}...`);

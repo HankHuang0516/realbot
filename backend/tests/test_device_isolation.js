@@ -5,7 +5,7 @@
  * Device A's Entity 0 should NOT interfere with Device B's Entity 0.
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 
 async function api(method, path, body = null) {
     const options = {

@@ -2,7 +2,7 @@
  * Test Broadcast and Entity-to-Entity Messaging
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 
 async function api(method, path, body = null) {
     const options = {

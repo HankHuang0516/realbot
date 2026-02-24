@@ -19,7 +19,7 @@ const path = require('path');
 const fs = require('fs');
 
 // ── Config ──────────────────────────────────────────────────
-const API_BASE = 'https://eclaw.up.railway.app';
+const API_BASE = 'https://eclawbot.com';
 const POLL_INTERVAL_MS = 5000;
 const MAX_WAIT_MS = 120000;
 const BETWEEN_TESTS_MS = 3000;

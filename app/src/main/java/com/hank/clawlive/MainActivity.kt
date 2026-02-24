@@ -69,7 +69,7 @@ class MainActivity : AppCompatActivity() {
         StateRepository(NetworkModule.api, this)
     }
     companion object {
-        private const val API_BASE_URL = "https://eclaw.up.railway.app"
+        private const val API_BASE_URL = "https://eclawbot.com"
     }
 
     // Notification permission launcher (Android 13+)

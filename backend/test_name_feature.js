@@ -3,7 +3,7 @@
  * Run: node test_name_feature.js
  */
 
-const API_BASE = 'https://eclaw.up.railway.app';
+const API_BASE = 'https://eclawbot.com';
 
 async function testNameFeature() {
     console.log('=== Entity Name Feature Test ===\n');

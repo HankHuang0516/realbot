@@ -12,7 +12,7 @@
  * Run: node tests/test_entity_name_preservation.js
  */
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 // ============================================
 // Helpers

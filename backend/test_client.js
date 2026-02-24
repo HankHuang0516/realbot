@@ -4,7 +4,7 @@
  * Tests claw wave animations with proper botSecret authentication.
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 const DELAY_MS = 2000;
 
 let botSecret = null;

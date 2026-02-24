@@ -5,7 +5,7 @@
  * Registers entity, binds to get secret, then runs emotion showcase.
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 const DELAY_EMOTION = 2000; // Time to hold the emotion
 const DELAY_ANIM = 200;     // Fast animation tick
 

@@ -207,7 +207,7 @@ module.exports = function(devices) {
                 skills.unshift({
                     id: 'system-eclaw-api-skill',
                     title: systemSkillTitle,
-                    url: 'https://eclaw.up.railway.app/api/skill-doc',
+                    url: 'https://eclawbot.com/api/skill-doc',
                     assignedEntities: [],
                     isSystem: true,
                     createdAt: Date.now(),

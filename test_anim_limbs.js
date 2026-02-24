@@ -1,4 +1,4 @@
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 const ENTITY_ID = 0; // Target Entity 0 (Main)
 
 function sleep(ms) {

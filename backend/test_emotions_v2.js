@@ -4,7 +4,7 @@
  * Tests eye lid and angle animations with proper botSecret authentication.
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 const DELAY_EMOTION = 2000;
 const DELAY_ANIM = 200;
 

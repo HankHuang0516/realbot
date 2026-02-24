@@ -1,4 +1,4 @@
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 const BINDING_CODE = "774471"; // NEW CODE provided by user
 const ENTITY_ID = 0;
 

@@ -6,7 +6,7 @@
  * Verifies deletion process has no bugs.
  */
 
-const API_BASE = 'https://eclaw.up.railway.app';
+const API_BASE = 'https://eclawbot.com';
 const NUM_DEVICES = 10;
 const ENTITIES_PER_DEVICE = 4;
 
