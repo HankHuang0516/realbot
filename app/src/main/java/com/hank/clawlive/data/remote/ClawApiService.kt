@@ -464,6 +464,6 @@ data class NotificationCountResponse(
 
 data class NotificationPreferencesResponse(
     val success: Boolean,
-    val preferences: Map<String, Boolean> = emptyMap(),
+    val prefs: Map<String, Boolean> = emptyMap(),
     val error: String? = null
 )
