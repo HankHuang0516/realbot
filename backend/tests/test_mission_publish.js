@@ -10,7 +10,7 @@
  * 6. Clean up: delete TODO and RULE
  */
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 const TEST_DEVICE_ID = `test-mission-${Date.now()}`;
 const TEST_DEVICE_SECRET = 'test-secret';

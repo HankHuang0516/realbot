@@ -16,7 +16,7 @@ data class LinkPreviewData(
 
 object LinkPreviewHelper {
 
-    private const val API_BASE = "https://eclaw.up.railway.app"
+    private const val API_BASE = "https://eclawbot.com"
     private val cache = LruCache<String, LinkPreviewData?>(100)
 
     private val urlRegex = Regex("https?://\\S+")

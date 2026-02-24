@@ -17,7 +17,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 const TEST_DEVICE_ID = `chat-echo-delivery-${Date.now()}`;
 const TEST_DEVICE_SECRET = `secret-${Date.now()}`;
 const POLL_INTERVAL_MS = 2000;

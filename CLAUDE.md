@@ -52,7 +52,7 @@ When investigating backend bugs (broadcast failure, push not delivered, etc.):
    - Requires `deviceId` + `deviceSecret` (ask user if not available)
    - Filters: `category`, `level` (info/warn/error), `since` (timestamp ms), `filterDevice`, `limit`
    - Categories: `bind`, `unbind`, `transform`, `broadcast`, `broadcast_push`, `speakto_push`, `client_push`, `entity_poll`
-   - Example: `curl -s "https://eclaw.up.railway.app/api/logs?deviceId=DEVICE_ID&deviceSecret=DEVICE_SECRET&category=broadcast_push&limit=50"`
+   - Example: `curl -s "https://eclawbot.com/api/logs?deviceId=DEVICE_ID&deviceSecret=DEVICE_SECRET&category=broadcast_push&limit=50"`
 
 2. **Check credentials**: Look in `backend/.env` (local only, gitignored). If not available, ask user for a valid deviceId+deviceSecret pair.
 
@@ -78,7 +78,7 @@ When investigating backend bugs (broadcast failure, push not delivered, etc.):
 ## Key Architecture
 
 - Backend: `backend/index.js` — Express server on Railway
-- API Base: `https://eclaw.up.railway.app`
+- API Base: `https://eclawbot.com`
 - 4 entity slots per device (0-3), each independently bindable
 - Bots use OpenClaw platform (Zeabur), communicate via webhook push + exec+curl
 - Push notifications use instruction-first format with pre-filled curl templates
@@ -103,16 +103,16 @@ This buffer is the **primary data source for AI-automated debugging**.
 ### Querying telemetry for debugging
 ```bash
 # Get summary (usage, type breakdown)
-curl "https://eclaw.up.railway.app/api/device-telemetry/summary?deviceId=ID&deviceSecret=SECRET"
+curl "https://eclawbot.com/api/device-telemetry/summary?deviceId=ID&deviceSecret=SECRET"
 
 # Get all entries (newest 500)
-curl "https://eclaw.up.railway.app/api/device-telemetry?deviceId=ID&deviceSecret=SECRET"
+curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET"
 
 # Filter by type
-curl "https://eclaw.up.railway.app/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&type=api_req"
+curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&type=api_req"
 
 # Filter by time range
-curl "https://eclaw.up.railway.app/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&since=TIMESTAMP_MS"
+curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&since=TIMESTAMP_MS"
 ```
 
 ### Key files

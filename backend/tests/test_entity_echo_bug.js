@@ -18,7 +18,7 @@
  * This test verifies NO echo occurs in any combination.
  */
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 const TEST_DEVICE_ID = `echo-regression-${Date.now()}`;
 const TEST_DEVICE_SECRET = `secret-${Date.now()}`;

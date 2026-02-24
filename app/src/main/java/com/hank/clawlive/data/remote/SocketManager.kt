@@ -16,7 +16,7 @@ import timber.log.Timber
  * Uses socket.io-client v2.1.0 which authenticates via query params.
  */
 object SocketManager {
-    private const val SERVER_URL = "https://eclaw.up.railway.app"
+    private const val SERVER_URL = "https://eclawbot.com"
 
     private var socket: Socket? = null
     private var isInitialized = false

@@ -31,7 +31,7 @@ const resend = new Resend(process.env.RESEND_API_KEY || 'dummy');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const JWT_EXPIRY = '7d';
 const BCRYPT_ROUNDS = 12;
-const BASE_URL = process.env.BASE_URL || 'https://eclaw.up.railway.app';
+const BASE_URL = process.env.BASE_URL || 'https://eclawbot.com';
 const EMAIL_FROM = 'E-Claw <noreply@twopiggyhavefun.uk>';
 
 // Password validation: min 6 chars, must contain letters AND numbers

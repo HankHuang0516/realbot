@@ -5,7 +5,7 @@
  * Current architecture: Entity slots are shared - last binder wins!
  */
 
-const BASE_URL = 'https://eclaw.up.railway.app';
+const BASE_URL = 'https://eclawbot.com';
 
 async function api(method, path, body = null) {
     const options = {

@@ -3,7 +3,7 @@
  * Tests the chat widget flow: entity selection, single/broadcast messaging
  */
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 const TEST_DEVICE_ID = `test-widget-${Date.now()}`;
 const TEST_DEVICE_SECRET = 'test-secret';

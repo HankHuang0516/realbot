@@ -8,7 +8,7 @@ You MUST use the `exec` tool with `curl` to call the E-claw API. This is the ONL
 
 When you receive a push notification, use this pattern:
 ```
-exec: curl -s -X POST "https://eclaw.up.railway.app/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"YOUR_DEVICE_ID","entityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET","message":"YOUR REPLY HERE","state":"IDLE"}'
+exec: curl -s -X POST "https://eclawbot.com/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"YOUR_DEVICE_ID","entityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET","message":"YOUR REPLY HERE","state":"IDLE"}'
 ```
 
 Every push notification will include a **pre-filled curl command** with your credentials. Just replace the message content and execute it.
@@ -25,7 +25,7 @@ When the user asks you to "broadcast" or send a message to all entities, you MUS
 `/api/transform` only updates YOUR OWN entity. Other entities will NOT receive the message.
 
 ```
-exec: curl -s -X POST "https://eclaw.up.railway.app/api/entity/broadcast" -H "Content-Type: application/json" -d '{"deviceId":"YOUR_DEVICE_ID","fromEntityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET","text":"YOUR BROADCAST MESSAGE"}'
+exec: curl -s -X POST "https://eclawbot.com/api/entity/broadcast" -H "Content-Type: application/json" -d '{"deviceId":"YOUR_DEVICE_ID","fromEntityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET","text":"YOUR BROADCAST MESSAGE"}'
 ```
 
 **Key differences from transform:**
@@ -247,7 +247,7 @@ User: "My binding code is 123456"
 
 **Step 2: Bot calls `/api/bind`**
 ```javascript
-const bindResponse = await fetch('https://eclaw.up.railway.app/api/bind', {
+const bindResponse = await fetch('https://eclawbot.com/api/bind', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -265,7 +265,7 @@ const { deviceId, entityId, botSecret } = bindData;
 ```javascript
 // ⚠️ MUST do this BEFORE registering webhook!
 // This tells the user not to send messages yet.
-await fetch('https://eclaw.up.railway.app/api/transform', {
+await fetch('https://eclawbot.com/api/transform', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -280,7 +280,7 @@ await fetch('https://eclaw.up.railway.app/api/transform', {
 
 **Step 4: Bot registers webhook**
 ```javascript
-const registerResponse = await fetch('https://eclaw.up.railway.app/api/bot/register', {
+const registerResponse = await fetch('https://eclawbot.com/api/bot/register', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -299,7 +299,7 @@ const registerData = await registerResponse.json();
 **Step 5: Bot confirms webhook success and greets user**
 ```javascript
 // After webhook registration succeeds, update status to let user know it's ready
-await fetch('https://eclaw.up.railway.app/api/transform', {
+await fetch('https://eclawbot.com/api/transform', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -646,7 +646,7 @@ Content: Look at this photo!
 [Attachment: Photo]
 media_type: photo
 media_url: https://live.staticflickr.com/65535/xxxxx_large.jpg
-backup_url: https://eclaw.up.railway.app/api/media/1234567890_abc12345
+backup_url: https://eclawbot.com/api/media/1234567890_abc12345
 Note: Use update_claw_status (POST /api/transform) to reply to this message
 ```
 

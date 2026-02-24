@@ -13,7 +13,7 @@
  *   9. PATCH /api/feedback/:id → update status
  */
 
-const API_BASE = process.env.API_BASE || 'https://eclaw.up.railway.app';
+const API_BASE = process.env.API_BASE || 'https://eclawbot.com';
 
 const TEST_DEVICE_ID = `test-feedback-${Date.now()}`;
 const TEST_DEVICE_SECRET = `secret-${Date.now()}`;

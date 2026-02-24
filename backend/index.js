@@ -1025,7 +1025,7 @@ function getEntity(deviceId, entityId) {
  */
 function sendBindCredentialsToBot(webhookUrl, webhookToken, sessionKey, deviceId, entityId, botSecret, botType) {
     const skillDoc = loadSkillDoc();
-    const apiBase = 'https://eclaw.up.railway.app';
+    const apiBase = 'https://eclawbot.com';
     const msg = `[SYSTEM:BIND_COMPLETE] Official borrow binding established.
 
 YOUR CREDENTIALS (save these):
@@ -1174,7 +1174,7 @@ app.get('/api/link-preview', async (req, res) => {
         const response = await fetch(url, {
             signal: controller.signal,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; RealBot/1.0; +https://eclaw.up.railway.app)',
+                'User-Agent': 'Mozilla/5.0 (compatible; RealBot/1.0; +https://eclawbot.com)',
                 'Accept': 'text/html'
             },
             redirect: 'follow'
@@ -1992,7 +1992,7 @@ app.post('/api/device/reorder-entities', async (req, res) => {
     // Step 4: Notify bots of their new entity IDs (fire-and-forget)
     for (const info of botsToNotify) {
         const { entity, oldSlot, newSlot } = info;
-        const apiBase = 'https://eclaw.up.railway.app';
+        const apiBase = 'https://eclawbot.com';
         const notifyMsg = `[SYSTEM:ENTITY_MOVED] Your entity slot has changed from #${oldSlot} to #${newSlot}.
 
 UPDATED CREDENTIALS:
@@ -2246,7 +2246,7 @@ app.post('/api/client/speak', async (req, res) => {
             console.log(`[Push] Attempting push to Device ${deviceId} Entity ${eId} (webhook: ${entity.webhook.url})`);
 
             // Instruction-first push format with pre-filled curl template
-            const apiBase = 'https://eclaw.up.railway.app';
+            const apiBase = 'https://eclawbot.com';
             let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API below. Your text reply is DISCARDED and the user will NEVER see it.\n`;
             pushMsg += `Run this command to reply (replace YOUR_REPLY_HERE with your response):\n`;
             pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${eId},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
@@ -2427,7 +2427,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
     const hasWebhook = !!toEntity.webhook;
     if (hasWebhook) {
         // Instruction-first push format with pre-filled curl templates
-        const apiBase = 'https://eclaw.up.railway.app';
+        const apiBase = 'https://eclawbot.com';
         const toRemaining = getBotToBotRemaining(deviceId, toId);
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
         pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
@@ -2640,7 +2640,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
         // Fire-and-forget: push to target bot webhook (don't block response)
         if (hasWebhook) {
             // Instruction-first push format with pre-filled curl templates
-            const apiBase = 'https://eclaw.up.railway.app';
+            const apiBase = 'https://eclawbot.com';
             const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
             let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
             pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
@@ -5000,7 +5000,7 @@ setInterval(() => notifModule.pruneOldNotifications(), 24 * 60 * 60 * 1000);
 const webpush = require('web-push');
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     webpush.setVapidDetails(
-        process.env.VAPID_SUBJECT || 'mailto:admin@eclaw.up.railway.app',
+        process.env.VAPID_SUBJECT || 'mailto:admin@eclawbot.com',
         process.env.VAPID_PUBLIC_KEY,
         process.env.VAPID_PRIVATE_KEY
     );
@@ -5188,7 +5188,7 @@ async function executeScheduledMessage(schedule) {
     // Push to bot if webhook is registered
     let pushResult = { pushed: false, reason: 'no_webhook' };
     if (entity.webhook) {
-        const apiBase = 'https://eclaw.up.railway.app';
+        const apiBase = 'https://eclawbot.com';
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API below. Your text reply is DISCARDED and the user will NEVER see it.\n`;
         pushMsg += `Run this command to reply (replace YOUR_REPLY_HERE with your response):\n`;
         pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
@@ -5920,7 +5920,7 @@ function cachePhoto(deviceId, buffer, contentType) {
 function getBackupUrl(flickrUrl) {
     const mediaId = flickrToBackup.get(flickrUrl);
     if (mediaId && photoCache.has(mediaId)) {
-        return `https://eclaw.up.railway.app/api/media/${mediaId}`;
+        return `https://eclawbot.com/api/media/${mediaId}`;
     }
     return null;
 }
@@ -5999,7 +5999,7 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
 
             // Cache photo on backend as backup (max 5 per device)
             const mediaId = cachePhoto(deviceId, req.file.buffer, req.file.mimetype);
-            backupUrl = `https://eclaw.up.railway.app/api/media/${mediaId}`;
+            backupUrl = `https://eclawbot.com/api/media/${mediaId}`;
             flickrToBackup.set(result.url, mediaId);
             console.log(`[Upload] Photo cached: ${backupUrl}`);
         } else if (mediaType === 'voice') {
@@ -6013,7 +6013,7 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
                 [deviceId, originalName, req.file.mimetype, req.file.buffer, req.file.buffer.length]
             );
             const fileId = result.rows[0].id;
-            mediaUrl = `https://eclaw.up.railway.app/api/chat/file/${fileId}`;
+            mediaUrl = `https://eclawbot.com/api/chat/file/${fileId}`;
             console.log(`[Upload] File stored: ${originalName} (${(req.file.buffer.length / 1024 / 1024).toFixed(2)} MB) -> ${fileId}`);
         } else {
             return res.status(400).json({ success: false, error: 'Invalid mediaType. Use "photo", "voice", or "file"' });

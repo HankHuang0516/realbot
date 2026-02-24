@@ -228,7 +228,7 @@ Added test scripts:
 ```json
 "test": "node stress-test.js",
 "test:verbose": "VERBOSE=true node stress-test.js",
-"test:production": "API_BASE=https://eclaw.up.railway.app node stress-test.js",
+"test:production": "API_BASE=https://eclawbot.com node stress-test.js",
 "test:persistence": "node test-persistence.js",
 "test:persistence:check": "node test-persistence.js --check"
 ```
