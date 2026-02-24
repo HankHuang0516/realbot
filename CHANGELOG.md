@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/HankHuang0516/realbot/compare/v1.14.0...v1.15.0) (2026-02-24)
+
+
+### Features
+
+* enable Firebase Cloud Messaging (FCM) for Android push notifications ([180b13f](https://github.com/HankHuang0516/realbot/commit/180b13ff3b92c22d33d25546d08348a8ce3ad0b0))
+
 # [1.14.0](https://github.com/HankHuang0516/realbot/compare/v1.13.0...v1.14.0) (2026-02-24)
 
 
