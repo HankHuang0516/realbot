@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -68,6 +69,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnDebugEntityLimit: MaterialButton
     private lateinit var topBar: LinearLayout
     private lateinit var notifPrefsContainer: LinearLayout
+    private lateinit var notifHeader: LinearLayout
+    private lateinit var notifContentLayout: LinearLayout
+    private lateinit var notifExpandArrow: ImageView
+    private var isNotifExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,7 +93,7 @@ class SettingsActivity : AppCompatActivity() {
         observeSubscriptionState()
         updateEntityCount()
         displayAppVersion()
-        loadNotificationPreferences()
+        setupNotifCollapsible()
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -143,6 +148,9 @@ class SettingsActivity : AppCompatActivity() {
         btnAccountLogin = findViewById(R.id.btnAccountLogin)
         btnDebugEntityLimit = findViewById(R.id.btnDebugEntityLimit)
         notifPrefsContainer = findViewById(R.id.notifPrefsContainer)
+        notifHeader = findViewById(R.id.notifHeader)
+        notifContentLayout = findViewById(R.id.notifContentLayout)
+        notifExpandArrow = findViewById(R.id.notifExpandArrow)
 
         // Show debug button only in debug builds
         if (BuildConfig.DEBUG) {
@@ -604,6 +612,24 @@ class SettingsActivity : AppCompatActivity() {
     // ============================================
     // NOTIFICATION PREFERENCES
     // ============================================
+
+    private var notifPrefsLoaded = false
+
+    private fun setupNotifCollapsible() {
+        notifHeader.setOnClickListener {
+            isNotifExpanded = !isNotifExpanded
+            notifContentLayout.visibility = if (isNotifExpanded) View.VISIBLE else View.GONE
+            notifExpandArrow.animate()
+                .rotation(if (isNotifExpanded) 180f else 0f)
+                .setDuration(200)
+                .start()
+            // Lazy-load preferences on first expand
+            if (isNotifExpanded && !notifPrefsLoaded) {
+                notifPrefsLoaded = true
+                loadNotificationPreferences()
+            }
+        }
+    }
 
     private data class NotifPrefCategory(
         val key: String,

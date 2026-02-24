@@ -188,15 +188,6 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Notifications Section -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/notifications_title"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@android:color/white"
-                android:layout_marginBottom="8dp"/>
-
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -210,20 +201,56 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
+                    <!-- Collapsible header -->
+                    <LinearLayout
+                        android:id="@+id/notifHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/notifications_title"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@android:color/white"/>
+
+                        <ImageView
+                            android:id="@+id/notifExpandArrow"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@android:drawable/arrow_down_float"
+                            android:contentDescription="Expand"
+                            app:tint="#99FFFFFF"/>
+                    </LinearLayout>
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/notifications_desc"
                         android:textSize="13sp"
                         android:textColor="#99FFFFFF"
-                        android:layout_marginBottom="12dp"/>
+                        android:layout_marginTop="4dp"/>
 
-                    <!-- Notification preference toggles container (populated programmatically) -->
+                    <!-- Collapsible content (default GONE) -->
                     <LinearLayout
-                        android:id="@+id/notifPrefsContainer"
+                        android:id="@+id/notifContentLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"/>
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginTop="12dp">
+
+                        <!-- Notification preference toggles container (populated programmatically) -->
+                        <LinearLayout
+                            android:id="@+id/notifPrefsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"/>
+                    </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
