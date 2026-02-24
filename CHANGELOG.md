@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/HankHuang0516/realbot/compare/v1.20.1...v1.21.0) (2026-02-24)
+
+
+### Features
+
+* reframe comparison as competitive + add iPhone/Web note & QR codes ([4008efa](https://github.com/HankHuang0516/realbot/commit/4008efa9ddf7717f3b44cf53d401099636463bcf))
+
 ## [1.20.1](https://github.com/HankHuang0516/realbot/compare/v1.20.0...v1.20.1) (2026-02-24)
 
 
