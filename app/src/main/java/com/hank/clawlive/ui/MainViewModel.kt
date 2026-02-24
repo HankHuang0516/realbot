@@ -3,6 +3,7 @@ package com.hank.clawlive.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hank.clawlive.BuildConfig
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.model.AgentStatus
@@ -83,7 +84,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     entityId = entityId,
                     deviceId = deviceManager.deviceId,
                     deviceSecret = deviceManager.deviceSecret,
-                    appVersion = deviceManager.appVersion
+                    appVersion = deviceManager.appVersion,
+                    isTestDevice = BuildConfig.DEBUG
                 )
 
                 Timber.d("Registering entity $entityId for device: ${deviceManager.deviceId}")
@@ -113,6 +115,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         error = "Failed to generate binding code"
                     )
                 }
+            } catch (e: retrofit2.HttpException) {
+                Timber.e(e, "HTTP error generating binding code: ${e.code()}")
+                val errorMsg = if (e.code() == 403) {
+                    "Entity #${_uiState.value.selectedEntityId} requires premium (limit: 4)"
+                } else {
+                    "Server error: ${e.code()}"
+                }
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = errorMsg
+                )
             } catch (e: Exception) {
                 Timber.e(e, "Error generating binding code")
                 _uiState.value = _uiState.value.copy(
