@@ -70,6 +70,22 @@ io.on('connection', (socket) => {
 });
 
 // Middleware
+
+// Canonical domain redirect: www → non-www, old Railway domain → custom domain (portal only)
+const CANONICAL_HOST = 'eclawbot.com';
+app.use((req, res, next) => {
+    const host = req.hostname;
+    // Redirect www.eclawbot.com → eclawbot.com (all requests)
+    if (host === 'www.' + CANONICAL_HOST) {
+        return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+    }
+    // Redirect old Railway domain → custom domain (portal pages only, not API)
+    if (host === 'eclaw.up.railway.app' && req.path.startsWith('/portal')) {
+        return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+    }
+    next();
+});
+
 const cookieParser = require('cookie-parser');
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
