@@ -210,6 +210,38 @@
             margin: 4px 0 12px;
         }
 
+        /* ── Collapsible notification section ── */
+        .notif-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .notif-header:hover {
+            opacity: 0.8;
+        }
+
+        .expand-arrow {
+            transition: transform 0.2s;
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+
+        .expand-arrow.expanded {
+            transform: rotate(180deg);
+        }
+
+        .notif-content {
+            display: none;
+            margin-top: 12px;
+        }
+
+        .notif-content.visible {
+            display: block;
+        }
+
         /* ── Language chips ── */
         .language-chips {
             display: flex;
@@ -494,21 +526,26 @@
 
         <!-- Notifications Card -->
         <div class="card">
-            <div class="card-title">
-                <span>🔔 <span data-i18n="notif_settings_title">Notifications</span></span>
+            <div class="notif-header" onclick="toggleNotifSection()">
+                <div class="card-title" style="margin-bottom:0;">
+                    <span>🔔 <span data-i18n="notif_settings_title">Notifications</span></span>
+                </div>
+                <span class="expand-arrow" id="notifArrow">&#9662;</span>
             </div>
             <p class="section-desc" data-i18n="notif_settings_desc">Manage notification preferences</p>
 
-            <!-- Browser Push Toggle -->
-            <div class="setting-row">
-                <span class="setting-row-label" data-i18n="notif_push_enable">Enable browser notifications</span>
-                <button class="btn btn-sm" id="btnPushToggle" onclick="toggleWebPush()" style="min-width:80px;">
-                    ...
-                </button>
-            </div>
+            <div class="notif-content" id="notifContent">
+                <!-- Browser Push Toggle -->
+                <div class="setting-row">
+                    <span class="setting-row-label" data-i18n="notif_push_enable">Enable browser notifications</span>
+                    <button class="btn btn-sm" id="btnPushToggle" onclick="toggleWebPush()" style="min-width:80px;">
+                        ...
+                    </button>
+                </div>
 
-            <!-- Per-category toggles (loaded dynamically) -->
-            <div id="notifPrefsContainer"></div>
+                <!-- Per-category toggles (loaded dynamically) -->
+                <div id="notifPrefsContainer"></div>
+            </div>
         </div>
 
         <!-- Feedback Card -->
@@ -899,6 +936,13 @@
         // ============================================
         // Notification Preferences
         // ============================================
+        let isNotifExpanded = false;
+        function toggleNotifSection() {
+            isNotifExpanded = !isNotifExpanded;
+            document.getElementById('notifContent').classList.toggle('visible', isNotifExpanded);
+            document.getElementById('notifArrow').classList.toggle('expanded', isNotifExpanded);
+        }
+
         const NOTIF_PREF_CATEGORIES = [
             { key: 'bot_reply', i18n: 'notif_pref_bot_reply', label: 'Bot replies' },
             { key: 'broadcast', i18n: 'notif_pref_broadcast', label: 'Broadcasts' },
