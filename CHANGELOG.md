@@ -1,3 +1,11 @@
+# [1.19.0](https://github.com/HankHuang0516/realbot/compare/v1.18.0...v1.19.0) (2026-02-24)
+
+
+### Features
+
+* add E-Claw vs Telegram comparison infographic (SVG) ([7c72fee](https://github.com/HankHuang0516/realbot/commit/7c72fee0c13f3f57460d0b444b2f589168b8a6c1))
+* complete E-Claw vs Telegram comparison with all 12 categories ([e593a86](https://github.com/HankHuang0516/realbot/commit/e593a86fa26bad7161e2f332fd56a5f84642d566))
+
 # [1.18.0](https://github.com/HankHuang0516/realbot/compare/v1.17.0...v1.18.0) (2026-02-24)
 
 
