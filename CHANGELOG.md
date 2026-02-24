@@ -1,3 +1,10 @@
+## [1.16.2](https://github.com/HankHuang0516/realbot/compare/v1.16.1...v1.16.2) (2026-02-24)
+
+
+### Bug Fixes
+
+* auth redirect loop caused by /api/notifications/count returning 401 ([cb4d6a7](https://github.com/HankHuang0516/realbot/commit/cb4d6a7791ae25e19b685247766ee68acfc6701c))
+
 ## [1.16.1](https://github.com/HankHuang0516/realbot/compare/v1.16.0...v1.16.1) (2026-02-24)
 
 
