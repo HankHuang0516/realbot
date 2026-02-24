@@ -1099,14 +1099,7 @@ setInterval(() => {
 // ============================================
 
 app.get('/', (req, res) => {
-    const deviceCount = Object.keys(devices).length;
-    let boundCount = 0;
-    for (const deviceId in devices) {
-        for (let i = 0; i < MAX_ENTITIES_PER_DEVICE; i++) {
-            if (devices[deviceId].entities[i]?.isBound) boundCount++;
-        }
-    }
-    res.send(`Claw Backend Running! Devices: ${deviceCount}, Bound Entities: ${boundCount}`);
+    res.redirect('/portal/');
 });
 
 // Health check endpoint for Railway
