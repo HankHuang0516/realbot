@@ -115,6 +115,7 @@ const FREE_ENTITY_LIMIT = 4;
 // Helper: get the effective entity limit for a specific device
 function getDeviceEntityLimit(deviceId) {
     const device = devices[deviceId];
+    if (device && device.isTestDevice) return MAX_ENTITIES_PER_DEVICE;
     return (device && device.isPremium) ? MAX_ENTITIES_PER_DEVICE : FREE_ENTITY_LIMIT;
 }
 

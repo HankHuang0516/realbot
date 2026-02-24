@@ -4,10 +4,11 @@ import com.google.gson.annotations.SerializedName
 
 // Request to register device and get binding code
 data class RegisterRequest(
-    @SerializedName("entityId") val entityId: Int = 0, // 0-3
+    @SerializedName("entityId") val entityId: Int = 0, // 0-7
     @SerializedName("deviceId") val deviceId: String,
     @SerializedName("deviceSecret") val deviceSecret: String,
-    @SerializedName("appVersion") val appVersion: String? = null // e.g., "1.0.3"
+    @SerializedName("appVersion") val appVersion: String? = null, // e.g., "1.0.3"
+    @SerializedName("isTestDevice") val isTestDevice: Boolean = false
 )
 
 // Response from device registration
