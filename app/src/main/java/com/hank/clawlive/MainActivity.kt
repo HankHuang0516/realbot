@@ -1,10 +1,13 @@
 package com.hank.clawlive
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,8 +19,10 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -34,6 +39,7 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.EntityAvatarManager
+import com.hank.clawlive.fcm.ClawFcmService
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.model.EntityStatus
@@ -64,6 +70,13 @@ class MainActivity : AppCompatActivity() {
     }
     companion object {
         private const val API_BASE_URL = "https://eclaw.up.railway.app"
+    }
+
+    // Notification permission launcher (Android 13+)
+    private val notifPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        Timber.d("[FCM] POST_NOTIFICATIONS permission granted=$granted")
     }
 
     // UI elements
@@ -106,6 +119,16 @@ class MainActivity : AppCompatActivity() {
 
         // Connect Socket.IO for real-time updates
         com.hank.clawlive.data.remote.SocketManager.connect(this)
+
+        // FCM: Create notification channels + request permission (Android 13+)
+        ClawFcmService.createChannels(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         // Enable edge-to-edge display
         WindowCompat.setDecorFitsSystemWindows(window, false)

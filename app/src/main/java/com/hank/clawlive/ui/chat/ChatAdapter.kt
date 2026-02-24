@@ -173,9 +173,11 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 return
             }
             layoutLinkPreview.visibility = View.GONE // hide until loaded
+            val holder = this
             MainScope().launch {
                 val data = LinkPreviewHelper.fetch(url) ?: return@launch
-                if (bindingAdapterPosition == RecyclerView.NO_POSITION) return@launch
+                @Suppress("DEPRECATION")
+                if (holder.adapterPosition == RecyclerView.NO_POSITION) return@launch
                 tvLinkTitle.text = data.title
                 tvLinkDesc.text = data.description
                 tvLinkDesc.visibility = if (data.description.isNotEmpty()) View.VISIBLE else View.GONE
@@ -345,9 +347,11 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 return
             }
             layoutLinkPreview.visibility = View.GONE // hide until loaded
+            val holder = this
             MainScope().launch {
                 val data = LinkPreviewHelper.fetch(url) ?: return@launch
-                if (bindingAdapterPosition == RecyclerView.NO_POSITION) return@launch
+                @Suppress("DEPRECATION")
+                if (holder.adapterPosition == RecyclerView.NO_POSITION) return@launch
                 tvLinkTitle.text = data.title
                 tvLinkDesc.text = data.description
                 tvLinkDesc.visibility = if (data.description.isNotEmpty()) View.VISIBLE else View.GONE

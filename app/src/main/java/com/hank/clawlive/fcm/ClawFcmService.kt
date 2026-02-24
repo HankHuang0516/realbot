@@ -1,17 +1,5 @@
 package com.hank.clawlive.fcm
 
-// TODO: Uncomment entire file after enabling Firebase dependencies in build.gradle.kts
-// This file is prepared for FCM push notification support.
-// To enable:
-// 1. Create Firebase project at console.firebase.google.com
-// 2. Add Android app with package "com.hank.clawlive"
-// 3. Download google-services.json → place in app/ directory
-// 4. Uncomment googleServices plugin in app/build.gradle.kts
-// 5. Uncomment firebase-bom and firebase-messaging deps in app/build.gradle.kts
-// 6. Uncomment the code below
-// 7. Uncomment the <service> declaration in AndroidManifest.xml
-
-/*
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -111,4 +99,3 @@ class ClawFcmService : FirebaseMessagingService() {
         nm.notify(System.currentTimeMillis().toInt(), notif)
     }
 }
-*/
