@@ -203,6 +203,23 @@ Save to: `release_v{VERSION}/CHANGELOG.md`
 
 ---
 
+## 5.5. Update Web Portal Release Notes
+
+> [!IMPORTANT]
+> **Every release MUST update the web portal release notes page so users can see the latest changes.**
+
+### Files to update:
+1. **`backend/public/portal/release-notes.html`** — Add a new version card at the top of the release list
+2. **`backend/public/shared/i18n.js`** — Add i18n keys for the new version's features (all 8 languages)
+
+### Steps:
+1. Read the existing release notes page to understand the HTML structure
+2. Add a new version section at the top (move the `rn_badge_latest` badge to the new version)
+3. Add i18n keys following the pattern `rn_{VERSION_NO_DOTS}_{N}` (e.g., `rn_1110_1` for v1.11.0 feature 1)
+4. Translate feature descriptions into all 8 languages (en, zh, zh-CN, ja, ko, th, vi, id)
+
+---
+
 ## 6. Update Release History & Final Commit
 
 > [!CAUTION]
