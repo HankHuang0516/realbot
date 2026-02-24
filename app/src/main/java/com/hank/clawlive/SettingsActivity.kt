@@ -24,6 +24,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.hank.clawlive.billing.BillingManager
@@ -66,6 +67,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnSetWallpaper: MaterialButton
     private lateinit var btnDebugEntityLimit: MaterialButton
     private lateinit var topBar: LinearLayout
+    private lateinit var notifPrefsContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,6 +88,7 @@ class SettingsActivity : AppCompatActivity() {
         observeSubscriptionState()
         updateEntityCount()
         displayAppVersion()
+        loadNotificationPreferences()
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -139,6 +142,7 @@ class SettingsActivity : AppCompatActivity() {
         btnWebPortal = findViewById(R.id.btnWebPortal)
         btnAccountLogin = findViewById(R.id.btnAccountLogin)
         btnDebugEntityLimit = findViewById(R.id.btnDebugEntityLimit)
+        notifPrefsContainer = findViewById(R.id.notifPrefsContainer)
 
         // Show debug button only in debug builds
         if (BuildConfig.DEBUG) {
@@ -595,5 +599,118 @@ class SettingsActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    // ============================================
+    // NOTIFICATION PREFERENCES
+    // ============================================
+
+    private data class NotifPrefCategory(
+        val key: String,
+        val labelResId: Int
+    )
+
+    private val notifCategories = listOf(
+        NotifPrefCategory("bot_reply", R.string.notif_pref_bot_reply),
+        NotifPrefCategory("broadcast", R.string.notif_pref_broadcast),
+        NotifPrefCategory("speak_to", R.string.notif_pref_speak_to),
+        NotifPrefCategory("feedback_resolved", R.string.notif_pref_feedback),
+        NotifPrefCategory("todo_done", R.string.notif_pref_todo),
+        NotifPrefCategory("scheduled", R.string.notif_pref_scheduled)
+    )
+
+    private fun loadNotificationPreferences() {
+        // Show loading state
+        notifPrefsContainer.removeAllViews()
+        val loadingText = TextView(this).apply {
+            text = getString(R.string.notif_prefs_loading)
+            textSize = 13f
+            setTextColor(0x99FFFFFF.toInt())
+        }
+        notifPrefsContainer.addView(loadingText)
+
+        lifecycleScope.launch {
+            try {
+                val response = NetworkModule.api.getNotificationPreferences(
+                    deviceId = deviceManager.deviceId,
+                    deviceSecret = deviceManager.deviceSecret
+                )
+                if (response.success) {
+                    buildNotifPrefToggles(response.preferences)
+                } else {
+                    showNotifPrefsError()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load notification preferences")
+                showNotifPrefsError()
+            }
+        }
+    }
+
+    private fun buildNotifPrefToggles(prefs: Map<String, Boolean>) {
+        notifPrefsContainer.removeAllViews()
+
+        for (category in notifCategories) {
+            val enabled = prefs[category.key] ?: true
+
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.bottomMargin = dpToPx(4)
+                layoutParams = lp
+                setPadding(0, dpToPx(4), 0, dpToPx(4))
+            }
+
+            val label = TextView(this).apply {
+                text = getString(category.labelResId)
+                textSize = 14f
+                setTextColor(0xDDFFFFFF.toInt())
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+
+            val toggle = MaterialSwitch(this).apply {
+                isChecked = enabled
+                setOnCheckedChangeListener { _, isChecked ->
+                    updateNotifPref(category.key, isChecked)
+                }
+            }
+
+            row.addView(label)
+            row.addView(toggle)
+            notifPrefsContainer.addView(row)
+        }
+    }
+
+    private fun updateNotifPref(category: String, enabled: Boolean) {
+        lifecycleScope.launch {
+            try {
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "preferences" to mapOf(category to enabled)
+                )
+                val response = NetworkModule.api.updateNotificationPreferences(body)
+                if (!response.success) {
+                    Timber.w("Failed to update notification pref: ${response.message}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to update notification preference")
+                TelemetryHelper.trackError(e, mapOf("action" to "update_notif_pref", "category" to category))
+            }
+        }
+    }
+
+    private fun showNotifPrefsError() {
+        notifPrefsContainer.removeAllViews()
+        val errorText = TextView(this).apply {
+            text = getString(R.string.notif_prefs_error)
+            textSize = 13f
+            setTextColor(0x99FFFFFF.toInt())
+        }
+        notifPrefsContainer.addView(errorText)
     }
 }

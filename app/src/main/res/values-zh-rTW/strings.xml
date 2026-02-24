@@ -430,6 +430,18 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="schedule_executed">執行時間</string>
     <string name="schedule_push_ok">已推送至 Bot</string>
 
+    <!-- Notifications -->
+    <string name="notifications_title">通知</string>
+    <string name="notifications_desc">設定您想接收的通知類別。</string>
+    <string name="notif_pref_bot_reply">Bot 回覆</string>
+    <string name="notif_pref_broadcast">廣播訊息</string>
+    <string name="notif_pref_speak_to">實體對話</string>
+    <string name="notif_pref_feedback">意見回饋更新</string>
+    <string name="notif_pref_todo">TODO 完成</string>
+    <string name="notif_pref_scheduled">排程訊息</string>
+    <string name="notif_prefs_loading">載入偏好設定中…</string>
+    <string name="notif_prefs_error">載入通知偏好設定失敗</string>
+
     <!-- Navigation Bar -->
     <string name="nav_home">首頁</string>
     <string name="nav_mission">任務</string>

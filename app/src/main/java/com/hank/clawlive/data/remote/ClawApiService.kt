@@ -233,6 +233,42 @@ interface ClawApiService {
     suspend fun appLogin(@Body body: Map<String, String>): AppLoginResponse
 
     // ============================================
+    // NOTIFICATIONS
+    // ============================================
+
+    @GET("api/notifications")
+    suspend fun getNotifications(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String,
+        @Query("limit") limit: Int = 50,
+        @Query("offset") offset: Int = 0
+    ): NotificationsResponse
+
+    @GET("api/notifications/count")
+    suspend fun getUnreadNotificationCount(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
+    ): NotificationCountResponse
+
+    @POST("api/notifications/read")
+    suspend fun markNotificationRead(@Body body: Map<String, String>): ApiResponse
+
+    @POST("api/notifications/read-all")
+    suspend fun markAllNotificationsRead(@Body body: Map<String, String>): ApiResponse
+
+    @GET("api/notification-preferences")
+    suspend fun getNotificationPreferences(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
+    ): NotificationPreferencesResponse
+
+    @PUT("api/notification-preferences")
+    suspend fun updateNotificationPreferences(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
+    @POST("api/device/fcm-token")
+    suspend fun registerFcmToken(@Body body: Map<String, String>): ApiResponse
+
+    // ============================================
     // SCHEDULE
     // ============================================
 
@@ -398,5 +434,36 @@ data class AppLoginResponse(
     val deviceId: String? = null,
     val deviceSecret: String? = null,
     val email: String? = null,
+    val error: String? = null
+)
+
+// ============ Notification Response Models ============
+
+data class NotificationsResponse(
+    val success: Boolean,
+    val notifications: List<NotificationItem> = emptyList(),
+    val error: String? = null
+)
+
+data class NotificationItem(
+    val id: Int,
+    val type: String? = null,
+    val category: String? = null,
+    val title: String? = null,
+    val body: String? = null,
+    val link: String? = null,
+    val is_read: Boolean = false,
+    val created_at: Long = 0
+)
+
+data class NotificationCountResponse(
+    val success: Boolean,
+    val count: Int = 0,
+    val error: String? = null
+)
+
+data class NotificationPreferencesResponse(
+    val success: Boolean,
+    val preferences: Map<String, Boolean> = emptyMap(),
     val error: String? = null
 )

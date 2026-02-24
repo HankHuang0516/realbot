@@ -888,6 +888,8 @@
     <script src="shared/auth.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="shared/socket.js"></script>
     <script>
         // ── State ──
         let allMessages = [];
@@ -924,15 +926,28 @@
             renderNav('chat');
             const user = await checkAuth();
             if (!user) return;
+            initPortalSocket();
 
             updateUsageBadge();
             await loadBoundEntities();
             await loadMessages();
             isFirstLoad = false;
 
-            // Poll every 5 seconds
+            // Socket.IO real-time chat handler
+            window.onSocketChatMessage = function(msg) {
+                const exists = allMessages.some(m => m.id === msg.id);
+                if (!exists) {
+                    allMessages.push(msg);
+                    renderFilterChips();
+                    renderMessages(true);
+                }
+            };
+
+            // Poll every 5 seconds (fallback when socket disconnected)
             refreshInterval = setInterval(async () => {
-                await loadMessages();
+                if (!portalSocket || !portalSocket.connected) {
+                    await loadMessages();
+                }
                 await refreshUsage();
             }, 5000);
         });

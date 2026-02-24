@@ -16,6 +16,8 @@ billing = "7.0.0"
 room = "2.7.0"
 glide = "4.16.0"
 markwon = "4.6.2"
+firebaseBom = "33.7.0"
+googleServices = "4.4.2"
 
 [libraries]
 billing = { group = "com.android.billingclient", name = "billing-ktx", version.ref = "billing" }
@@ -47,6 +49,10 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 # Markwon Markdown Rendering
 markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
 
+# Firebase
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx" }
+
 # Glide Image Loading
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
@@ -55,3 +61,4 @@ glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", versi
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinKapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
