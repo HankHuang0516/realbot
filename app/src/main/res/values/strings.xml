@@ -438,6 +438,18 @@ If you have any questions, please contact us via our official email.
     <string name="schedule_executed">Executed</string>
     <string name="schedule_push_ok">Pushed to bot</string>
 
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_desc">Configure which notifications you want to receive.</string>
+    <string name="notif_pref_bot_reply">Bot Replies</string>
+    <string name="notif_pref_broadcast">Broadcasts</string>
+    <string name="notif_pref_speak_to">Entity Messages</string>
+    <string name="notif_pref_feedback">Feedback Updates</string>
+    <string name="notif_pref_todo">TODO Completed</string>
+    <string name="notif_pref_scheduled">Scheduled Messages</string>
+    <string name="notif_prefs_loading">Loading preferences…</string>
+    <string name="notif_prefs_error">Failed to load notification preferences</string>
+
     <!-- Navigation Bar -->
     <string name="nav_home">Home</string>
     <string name="nav_mission">Mission</string>

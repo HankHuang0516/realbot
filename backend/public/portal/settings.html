@@ -312,6 +312,23 @@
             </div>
         </div>
 
+        <!-- Notifications Card -->
+        <div class="card">
+            <div class="card-title" data-i18n="notif_settings_title">Notifications</div>
+            <p style="font-size:13px;color:var(--text-secondary);margin:4px 0 12px;" data-i18n="notif_settings_desc">Manage notification preferences</p>
+
+            <!-- Browser Push Toggle -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--card-border);">
+                <span style="font-size:14px;" data-i18n="notif_push_enable">Enable browser notifications</span>
+                <button class="btn btn-sm" id="btnPushToggle" onclick="toggleWebPush()" style="min-width:80px;">
+                    ...
+                </button>
+            </div>
+
+            <!-- Per-category toggles (loaded dynamically) -->
+            <div id="notifPrefsContainer" style="margin-top:8px;"></div>
+        </div>
+
         <!-- Feedback Card -->
         <div class="card" style="margin-bottom: 20px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -473,6 +490,8 @@
     <script src="../shared/telemetry.js"></script>
     <!-- i18n is now a class, need to wait for it before use -->
     <script src="../shared/i18n.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="shared/socket.js"></script>
 
     <script>
         let tappayReady = false;
@@ -492,10 +511,13 @@
 
             const user = await checkAuth();
             if (!user) return;
+            initPortalSocket();
 
             populateAccountInfo(user);
             await loadSubscriptionStatus();
             loadLanguagePreference();
+            loadNotifPreferences();
+            updatePushToggle();
 
             document.getElementById('pageContent').style.display = '';
             initTapPay();
@@ -784,6 +806,145 @@
             Object.entries(chips).forEach(([id, l]) => {
                 document.getElementById(id).classList.toggle('active', lang === l);
             });
+        }
+
+        // ============================================
+        // Notification Preferences
+        // ============================================
+
+        const NOTIF_PREF_CATEGORIES = [
+            { key: 'bot_reply', i18n: 'notif_pref_bot_reply', label: 'Bot replies' },
+            { key: 'broadcast', i18n: 'notif_pref_broadcast', label: 'Broadcasts' },
+            { key: 'speak_to', i18n: 'notif_pref_speak_to', label: 'Entity conversations' },
+            { key: 'feedback_resolved', i18n: 'notif_pref_feedback', label: 'Feedback updates' },
+            { key: 'feedback_reply', i18n: 'notif_pref_feedback', label: 'Feedback replies', hidden: true },
+            { key: 'todo_done', i18n: 'notif_pref_todo', label: 'TODO completion' },
+            { key: 'scheduled', i18n: 'notif_pref_scheduled', label: 'Scheduled messages' }
+        ];
+
+        async function loadNotifPreferences() {
+            const container = document.getElementById('notifPrefsContainer');
+            if (!container) return;
+
+            try {
+                const data = await apiCall('GET', '/api/notification-preferences');
+                const prefs = data.prefs || {};
+
+                container.innerHTML = '';
+                for (const cat of NOTIF_PREF_CATEGORIES) {
+                    if (cat.hidden) continue;
+                    const enabled = prefs[cat.key] !== false;
+                    const t = typeof i18n !== 'undefined' ? i18n.t(cat.i18n) : cat.label;
+
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(51,51,85,0.3);';
+                    row.innerHTML = `
+                        <span style="font-size:14px;">${t}</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleNotifPref('${cat.key}', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    `;
+                    container.appendChild(row);
+                }
+            } catch (e) {
+                container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Failed to load preferences</div>';
+            }
+        }
+
+        async function toggleNotifPref(key, enabled) {
+            try {
+                // Also toggle related hidden categories together
+                const prefs = {};
+                prefs[key] = enabled;
+                if (key === 'feedback_resolved') prefs['feedback_reply'] = enabled;
+
+                await apiCall('PUT', '/api/notification-preferences', { prefs });
+            } catch (e) {
+                showToast('Failed to update preference', 'error');
+            }
+        }
+
+        // Web Push toggle
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+        }
+
+        async function updatePushToggle() {
+            const btn = document.getElementById('btnPushToggle');
+            if (!btn) return;
+            const t = (key, fb) => typeof i18n !== 'undefined' ? i18n.t(key) : fb;
+
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                btn.textContent = 'Not supported';
+                btn.disabled = true;
+                return;
+            }
+
+            try {
+                const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+                if (reg) {
+                    const sub = await reg.pushManager.getSubscription();
+                    if (sub) {
+                        btn.textContent = t('notif_push_enabled', 'Enabled');
+                        btn.className = 'btn btn-sm btn-outline';
+                        btn.style.borderColor = 'var(--success)';
+                        btn.style.color = 'var(--success)';
+                        return;
+                    }
+                }
+            } catch (e) { /* fall through */ }
+
+            btn.textContent = t('notif_push_disabled', 'Disabled');
+            btn.className = 'btn btn-sm btn-primary';
+            btn.style.borderColor = '';
+            btn.style.color = '';
+        }
+
+        async function toggleWebPush() {
+            const btn = document.getElementById('btnPushToggle');
+            if (!btn) return;
+            btn.disabled = true;
+
+            try {
+                const reg = await navigator.serviceWorker.register('/sw.js');
+                const existing = await reg.pushManager.getSubscription();
+
+                if (existing) {
+                    // Unsubscribe
+                    await existing.unsubscribe();
+                    await apiCall('DELETE', '/api/push/unsubscribe', { endpoint: existing.endpoint });
+                    showToast(typeof i18n !== 'undefined' ? i18n.t('notif_push_disabled') : 'Push disabled', 'info');
+                } else {
+                    // Subscribe
+                    const vapidRes = await apiCall('GET', '/api/push/vapid-public-key');
+                    if (!vapidRes.publicKey) {
+                        showToast('Push not configured on server', 'error');
+                        return;
+                    }
+
+                    const permission = await Notification.requestPermission();
+                    if (permission !== 'granted') {
+                        showToast('Notification permission denied', 'error');
+                        return;
+                    }
+
+                    const sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(vapidRes.publicKey)
+                    });
+                    await apiCall('POST', '/api/push/subscribe', { subscription: sub.toJSON() });
+                    showToast(typeof i18n !== 'undefined' ? i18n.t('notif_push_enabled') : 'Push enabled', 'success');
+                }
+            } catch (e) {
+                showToast('Failed: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                updatePushToggle();
+            }
         }
 
         // ============================================

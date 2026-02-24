@@ -33,7 +33,9 @@
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
     "pg": "^8.18.0",
-    "resend": "^6.9.2"
+    "resend": "^6.9.2",
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",

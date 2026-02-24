@@ -104,6 +104,9 @@ class MainActivity : AppCompatActivity() {
         // Initialize telemetry (safe to call multiple times)
         TelemetryHelper.init(this)
 
+        // Connect Socket.IO for real-time updates
+        com.hank.clawlive.data.remote.SocketManager.connect(this)
+
         // Enable edge-to-edge display
         WindowCompat.setDecorFitsSystemWindows(window, false)
 

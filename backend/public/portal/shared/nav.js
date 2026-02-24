@@ -46,6 +46,22 @@ function renderNav(activePage) {
             `).join('')}
         </div>
         <div class="nav-user" id="navUser">
+            <div class="notif-bell" id="notifBell" onclick="toggleNotifDropdown(event)" title="${t('notif_title', 'Notifications')}">
+                <svg class="bell-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+            </div>
+            <div class="notif-dropdown" id="notifDropdown" style="display:none;">
+                <div class="notif-header">
+                    <span data-i18n="notif_title">${t('notif_title', 'Notifications')}</span>
+                    <button class="notif-mark-all" onclick="markAllNotifsRead()" data-i18n="notif_mark_all">${t('notif_mark_all', 'Mark all read')}</button>
+                </div>
+                <div class="notif-list" id="notifList">
+                    <div class="notif-empty" data-i18n="notif_empty">${t('notif_empty', 'No notifications')}</div>
+                </div>
+            </div>
             <span class="email" id="navEmail"></span>
             <button class="btn btn-outline btn-sm" onclick="doLogout()" data-i18n="nav_logout">${t('nav_logout', 'Logout')}</button>
         </div>
@@ -77,6 +93,8 @@ async function logout() {
     try {
         await apiCall('POST', '/api/auth/logout');
     } catch (e) { }
+    // Disconnect socket before leaving
+    if (typeof portalSocket !== 'undefined' && portalSocket) portalSocket.disconnect();
     window.location.href = 'index.html';
 }
 

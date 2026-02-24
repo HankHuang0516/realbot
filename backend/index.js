@@ -1,21 +1,73 @@
-// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5.3)
+// Claw Live Wallpaper Backend - Multi-Device Multi-Entity Support (v5.4)
 // Each device has its own 4 entity slots (matrix architecture)
-// v5.2 Changes (PostgreSQL):
-//   - Bug #1 Fix: Added validation to prevent crashes from malformed requests
-//   - Bug #2 Fix: Implemented PostgreSQL data persistence (fallback to file storage)
+// v5.4 Changes: Notification system + Socket.IO real-time
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { Server: SocketIO } = require('socket.io');
 const db = require('./db');
 const flickr = require('./flickr');
 const gatekeeper = require('./gatekeeper');
 const telemetry = require('./device-telemetry');
 const feedbackModule = require('./device-feedback');
 const scheduler = require('./scheduler');
+const notifModule = require('./notifications');
 const multer = require('multer');
 const app = express();
+const httpServer = http.createServer(app);
 const port = process.env.PORT || 3000;
+
+// ============================================
+// SOCKET.IO SERVER
+// ============================================
+const io = new SocketIO(httpServer, {
+    cors: { origin: true, credentials: true },
+    path: '/socket.io',
+    allowEIO3: true, // backward compat with Android socket.io-client v2.1.0
+    pingTimeout: 60000,
+    pingInterval: 25000
+});
+
+// Socket.IO auth middleware
+io.use((socket, next) => {
+    // v4 clients use handshake.auth, v2 clients use handshake.query
+    const deviceId = socket.handshake.auth?.deviceId || socket.handshake.query?.deviceId;
+    const deviceSecret = socket.handshake.auth?.deviceSecret || socket.handshake.query?.deviceSecret;
+    if (deviceId && deviceSecret) {
+        const device = devices[deviceId];
+        if (device && device.deviceSecret === deviceSecret) {
+            socket.deviceId = deviceId;
+            return next();
+        }
+    }
+    // JWT cookie path for web portal
+    const cookies = socket.handshake.headers.cookie;
+    if (cookies) {
+        const jwt = require('jsonwebtoken');
+        const tokenMatch = cookies.match(/token=([^;]+)/);
+        if (tokenMatch) {
+            try {
+                const decoded = jwt.verify(tokenMatch[1], process.env.JWT_SECRET || 'dev-secret');
+                socket.deviceId = decoded.deviceId;
+                socket.userId = decoded.userId;
+                return next();
+            } catch (e) { /* fall through */ }
+        }
+    }
+    next(new Error('Authentication failed'));
+});
+
+io.on('connection', (socket) => {
+    const deviceId = socket.deviceId;
+    socket.join(`device:${deviceId}`);
+    console.log(`[Socket.IO] Connected: device ${deviceId} (${io.engine.clientsCount} total)`);
+
+    socket.on('disconnect', () => {
+        console.log(`[Socket.IO] Disconnected: device ${deviceId}`);
+    });
+});
 
 // Middleware
 const cookieParser = require('cookie-parser');
@@ -413,6 +465,8 @@ document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(mdC
 const missionModule = require('./mission')(devices);
 app.use('/api/mission', missionModule.router);
 missionModule.initMissionDatabase();
+// Wire notification callback (notifyDevice defined later, uses closure)
+missionModule.setNotifyCallback((deviceId, notif) => notifyDevice(deviceId, notif));
 
 // ============================================
 // USER AUTHENTICATION (PostgreSQL)
@@ -1590,6 +1644,27 @@ app.post('/api/transform', (req, res) => {
     console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${finalMessage || entity.message}"`);
     serverLog('info', 'transform', `${state || entity.state}: ${(finalMessage || entity.message || '').slice(0, 100)}`, { deviceId, entityId: eId, metadata: { state: state || entity.state } });
 
+    // Emit entity:update via Socket.IO for real-time wallpaper/dashboard refresh
+    if (io) {
+        io.to(`device:${deviceId}`).emit('entity:update', {
+            deviceId, entityId: eId,
+            name: entity.name, character: entity.character,
+            state: entity.state, message: entity.message,
+            parts: entity.parts, lastUpdated: entity.lastUpdated
+        });
+    }
+
+    // Notify device about bot reply (fire-and-forget)
+    if (finalMessage) {
+        notifyDevice(deviceId, {
+            type: 'chat', category: 'bot_reply',
+            title: entity.name || `Entity ${eId}`,
+            body: (finalMessage || '').slice(0, 100),
+            link: 'chat.html',
+            metadata: { entityId: eId, character: entity.character }
+        }).catch(() => {});
+    }
+
     res.json({
         success: true,
         deviceId: deviceId,
@@ -2323,6 +2398,15 @@ app.post('/api/entity/speak-to', async (req, res) => {
     const chatMsgId = await saveChatMessage(deviceId, fromId, speakToText, `${sourceLabel}->${toId}`, false, true, mediaType || null, mediaUrl || null);
     markMessagesAsRead(deviceId, toId);
 
+    // Notify device about speak-to (fire-and-forget)
+    notifyDevice(deviceId, {
+        type: 'chat', category: 'speak_to',
+        title: `${fromEntity.name || `Entity ${fromId}`} → ${toEntity.name || `Entity ${toId}`}`,
+        body: (speakToText || '').slice(0, 100),
+        link: 'chat.html',
+        metadata: { fromEntityId: fromId, toEntityId: toId }
+    }).catch(() => {});
+
     console.log(`[Entity] Device ${deviceId} Entity ${fromId} -> Entity ${toId}: "${speakToText}" (b2b remaining: ${b2bRemaining})`);
 
     // Update entity.message so Android app can display it
@@ -2507,6 +2591,15 @@ app.post('/api/entity/broadcast', async (req, res) => {
 
     // Save ONE chat message for the broadcast (sender's perspective, all targets)
     const broadcastChatMsgId = await saveChatMessage(deviceId, fromId, broadcastText, `${sourceLabel}->${targetIds.join(',')}`, false, true, mediaType || null, mediaUrl || null);
+
+    // Notify device about broadcast (fire-and-forget)
+    notifyDevice(deviceId, {
+        type: 'chat', category: 'broadcast',
+        title: `${fromEntity.name || `Entity ${fromId}`}`,
+        body: (broadcastText || '').slice(0, 100),
+        link: 'chat.html',
+        metadata: { fromEntityId: fromId, targets: targetIds }
+    }).catch(() => {});
 
     // Queue messages synchronously, then fire-and-forget webhook pushes
     const results = targetIds.map((toId) => {
@@ -4596,6 +4689,29 @@ app.patch('/api/feedback/:id', async (req, res) => {
     let photosDeleted = 0;
     if (updated && (status === 'resolved' || status === 'closed')) {
         photosDeleted = await feedbackModule.deleteFeedbackPhotos(chatPool, fb.id);
+
+        // Notify the feedback author about resolution
+        if (fb.device_id) {
+            notifyDevice(fb.device_id, {
+                type: 'feedback',
+                category: status === 'resolved' ? 'feedback_resolved' : 'feedback_resolved',
+                title: status === 'resolved' ? 'Feedback Resolved' : 'Feedback Closed',
+                body: `Your feedback #${fb.id} has been ${status}`,
+                link: 'feedback.html',
+                metadata: { feedbackId: fb.id, status }
+            }).catch(() => {});
+        }
+    }
+
+    // Notify about admin reply (resolution text added)
+    if (updated && resolution && fb.device_id) {
+        notifyDevice(fb.device_id, {
+            type: 'feedback', category: 'feedback_reply',
+            title: 'Feedback Reply',
+            body: (resolution || '').slice(0, 100),
+            link: 'feedback.html',
+            metadata: { feedbackId: fb.id }
+        }).catch(() => {});
     }
 
     res.json({ success: updated, message: updated ? "Updated" : "No changes", photosDeleted });
@@ -4731,6 +4847,7 @@ _telemetryPool = chatPool;
 telemetry.initTelemetryTable(chatPool);
 feedbackModule.initFeedbackTable(chatPool);
 feedbackModule.initFeedbackPhotosTable(chatPool);
+notifModule.initNotificationTables(chatPool);
 
 // Auto-migrate: add delivery tracking + media columns
 chatPool.query(`
@@ -4741,6 +4858,285 @@ chatPool.query(`
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS schedule_id INT DEFAULT NULL;
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS schedule_label TEXT DEFAULT NULL;
 `).catch(() => {});
+
+// ============================================
+// NOTIFICATION SYSTEM - Central dispatcher
+// ============================================
+
+/**
+ * Central notification dispatcher.
+ * Saves to DB, emits via Socket.IO, and (future) sends Web Push / FCM.
+ * @param {string} deviceId
+ * @param {object} notification - { type, category, title, body, link?, metadata? }
+ */
+async function notifyDevice(deviceId, notification) {
+    try {
+        // Check user preferences — skip if category disabled
+        const prefs = await notifModule.getPrefs(deviceId);
+        if (!notifModule.isCategoryEnabled(prefs, notification.category)) return;
+
+        // Save to DB
+        const notif = await notifModule.saveNotification(deviceId, notification);
+        if (!notif) return;
+
+        // Emit via Socket.IO
+        io.to(`device:${deviceId}`).emit('notification', {
+            id: notif.id,
+            type: notif.type,
+            category: notif.category,
+            title: notif.title,
+            body: notif.body,
+            link: notif.link,
+            metadata: typeof notif.metadata === 'string' ? JSON.parse(notif.metadata) : notif.metadata,
+            isRead: false,
+            createdAt: notif.created_at
+        });
+
+        // Web Push (Phase 3 — enabled when VAPID keys are configured)
+        if (typeof sendWebPush === 'function') {
+            sendWebPush(deviceId, notif).catch(() => {});
+        }
+
+        // FCM (Phase 5 — enabled when firebase-admin is configured)
+        if (typeof sendFcm === 'function') {
+            sendFcm(deviceId, notif).catch(() => {});
+        }
+    } catch (err) {
+        console.warn('[Notify] Failed:', err.message);
+    }
+}
+
+// ---- Notification REST API ----
+
+// Authenticate device by deviceId+deviceSecret or JWT cookie
+function authDevice(req) {
+    const deviceId = req.query.deviceId || req.body.deviceId;
+    const deviceSecret = req.query.deviceSecret || req.body.deviceSecret;
+    if (deviceId && deviceSecret) {
+        const device = devices[deviceId];
+        if (device && device.deviceSecret === deviceSecret) return deviceId;
+    }
+    // Fallback: JWT cookie (web portal)
+    if (req.user && req.user.deviceId) return req.user.deviceId;
+    return null;
+}
+
+app.get('/api/notifications', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const offset = parseInt(req.query.offset) || 0;
+    const unreadOnly = req.query.unreadOnly === 'true';
+
+    const notifications = await notifModule.getNotifications(deviceId, { limit, offset, unreadOnly });
+    res.json({ success: true, notifications });
+});
+
+app.get('/api/notifications/count', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const count = await notifModule.getUnreadCount(deviceId);
+    res.json({ success: true, count });
+});
+
+app.post('/api/notifications/read', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { id } = req.body;
+    if (!id) return res.status(400).json({ success: false, error: 'id required' });
+
+    await notifModule.markRead(deviceId, id);
+    res.json({ success: true });
+});
+
+app.post('/api/notifications/read-all', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    await notifModule.markAllRead(deviceId);
+    res.json({ success: true });
+});
+
+app.get('/api/notification-preferences', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const prefs = await notifModule.getPrefs(deviceId);
+    res.json({ success: true, prefs, defaults: notifModule.DEFAULT_PREFS });
+});
+
+app.put('/api/notification-preferences', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { prefs } = req.body;
+    if (!prefs || typeof prefs !== 'object') {
+        return res.status(400).json({ success: false, error: 'prefs object required' });
+    }
+
+    await notifModule.updatePrefs(deviceId, prefs);
+    const updated = await notifModule.getPrefs(deviceId);
+    res.json({ success: true, prefs: updated });
+});
+
+// Prune old notifications daily
+setInterval(() => notifModule.pruneOldNotifications(), 24 * 60 * 60 * 1000);
+
+// ============================================
+// WEB PUSH NOTIFICATIONS (VAPID)
+// ============================================
+const webpush = require('web-push');
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT || 'mailto:admin@eclaw.up.railway.app',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+    console.log('[WebPush] VAPID configured');
+}
+
+// Serve service worker at root scope
+app.get('/sw.js', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/sw.js'));
+});
+
+app.get('/api/push/vapid-public-key', (req, res) => {
+    if (!process.env.VAPID_PUBLIC_KEY) {
+        return res.status(503).json({ success: false, error: 'Web Push not configured' });
+    }
+    res.json({ success: true, publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push/subscribe', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { subscription } = req.body;
+    if (!subscription || !subscription.endpoint || !subscription.keys) {
+        return res.status(400).json({ success: false, error: 'subscription with endpoint and keys required' });
+    }
+
+    const ok = await notifModule.savePushSubscription(deviceId, subscription, req.headers['user-agent']);
+    res.json({ success: ok });
+});
+
+app.delete('/api/push/unsubscribe', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { endpoint } = req.body;
+    if (!endpoint) return res.status(400).json({ success: false, error: 'endpoint required' });
+
+    await notifModule.removePushSubscription(endpoint);
+    res.json({ success: true });
+});
+
+// Send Web Push to all subscriptions for a device
+async function sendWebPush(deviceId, notif) {
+    if (!process.env.VAPID_PUBLIC_KEY) return;
+    try {
+        const subs = await notifModule.getPushSubscriptions(deviceId);
+        for (const sub of subs) {
+            try {
+                await webpush.sendNotification(
+                    { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+                    JSON.stringify({
+                        title: notif.title,
+                        body: notif.body,
+                        link: notif.link,
+                        category: notif.category
+                    })
+                );
+            } catch (e) {
+                if (e.statusCode === 410 || e.statusCode === 404) {
+                    await notifModule.removePushSubscription(sub.endpoint);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[WebPush] Send failed:', err.message);
+    }
+}
+
+// ============================================
+// FCM PUSH NOTIFICATIONS (Firebase Admin SDK)
+// ============================================
+
+// FCM token registration endpoint
+app.post('/api/device/fcm-token', (req, res) => {
+    const { deviceId, deviceSecret, fcmToken } = req.body;
+    if (!deviceId || !deviceSecret || !fcmToken) {
+        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, fcmToken required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // Store in memory (persisted to DB via auto-save)
+    device.fcmToken = fcmToken;
+
+    // Also store in DB immediately
+    chatPool.query(
+        'ALTER TABLE devices ADD COLUMN IF NOT EXISTS fcm_token TEXT'
+    ).catch(() => {});
+    chatPool.query(
+        'UPDATE devices SET fcm_token = $1 WHERE device_id = $2',
+        [fcmToken, deviceId]
+    ).catch(() => {});
+
+    console.log(`[FCM] Token registered for device ${deviceId}`);
+    res.json({ success: true });
+});
+
+// Send FCM push notification (enabled when FIREBASE_SERVICE_ACCOUNT is set)
+let firebaseAdmin = null;
+try {
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+        firebaseAdmin = require('firebase-admin');
+        firebaseAdmin.initializeApp({
+            credential: firebaseAdmin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+        });
+        console.log('[FCM] Firebase Admin initialized');
+    }
+} catch (e) {
+    console.warn('[FCM] Firebase Admin init skipped:', e.message);
+}
+
+async function sendFcm(deviceId, notif) {
+    if (!firebaseAdmin) return;
+    try {
+        const device = devices[deviceId];
+        const token = device?.fcmToken;
+        if (!token) return;
+
+        await firebaseAdmin.messaging().send({
+            token,
+            data: {
+                title: notif.title || '',
+                body: notif.body || '',
+                category: notif.category || '',
+                link: notif.link || ''
+            },
+            android: {
+                priority: 'high',
+                notification: {
+                    channelId: 'eclaw_chat',
+                    sound: 'default'
+                }
+            }
+        });
+    } catch (e) {
+        if (e.code === 'messaging/registration-token-not-registered') {
+            delete devices[deviceId]?.fcmToken;
+            chatPool.query('UPDATE devices SET fcm_token = NULL WHERE device_id = $1', [deviceId]).catch(() => {});
+        }
+        console.warn('[FCM] Send failed:', e.message);
+    }
+}
 
 // ============================================
 // SCHEDULER - Scheduled message delivery
@@ -4768,6 +5164,15 @@ async function executeScheduledMessage(schedule) {
     if (!entity.messageQueue) entity.messageQueue = [];
     entity.messageQueue.push(messageObj);
     saveChatMessage(deviceId, entityId, message, 'scheduled', true, false, null, null, schedule.id, schedule.label || null);
+
+    // Notify device about scheduled message delivery
+    notifyDevice(deviceId, {
+        type: 'chat', category: 'scheduled',
+        title: schedule.label || 'Scheduled Message',
+        body: (message || '').slice(0, 100),
+        link: 'chat.html',
+        metadata: { entityId, scheduleId: schedule.id, label: schedule.label }
+    }).catch(() => {});
 
     console.log(`[Scheduler] Sent to device ${deviceId} entity ${entityId}: "${message}"`);
 
@@ -5057,7 +5462,24 @@ async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isF
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
             [deviceId, entityId, text, source, isFromUser || false, isFromBot || false, mediaType, mediaUrl, scheduleId, scheduleLabel]
         );
-        return result.rows[0]?.id || null;
+        const msgId = result.rows[0]?.id || null;
+
+        // Emit via Socket.IO for real-time chat updates
+        if (msgId && io) {
+            io.to(`device:${deviceId}`).emit('chat:message', {
+                id: msgId,
+                device_id: deviceId,
+                entity_id: entityId,
+                text, source,
+                is_from_user: isFromUser || false,
+                is_from_bot: isFromBot || false,
+                media_type: mediaType,
+                media_url: mediaUrl,
+                created_at: Date.now()
+            });
+        }
+
+        return msgId;
     } catch (err) {
         // Silently fail - chat history is non-critical
         if (!err.message.includes('does not exist')) {
@@ -5746,8 +6168,8 @@ app.delete('/api/bot/file', async (req, res) => {
 });
 
 if (require.main === module) {
-    app.listen(port, '0.0.0.0', async () => {
-        console.log(`Claw Backend v5.3 (PostgreSQL + Auth + Portal) running on port ${port}`);
+    httpServer.listen(port, '0.0.0.0', async () => {
+        console.log(`Claw Backend v5.4 (Socket.IO + Notifications) running on port ${port}`);
         console.log(`Max entities per device: ${MAX_ENTITIES_PER_DEVICE}`);
         console.log(`Persistence: ${usePostgreSQL ? 'PostgreSQL' : 'File Storage (Fallback)'}`);
 
@@ -5862,3 +6284,5 @@ app.get('/api/bot/pending-messages', (req, res) => {
 
 // Export app for testing (Jest + Supertest)
 module.exports = app;
+module.exports.httpServer = httpServer;
+module.exports.io = io;

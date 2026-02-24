@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
     id("kotlin-kapt")
+    // TODO: Uncomment after placing google-services.json in app/ directory:
+    // alias(libs.plugins.googleServices)
 }
 
 android {
@@ -97,6 +99,14 @@ dependencies {
     // Glide for image loading (chat photos)
     implementation(libs.glide)
     kapt(libs.glide.compiler)
+
+    // Socket.IO for real-time notifications
+    implementation(libs.socket.io.client)
+
+    // Firebase Cloud Messaging (FCM) for push notifications
+    // TODO: Uncomment after enabling googleServices plugin:
+    // implementation(platform(libs.firebase.bom))
+    // implementation(libs.firebase.messaging)
 
     // Unit test dependencies
     testImplementation("junit:junit:4.13.2")

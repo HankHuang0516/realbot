@@ -478,6 +478,8 @@
     <script src="shared/auth.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="shared/socket.js"></script>
     <script>
         // --- Constants ---
         const ENTITY_CHARS = {
@@ -503,6 +505,7 @@
             renderNav('files');
             const user = await checkAuth();
             if (!user) return;
+            initPortalSocket();
 
             // Restore view mode
             setViewMode(currentViewMode, true);

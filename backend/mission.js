@@ -983,6 +983,18 @@ module.exports = function(devices) {
             await client.query('COMMIT');
 
             console.log(`[Mission] TODO marked done: "${item.title}" (from ${fromList}) by bot, device ${deviceId}`);
+
+            // Notify device about TODO completion
+            if (_notifyCallback) {
+                _notifyCallback(deviceId, {
+                    type: 'todo', category: 'todo_done',
+                    title: 'TODO Completed',
+                    body: item.title || 'A task was completed',
+                    link: 'mission.html',
+                    metadata: { itemTitle: item.title, fromList }
+                }).catch(() => {});
+            }
+
             res.json({
                 success: true,
                 message: `TODO "${item.title}" marked as done`,
@@ -1730,5 +1742,9 @@ module.exports = function(devices) {
         }
     });
 
-    return { router, initMissionDatabase };
+    // Notification callback (set from index.js)
+    let _notifyCallback = null;
+    function setNotifyCallback(fn) { _notifyCallback = fn; }
+
+    return { router, initMissionDatabase, setNotifyCallback };
 };
