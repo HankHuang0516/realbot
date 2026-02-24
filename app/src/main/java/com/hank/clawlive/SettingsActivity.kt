@@ -662,7 +662,7 @@ class SettingsActivity : AppCompatActivity() {
                     deviceSecret = deviceManager.deviceSecret
                 )
                 if (response.success) {
-                    buildNotifPrefToggles(response.preferences)
+                    buildNotifPrefToggles(response.prefs)
                 } else {
                     showNotifPrefsError()
                 }
@@ -717,7 +717,7 @@ class SettingsActivity : AppCompatActivity() {
                 val body = mapOf<String, Any>(
                     "deviceId" to deviceManager.deviceId,
                     "deviceSecret" to deviceManager.deviceSecret,
-                    "preferences" to mapOf(category to enabled)
+                    "prefs" to mapOf(category to enabled)
                 )
                 val response = NetworkModule.api.updateNotificationPreferences(body)
                 if (!response.success) {
