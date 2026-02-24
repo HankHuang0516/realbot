@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/HankHuang0516/realbot/compare/v1.16.2...v1.17.0) (2026-02-24)
+
+
+### Features
+
+* unified Info Hub with embedded User Guide, FAQ, Release Notes & Compare ([020ee67](https://github.com/HankHuang0516/realbot/commit/020ee6761c42a2e0f16599fac267b57e13935260)), closes [info.html#section](https://github.com/info.html/issues/section)
+
 ## [1.16.2](https://github.com/HankHuang0516/realbot/compare/v1.16.1...v1.16.2) (2026-02-24)
 
 
