@@ -29,6 +29,9 @@ playwright-report/
 test-results/
 release_v*
 
+# Firebase
+app/google-services.json
+
 # Signing keys & secrets
 *.jks
 keystore.properties
