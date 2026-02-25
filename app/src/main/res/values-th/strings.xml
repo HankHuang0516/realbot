@@ -210,7 +210,7 @@
     <string name="borrow_beta_label">เบต้า</string>
     <string name="free_version">เวอร์ชันฟรี</string>
     <string name="free_version_model">โมเดล: MiniMax 2.1</string>
-    <string name="free_version_desc">หน่วยความจำร่วม ใช้ร่วมกับผู้ใช้ฟรีทั้งหมด\nจำกัด 15 ข้อความ/วัน</string>
+    <string name="free_version_desc">หน่วยความจำร่วม ใช้ร่วมกับผู้ใช้ฟรีทั้งหมด\nจำกัด 15 ข้อความ/วัน (เฉพาะบอทฟรี)</string>
     <string name="free_version_warning">ไม่แนะนำสำหรับข้อมูลที่มีความละเอียดอ่อน</string>
     <string name="use_free_version">ใช้เวอร์ชันฟรี</string>
     <string name="monthly_version">แพ็กเกจรายเดือน</string>
@@ -319,7 +319,7 @@
     <string name="delete">ลบ</string>
     <string name="last_synced_format"> | ซิงค์ล่าสุด: %s</string>
     <string name="usage_limit_title">ถึงขีดจำกัดรายวันแล้ว</string>
-    <string name="usage_limit_message">คุณใช้ข้อความครบ 15 ข้อความต่อวันแล้ว\n\nอัปเกรดเป็นพรีเมียมเพื่อส่งข้อความไม่จำกัด!</string>
+    <string name="usage_limit_message">คุณใช้ข้อความครบ 15 ข้อความต่อวันของบอทฟรีแล้ว\n\nบอทของคุณเองไม่มีข้อจำกัด!</string>
     <string name="usage_limit_upgrade">อัปเกรด</string>
     <string name="file_manager_title">ไฟล์</string>
     <string name="file_filter_photos">รูปภาพ</string>

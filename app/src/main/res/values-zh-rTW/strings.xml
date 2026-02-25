@@ -279,7 +279,7 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="borrow_beta_label">BETA</string>
     <string name="free_version">免費版</string>
     <string name="free_version_model">Model: MiniMax 2.1</string>
-    <string name="free_version_desc">共用記憶，與所有免費版用戶共享\n每日 15 則訊息限制</string>
+    <string name="free_version_desc">共用記憶，與所有免費版用戶共享\n每日 15 則訊息限制（僅限免費機器人）</string>
     <string name="free_version_warning">敏感資訊不建議與實體分享</string>
     <string name="use_free_version">使用免費版</string>
     <string name="monthly_version">月租版</string>
@@ -360,7 +360,7 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
 
     <!-- Usage Limit -->
     <string name="usage_limit_title">已達每日上限</string>
-    <string name="usage_limit_message">您今日已達 15 則訊息的免費上限。\n\n升級尊爵會員即可享有無限發送！</string>
+    <string name="usage_limit_message">您今日已達免費機器人 15 則訊息的上限。\n\n自己的機器人沒有此限制！</string>
     <string name="usage_limit_upgrade">立即升級</string>
 
     <!-- File Manager -->

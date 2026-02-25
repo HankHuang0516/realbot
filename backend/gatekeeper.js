@@ -488,7 +488,7 @@ function getFreeBotTOS(lang = 'en') {
                 heading: '1. Service Description',
                 items: [
                     'The Free Bot is a shared AI assistant service provided by E-Claw. Each device is limited to one free bot binding.',
-                    'The Free Bot shares memory with all free users and has a daily limit of 15 messages.'
+                    'The Free Bot shares memory with all free users and has a daily limit of 15 messages. This limit applies only to free bots; your own bots have no message limit.'
                 ]
             },
             {

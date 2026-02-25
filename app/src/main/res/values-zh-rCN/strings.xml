@@ -210,7 +210,7 @@
     <string name="borrow_beta_label">测试版</string>
     <string name="free_version">免费版</string>
     <string name="free_version_model">模型：MiniMax 2.1</string>
-    <string name="free_version_desc">共享记忆，与所有免费用户共享\n每日 15 条消息限制</string>
+    <string name="free_version_desc">共享记忆，与所有免费用户共享\n每日 15 条消息限制（仅限免费机器人）</string>
     <string name="free_version_warning">不建议发送敏感信息</string>
     <string name="use_free_version">使用免费版</string>
     <string name="monthly_version">包月版</string>
@@ -319,7 +319,7 @@ E-claw 团队深知隐私对您的重要性。我们在此郑重声明：<b>我�
     <string name="delete">删除</string>
     <string name="last_synced_format"> | 上次同步：%s</string>
     <string name="usage_limit_title">已达每日上限</string>
-    <string name="usage_limit_message">您已达到每日 15 条消息的上限。\n\n升级到高级版即可无限发消息！</string>
+    <string name="usage_limit_message">您已达到免费机器人每日 15 条消息的上限。\n\n自己的机器人没有此限制！</string>
     <string name="usage_limit_upgrade">升级</string>
     <string name="file_manager_title">文件</string>
     <string name="file_filter_photos">照片</string>
