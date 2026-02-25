@@ -479,7 +479,7 @@ document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(mdC
 // ============================================
 // MISSION CONTROL DASHBOARD (PostgreSQL)
 // ============================================
-const missionModule = require('./mission')(devices);
+const missionModule = require('./mission')(devices, { awardEntityXP });
 app.use('/api/mission', missionModule.router);
 missionModule.initMissionDatabase();
 // Wire notification callback (notifyDevice defined later, uses closure)
@@ -948,8 +948,59 @@ function createDefaultEntity(entityId) {
         lastUpdated: Date.now(),
         messageQueue: [],
         webhook: null,
-        appVersion: null // Device app version (e.g., "1.0.3")
+        appVersion: null, // Device app version (e.g., "1.0.3")
+        xp: 0,
+        level: 1
     };
+}
+
+// ============================================
+// XP / LEVEL SYSTEM
+// ============================================
+const XP_PER_PRIORITY = { LOW: 10, MEDIUM: 25, HIGH: 50, CRITICAL: 100 };
+
+function xpForLevel(level) {
+    return Math.pow(level - 1, 2) * 100;
+}
+
+function calculateLevel(xp) {
+    return Math.floor(Math.sqrt(xp / 100)) + 1;
+}
+
+function getXpProgress(xp) {
+    const level = calculateLevel(xp);
+    const currentThreshold = xpForLevel(level);
+    const nextThreshold = xpForLevel(level + 1);
+    return {
+        level,
+        xp,
+        currentLevelXp: xp - currentThreshold,
+        nextLevelXp: nextThreshold - currentThreshold,
+        progress: (xp - currentThreshold) / (nextThreshold - currentThreshold)
+    };
+}
+
+/**
+ * Award XP to an entity. Recalculates level.
+ * Returns { xp, level, leveledUp } or null if entity not found/not bound.
+ */
+function awardEntityXP(deviceId, entityId, amount, reason) {
+    const device = devices[deviceId];
+    if (!device) return null;
+    const entity = device.entities[entityId];
+    if (!entity || !entity.isBound) return null;
+
+    const oldLevel = entity.level || 1;
+    entity.xp = (entity.xp || 0) + amount;
+    entity.level = calculateLevel(entity.xp);
+
+    const leveledUp = entity.level > oldLevel;
+
+    console.log(`[XP] Device ${deviceId} Entity ${entityId}: +${amount} XP (${reason}), total: ${entity.xp}, level: ${entity.level}${leveledUp ? ' LEVEL UP!' : ''}`);
+
+    saveData();
+
+    return { xp: entity.xp, level: entity.level, leveledUp };
 }
 
 // Helper: Get version info for responses
@@ -1363,6 +1414,8 @@ app.post('/api/device/status', (req, res) => {
         parts: entity.parts,
         lastUpdated: entity.lastUpdated,
         isBound: entity.isBound,
+        xp: entity.xp || 0,
+        level: entity.level || 1,
         versionInfo: getVersionInfo(appVersion || entity.appVersion)
     });
 });
@@ -1477,7 +1530,9 @@ app.get('/api/entities', (req, res) => {
                     message: entity.message,
                     parts: entity.parts,
                     lastUpdated: entity.lastUpdated,
-                    isBound: true  // Always true since we only return bound entities
+                    isBound: true,  // Always true since we only return bound entities
+                    xp: entity.xp || 0,
+                    level: entity.level || 1
                 });
             }
         }
@@ -1661,7 +1716,8 @@ app.post('/api/transform', (req, res) => {
             deviceId, entityId: eId,
             name: entity.name, character: entity.character,
             state: entity.state, message: entity.message,
-            parts: entity.parts, lastUpdated: entity.lastUpdated
+            parts: entity.parts, lastUpdated: entity.lastUpdated,
+            xp: entity.xp || 0, level: entity.level || 1
         });
     }
 
@@ -1685,7 +1741,9 @@ app.post('/api/transform', (req, res) => {
             character: entity.character,
             state: entity.state,
             message: entity.message,
-            parts: entity.parts
+            parts: entity.parts,
+            xp: entity.xp || 0,
+            level: entity.level || 1
         },
         versionInfo: getVersionInfo(entity.appVersion)
     });

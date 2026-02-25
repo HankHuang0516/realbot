@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.hank.clawlive.R
 import com.hank.clawlive.data.model.CharacterState
 import com.hank.clawlive.data.model.EntityStatus
@@ -93,6 +94,10 @@ class EntityCardAdapter(
         private val editActionsRow: LinearLayout = itemView.findViewById(R.id.editActionsRow)
         private val btnRefreshEntity: MaterialButton = itemView.findViewById(R.id.btnRefreshEntity)
         private val btnRemoveEntity: MaterialButton = itemView.findViewById(R.id.btnRemoveEntity)
+        private val xpBarRow: LinearLayout = itemView.findViewById(R.id.xpBarRow)
+        private val tvLevel: TextView = itemView.findViewById(R.id.tvLevel)
+        private val xpProgressBar: LinearProgressIndicator = itemView.findViewById(R.id.xpProgressBar)
+        private val tvXpText: TextView = itemView.findViewById(R.id.tvXpText)
 
         private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
@@ -115,6 +120,24 @@ class EntityCardAdapter(
             // Message
             tvLastMessage.text = entity.message
             tvMessageTime.text = timeFormat.format(Date(entity.lastUpdated))
+
+            // XP/Level bar
+            if (entity.isBound) {
+                xpBarRow.visibility = View.VISIBLE
+                val level = entity.level
+                val xp = entity.xp
+                val currentThreshold = (level - 1) * (level - 1) * 100
+                val nextThreshold = level * level * 100
+                val xpInLevel = xp - currentThreshold
+                val xpNeeded = nextThreshold - currentThreshold
+
+                tvLevel.text = "Lv.$level"
+                tvXpText.text = "$xpInLevel/$xpNeeded XP"
+                xpProgressBar.max = if (xpNeeded > 0) xpNeeded else 1
+                xpProgressBar.setProgressCompat(xpInLevel.coerceAtLeast(0), true)
+            } else {
+                xpBarRow.visibility = View.GONE
+            }
 
             // Edit mode: drag handle + action buttons
             ivDragHandle.visibility = if (isEditMode) View.VISIBLE else View.GONE

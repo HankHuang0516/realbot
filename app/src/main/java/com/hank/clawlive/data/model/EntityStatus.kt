@@ -15,7 +15,9 @@ data class EntityStatus(
     val isBound: Boolean = false,
     val usage: UsageInfo? = null,
     val messageQueue: List<MessageQueueItem>? = null,
-    val botSecret: String? = null  // For bot polling API calls
+    val botSecret: String? = null,  // For bot polling API calls
+    val xp: Int = 0,
+    val level: Int = 1
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType
