@@ -52,7 +52,8 @@ function showToast(message, type = 'info') {
 // Format timestamp
 function formatTime(ts) {
     if (!ts) return '';
-    const d = new Date(ts);
+    const d = new Date(typeof ts === 'string' && /^\d+$/.test(ts) ? Number(ts) : ts);
+    if (isNaN(d.getTime())) return '';
     const now = new Date();
     const isToday = d.toDateString() === now.toDateString();
     if (isToday) {

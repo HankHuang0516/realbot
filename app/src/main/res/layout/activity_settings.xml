@@ -41,7 +41,7 @@
             android:paddingHorizontal="24dp"
             android:paddingBottom="24dp">
 
-            <!-- 1. Usage & Subscription Card -->
+            <!-- Usage & Subscription Card -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSubscription"
                 android:layout_width="match_parent"
@@ -187,251 +187,39 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 2. Language Card (collapsible, matching notification card style) -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="#1A1A1A"
-                app:strokeColor="#333333"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="12dp">
-
-                    <!-- Collapsible header — icon + title + expand arrow -->
-                    <LinearLayout
-                        android:id="@+id/langHeader"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_language"
-                            android:contentDescription="Language"
-                            app:tint="#CCFFFFFF"/>
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:text="@string/language_title"
-                            android:textSize="14sp"
-                            android:textColor="#CCFFFFFF"
-                            android:gravity="center"/>
-
-                        <ImageView
-                            android:id="@+id/langExpandArrow"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_expand_more"
-                            android:contentDescription="Expand"
-                            app:tint="#99FFFFFF"/>
-
-                    </LinearLayout>
-
-                    <!-- Collapsible content (default GONE) -->
-                    <LinearLayout
-                        android:id="@+id/langContentLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone"
-                        android:layout_marginTop="12dp">
-
-                        <com.google.android.material.chip.ChipGroup
-                            android:id="@+id/chipGroupLanguage"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            app:singleSelection="true"
-                            app:selectionRequired="true">
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangEn"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_en"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangZh"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_zh"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangZhCn"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_zh_cn"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangJa"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_ja"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangKo"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_ko"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangTh"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_th"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangVi"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_vi"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                            <com.google.android.material.chip.Chip
-                                android:id="@+id/chipLangId"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/language_id"
-                                style="@style/Widget.Material3.Chip.Filter"/>
-
-                        </com.google.android.material.chip.ChipGroup>
-
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 3. Notifications Section (collapsible) -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="#1A1A1A"
-                app:strokeColor="#333333"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingHorizontal="16dp"
-                    android:paddingVertical="12dp">
-
-                    <!-- Collapsible header — matches button row style -->
-                    <LinearLayout
-                        android:id="@+id/notifHeader"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_notification"
-                            android:contentDescription="Notification"
-                            app:tint="#CCFFFFFF"/>
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="16dp"
-                            android:text="@string/notifications_title"
-                            android:textSize="14sp"
-                            android:textColor="#CCFFFFFF"
-                            android:gravity="center"/>
-
-                        <ImageView
-                            android:id="@+id/notifExpandArrow"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@drawable/ic_expand_more"
-                            android:contentDescription="Expand"
-                            app:tint="#99FFFFFF"/>
-                    </LinearLayout>
-
-                    <!-- Collapsible content (default GONE) -->
-                    <LinearLayout
-                        android:id="@+id/notifContentLayout"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone"
-                        android:layout_marginTop="12dp">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/notifications_desc"
-                            android:textSize="13sp"
-                            android:textColor="#99FFFFFF"
-                            android:layout_marginBottom="8dp"/>
-
-                        <!-- Notification preference toggles container (populated programmatically) -->
-                        <LinearLayout
-                            android:id="@+id/notifPrefsContainer"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"/>
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 4. Set Wallpaper Button -->
+            <!-- Feedback Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetWallpaper"
+                android:id="@+id/btnFeedback"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/set_wallpaper"
+                android:text="@string/feedback"
                 android:textColor="#CCFFFFFF"
                 app:backgroundTint="#1A1A1A"
-                android:layout_marginBottom="8dp"
                 app:cornerRadius="12dp"
-                app:icon="@drawable/ic_wallpaper"
+                app:icon="@drawable/ic_feedback"
                 app:iconTint="#CCFFFFFF"
                 app:strokeColor="#333333"
                 app:strokeWidth="1dp"
                 style="@style/Widget.Material3.Button.TonalButton"/>
 
-            <!-- 5. Account Login Button -->
+            <!-- Privacy Policy Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAccountLogin"
+                android:id="@+id/btnPrivacyPolicy"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/account_login"
+                android:text="@string/privacy_policy_title"
                 android:textColor="#CCFFFFFF"
                 app:backgroundTint="#1A1A1A"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="12dp"
                 app:cornerRadius="12dp"
-                app:icon="@android:drawable/ic_lock_idle_lock"
+                app:icon="@drawable/ic_privacy"
                 app:iconTint="#CCFFFFFF"
                 app:strokeColor="#333333"
                 app:strokeWidth="1dp"
                 style="@style/Widget.Material3.Button.TonalButton"/>
 
-            <!-- 6. Web Portal Button -->
+            <!-- Web Portal Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnWebPortal"
                 android:layout_width="match_parent"
@@ -447,33 +235,33 @@
                 app:strokeWidth="1dp"
                 style="@style/Widget.Material3.Button.TonalButton"/>
 
-            <!-- 7. Feedback Button -->
+            <!-- Account Login Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFeedback"
+                android:id="@+id/btnAccountLogin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/feedback"
+                android:text="@string/account_login"
                 android:textColor="#CCFFFFFF"
                 app:backgroundTint="#1A1A1A"
                 android:layout_marginBottom="8dp"
                 app:cornerRadius="12dp"
-                app:icon="@drawable/ic_feedback"
+                app:icon="@android:drawable/ic_lock_idle_lock"
                 app:iconTint="#CCFFFFFF"
                 app:strokeColor="#333333"
                 app:strokeWidth="1dp"
                 style="@style/Widget.Material3.Button.TonalButton"/>
 
-            <!-- 8. Privacy Policy Button -->
+            <!-- Set Wallpaper Button -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPrivacyPolicy"
+                android:id="@+id/btnSetWallpaper"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/privacy_policy_title"
+                android:text="@string/set_wallpaper"
                 android:textColor="#CCFFFFFF"
                 app:backgroundTint="#1A1A1A"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="24dp"
                 app:cornerRadius="12dp"
-                app:icon="@drawable/ic_privacy"
+                app:icon="@drawable/ic_wallpaper"
                 app:iconTint="#CCFFFFFF"
                 app:strokeColor="#333333"
                 app:strokeWidth="1dp"
@@ -495,6 +283,97 @@
                 app:strokeColor="#FF9800"
                 app:strokeWidth="1dp"
                 android:visibility="gone"/>
+
+            <!-- Language Settings Section -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/language_title"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:layout_marginBottom="12dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/chipGroupLanguage"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:singleSelection="true"
+                            app:selectionRequired="true">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/chipLangEn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_en"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangZh"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_zh"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangZhCn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_zh_cn"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangJa"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_ja"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangKo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_ko"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangTh"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_th"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangVi"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_vi"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipLangId"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/language_id"
+                            style="@style/Widget.Material3.Chip.Filter"/>
+
+                    </com.google.android.material.chip.ChipGroup>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- App Version -->
             <TextView
