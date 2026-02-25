@@ -1,3 +1,15 @@
+## [1.22.3](https://github.com/HankHuang0516/realbot/compare/v1.22.2...v1.22.3) (2026-02-25)
+
+
+### Bug Fixes
+
+* add fill color to card emoji icons (lobster + airplane) ([5527523](https://github.com/HankHuang0516/realbot/commit/55275237476ad378f1c265c7ec2a8cdf3e1cb0b2)), closes [#6C63FF](https://github.com/HankHuang0516/realbot/issues/6C63FF) [#0088CC](https://github.com/HankHuang0516/realbot/issues/0088CC)
+* regenerate PNG with CJK font support and updated QR codes ([f3989d4](https://github.com/HankHuang0516/realbot/commit/f3989d442654bdb10c020bdd283a6b74a2a80a29))
+* replace broken QR codes with valid ones for Web portal and Android app ([1c61238](https://github.com/HankHuang0516/realbot/commit/1c612385f35a13bff9b6ae152fb47f37762f8c8d))
+* replace emoji icons with proper SVG brand icons + fix table overflow ([51d0916](https://github.com/HankHuang0516/realbot/commit/51d0916021da264e5a3bf5fbc9fbae56f735d002))
+* use rsvg-convert for PNG with proper emoji + CJK rendering ([29d5f9a](https://github.com/HankHuang0516/realbot/commit/29d5f9ae424ee891da5abef6e13b72e1c2e5ba4c))
+* widen QR cards, replace blurry emoji, fix corrupted QR data ([b16bbe5](https://github.com/HankHuang0516/realbot/commit/b16bbe5e630a1e22ab2a81de54bb7ac63f0c2750))
+
 ## [1.22.2](https://github.com/HankHuang0516/realbot/compare/v1.22.1...v1.22.2) (2026-02-25)
 
 
