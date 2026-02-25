@@ -2392,6 +2392,7 @@ app.post('/api/client/speak', async (req, res) => {
                 const bkUrl = getBackupUrl(mediaUrl);
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
             } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
+            else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
 
             pushResult = await pushToBot(entity, deviceId, "new_message", {
@@ -2577,6 +2578,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
             const bkUrl = getBackupUrl(mediaUrl);
             if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
         } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
+            else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
         pushToBot(toEntity, deviceId, "entity_message", {
             message: pushMsg
@@ -2790,6 +2792,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 const bkUrl = getBackupUrl(mediaUrl);
                 if (bkUrl) pushMsg += `\nbackup_url: ${bkUrl}`;
             } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
+            else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
             pushToBot(toEntity, deviceId, "entity_broadcast", {
                 message: pushMsg
@@ -5992,11 +5995,14 @@ const mediaUpload = multer({
     fileFilter: (req, file, cb) => {
         const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         const audioTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/aac', 'audio/mpeg'];
+        const videoTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
         const mediaType = (req.body && req.body.mediaType) || '';
         if (mediaType === 'photo' && !imageTypes.includes(file.mimetype)) {
             cb(new Error('Unsupported image type: ' + file.mimetype));
         } else if (mediaType === 'voice' && !audioTypes.includes(file.mimetype)) {
             cb(new Error('Unsupported audio type: ' + file.mimetype));
+        } else if (mediaType === 'video' && !videoTypes.includes(file.mimetype)) {
+            cb(new Error('Unsupported video type: ' + file.mimetype));
         } else {
             cb(null, true); // "file" type accepts anything
         }
@@ -6076,18 +6082,55 @@ app.get('/api/media/:id', (req, res) => {
  */
 app.get('/api/chat/file/:id', async (req, res) => {
     try {
-        const result = await chatPool.query(
-            'SELECT original_name, content_type, file_data FROM chat_uploads WHERE id = $1',
+        // First query metadata only (no file_data) to support Range requests efficiently
+        const metaResult = await chatPool.query(
+            'SELECT original_name, content_type, file_size FROM chat_uploads WHERE id = $1',
             [req.params.id]
         );
-        if (result.rows.length === 0) {
+        if (metaResult.rows.length === 0) {
             return res.status(404).json({ error: 'File not found' });
         }
-        const row = result.rows[0];
-        res.set('Content-Type', row.content_type);
-        res.set('Content-Disposition', `inline; filename="${encodeURIComponent(row.original_name)}"`);
+        const { original_name, content_type, file_size } = metaResult.rows[0];
+        const totalSize = parseInt(file_size);
+
+        res.set('Content-Type', content_type);
+        res.set('Content-Disposition', `inline; filename="${encodeURIComponent(original_name)}"`);
         res.set('Cache-Control', 'public, max-age=86400');
-        res.send(row.file_data);
+        res.set('Accept-Ranges', 'bytes');
+
+        const rangeHeader = req.headers.range;
+        if (rangeHeader) {
+            // Parse Range header (e.g. "bytes=0-1023")
+            const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+            if (!match) {
+                res.status(416).set('Content-Range', `bytes */${totalSize}`).end();
+                return;
+            }
+            const start = parseInt(match[1]);
+            const end = match[2] ? parseInt(match[2]) : totalSize - 1;
+            if (start >= totalSize || end >= totalSize || start > end) {
+                res.status(416).set('Content-Range', `bytes */${totalSize}`).end();
+                return;
+            }
+            const chunkSize = end - start + 1;
+            // PostgreSQL SUBSTRING on BYTEA is 1-indexed
+            const dataResult = await chatPool.query(
+                'SELECT SUBSTRING(file_data FROM $1 FOR $2) AS chunk FROM chat_uploads WHERE id = $3',
+                [start + 1, chunkSize, req.params.id]
+            );
+            res.status(206);
+            res.set('Content-Range', `bytes ${start}-${end}/${totalSize}`);
+            res.set('Content-Length', chunkSize);
+            res.send(dataResult.rows[0].chunk);
+        } else {
+            // No Range header — serve entire file
+            const dataResult = await chatPool.query(
+                'SELECT file_data FROM chat_uploads WHERE id = $1',
+                [req.params.id]
+            );
+            res.set('Content-Length', totalSize);
+            res.send(dataResult.rows[0].file_data);
+        }
     } catch (err) {
         console.error('[ChatFile] Serve error:', err);
         res.status(500).json({ error: 'Failed to serve file' });
@@ -6138,18 +6181,18 @@ app.post('/api/chat/upload-media', mediaUpload.single('file'), async (req, res) 
         } else if (mediaType === 'voice') {
             const base64 = req.file.buffer.toString('base64');
             mediaUrl = `data:${req.file.mimetype};base64,${base64}`;
-        } else if (mediaType === 'file') {
-            // Store file in PostgreSQL
-            const originalName = req.file.originalname || 'file';
+        } else if (mediaType === 'video' || mediaType === 'file') {
+            // Store video/file in PostgreSQL
+            const originalName = req.file.originalname || (mediaType === 'video' ? 'video.mp4' : 'file');
             const result = await chatPool.query(
                 'INSERT INTO chat_uploads (device_id, original_name, content_type, file_data, file_size) VALUES ($1, $2, $3, $4, $5) RETURNING id',
                 [deviceId, originalName, req.file.mimetype, req.file.buffer, req.file.buffer.length]
             );
             const fileId = result.rows[0].id;
             mediaUrl = `https://eclawbot.com/api/chat/file/${fileId}`;
-            console.log(`[Upload] File stored: ${originalName} (${(req.file.buffer.length / 1024 / 1024).toFixed(2)} MB) -> ${fileId}`);
+            console.log(`[Upload] ${mediaType === 'video' ? 'Video' : 'File'} stored: ${originalName} (${(req.file.buffer.length / 1024 / 1024).toFixed(2)} MB) -> ${fileId}`);
         } else {
-            return res.status(400).json({ success: false, error: 'Invalid mediaType. Use "photo", "voice", or "file"' });
+            return res.status(400).json({ success: false, error: 'Invalid mediaType. Use "photo", "voice", "video", or "file"' });
         }
 
         const fileName = req.file.originalname || null;
