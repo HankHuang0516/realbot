@@ -2232,21 +2232,35 @@ app.post('/api/client/speak', async (req, res) => {
         return res.status(404).json({ success: false, message: "Device not found" });
     }
 
-    // Usage enforcement
-    try {
-        const usage = await subscriptionModule.enforceUsageLimit(deviceId);
-        if (!usage.allowed) {
-            return res.status(429).json({
-                success: false,
-                message: "Daily message limit reached",
-                error: "USAGE_LIMIT_EXCEEDED",
-                remaining: 0,
-                limit: usage.limit,
-                used: usage.used || 0
-            });
+    // Usage enforcement — only for free bot targets
+    const targetEids = entityId === "all"
+        ? Object.keys(device.entities).map(Number).filter(i => device.entities[i]?.isBound)
+        : Array.isArray(entityId)
+            ? entityId.map(id => parseInt(id))
+            : [parseInt(entityId) || 0];
+    const hasFreeBotTarget = targetEids.some(eId => {
+        const binding = officialBindingsCache[getBindingCacheKey(deviceId, eId)];
+        if (!binding) return false;
+        const bot = officialBots[binding.bot_id];
+        return bot && bot.bot_type === 'free';
+    });
+
+    if (hasFreeBotTarget) {
+        try {
+            const usage = await subscriptionModule.enforceUsageLimit(deviceId);
+            if (!usage.allowed) {
+                return res.status(429).json({
+                    success: false,
+                    message: "Daily message limit reached",
+                    error: "USAGE_LIMIT_EXCEEDED",
+                    remaining: 0,
+                    limit: usage.limit,
+                    used: usage.used || 0
+                });
+            }
+        } catch (usageErr) {
+            console.warn('[Usage] Enforcement check failed, allowing:', usageErr.message);
         }
-    } catch (usageErr) {
-        console.warn('[Usage] Enforcement check failed, allowing:', usageErr.message);
     }
 
     // Gatekeeper First Lock: check if device is blocked from free bots
@@ -4431,7 +4445,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
 // POST /api/feedback — Submit feedback with auto log capture
 app.post('/api/feedback', async (req, res) => {
     try {
-        const { deviceId, deviceSecret, message, category, appVersion } = req.body;
+        const { deviceId, deviceSecret, message, category, appVersion, source } = req.body;
 
         if (!message || !message.trim()) {
             return res.status(400).json({ success: false, message: "Message is required" });
@@ -4457,6 +4471,7 @@ app.post('/api/feedback', async (req, res) => {
             message: trimmedMessage,
             category: category || 'bug',
             appVersion: appVersion || '',
+            source: source || '',
             logSnapshot,
             deviceState,
             markTs

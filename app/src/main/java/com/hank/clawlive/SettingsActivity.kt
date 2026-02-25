@@ -319,7 +319,9 @@ class SettingsActivity : AppCompatActivity() {
             try {
                 val response = NetworkModule.api.getAllEntities(deviceId = deviceManager.deviceId)
                 val boundCount = response.entities.size
-                tvEntityCount.text = "$boundCount/$maxEntities"
+                // #69: Save server entity limit so it refreshes immediately after payment
+                layoutPrefs.serverEntityLimit = response.maxEntities
+                tvEntityCount.text = "$boundCount/${response.maxEntities}"
             } catch (e: Exception) {
                 Timber.e(e, "Failed to fetch entity count from API")
             }
