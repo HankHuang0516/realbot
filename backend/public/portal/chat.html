@@ -191,6 +191,50 @@
             white-space: nowrap;
         }
 
+        .btn-cross-device {
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            cursor: pointer;
+            white-space: nowrap;
+            margin-left: auto;
+        }
+        .btn-cross-device:hover, .btn-cross-device.active {
+            background: var(--primary);
+            color: #fff;
+        }
+        .cross-device-bar {
+            padding: 8px 16px;
+            background: var(--input-bg);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cross-device-input {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            letter-spacing: 2px;
+            width: 100px;
+            padding: 4px 8px;
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text-primary);
+            text-transform: lowercase;
+        }
+        .cross-device-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .target-check {
             display: flex;
             align-items: center;
@@ -822,6 +866,15 @@
                     <input type="checkbox" checked onchange="toggleTargetAll(this)">
                     <span data-i18n="chat_filter_all">All</span>
                 </label>
+                <button class="btn-cross-device" id="btnCrossDevice" onclick="toggleCrossDeviceMode()" data-i18n="chat_cross_device">Cross-Device</button>
+            </div>
+            <!-- Cross-Device Target Input (hidden by default) -->
+            <div class="cross-device-bar" id="crossDeviceBar" style="display:none;">
+                <span class="target-label">&#x1F310;</span>
+                <input type="text" id="crossDeviceCode" class="cross-device-input" maxlength="6" placeholder="abc123" data-i18n-placeholder="chat_cross_device_placeholder">
+                <button class="btn btn-outline btn-sm" onclick="lookupCrossDeviceEntity()" data-i18n="chat_cross_device_lookup">Lookup</button>
+                <span class="cross-device-info" id="crossDeviceInfo"></span>
+                <button class="btn-cross-device active" onclick="toggleCrossDeviceMode()">&#x2715;</button>
             </div>
 
             <!-- Input Bar -->
@@ -904,6 +957,7 @@
         let currentFilter = 'all';
         let refreshInterval = null;
         let isFirstLoad = true;
+        let crossDeviceMode = false;
 
         const ENTITY_CHARS = {
             0: { name: 'Lobster', emoji: '\u{1F99E}' },
@@ -1101,6 +1155,82 @@
                 boundEntities.forEach(e => targets.push(e.entityId));
             }
             return targets;
+        }
+
+        // ── Cross-Device Mode ──
+        function toggleCrossDeviceMode() {
+            crossDeviceMode = !crossDeviceMode;
+            document.getElementById('targetBar').style.display = crossDeviceMode ? 'none' : '';
+            document.getElementById('crossDeviceBar').style.display = crossDeviceMode ? 'flex' : 'none';
+            document.getElementById('btnCrossDevice').classList.toggle('active', crossDeviceMode);
+            if (crossDeviceMode) {
+                document.getElementById('crossDeviceCode').focus();
+            }
+        }
+
+        async function lookupCrossDeviceEntity() {
+            const code = document.getElementById('crossDeviceCode').value.trim().toLowerCase();
+            const info = document.getElementById('crossDeviceInfo');
+            if (!code || code.length < 3) {
+                info.textContent = '';
+                return;
+            }
+            try {
+                const data = await apiCall('GET', `/api/entity/lookup?code=${encodeURIComponent(code)}`);
+                if (data.success && data.entity) {
+                    const e = data.entity;
+                    info.textContent = `${e.name || e.character} (Lv.${e.level}) - ${e.state}`;
+                    info.style.color = 'var(--text-primary)';
+                } else {
+                    info.textContent = 'Not found';
+                    info.style.color = 'var(--danger)';
+                }
+            } catch (err) {
+                info.textContent = 'Not found';
+                info.style.color = 'var(--danger)';
+            }
+        }
+
+        async function sendCrossDeviceMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const targetCode = document.getElementById('crossDeviceCode').value.trim().toLowerCase();
+            if (!targetCode || targetCode.length < 3) {
+                showToast('Enter a valid target code', 'error');
+                return;
+            }
+
+            // Pick first bound entity as sender
+            const fromEntity = boundEntities[0];
+            if (!fromEntity) {
+                showToast('No bound entities', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnSend');
+            btn.disabled = true;
+            const saved = input.value;
+            input.value = '';
+
+            try {
+                await apiCall('POST', '/api/client/cross-speak', {
+                    deviceId: currentUser.deviceId,
+                    fromEntityId: fromEntity.entityId,
+                    targetCode: targetCode,
+                    text: text,
+                    source: 'web_chat'
+                });
+                await loadMessages();
+                const container = document.getElementById('chatMessages');
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                input.value = saved;
+                showToast(err.message || 'Failed to send', 'error');
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         // ── Messages ──
@@ -1304,6 +1434,17 @@
          */
         function parseEntitySource(source) {
             if (!source) return null;
+            // Cross-device: xdevice:code:CHARACTER->targetCode
+            const xmatch = source.match(/^xdevice:([a-z0-9]+):([A-Z]+)->(.+)$/);
+            if (xmatch) {
+                return {
+                    fromPublicCode: xmatch[1],
+                    character: xmatch[2],
+                    targets: [xmatch[3]],
+                    crossDevice: true
+                };
+            }
+            // Same-device: entity:ID:CHARACTER->targets
             const match = source.match(/^entity:(\d+):([A-Z]+)->(.+)$/);
             if (!match) return null;
             return {
@@ -1318,6 +1459,11 @@
             const entityHtml = `<span class="entity-label" data-entity="${entityId}">${getEntityLabel(entityId)}</span>`;
 
             if (msg.is_from_user) {
+                // Cross-device message sent by user
+                const xdParsed = parseEntitySource(msg.source);
+                if (xdParsed && xdParsed.crossDevice) {
+                    return `You &rarr; &#x1F310; ${escapeHtml(xdParsed.targets[0])} (cross-device)`;
+                }
                 // Mission notify: consolidated notification bubble
                 if (msg.source && msg.source.startsWith('mission_notify')) {
                     return 'Mission Control';
@@ -1343,6 +1489,12 @@
                 // Check for entity-to-entity source pattern
                 const parsed = parseEntitySource(msg.source);
                 if (parsed) {
+                    if (parsed.crossDevice) {
+                        // Cross-device message
+                        const senderHtml = `<span class="entity-label" style="color:var(--primary);">&#x1F310; ${escapeHtml(parsed.fromPublicCode)}</span>`;
+                        return `${senderHtml} &rarr; ${entityHtml} (cross-device)`;
+                    }
+
                     const senderHtml = `<span class="entity-label" data-entity="${parsed.fromEntityId}">${getEntityLabel(parsed.fromEntityId)}</span>`;
 
                     // Build 發送至 with per-target 已讀 status
@@ -1367,6 +1519,11 @@
 
         // ── Send Message ──
         async function sendMessage() {
+            // Cross-device mode
+            if (crossDeviceMode) {
+                return sendCrossDeviceMessage();
+            }
+
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             const readyFiles = pendingFiles.filter(f => f.status === 'ready');

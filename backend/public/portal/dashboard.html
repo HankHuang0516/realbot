@@ -90,6 +90,37 @@
             font-weight: 600;
         }
 
+        .entity-public-code {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background: var(--input-bg);
+            padding: 2px 8px;
+            border-radius: 6px;
+            transition: opacity 0.15s;
+        }
+        .entity-public-code:hover {
+            opacity: 0.75;
+        }
+        .entity-public-code code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+        .entity-public-code .code-label {
+            color: var(--text-muted, #888);
+            font-size: 11px;
+        }
+        .entity-public-code .copy-hint {
+            font-size: 11px;
+            opacity: 0.6;
+        }
+
         .entity-message {
             font-size: 13px;
             color: var(--text-secondary);
@@ -1138,6 +1169,7 @@
                             '<span class="entity-xp-text">' + xd.xpInLevel + '/' + xd.xpNeeded + ' XP</span>' +
                             '</div>';
                     })() +
+                    (entity.publicCode ? '<div class="entity-public-code" onclick="copyPublicCode(\'' + entity.publicCode + '\')" title="' + i18n.t('dash_copy_code') + '"><span class="code-label">' + i18n.t('dash_public_code') + ':</span> <code>' + entity.publicCode + '</code> <span class="copy-hint">&#x1F4CB;</span></div>' : '') +
                     '<div class="entity-message">' + escapeHtml(lastMsg) + '</div>' +
                     '</div>' +
                     '</div>' +
@@ -1414,6 +1446,22 @@
         }
 
         // --- Remove Entity ---
+        function copyPublicCode(code) {
+            if (!code) return;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast(i18n.t('dash_public_code_copied'));
+            }).catch(() => {
+                // Fallback for older browsers
+                const el = document.createElement('textarea');
+                el.value = code;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast(i18n.t('dash_public_code_copied'));
+            });
+        }
+
         function confirmRemove(entityId, displayName) {
             const overlay = document.createElement('div');
             overlay.className = 'confirm-overlay';

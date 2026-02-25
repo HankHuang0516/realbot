@@ -18,7 +18,8 @@ data class EntityStatus(
     val botSecret: String? = null,  // For bot polling API calls
     val avatar: String? = null,  // User-chosen emoji avatar (synced from server)
     val xp: Int = 0,
-    val level: Int = 1
+    val level: Int = 1,
+    val publicCode: String? = null  // Cross-device messaging code
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType
