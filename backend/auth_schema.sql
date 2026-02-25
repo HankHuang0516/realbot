@@ -90,5 +90,5 @@ ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS delivered_to TEXT DEFAULT NUL
 -- Migration: add is_admin column to existing user_accounts tables
 ALTER TABLE user_accounts ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;
 
--- Set admin for hankhuang0516@gmail.com
-UPDATE user_accounts SET is_admin = TRUE WHERE email = 'hankhuang0516@gmail.com';
+-- Set admins
+UPDATE user_accounts SET is_admin = TRUE WHERE email IN ('hankhuang0516@gmail.com', 'bbb880008@gmail.com');
