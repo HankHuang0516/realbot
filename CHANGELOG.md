@@ -1,3 +1,10 @@
+# [1.27.0](https://github.com/HankHuang0516/realbot/compare/v1.26.0...v1.27.0) (2026-02-25)
+
+
+### Features
+
+* add cross-device bot-to-bot communication via public entity codes ([4993572](https://github.com/HankHuang0516/realbot/commit/4993572687c9089ea4074e60c18b8e6f2832fe4a)), closes [#70](https://github.com/HankHuang0516/realbot/issues/70)
+
 # [1.26.0](https://github.com/HankHuang0516/realbot/compare/v1.25.2...v1.26.0) (2026-02-25)
 
 
