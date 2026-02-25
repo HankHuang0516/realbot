@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/HankHuang0516/realbot/compare/v1.23.0...v1.24.0) (2026-02-25)
+
+
+### Features
+
+* add bbb880008@gmail.com as admin user ([1aa4ade](https://github.com/HankHuang0516/realbot/commit/1aa4adec63ca0fb7622a91681b974da11bcc55d1))
+
 # [1.23.0](https://github.com/HankHuang0516/realbot/compare/v1.22.3...v1.23.0) (2026-02-25)
 
 
