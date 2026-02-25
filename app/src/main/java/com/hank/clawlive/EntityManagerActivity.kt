@@ -1,5 +1,8 @@
 package com.hank.clawlive
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -186,6 +189,18 @@ class EntityManagerActivity : AppCompatActivity() {
         // Character type
         val tvCharacterType = cardView.findViewById<TextView>(R.id.tvCharacterType)
         tvCharacterType.text = entity.character
+
+        // Public code (cross-device messaging)
+        val tvPublicCode = cardView.findViewById<TextView>(R.id.tvPublicCode)
+        if (!entity.publicCode.isNullOrBlank()) {
+            tvPublicCode.visibility = View.VISIBLE
+            tvPublicCode.text = getString(R.string.entity_public_code, entity.publicCode)
+            tvPublicCode.setOnClickListener {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("Public Code", entity.publicCode))
+                Toast.makeText(this, R.string.code_copied, Toast.LENGTH_SHORT).show()
+            }
+        }
 
         // State badge
         val tvStateBadge = cardView.findViewById<TextView>(R.id.tvStateBadge)
