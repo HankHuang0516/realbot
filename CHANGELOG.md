@@ -1,3 +1,10 @@
+## [1.22.2](https://github.com/HankHuang0516/realbot/compare/v1.22.1...v1.22.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* resolve "Invalid Date" in notification items ([ecc745d](https://github.com/HankHuang0516/realbot/commit/ecc745d4551d9f91c29fce8c1d1e36663516cc36))
+
 ## [1.22.1](https://github.com/HankHuang0516/realbot/compare/v1.22.0...v1.22.1) (2026-02-25)
 
 
