@@ -1209,7 +1209,7 @@ node backend/tests/test-broadcast.js</div>
             </div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_free">Is E-Claw free?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_free">Yes! E-Claw offers a free tier with shared bots (up to 15 messages/day). For unlimited messaging and a dedicated personal bot, there's a subscription plan at NT$288/month. Self-hosted bots are always free.</div>
+                <div class="faq-answer" data-i18n="faq_a_free">Yes! E-Claw offers a free tier with shared bots (up to 15 messages/day per free bot). Your own bots (self-hosted) have no message limit and are always free.</div>
             </div>
 
             <div class="faq-section-title" data-i18n="faq_section_setup">Setup & Binding</div>
@@ -1491,12 +1491,25 @@ node backend/tests/test-broadcast.js</div>
     </div><!-- /container -->
 
     <script src="shared/api.js"></script>
+    <script src="shared/nav.js"></script>
     <script src="shared/public-nav.js"></script>
+    <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="shared/footer.js"></script>
     <script>
-        window.addEventListener('DOMContentLoaded', () => {
-            renderPublicNav('info');
+        let currentUser = null;
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Soft auth check: show authenticated nav if logged in, public nav otherwise
+            try {
+                const data = await apiCall('GET', '/api/auth/me');
+                currentUser = data.user;
+                renderNav('info');
+                const emailEl = document.getElementById('navEmail');
+                if (emailEl) emailEl.textContent = currentUser.email;
+            } catch (e) {
+                renderPublicNav('info');
+            }
             if (typeof renderFooter === 'function') renderFooter();
 
             // ── Info tab switching ──
