@@ -1,3 +1,10 @@
+# [1.25.0](https://github.com/HankHuang0516/realbot/compare/v1.24.0...v1.25.0) (2026-02-25)
+
+
+### Features
+
+* add video sending support to chat with streaming playback ([f24f462](https://github.com/HankHuang0516/realbot/commit/f24f462038f20494ab59e4ef10013e890033dadf))
+
 # [1.24.0](https://github.com/HankHuang0516/realbot/compare/v1.23.0...v1.24.0) (2026-02-25)
 
 
