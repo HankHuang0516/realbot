@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/HankHuang0516/realbot/compare/v1.21.0...v1.22.0) (2026-02-25)
+
+
+### Features
+
+* add XP/Level system for entities ([6acfff3](https://github.com/HankHuang0516/realbot/commit/6acfff325515bd7e117b896a37742b5578a3fdf2))
+
 # [1.21.0](https://github.com/HankHuang0516/realbot/compare/v1.20.1...v1.21.0) (2026-02-24)
 
 
