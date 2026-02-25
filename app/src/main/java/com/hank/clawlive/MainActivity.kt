@@ -43,6 +43,7 @@ import com.hank.clawlive.fcm.ClawFcmService
 import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.model.EntityStatus
+import com.hank.clawlive.data.model.UpdateAvatarRequest
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.remote.TelemetryHelper
 import com.hank.clawlive.data.repository.StateRepository
@@ -313,6 +314,15 @@ class MainActivity : AppCompatActivity() {
                     if (entity.entityId !in currentRegistered) {
                         layoutPrefs.addRegisteredEntity(entity.entityId)
                         Timber.d("[#48] Auto-registered entity ${entity.entityId} from server response")
+                    }
+                }
+
+                // #64 fix: Sync avatars from server → local storage
+                newEntities.forEach { entity ->
+                    entity.avatar?.let { serverAvatar ->
+                        if (serverAvatar != avatarManager.getAvatar(entity.entityId)) {
+                            avatarManager.setAvatar(entity.entityId, serverAvatar)
+                        }
                     }
                 }
 
@@ -623,6 +633,17 @@ class MainActivity : AppCompatActivity() {
                     avatarManager.setAvatar(entityId, avatar)
                     iconView.text = avatar
                     dialog.dismiss()
+                    // #64: Upload avatar to server for cross-device sync
+                    lifecycleScope.launch {
+                        try {
+                            api.updateEntityAvatar(UpdateAvatarRequest(
+                                deviceId = deviceManager.deviceId,
+                                deviceSecret = deviceManager.deviceSecret,
+                                entityId = entityId,
+                                avatar = avatar
+                            ))
+                        } catch (_: Exception) { /* fire-and-forget */ }
+                    }
                 }
             }
             grid.addView(tv)

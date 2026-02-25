@@ -53,3 +53,17 @@ data class SpawnEntityRequest(
     @SerializedName("character") val character: String = "LOBSTER",
     @SerializedName("message") val message: String? = null
 )
+
+// Request to update entity avatar (synced across devices)
+data class UpdateAvatarRequest(
+    @SerializedName("deviceId") val deviceId: String,
+    @SerializedName("deviceSecret") val deviceSecret: String,
+    @SerializedName("entityId") val entityId: Int,
+    @SerializedName("avatar") val avatar: String
+)
+
+// Generic success/failure response
+data class GenericResponse(
+    @SerializedName("success") val success: Boolean = false,
+    @SerializedName("message") val message: String? = null
+)

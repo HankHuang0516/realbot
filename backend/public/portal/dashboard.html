@@ -957,6 +957,9 @@
         }
 
         function getAvatarForEntity(entityId) {
+            // #64: Check server-synced avatar first
+            const entity = entities.find(e => e.entityId === entityId);
+            if (entity && entity.avatar) return entity.avatar;
             const saved = localStorage.getItem('eclaw_avatar_' + entityId);
             if (saved) return saved;
             return DEFAULT_AVATARS[entityId] || '🦞';
@@ -964,6 +967,11 @@
 
         function saveAvatarForEntity(entityId, emoji) {
             localStorage.setItem('eclaw_avatar_' + entityId, emoji);
+            // #64: Upload avatar to server for cross-device sync
+            apiCall('PUT', '/api/device/entity/avatar', {
+                entityId: entityId,
+                avatar: emoji
+            }).catch(() => { /* fire-and-forget */ });
         }
 
         // --- Init ---

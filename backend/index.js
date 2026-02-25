@@ -949,6 +949,7 @@ function createDefaultEntity(entityId) {
         messageQueue: [],
         webhook: null,
         appVersion: null, // Device app version (e.g., "1.0.3")
+        avatar: null, // User-chosen emoji avatar (synced across devices)
         xp: 0,
         level: 1
     };
@@ -1531,6 +1532,7 @@ app.get('/api/entities', (req, res) => {
                     parts: entity.parts,
                     lastUpdated: entity.lastUpdated,
                     isBound: true,  // Always true since we only return bound entities
+                    avatar: entity.avatar || null,
                     xp: entity.xp || 0,
                     level: entity.level || 1
                 });
@@ -2144,6 +2146,62 @@ app.put('/api/device/entity/name', async (req, res) => {
         name: newName,
         entityId: eId
     });
+});
+
+/**
+ * PUT /api/device/entity/avatar
+ * Device owner updates an entity's avatar emoji (synced across devices).
+ * Body: { deviceId, deviceSecret, entityId, avatar }
+ */
+app.put('/api/device/entity/avatar', async (req, res) => {
+    let { deviceId, deviceSecret, entityId, avatar } = req.body || {};
+
+    // Fallback: use cookie-based auth (web portal)
+    if ((!deviceId || !deviceSecret) && req.cookies && req.cookies.eclaw_session) {
+        try {
+            const jwt = require('jsonwebtoken');
+            const decoded = jwt.verify(req.cookies.eclaw_session, process.env.JWT_SECRET || 'dev-secret-change-in-production');
+            if (decoded && decoded.deviceId && decoded.deviceSecret) {
+                deviceId = decoded.deviceId;
+                deviceSecret = decoded.deviceSecret;
+            }
+        } catch (e) { /* invalid token, fall through */ }
+    }
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, message: "deviceId and deviceSecret required" });
+    }
+
+    const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, message: "Invalid entityId" });
+    }
+
+    // Validate avatar: must be a short emoji string (1-8 chars to support compound emojis)
+    if (!avatar || typeof avatar !== 'string' || avatar.length > 8) {
+        return res.status(400).json({ success: false, message: "Invalid avatar (must be 1-8 chars)" });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, message: "Device not found" });
+    }
+
+    if (device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, message: "Invalid deviceSecret" });
+    }
+
+    const entity = device.entities[eId];
+    if (!entity) {
+        return res.status(400).json({ success: false, message: `Entity ${eId} not found` });
+    }
+
+    entity.avatar = avatar;
+    entity.lastUpdated = Date.now();
+
+    await saveData();
+
+    res.json({ success: true, avatar, entityId: eId });
 });
 
 // ============================================
