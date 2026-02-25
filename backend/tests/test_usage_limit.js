@@ -1,13 +1,15 @@
 /**
  * Usage Limit Test
  *
- * Tests the daily message limit flow:
- * 1. Send 15 messages → should succeed (free tier limit)
- * 2. 16th message → should return 429 USAGE_LIMIT_EXCEEDED
+ * Tests the daily message limit flow (applies only to free bot targets):
+ * 1. Send 15 messages to a free bot → should succeed (free tier limit)
+ * 2. 16th message to a free bot → should return 429 USAGE_LIMIT_EXCEEDED
  * 3. Simulate premium upgrade (via DB)
  * 4. Send 10 more messages → all should succeed (premium = no limit)
  *
- * Note: This test manipulates the usage_tracking table directly.
+ * Note: The 15-message limit only applies to free bots (bot_type='free').
+ *       User's own bots (personal/self-hosted) have no message limit.
+ *       This test manipulates the usage_tracking table directly.
  *       It uses a unique test device to avoid interference.
  */
 

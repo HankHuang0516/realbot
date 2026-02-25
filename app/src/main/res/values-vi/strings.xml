@@ -210,7 +210,7 @@
     <string name="borrow_beta_label">BETA</string>
     <string name="free_version">Phiên bản miễn phí</string>
     <string name="free_version_model">Mô hình: MiniMax 2.1</string>
-    <string name="free_version_desc">Bộ nhớ chung, dùng chung với tất cả người dùng miễn phí\nGiới hạn 15 tin nhắn/ngày</string>
+    <string name="free_version_desc">Bộ nhớ chung, dùng chung với tất cả người dùng miễn phí\nGiới hạn 15 tin nhắn/ngày (chỉ bot miễn phí)</string>
     <string name="free_version_warning">Không khuyến khích dùng cho thông tin nhạy cảm</string>
     <string name="use_free_version">Dùng phiên bản miễn phí</string>
     <string name="monthly_version">Phiên bản tháng</string>
@@ -319,7 +319,7 @@ Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ qua email chín
     <string name="delete">Xóa</string>
     <string name="last_synced_format"> | Đồng bộ lần cuối: %s</string>
     <string name="usage_limit_title">Đã đạt giới hạn hàng ngày</string>
-    <string name="usage_limit_message">Bạn đã đạt giới hạn 15 tin nhắn mỗi ngày.\n\nNâng cấp lên Cao cấp để nhắn tin không giới hạn!</string>
+    <string name="usage_limit_message">Bạn đã đạt giới hạn 15 tin nhắn/ngày của bot miễn phí.\n\nBot riêng của bạn không có giới hạn!</string>
     <string name="usage_limit_upgrade">Nâng cấp</string>
     <string name="file_manager_title">Tệp</string>
     <string name="file_filter_photos">Ảnh</string>

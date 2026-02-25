@@ -243,7 +243,7 @@
     <string name="borrow_beta_label">BETA</string>
     <string name="free_version">Free Version</string>
     <string name="free_version_model">Model: MiniMax 2.1</string>
-    <string name="free_version_desc">Shared memory, shared with all free users\n15 messages/day limit</string>
+    <string name="free_version_desc">Shared memory, shared with all free users\n15 messages/day limit (free bot only)</string>
     <string name="free_version_warning">Not recommended for sensitive info</string>
     <string name="use_free_version">Use Free Version</string>
     <string name="monthly_version">Monthly Version</string>
@@ -364,7 +364,7 @@ If you have any questions, please contact us via our official email.
 
     <!-- Usage Limit -->
     <string name="usage_limit_title">Daily Limit Reached</string>
-    <string name="usage_limit_message">You have reached the daily limit of 15 messages.\n\nUpgrade to Premium for unlimited messaging!</string>
+    <string name="usage_limit_message">You have reached the daily limit of 15 messages for free bots.\n\nYour own bots have no limit!</string>
     <string name="usage_limit_upgrade">Upgrade</string>
 
     <!-- File Manager -->

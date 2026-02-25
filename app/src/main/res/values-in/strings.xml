@@ -210,7 +210,7 @@
     <string name="borrow_beta_label">BETA</string>
     <string name="free_version">Versi Gratis</string>
     <string name="free_version_model">Model: MiniMax 2.1</string>
-    <string name="free_version_desc">Memori bersama, dipakai bersama semua pengguna gratis\nBatas 15 pesan/hari</string>
+    <string name="free_version_desc">Memori bersama, dipakai bersama semua pengguna gratis\nBatas 15 pesan/hari (hanya bot gratis)</string>
     <string name="free_version_warning">Tidak disarankan untuk informasi sensitif</string>
     <string name="use_free_version">Gunakan Versi Gratis</string>
     <string name="monthly_version">Versi Bulanan</string>
@@ -319,7 +319,7 @@ Jika Anda memiliki pertanyaan, silakan hubungi kami melalui email resmi kami.
     <string name="delete">Hapus</string>
     <string name="last_synced_format"> | Terakhir disinkronkan: %s</string>
     <string name="usage_limit_title">Batas Harian Tercapai</string>
-    <string name="usage_limit_message">Anda telah mencapai batas harian 15 pesan.\n\nUpgrade ke Premium untuk pesan tanpa batas!</string>
+    <string name="usage_limit_message">Anda telah mencapai batas harian 15 pesan untuk bot gratis.\n\nBot milik Anda sendiri tidak memiliki batasan!</string>
     <string name="usage_limit_upgrade">Upgrade</string>
     <string name="file_manager_title">Berkas</string>
     <string name="file_filter_photos">Foto</string>
