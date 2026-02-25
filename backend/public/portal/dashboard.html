@@ -182,12 +182,14 @@
         /* Slot selector */
         .slot-selector {
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             margin-bottom: 16px;
         }
 
         .slot-btn {
-            flex: 1;
+            flex: 1 1 calc(25% - 6px);
+            min-width: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -728,22 +730,7 @@
                 <!-- Slot Selector -->
                 <label class="form-label" data-i18n="dash_label_select_slot">Select Entity Slot</label>
                 <div class="slot-selector" id="slotSelector">
-                    <button class="slot-btn active" data-slot="0" onclick="selectSlot(0)">
-                        <span class="slot-emoji">🦞</span>
-                        <span>Slot 0</span>
-                    </button>
-                    <button class="slot-btn" data-slot="1" onclick="selectSlot(1)">
-                        <span class="slot-emoji">🐷</span>
-                        <span>Slot 1</span>
-                    </button>
-                    <button class="slot-btn" data-slot="2" onclick="selectSlot(2)">
-                        <span class="slot-emoji">🦞</span>
-                        <span>Slot 2</span>
-                    </button>
-                    <button class="slot-btn" data-slot="3" onclick="selectSlot(3)">
-                        <span class="slot-emoji">🐷</span>
-                        <span>Slot 3</span>
-                    </button>
+                    <!-- Populated dynamically by renderSlotSelector() -->
                 </div>
 
                 <!-- Generate Code Button -->
@@ -943,6 +930,7 @@
         // --- State ---
         let entities = [];
         let selectedSlot = 0;
+        let maxEntitySlots = 4; // Updated from API (premium=8, free=4)
         let currentCode = null;
         let codeExpiry = null;
         let countdownInterval = null;
@@ -981,6 +969,7 @@
             const user = await checkAuth();
             if (!user) return;
             initPortalSocket();
+            renderSlotSelector();
 
             await loadEntities();
 
@@ -1014,6 +1003,14 @@
                 }
 
                 entities = newEntities;
+
+                // Update slot limit from server (premium=8, free=4)
+                const serverMax = data.maxEntitiesPerDevice || 4;
+                if (serverMax !== maxEntitySlots) {
+                    maxEntitySlots = serverMax;
+                    renderSlotSelector();
+                }
+
                 renderEntities();
                 updateEntityCount();
                 updateSlotAvailability();
@@ -1027,10 +1024,24 @@
         }
 
         function updateEntityCount() {
-            const isPremium = currentUser.subscription && currentUser.subscription.tier === 'premium';
-            const max = isPremium ? 8 : 4;
             document.getElementById('entityCount').innerHTML =
-                '<strong>' + entities.length + '</strong> / ' + max + ' bound';
+                '<strong>' + entities.length + '</strong> / ' + maxEntitySlots + ' bound';
+        }
+
+        function renderSlotSelector() {
+            const container = document.getElementById('slotSelector');
+            const occupiedSlots = new Set(entities.map(e => e.entityId));
+            container.innerHTML = '';
+            for (let i = 0; i < maxEntitySlots; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'slot-btn';
+                btn.dataset.slot = i;
+                btn.onclick = () => selectSlot(i);
+                if (i === selectedSlot) btn.classList.add('active');
+                if (occupiedSlots.has(i)) btn.classList.add('occupied');
+                btn.innerHTML = '<span class="slot-emoji">' + (i % 2 === 0 ? '🦞' : '🐷') + '</span><span>Slot ' + i + '</span>';
+                container.appendChild(btn);
+            }
         }
 
         function updateSlotAvailability() {
@@ -1052,7 +1063,7 @@
                 // Reset code display since current slot was just bound
                 resetCodeDisplay();
                 // Auto-select first available slot
-                const firstAvailable = [0, 1, 2, 3].find(s => !occupiedSlots.has(s));
+                const firstAvailable = Array.from({length: maxEntitySlots}, (_, i) => i).find(s => !occupiedSlots.has(s));
                 if (firstAvailable !== undefined) {
                     selectSlot(firstAvailable);
                 }
