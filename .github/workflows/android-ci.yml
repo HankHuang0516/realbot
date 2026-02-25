@@ -30,6 +30,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create dummy google-services.json for CI
+        run: |
+          cat > app/google-services.json << 'GSEOF'
+          {"project_info":{"project_number":"000000000000","project_id":"dummy-ci","storage_bucket":"dummy-ci.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.hank.clawlive"}},"api_key":[{"current_key":"dummy-key-for-ci"}]}],"configuration_version":"1"}
+          GSEOF
+
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -64,6 +70,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create dummy google-services.json for CI
+        run: |
+          cat > app/google-services.json << 'GSEOF'
+          {"project_info":{"project_number":"000000000000","project_id":"dummy-ci","storage_bucket":"dummy-ci.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.hank.clawlive"}},"api_key":[{"current_key":"dummy-key-for-ci"}]}],"configuration_version":"1"}
+          GSEOF
+
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -95,6 +107,12 @@ jobs:
     needs: lint
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create dummy google-services.json for CI
+        run: |
+          cat > app/google-services.json << 'GSEOF'
+          {"project_info":{"project_number":"000000000000","project_id":"dummy-ci","storage_bucket":"dummy-ci.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.hank.clawlive"}},"api_key":[{"current_key":"dummy-key-for-ci"}]}],"configuration_version":"1"}
+          GSEOF
 
       - uses: actions/setup-java@v4
         with:
@@ -129,6 +147,12 @@ jobs:
     if: ${{ vars.RUN_INSTRUMENTED_TESTS == 'true' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Create dummy google-services.json for CI
+        run: |
+          cat > app/google-services.json << 'GSEOF'
+          {"project_info":{"project_number":"000000000000","project_id":"dummy-ci","storage_bucket":"dummy-ci.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:000000000000:android:0000000000000000","android_client_info":{"package_name":"com.hank.clawlive"}},"api_key":[{"current_key":"dummy-key-for-ci"}]}],"configuration_version":"1"}
+          GSEOF
 
       - uses: actions/setup-java@v4
         with:

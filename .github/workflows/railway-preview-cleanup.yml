@@ -9,6 +9,10 @@ on:
     branches: [main]
     types: [closed]          # fires on both merge and manual close
 
+permissions:
+  pull-requests: write
+  issues: write
+
 jobs:
   cleanup:
     name: Delete Railway preview environment
