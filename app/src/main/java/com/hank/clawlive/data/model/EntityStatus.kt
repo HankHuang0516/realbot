@@ -16,6 +16,7 @@ data class EntityStatus(
     val usage: UsageInfo? = null,
     val messageQueue: List<MessageQueueItem>? = null,
     val botSecret: String? = null,  // For bot polling API calls
+    val avatar: String? = null,  // User-chosen emoji avatar (synced from server)
     val xp: Int = 0,
     val level: Int = 1
 ) {

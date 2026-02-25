@@ -65,6 +65,12 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var chipGroupLanguage: ChipGroup
     private lateinit var chipLangEn: Chip
     private lateinit var chipLangZh: Chip
+    private lateinit var chipLangZhCn: Chip
+    private lateinit var chipLangJa: Chip
+    private lateinit var chipLangKo: Chip
+    private lateinit var chipLangTh: Chip
+    private lateinit var chipLangVi: Chip
+    private lateinit var chipLangId: Chip
     private lateinit var btnSetWallpaper: MaterialButton
     private lateinit var btnDebugEntityLimit: MaterialButton
     private lateinit var topBar: LinearLayout
@@ -73,6 +79,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var notifContentLayout: LinearLayout
     private lateinit var notifExpandArrow: ImageView
     private var isNotifExpanded = false
+    private lateinit var langHeader: LinearLayout
+    private lateinit var langContentLayout: LinearLayout
+    private lateinit var langExpandArrow: ImageView
+    private var isLangExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,6 +104,7 @@ class SettingsActivity : AppCompatActivity() {
         updateEntityCount()
         displayAppVersion()
         setupNotifCollapsible()
+        setupLangCollapsible()
     }
 
     private fun setupEdgeToEdgeInsets() {
@@ -139,6 +150,12 @@ class SettingsActivity : AppCompatActivity() {
         chipGroupLanguage = findViewById(R.id.chipGroupLanguage)
         chipLangEn = findViewById(R.id.chipLangEn)
         chipLangZh = findViewById(R.id.chipLangZh)
+        chipLangZhCn = findViewById(R.id.chipLangZhCn)
+        chipLangJa = findViewById(R.id.chipLangJa)
+        chipLangKo = findViewById(R.id.chipLangKo)
+        chipLangTh = findViewById(R.id.chipLangTh)
+        chipLangVi = findViewById(R.id.chipLangVi)
+        chipLangId = findViewById(R.id.chipLangId)
         topBar = findViewById(R.id.topBar)
         btnSetWallpaper = findViewById(R.id.btnSetWallpaper)
         tvEntityCount = findViewById(R.id.tvEntityCount)
@@ -151,6 +168,9 @@ class SettingsActivity : AppCompatActivity() {
         notifHeader = findViewById(R.id.notifHeader)
         notifContentLayout = findViewById(R.id.notifContentLayout)
         notifExpandArrow = findViewById(R.id.notifExpandArrow)
+        langHeader = findViewById(R.id.langHeader)
+        langContentLayout = findViewById(R.id.langContentLayout)
+        langExpandArrow = findViewById(R.id.langExpandArrow)
 
         // Show debug button only in debug builds
         if (BuildConfig.DEBUG) {
@@ -196,14 +216,20 @@ class SettingsActivity : AppCompatActivity() {
         // Language selection
         chipGroupLanguage.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.isNotEmpty()) {
-                val localeList = when (checkedIds[0]) {
-                    R.id.chipLangZh -> LocaleListCompat.forLanguageTags("zh-TW")
-                    else -> LocaleListCompat.forLanguageTags("en")
+                val tag = when (checkedIds[0]) {
+                    R.id.chipLangZh -> "zh-TW"
+                    R.id.chipLangZhCn -> "zh-CN"
+                    R.id.chipLangJa -> "ja"
+                    R.id.chipLangKo -> "ko"
+                    R.id.chipLangTh -> "th"
+                    R.id.chipLangVi -> "vi"
+                    R.id.chipLangId -> "in"
+                    else -> "en"
                 }
-
+                val localeList = LocaleListCompat.forLanguageTags(tag)
                 val current = AppCompatDelegate.getApplicationLocales()
                 if (current.toLanguageTags() != localeList.toLanguageTags()) {
-                     AppCompatDelegate.setApplicationLocales(localeList)
+                    AppCompatDelegate.setApplicationLocales(localeList)
                 }
             }
         }
@@ -211,23 +237,21 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadCurrentLanguage() {
         val locales = AppCompatDelegate.getApplicationLocales()
-        if (!locales.isEmpty) {
-            // App has a specific locale set
-            val tag = locales.toLanguageTags()
-            if (tag.contains("zh")) {
-                chipLangZh.isChecked = true
-            } else {
-                chipLangEn.isChecked = true
-            }
+        val tag = if (!locales.isEmpty) {
+            locales.toLanguageTags()
         } else {
-            // Follow system: Check system locale
-            val systemLocale = LocaleListCompat.getDefault()
-            val systemTag = systemLocale.toLanguageTags()
-            if (systemTag.contains("zh")) {
-                chipLangZh.isChecked = true
-            } else {
-                chipLangEn.isChecked = true
-            }
+            LocaleListCompat.getDefault().toLanguageTags()
+        }
+
+        when {
+            tag.contains("zh-CN") || tag.contains("zh-Hans") -> chipLangZhCn.isChecked = true
+            tag.contains("zh") -> chipLangZh.isChecked = true
+            tag.contains("ja") -> chipLangJa.isChecked = true
+            tag.contains("ko") -> chipLangKo.isChecked = true
+            tag.contains("th") -> chipLangTh.isChecked = true
+            tag.contains("vi") -> chipLangVi.isChecked = true
+            tag.contains("in") || tag.contains("id") -> chipLangId.isChecked = true
+            else -> chipLangEn.isChecked = true
         }
     }
 
@@ -606,6 +630,21 @@ class SettingsActivity : AppCompatActivity() {
             tvAppVersion.text = getString(R.string.app_version, version)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    // ============================================
+    // LANGUAGE COLLAPSIBLE
+    // ============================================
+
+    private fun setupLangCollapsible() {
+        langHeader.setOnClickListener {
+            isLangExpanded = !isLangExpanded
+            langContentLayout.visibility = if (isLangExpanded) View.VISIBLE else View.GONE
+            langExpandArrow.animate()
+                .rotation(if (isLangExpanded) 180f else 0f)
+                .setDuration(200)
+                .start()
         }
     }
 

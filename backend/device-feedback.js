@@ -262,7 +262,9 @@ function autoTriage(logSnapshot) {
 function generateAiPrompt(feedback, photos) {
     const lines = [];
 
-    lines.push(`## Bug Report #${feedback.id}`);
+    const promptTitleMap = { bug: 'Bug Report', feature: 'Feature Request', question: 'Question' };
+    const promptTitle = promptTitleMap[feedback.category] || 'Bug Report';
+    lines.push(`## ${promptTitle} #${feedback.id}`);
     lines.push('');
     lines.push(`**Description:** ${feedback.message}`);
     lines.push(`**Category:** ${feedback.category || 'bug'}`);
@@ -548,15 +550,23 @@ async function createGithubIssue(feedback, photos) {
     if (!token || !repo) return null;
 
     const prompt = generateAiPrompt(feedback, photos);
-    const severityLabel = `severity:${feedback.severity || 'medium'}`;
-    const labels = ['bug', 'ai-feedback', severityLabel];
+    const cat = feedback.category || 'bug';
+    const categoryLabelMap = { bug: 'bug', feature: 'enhancement', question: 'question' };
+    const categoryPrefixMap = { bug: 'Bug', feature: 'Feature', question: 'Question' };
+    const categoryLabel = categoryLabelMap[cat] || 'bug';
+    const prefix = categoryPrefixMap[cat] || 'Bug';
+
+    const labels = [categoryLabel, 'ai-feedback'];
+    if (cat === 'bug') {
+        labels.push(`severity:${feedback.severity || 'medium'}`);
+    }
     if (feedback.tags) {
         for (const tag of feedback.tags) {
             if (!tag.startsWith('endpoint:')) labels.push(tag);
         }
     }
 
-    const title = `[Feedback #${feedback.id}] ${(feedback.message || '').substring(0, 80)}`;
+    const title = `[${prefix} #${feedback.id}] ${(feedback.message || '').substring(0, 80)}`;
     const body = prompt;
 
     try {

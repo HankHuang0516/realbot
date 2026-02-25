@@ -60,6 +60,10 @@ interface ClawApiService {
     @PUT("api/device/entity/name")
     suspend fun renameEntity(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
+    // Update entity avatar (synced across devices)
+    @PUT("api/device/entity/avatar")
+    suspend fun updateEntityAvatar(@Body request: UpdateAvatarRequest): GenericResponse
+
     // ============================================
     // FEEDBACK
     // ============================================
