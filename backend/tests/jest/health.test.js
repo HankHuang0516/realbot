@@ -118,6 +118,7 @@ jest.mock('../../mission', () => {
     return jest.fn().mockReturnValue({
         router: express.Router(),
         initMissionDatabase: jest.fn().mockResolvedValue(undefined),
+        setNotifyCallback: jest.fn(),
     });
 });
 
@@ -127,6 +128,7 @@ jest.mock('../../auth', () => {
     return jest.fn().mockReturnValue({
         router: express.Router(),
         authMiddleware: noop,
+        softAuthMiddleware: noop,
         adminMiddleware: noop,
         initAuthDatabase: jest.fn().mockResolvedValue(undefined),
         pool: {
@@ -205,13 +207,9 @@ describe('GET /api/version', () => {
 // / (root)
 // ════════════════════════════════════════════════════════════════
 describe('GET /', () => {
-    it('returns HTTP 200', async () => {
+    it('redirects to /portal/', async () => {
         const res = await request(app).get('/');
-        expect(res.status).toBe(200);
-    });
-
-    it('response contains "Claw Backend Running"', async () => {
-        const res = await request(app).get('/');
-        expect(res.text).toContain('Claw Backend Running');
+        expect(res.status).toBe(302);
+        expect(res.headers.location).toBe('/portal/');
     });
 });

@@ -116,6 +116,7 @@ jest.mock('../../mission', () => {
     return jest.fn().mockReturnValue({
         router: express.Router(),
         initMissionDatabase: jest.fn().mockResolvedValue(undefined),
+        setNotifyCallback: jest.fn(),
     });
 });
 
@@ -125,6 +126,7 @@ jest.mock('../../auth', () => {
     return jest.fn().mockReturnValue({
         router: express.Router(),
         authMiddleware: noop,
+        softAuthMiddleware: noop,
         adminMiddleware: noop,
         initAuthDatabase: jest.fn().mockResolvedValue(undefined),
         pool: {
