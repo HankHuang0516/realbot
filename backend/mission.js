@@ -97,7 +97,7 @@ function toPriorityName(val) {
     return PRIORITY_MAP[parseInt(val)] || 'MEDIUM';
 }
 
-module.exports = function(devices) {
+module.exports = function(devices, { awardEntityXP } = {}) {
     const router = express.Router();
 
     // ============================================
@@ -921,7 +921,7 @@ module.exports = function(devices) {
     // ============================================
     router.post('/todo/done', async (req, res) => {
         if (!authenticate(req, res)) return;
-        const { deviceId, title } = req.body;
+        const { deviceId, title, entityId } = req.body;
 
         if (!title) {
             return res.status(400).json({ success: false, error: 'Missing title' });
@@ -984,6 +984,16 @@ module.exports = function(devices) {
 
             console.log(`[Mission] TODO marked done: "${item.title}" (from ${fromList}) by bot, device ${deviceId}`);
 
+            // Award XP for completing TODO
+            let xpResult = null;
+            let xpAwarded = 0;
+            if (entityId != null && awardEntityXP) {
+                const priorityName = toPriorityName(item.priority);
+                const XP_AMOUNTS = { LOW: 10, MEDIUM: 25, HIGH: 50, CRITICAL: 100 };
+                xpAwarded = XP_AMOUNTS[priorityName] || 25;
+                xpResult = awardEntityXP(deviceId, parseInt(entityId), xpAwarded, `todo_done:${item.title}`);
+            }
+
             // Notify device about TODO completion
             if (_notifyCallback) {
                 _notifyCallback(deviceId, {
@@ -999,7 +1009,11 @@ module.exports = function(devices) {
                 success: true,
                 message: `TODO "${item.title}" marked as done`,
                 item,
-                version: updateResult.rows[0].version
+                version: updateResult.rows[0].version,
+                xpAwarded,
+                entityXp: xpResult?.xp,
+                entityLevel: xpResult?.level,
+                leveledUp: xpResult?.leveledUp || false
             });
         } catch (error) {
             await client.query('ROLLBACK');

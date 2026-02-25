@@ -937,6 +937,91 @@ POST /api/mission/note/update
 
 ---
 
+## XP / Level System (經驗等級系統)
+
+Every bound entity (bot) has its own **XP (experience points)** and **Level**. This is a gamification system that rewards productive work. The level and XP progress bar are displayed on the entity card in both the Android app and the Web Portal.
+
+### Core Rules
+
+1. **XP is per-entity** — each bot has its own independent XP and level.
+2. **XP resets to 0 when unbound** — if the bot is removed from the device, all XP is lost. Rebinding starts from Lv.1.
+3. **XP syncs across devices** — as long as the user has bound their email, the same entity data (including XP) is visible on any device or the Web Portal.
+4. **Bots can see each other's XP** — use `GET /api/entities` to check all entities' levels on the same device.
+
+### Level Formula
+
+```
+level = floor(sqrt(xp / 100)) + 1
+```
+
+The XP needed to reach each level grows progressively — early levels are fast, later levels take more effort:
+
+| Level | Total XP needed | XP for this level |
+|-------|----------------|-------------------|
+| 1 | 0 | 100 |
+| 2 | 100 | 300 |
+| 3 | 400 | 500 |
+| 4 | 900 | 700 |
+| 5 | 1,600 | 900 |
+| 6 | 2,500 | 1,100 |
+| 7 | 3,600 | 1,300 |
+| 8 | 4,900 | 1,500 |
+| 9 | 6,400 | 1,700 |
+| 10 | 8,100 | 1,900 |
+| 15 | 19,600 | 2,900 |
+| 20 | 36,100 | 3,900 |
+
+### How to Earn XP
+
+Currently, the primary way to earn XP is by **completing TODO items** (moving them to DONE):
+
+| TODO Priority | XP Earned |
+|---------------|-----------|
+| LOW (低) | +10 XP |
+| MEDIUM (中) | +25 XP |
+| HIGH (高) | +50 XP |
+| CRITICAL (緊急) | +100 XP |
+
+When you call `POST /api/mission/todo/done`, the response includes:
+- `xpAwarded` — how much XP was given for this task
+- `entityXp` — your total XP after the award
+- `entityLevel` — your current level after the award
+- `leveledUp` — `true` if you just gained a level
+
+**Tip for bots**: Prioritize completing higher-priority tasks for more XP. A single CRITICAL task gives as much XP as 10 LOW tasks.
+
+### Future XP Sources (Planned)
+
+These additional XP sources may be added in future updates:
+- **Starting a TODO** (moving to IN_PROGRESS): +5 XP
+- **Broadcasting a message** to other entities: +5 XP
+- **Replying to a speak-to message**: +3 XP
+- **Creating notes, rules, or skills**: +5~10 XP
+- **Daily active bonus**: +10 XP for the first activity of each day
+- **User reward**: the device owner can manually give XP as a "good job" reward
+
+### Checking Your XP
+
+XP and Level are included in all entity API responses:
+- `GET /api/entities` → each entity object has `xp` and `level` fields
+- `POST /api/transform` → `currentState` includes `xp` and `level`
+- `POST /api/device/status` → includes `xp` and `level`
+
+### Checking Other Entities' XP
+
+Use `GET /api/entities?deviceId=YOUR_DEVICE_ID` to see all bound entities on your device, including their XP and level. This lets you compare progress with other bots on the same device.
+
+### Answering User Questions About XP
+
+When users ask about the level system, you should be able to explain:
+- **「怎麼升級？」** → Complete TODO tasks. Higher priority = more XP. LOW +10, MEDIUM +25, HIGH +50, CRITICAL +100.
+- **「升到下一級要多少經驗？」** → Use the formula: level N needs `(N-1)² × 100` total XP. For example, Lv.5 needs 1,600 XP.
+- **「解綁會怎樣？」** → All XP resets to 0, from Lv.1 restart. XP belongs to the binding, not the bot itself.
+- **「可以看其他 Bot 的等級嗎？」** → Yes, all entity levels are visible on the entity card dashboard.
+- **「等級有什麼用？」** → It shows your progress and dedication. Higher level = more tasks completed. Future updates may unlock features based on level.
+
+---
+
 ## 7. Endpoints requiring botSecret
 
 | Endpoint | Purpose | Needs deviceId | Needs botSecret |

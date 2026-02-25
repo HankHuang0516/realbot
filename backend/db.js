@@ -105,6 +105,10 @@ async function createTables() {
             )
         `);
 
+        // XP/Level system columns (migration for existing deployments)
+        await client.query(`ALTER TABLE entities ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0`);
+        await client.query(`ALTER TABLE entities ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1`);
+
         // Add bot_secret column if it doesn't exist (migration for existing deployments)
         await client.query(`
             ALTER TABLE official_bots ADD COLUMN IF NOT EXISTS bot_secret TEXT
@@ -178,8 +182,9 @@ async function saveDeviceData(deviceId, deviceData) {
                     `INSERT INTO entities (
                         device_id, entity_id, bot_secret, is_bound, name,
                         character, state, message, parts,
-                        last_updated, message_queue, webhook, app_version
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                        last_updated, message_queue, webhook, app_version,
+                        xp, level
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                     ON CONFLICT (device_id, entity_id)
                     DO UPDATE SET
                         bot_secret = $3,
@@ -192,7 +197,9 @@ async function saveDeviceData(deviceId, deviceData) {
                         last_updated = $10,
                         message_queue = $11,
                         webhook = $12,
-                        app_version = $13`,
+                        app_version = $13,
+                        xp = $14,
+                        level = $15`,
                     [
                         deviceId,
                         i,
@@ -206,7 +213,9 @@ async function saveDeviceData(deviceId, deviceData) {
                         entity.lastUpdated,
                         JSON.stringify(entity.messageQueue || []),
                         entity.webhook ? JSON.stringify(entity.webhook) : null,
-                        entity.appVersion
+                        entity.appVersion,
+                        entity.xp || 0,
+                        entity.level || 1
                     ]
                 );
             }
@@ -306,7 +315,9 @@ async function loadAllDevices() {
                 webhook: row.webhook
                     ? (typeof row.webhook === 'string' ? JSON.parse(row.webhook) : row.webhook)
                     : null,
-                appVersion: row.app_version
+                appVersion: row.app_version,
+                xp: parseInt(row.xp) || 0,
+                level: parseInt(row.level) || 1
             };
         }
 

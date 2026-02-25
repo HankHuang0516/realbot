@@ -103,6 +103,37 @@
             text-overflow: ellipsis;
         }
 
+        .entity-xp {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .entity-xp-level {
+            font-weight: 700;
+            font-size: 11px;
+            color: #FFD700;
+            white-space: nowrap;
+        }
+        .entity-xp-bar {
+            flex: 1;
+            height: 5px;
+            background: var(--input-bg, #2a2a3e);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .entity-xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        .entity-xp-text {
+            font-size: 10px;
+            color: var(--text-muted, #888);
+            white-space: nowrap;
+        }
+
         .entity-card-footer {
             display: flex;
             align-items: center;
@@ -1035,6 +1066,17 @@
             }
         }
 
+        function getXpDisplay(entity) {
+            var xp = entity.xp || 0;
+            var level = entity.level || 1;
+            var currentThreshold = Math.pow(level - 1, 2) * 100;
+            var nextThreshold = Math.pow(level, 2) * 100;
+            var xpInLevel = xp - currentThreshold;
+            var xpNeeded = nextThreshold - currentThreshold;
+            var pct = xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 0;
+            return { level: level, xpInLevel: xpInLevel, xpNeeded: xpNeeded, pct: pct };
+        }
+
         // --- Rendering ---
         function renderEntities() {
             const grid = document.getElementById('entityGrid');
@@ -1069,6 +1111,14 @@
                     '<span class="badge-id">#' + entity.entityId + '</span>' +
                     '<span class="badge ' + stateBadgeClass + '">' + escapeHtml(state) + '</span>' +
                     '</div>' +
+                    (function() {
+                        var xd = getXpDisplay(entity);
+                        return '<div class="entity-xp">' +
+                            '<span class="entity-xp-level">Lv.' + xd.level + '</span>' +
+                            '<div class="entity-xp-bar"><div class="entity-xp-bar-fill" style="width:' + xd.pct.toFixed(1) + '%"></div></div>' +
+                            '<span class="entity-xp-text">' + xd.xpInLevel + '/' + xd.xpNeeded + ' XP</span>' +
+                            '</div>';
+                    })() +
                     '<div class="entity-message">' + escapeHtml(lastMsg) + '</div>' +
                     '</div>' +
                     '</div>' +

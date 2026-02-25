@@ -89,12 +89,54 @@
 
         </LinearLayout>
 
+        <!-- XP/Level Bar -->
+        <LinearLayout
+            android:id="@+id/xpBarRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:paddingHorizontal="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvLevel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lv.1"
+                android:textColor="#FFD700"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="8dp"/>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/xpProgressBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:trackThickness="6dp"
+                app:trackCornerRadius="3dp"
+                app:indicatorColor="#FFD700"
+                app:trackColor="#333355"/>
+
+            <TextView
+                android:id="@+id/tvXpText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0/100 XP"
+                android:textColor="#888888"
+                android:textSize="10sp"
+                android:layout_marginStart="8dp"/>
+
+        </LinearLayout>
+
         <!-- Last Message Bubble -->
         <LinearLayout
             android:id="@+id/messageBubble"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="8dp"
             android:orientation="vertical"
             android:padding="12dp"
             android:background="@drawable/message_bubble_background">
