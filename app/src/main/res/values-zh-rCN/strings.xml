@@ -88,6 +88,7 @@
     <string name="attach">附件</string>
     <string name="attach_camera">相机</string>
     <string name="attach_gallery">相册</string>
+    <string name="attach_video">视频</string>
     <string name="attach_file">文件</string>
     <string name="file_too_large">文件过大（最大 100MB）</string>
     <string name="wait_upload">请等待上传完成</string>

@@ -139,6 +139,10 @@ class ChatActivity : AppCompatActivity() {
         uris.forEach { uri -> stageFile(uri, "photo") }
     }
 
+    private val videoLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
+        uris.forEach { uri -> stageFile(uri, "video") }
+    }
+
     private val fileLauncher = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         uris.forEach { uri -> stageFile(uri, "file") }
     }
@@ -372,6 +376,7 @@ class ChatActivity : AppCompatActivity() {
         val options = arrayOf(
             getString(R.string.attach_camera),
             getString(R.string.attach_gallery),
+            getString(R.string.attach_video),
             getString(R.string.attach_file)
         )
         AlertDialog.Builder(this)
@@ -388,7 +393,10 @@ class ChatActivity : AppCompatActivity() {
                     1 -> { // Gallery (multi-select)
                         galleryLauncher.launch("image/*")
                     }
-                    2 -> { // File (multi-select)
+                    2 -> { // Video (multi-select)
+                        videoLauncher.launch("video/*")
+                    }
+                    3 -> { // File (multi-select)
                         fileLauncher.launch(arrayOf("*/*"))
                     }
                 }
@@ -426,7 +434,8 @@ class ChatActivity : AppCompatActivity() {
                 }
                 val mimeType = contentResolver.getType(uri) ?: "application/octet-stream"
                 val isImage = mimeType.startsWith("image/")
-                val mediaType = if (isImage) "photo" else type
+                val isVideo = mimeType.startsWith("video/")
+                val mediaType = if (isImage) "photo" else if (isVideo) "video" else type
 
                 val id = "${System.currentTimeMillis()}_${(Math.random() * 100000).toInt()}"
                 val entry = PendingFile(id = id, uri = uri, fileName = displayName, type = mediaType)
@@ -882,6 +891,7 @@ class ChatActivity : AppCompatActivity() {
             for ((i, f) in readyFiles.withIndex()) {
                 val msgText = if (i == 0 && text.isNotEmpty()) text
                     else if (f.type == "photo") "[Photo]"
+                    else if (f.type == "video") "[Video]"
                     else "[File] ${f.fileName}"
                 chatPrefs.saveLastMessage(msgText, targetIds)
                 sendMediaMessage(msgText, targetIds, f.type, f.mediaUrl!!)

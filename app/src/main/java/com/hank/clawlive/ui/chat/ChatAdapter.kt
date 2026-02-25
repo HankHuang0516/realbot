@@ -209,6 +209,23 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                         .centerCrop()
                         .into(ivPhoto)
                 }
+                "video" -> {
+                    ivPhoto.visibility = View.VISIBLE
+                    layoutFile.visibility = View.GONE
+                    layoutVoice.visibility = View.GONE
+                    tvMessage.visibility = if (message.text == "[Video]") View.GONE else View.VISIBLE
+                    if (message.text != "[Video]") tvMessage.text = message.text
+                    Glide.with(itemView.context)
+                        .load(message.mediaUrl)
+                        .centerCrop()
+                        .into(ivPhoto)
+                    ivPhoto.setOnClickListener {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(Uri.parse(message.mediaUrl), "video/*")
+                        }
+                        itemView.context.startActivity(intent)
+                    }
+                }
                 "file" -> {
                     ivPhoto.visibility = View.GONE
                     layoutFile.visibility = View.VISIBLE
@@ -382,6 +399,23 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                         .load(message.mediaUrl)
                         .centerCrop()
                         .into(ivPhoto)
+                }
+                "video" -> {
+                    ivPhoto.visibility = View.VISIBLE
+                    layoutFile.visibility = View.GONE
+                    layoutVoice.visibility = View.GONE
+                    tvMessage.visibility = if (message.text == "[Video]") View.GONE else View.VISIBLE
+                    if (message.text != "[Video]") tvMessage.text = message.text
+                    Glide.with(itemView.context)
+                        .load(message.mediaUrl)
+                        .centerCrop()
+                        .into(ivPhoto)
+                    ivPhoto.setOnClickListener {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(Uri.parse(message.mediaUrl), "video/*")
+                        }
+                        itemView.context.startActivity(intent)
+                    }
                 }
                 "file" -> {
                     ivPhoto.visibility = View.GONE
