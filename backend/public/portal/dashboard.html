@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="dash_title">E-Claw - Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦞</text></svg>">
     <link rel="stylesheet" href="shared/style.css">
     <style>
         .page-header {
@@ -936,6 +937,7 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="shared/entity-utils.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -943,13 +945,8 @@
     <script src="shared/footer.js"></script>
     <script>
         // --- Constants ---
-        const DEFAULT_AVATARS = { 0: '🦞', 1: '🐷', 2: '🦞', 3: '🐷' };
-        const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '🦞' },
-            1: { name: 'Pig', emoji: '🐷' },
-            2: { name: 'Lobster', emoji: '🦞' },
-            3: { name: 'Pig', emoji: '🐷' }
-        };
+        // ENTITY_CHARS_DEFAULT, getAvatarForEntity, getEntityDisplayName, getEntityLabel
+        // are provided by shared/entity-utils.js
         const AVATAR_OPTIONS = [
             '🦞', '🦀', '🐙', '🦑', '🐠', '🐟',
             '🐷', '🐶', '🐱', '🐰', '🦊', '🐻',
@@ -975,17 +972,12 @@
             return div.innerHTML;
         }
 
-        function getAvatarForEntity(entityId) {
-            // #64: Check server-synced avatar first
-            const entity = entities.find(e => e.entityId === entityId);
-            if (entity && entity.avatar) return entity.avatar;
-            const saved = localStorage.getItem('eclaw_avatar_' + entityId);
-            if (saved) return saved;
-            return DEFAULT_AVATARS[entityId] || '🦞';
-        }
+        // getAvatarForEntity is provided by shared/entity-utils.js
 
         function saveAvatarForEntity(entityId, emoji) {
             localStorage.setItem('eclaw_avatar_' + entityId, emoji);
+            // Update shared map so other functions pick it up immediately
+            _entityAvatarMap[entityId] = emoji;
             // #64: Upload avatar to server for cross-device sync
             apiCall('PUT', '/api/device/entity/avatar', {
                 entityId: entityId,
@@ -1034,6 +1026,7 @@
                 }
 
                 entities = newEntities;
+                updateEntityMaps(entities);
 
                 // Update slot limit from server (premium=8, free=4)
                 const serverMax = data.maxEntitiesPerDevice || 4;
@@ -1070,7 +1063,7 @@
                 btn.onclick = () => selectSlot(i);
                 if (i === selectedSlot) btn.classList.add('active');
                 if (occupiedSlots.has(i)) btn.classList.add('occupied');
-                btn.innerHTML = '<span class="slot-emoji">' + (i % 2 === 0 ? '🦞' : '🐷') + '</span><span>Slot ' + i + '</span>';
+                btn.innerHTML = '<span class="slot-emoji">' + (ENTITY_CHARS_DEFAULT[i]?.emoji || ENTITY_CHARS_DEFAULT[i % 4]?.emoji || '\u{1F99E}') + '</span><span>Slot ' + i + '</span>';
                 container.appendChild(btn);
             }
         }
@@ -1144,8 +1137,7 @@
 
             emptyState.style.display = 'none';
             grid.innerHTML = entities.map(entity => {
-                const char = ENTITY_CHARS[entity.entityId] || ENTITY_CHARS[0];
-                const displayName = entity.name || (char.name + ' #' + entity.entityId);
+                const displayName = entity.name || (getEntityDisplayName(entity.entityId) + ' #' + entity.entityId);
                 const avatar = getAvatarForEntity(entity.entityId);
                 const state = entity.state || 'idle';
                 const stateBadgeClass = getStateBadgeClass(state);
@@ -1549,8 +1541,8 @@
             }
 
             let html = '';
-            for (let i = 0; i < 4; i++) {
-                const char = ENTITY_CHARS[i] || ENTITY_CHARS[0];
+            for (let i = 0; i < maxEntitySlots; i++) {
+                const avatar = getAvatarForEntity(i);
                 const isActive = i === selectedBorrowEntity;
                 const binding = bindingMap[i];
                 const isOccupied = occupiedSlots.has(i) && !binding;
@@ -1563,7 +1555,7 @@
                 }
 
                 html += '<div class="borrow-chip' + (isActive ? ' active' : '') + '" data-slot="' + i + '" onclick="selectBorrowEntity(' + i + ')">' +
-                    char.emoji + ' Entity ' + i + badgeHtml +
+                    avatar + ' Entity ' + i + badgeHtml +
                     '</div>';
             }
             container.innerHTML = html;
@@ -1666,13 +1658,13 @@
             }
 
             container.innerHTML = bindings.map(b => {
-                const char = ENTITY_CHARS[b.entityId] || ENTITY_CHARS[0];
+                const avatar = getAvatarForEntity(b.entityId);
                 const typeBadgeClass = b.botType === 'free' ? 'badge-free' : 'badge-premium';
                 const typeText = b.botType === 'free' ? i18n.t('borrow_type_free') : i18n.t('borrow_type_personal');
 
                 return '<div class="binding-item">' +
                     '<div class="binding-info">' +
-                    '<span class="binding-emoji">' + char.emoji + '</span>' +
+                    '<span class="binding-emoji">' + avatar + '</span>' +
                     '<div class="binding-details">' +
                     '<span class="binding-entity-name">Entity ' + b.entityId + '</span>' +
                     '<span class="binding-type"><span class="badge ' + typeBadgeClass + '">' + typeText + '</span></span>' +

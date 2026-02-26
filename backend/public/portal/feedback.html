@@ -5,14 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="feedback_title">E-Claw - My Feedback</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦞</text></svg>">
     <link rel="stylesheet" href="shared/style.css">
     <style>
-        .feedback-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px 16px;
-        }
-
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -27,7 +22,7 @@
 
         /* Submit form section */
         .submit-section {
-            background: var(--card-bg);
+            background: var(--card);
             border: 1px solid var(--card-border);
             border-radius: var(--radius);
             padding: 20px;
@@ -58,17 +53,19 @@
             display: flex;
             gap: 10px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
         .cat-card {
             flex: 1;
+            min-width: 80px;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 14px 8px;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--card-border);
-            background: var(--bg-secondary);
+            background: var(--input-bg);
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -122,9 +119,9 @@
             width: 100%;
             min-height: 100px;
             padding: 12px;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--card-border);
-            background: var(--bg-secondary);
+            background: var(--input-bg);
             color: var(--text);
             font-size: 14px;
             font-family: inherit;
@@ -141,7 +138,7 @@
         .submit-btn {
             width: 100%;
             padding: 12px;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             border: none;
             background: var(--warning);
             color: #000;
@@ -164,9 +161,9 @@
         .submit-result {
             margin-top: 16px;
             padding: 16px;
-            border-radius: 12px;
-            border: 1px solid #2E7D32;
-            background: rgba(17, 26, 17, 0.8);
+            border-radius: var(--radius);
+            border: 1px solid var(--success);
+            background: var(--card);
             display: none;
         }
 
@@ -178,13 +175,13 @@
         }
 
         .result-header .check {
-            color: #4CAF50;
+            color: var(--success);
             font-size: 18px;
             font-weight: bold;
         }
 
         .result-header .title {
-            color: #4CAF50;
+            color: var(--success);
             font-size: 15px;
             font-weight: 600;
         }
@@ -207,9 +204,9 @@
             align-items: center;
             gap: 12px;
             padding: 12px;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             border: 1px solid var(--card-border);
-            background: var(--card-bg);
+            background: var(--card);
             text-decoration: none;
             color: var(--warning);
             transition: border-color 0.2s;
@@ -276,7 +273,7 @@
             padding: 6px 16px;
             border-radius: 20px;
             border: 1px solid var(--card-border);
-            background: var(--card-bg);
+            background: var(--card);
             color: var(--text-secondary);
             cursor: pointer;
             font-size: 13px;
@@ -297,7 +294,7 @@
 
         /* Feedback card */
         .feedback-card {
-            background: var(--card-bg);
+            background: var(--card);
             border: 1px solid var(--card-border);
             border-radius: var(--radius);
             padding: 16px;
@@ -431,8 +428,8 @@
             color: var(--warning);
             text-decoration: none;
             border: 1px solid var(--card-border);
-            border-radius: 8px;
-            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            background: var(--input-bg);
             transition: all 0.2s;
         }
 
@@ -489,9 +486,9 @@
             align-items: center;
             gap: 6px;
             padding: 8px 16px;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             border: 1px dashed var(--card-border);
-            background: var(--bg-secondary);
+            background: var(--input-bg);
             color: var(--text-secondary);
             font-size: 13px;
             cursor: pointer;
@@ -622,7 +619,7 @@
 </head>
 
 <body>
-    <div class="feedback-container">
+    <div class="container">
         <div class="page-header">
             <h2 data-i18n="feedback_title">My Feedback</h2>
             <a href="settings.html" class="back-link">&larr; Settings</a>

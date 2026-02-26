@@ -2479,6 +2479,7 @@ app.post('/api/client/speak', async (req, res) => {
             } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
+            pushMsg += getMissionApiHints(apiBase, deviceId, eId, entity.botSecret);
 
             pushResult = await pushToBot(entity, deviceId, "new_message", {
                 message: pushMsg
@@ -2665,6 +2666,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
+        pushMsg += getMissionApiHints(apiBase, deviceId, toId, toEntity.botSecret);
         pushToBot(toEntity, deviceId, "entity_message", {
             message: pushMsg
         }).then(pushResult => {
@@ -2846,6 +2848,7 @@ app.post('/api/entity/cross-speak', async (req, res) => {
         } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
         else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
+        pushMsg += getMissionApiHints(apiBase, target.deviceId, target.entityId, toEntity.botSecret);
 
         pushToBot(toEntity, target.deviceId, "cross_device_message", {
             message: pushMsg
@@ -3027,6 +3030,7 @@ app.post('/api/client/cross-speak', async (req, res) => {
         } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
         else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
         else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
+        pushMsg += getMissionApiHints(apiBase, target.deviceId, target.entityId, toEntity.botSecret);
 
         pushToBot(toEntity, target.deviceId, "cross_device_message", {
             message: pushMsg
@@ -3225,6 +3229,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
             } else if (mediaType === 'voice') pushMsg += `\n[Attachment: Voice]\nmedia_type: voice\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'video') pushMsg += `\n[Attachment: Video]\nmedia_type: video\nmedia_url: ${mediaUrl}`;
             else if (mediaType === 'file') pushMsg += `\n[Attachment: File]\nmedia_type: file\nmedia_url: ${mediaUrl}`;
+            pushMsg += getMissionApiHints(apiBase, deviceId, toId, toEntity.botSecret);
             pushToBot(toEntity, deviceId, "entity_broadcast", {
                 message: pushMsg
             }).then(pushResult => {
@@ -4739,6 +4744,19 @@ async function sendToSession(url, token, sessionKey, message) {
 }
 
 /**
+ * Helper: Generate Mission Dashboard API hints for bot push notifications.
+ * Appended to every push so the bot's LLM always has the tool signatures in context.
+ */
+function getMissionApiHints(apiBase, deviceId, entityId, botSecret) {
+    let hints = `\n\n[AVAILABLE TOOLS — Mission Dashboard]\n`;
+    hints += `Read tasks/notes/rules/skills: exec: curl -s "${apiBase}/api/mission/dashboard?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${entityId}"\n`;
+    hints += `Read notes: exec: curl -s "${apiBase}/api/mission/notes?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${entityId}"\n`;
+    hints += `Mark TODO done: exec: curl -s -X POST "${apiBase}/api/mission/todo/done" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","title":"TASK_TITLE"}'\n`;
+    hints += `Add note: exec: curl -s -X POST "${apiBase}/api/mission/note/add" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","title":"TITLE","content":"CONTENT"}'\n`;
+    return hints;
+}
+
+/**
  * Helper: Push notification to bot webhook
  * Supports OpenClaw format: POST to /tools/invoke with tool invocation payload
  */
@@ -5762,6 +5780,7 @@ async function executeScheduledMessage(schedule) {
         pushMsg += `[SCHEDULED MESSAGE] Device ${deviceId} Entity ${entityId}\n`;
         pushMsg += `From: scheduled\n`;
         pushMsg += `Content: ${message}`;
+        pushMsg += getMissionApiHints(apiBase, deviceId, entityId, entity.botSecret);
 
         pushResult = await pushToBot(entity, deviceId, 'new_message', {
             message: pushMsg

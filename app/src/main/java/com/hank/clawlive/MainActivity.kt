@@ -291,6 +291,24 @@ class MainActivity : AppCompatActivity() {
                 val response = api.getAllEntities(deviceId = deviceManager.deviceId)
                 val newEntities = response.entities.filter { it.isBound }
 
+                // #72 fix: Sync serverEntityLimit from API response
+                val prevLimit = layoutPrefs.serverEntityLimit
+                if (response.maxEntities != prevLimit) {
+                    layoutPrefs.serverEntityLimit = response.maxEntities
+                    Timber.d("[#72] serverEntityLimit updated: $prevLimit -> ${response.maxEntities}")
+                    // Refresh entity chips to show newly available slots
+                    chipGroupEntity.removeAllViews()
+                    entityChips = EntityChipHelper.populate(this@MainActivity, chipGroupEntity)
+                    // Re-attach chip listener after repopulation
+                    chipGroupEntity.setOnCheckedStateChangeListener { _, checkedIds ->
+                        if (checkedIds.isNotEmpty()) {
+                            val chipId = checkedIds[0]
+                            val selectedEntityId = entityChips.entries.find { it.value.id == chipId }?.key ?: 0
+                            viewModel.selectEntity(selectedEntityId)
+                        }
+                    }
+                }
+
                 // #48 diagnosis: log entity details on every poll
                 val prevIds = boundEntities.map { it.entityId }.sorted()
                 val newIds = newEntities.map { it.entityId }.sorted()

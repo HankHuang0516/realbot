@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="chat_title">E-Claw - Chat</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦞</text></svg>">
     <link rel="stylesheet" href="shared/style.css">
     <style>
         /* ── Chat Layout ── */
@@ -944,6 +945,7 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="shared/entity-utils.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -959,27 +961,8 @@
         let isFirstLoad = true;
         let crossDeviceMode = false;
 
-        const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '\u{1F99E}' },
-            1: { name: 'Pig', emoji: '\u{1F437}' },
-            2: { name: 'Lobster', emoji: '\u{1F99E}' },
-            3: { name: 'Pig', emoji: '\u{1F437}' }
-        };
-
-        // Entity name lookup (populated from boundEntities)
-        let entityNameMap = {};
-
-        function getEntityDisplayName(id) {
-            if (entityNameMap[id]) return entityNameMap[id];
-            const char = ENTITY_CHARS[id] || { name: 'Entity' };
-            return char.name;
-        }
-
-        function getEntityLabel(id) {
-            const char = ENTITY_CHARS[id] || { name: 'Entity', emoji: '?' };
-            const name = getEntityDisplayName(id);
-            return `${char.emoji} ${escapeHtml(name)} (#${id})`;
-        }
+        // ENTITY_CHARS, getEntityDisplayName, getEntityLabel, getAvatarForEntity
+        // are provided by shared/entity-utils.js
 
         // ── Init ──
         window.addEventListener('DOMContentLoaded', async () => {
@@ -1084,10 +1067,7 @@
                 const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
                 boundEntities = (data.entities || []).filter(e => e.isBound);
                 boundEntityIds = new Set(boundEntities.map(e => e.entityId));
-                entityNameMap = {};
-                boundEntities.forEach(e => {
-                    if (e.name) entityNameMap[e.entityId] = e.name;
-                });
+                updateEntityMaps(boundEntities);
                 renderTargetBar();
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
@@ -1114,13 +1094,13 @@
             const savedTargets = saved ? new Set(saved.split(',').map(Number)) : null;
 
             boundEntities.forEach(e => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
-                const name = e.name || char.name;
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
                 const isChecked = savedTargets ? savedTargets.has(e.entityId) : true;
                 const label = document.createElement('label');
                 label.className = 'target-check target-entity-check';
                 label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" ${isChecked ? 'checked' : ''} onchange="updateTargetAll()">
-                    <span>${char.emoji} ${escapeHtml(name)} (#${e.entityId})</span>`;
+                    <span>${avatar} ${escapeHtml(name)} (#${e.entityId})</span>`;
                 bar.appendChild(label);
             });
 
@@ -1274,11 +1254,11 @@
 
             const sortedIds = Array.from(entityIdsWithMessages).sort((a, b) => a - b);
             sortedIds.forEach(id => {
-                const char = ENTITY_CHARS[id] || ENTITY_CHARS[0];
+                const avatar = getAvatarForEntity(id);
                 const existing = group.querySelector(`[data-filter="entity-${id}"]`);
                 if (existing) {
                     // Update name in case it changed
-                    existing.textContent = `${char.emoji} ${getEntityDisplayName(id)} (#${id})`;
+                    existing.textContent = `${avatar} ${getEntityDisplayName(id)} (#${id})`;
                     return;
                 }
 
@@ -1286,7 +1266,7 @@
                 chip.className = `filter-chip filter-chip-entity${currentFilter === 'entity-' + id ? ' active' : ''}`;
                 chip.dataset.filter = `entity-${id}`;
                 chip.onclick = () => setFilter(`entity-${id}`);
-                chip.textContent = `${char.emoji} ${getEntityDisplayName(id)} (#${id})`;
+                chip.textContent = `${avatar} ${getEntityDisplayName(id)} (#${id})`;
                 group.insertBefore(chip, myChip);
             });
         }

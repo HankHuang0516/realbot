@@ -528,6 +528,10 @@ class ClawRenderer(private val context: Context) {
             1 -> Color.parseColor("#2196F3") // Blue
             2 -> Color.parseColor("#FF9800") // Orange
             3 -> Color.parseColor("#9C27B0") // Purple
+            4 -> Color.parseColor("#E91E63") // Pink
+            5 -> Color.parseColor("#00BCD4") // Cyan
+            6 -> Color.parseColor("#FF5722") // Deep Orange
+            7 -> Color.parseColor("#3F51B5") // Indigo
             else -> Color.GRAY
         }
 
@@ -740,8 +744,8 @@ class ClawRenderer(private val context: Context) {
         val charString = entity.character.uppercase(java.util.Locale.ROOT)
         // Check for overrides in parts
         val customColor = entity.parts?.get("COLOR")?.toInt()
-        val metallic = entity.parts?.get("METALLIC") ?: 0f
-        val gloss = entity.parts?.get("GLOSS") ?: 0f
+        val metallic = entity.parts?.get("METALLIC")?.toFloat() ?: 0f
+        val gloss = entity.parts?.get("GLOSS")?.toFloat() ?: 0f
 
         val (coralBright, coralDark) = if (customColor != null) {
             // Ensure alpha channel is set (in case only RGB was provided without alpha)
@@ -819,7 +823,7 @@ class ClawRenderer(private val context: Context) {
 
         // Left Claw
         canvas.save()
-        val leftRotation = entity.parts?.get("CLAW_LEFT") ?: 0f
+        val leftRotation = entity.parts?.get("CLAW_LEFT")?.toFloat() ?: 0f
         if (leftRotation != 0f) {
             canvas.rotate(leftRotation, 20f, 55f)
         }
@@ -835,7 +839,7 @@ class ClawRenderer(private val context: Context) {
 
         // Right Claw
         canvas.save()
-        val rightRotation = entity.parts?.get("CLAW_RIGHT") ?: 0f
+        val rightRotation = entity.parts?.get("CLAW_RIGHT")?.toFloat() ?: 0f
         if (rightRotation != 0f) {
             canvas.rotate(rightRotation, 100f, 55f) // Adjusted pivot
         }
@@ -899,8 +903,8 @@ class ClawRenderer(private val context: Context) {
         val lidPaint = Paint().apply { style = Paint.Style.FILL; color = Color.parseColor("#FF7F50"); isAntiAlias = true }
 
         val defaultLid = if (entity.state == CharacterState.SLEEPING) 1.0f else 0f
-        val lidFactor = entity.parts?.get("EYE_LID") ?: defaultLid
-        val browAngle = entity.parts?.get("EYE_ANGLE") ?: 0f
+        val lidFactor = entity.parts?.get("EYE_LID")?.toFloat() ?: defaultLid
+        val browAngle = entity.parts?.get("EYE_ANGLE")?.toFloat() ?: 0f
 
         drawSingleEye(canvas, leftEyeX, eyeY, eyeRadius, pupilRadius, lidFactor, browAngle, pupilPaint, lidPaint)
         drawSingleEye(canvas, rightEyeX, eyeY, eyeRadius, pupilRadius, lidFactor, -browAngle, pupilPaint, lidPaint)

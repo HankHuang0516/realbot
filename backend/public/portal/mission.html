@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="mc_title">E-Claw Mission Control</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦞</text></svg>">
     <link rel="stylesheet" href="shared/style.css">
     <style>
         .page-header {
@@ -439,6 +440,7 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="shared/entity-utils.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -453,24 +455,8 @@
         let refreshTimer = null;
         let boundEntities = [];
 
-        const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '\u{1F99E}' },
-            1: { name: 'Pig', emoji: '\u{1F437}' },
-            2: { name: 'Lobster', emoji: '\u{1F99E}' },
-            3: { name: 'Pig', emoji: '\u{1F437}' }
-        };
-
-        function getEntityDisplayName(id) {
-            const entity = boundEntities.find(e => e.entityId === id);
-            if (entity && entity.name) return entity.name;
-            const char = ENTITY_CHARS[id] || { name: 'Entity' };
-            return char.name;
-        }
-
-        function getEntityLabel(id) {
-            const char = ENTITY_CHARS[id] || { name: 'Entity', emoji: '?' };
-            return `${char.emoji} ${esc(getEntityDisplayName(id))} (#${id})`;
-        }
+        // ENTITY_CHARS_DEFAULT, getAvatarForEntity, getEntityDisplayName, getEntityLabel
+        // are provided by shared/entity-utils.js
 
         // --- Helpers ---
         const getPriorityLabel = (p) => {
@@ -520,6 +506,7 @@
             try {
                 const data = await apiCall('GET', `/api/entities?deviceId=${currentUser.deviceId}`);
                 boundEntities = (data.entities || []).filter(e => e.isBound);
+                updateEntityMaps(boundEntities);
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
             }
@@ -528,9 +515,9 @@
         function getEntityOptions(selectedId) {
             let opts = [{ value: '', label: i18n.t('mc_assign_none') || '-- 不指定 --' }];
             boundEntities.forEach(e => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
-                const name = e.name || char.name;
-                opts.push({ value: String(e.entityId), label: `${char.emoji} ${name} (#${e.entityId})` });
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
+                opts.push({ value: String(e.entityId), label: `${avatar} ${name} (#${e.entityId})` });
             });
             return opts;
         }
@@ -1199,12 +1186,12 @@
             const c = document.getElementById('dialogContainer');
 
             let entityCheckboxes = boundEntities.map(e => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
-                const name = e.name || char.name;
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
                 const checked = isEdit && (skill.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
                 return `<label>
                     <input type="checkbox" class="skill-entity-cb" value="${e.entityId}" ${checked}>
-                    ${char.emoji} ${esc(name)} (#${e.entityId})
+                    ${avatar} ${esc(name)} (#${e.entityId})
                 </label>`;
             }).join('');
 
@@ -1308,12 +1295,12 @@
             ).join('');
 
             let entityCheckboxes = boundEntities.map(e => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
-                const name = e.name || char.name;
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
                 const checked = isEdit && (rule.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
                 return `<label>
                     <input type="checkbox" class="rule-entity-cb" value="${e.entityId}" ${checked}>
-                    ${char.emoji} ${esc(name)} (#${e.entityId})
+                    ${avatar} ${esc(name)} (#${e.entityId})
                 </label>`;
             }).join('');
 
@@ -1472,12 +1459,12 @@
             const c = document.getElementById('dialogContainer');
 
             let entityCheckboxes = boundEntities.map(e => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
-                const name = e.name || char.name;
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
                 const checked = isEdit && (soul.assignedEntities || []).includes(String(e.entityId)) ? 'checked' : '';
                 return `<label>
                     <input type="checkbox" class="soul-entity-cb" value="${e.entityId}" ${checked}>
-                    ${char.emoji} ${esc(name)} (#${e.entityId})
+                    ${avatar} ${esc(name)} (#${e.entityId})
                 </label>`;
             }).join('');
 
