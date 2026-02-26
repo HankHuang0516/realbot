@@ -1,3 +1,10 @@
+## [1.27.1](https://github.com/HankHuang0516/realbot/compare/v1.27.0...v1.27.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* resolve 8 open issues via multi-agent parallel implementation ([d7b0ee0](https://github.com/HankHuang0516/realbot/commit/d7b0ee0f45477c76badcc64d46fa924110bd666a)), closes [#77](https://github.com/HankHuang0516/realbot/issues/77) [#76](https://github.com/HankHuang0516/realbot/issues/76) [#72](https://github.com/HankHuang0516/realbot/issues/72) [#73](https://github.com/HankHuang0516/realbot/issues/73) [#79](https://github.com/HankHuang0516/realbot/issues/79) [#80](https://github.com/HankHuang0516/realbot/issues/80) [#75](https://github.com/HankHuang0516/realbot/issues/75) [#74](https://github.com/HankHuang0516/realbot/issues/74)
+
 # [1.27.0](https://github.com/HankHuang0516/realbot/compare/v1.26.0...v1.27.0) (2026-02-25)
 
 
