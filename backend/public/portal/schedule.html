@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="sched_title">E-Claw - Schedule</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦞</text></svg>">
     <link rel="stylesheet" href="shared/style.css">
     <style>
         .page-header {
@@ -163,6 +164,11 @@
         .sched-actions button:hover {
             background: var(--card-border);
             color: var(--text);
+        }
+
+        .sched-actions .btn-edit:hover {
+            background: var(--primary);
+            color: #fff;
         }
 
         .sched-actions .btn-del:hover {
@@ -457,6 +463,7 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="shared/entity-utils.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -468,24 +475,8 @@
         let boundEntities = [];
         let refreshTimer = null;
 
-        const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '\u{1F99E}' },
-            1: { name: 'Pig', emoji: '\u{1F437}' },
-            2: { name: 'Lobster', emoji: '\u{1F99E}' },
-            3: { name: 'Pig', emoji: '\u{1F437}' }
-        };
-
-        let entityNameMap = {};
-        function getEntityDisplayName(id) {
-            if (entityNameMap[id]) return entityNameMap[id];
-            const char = ENTITY_CHARS[id] || { name: 'Entity' };
-            return char.name;
-        }
-
-        function getEntityLabel(id) {
-            const char = ENTITY_CHARS[id] || { name: 'Entity', emoji: '?' };
-            return char.emoji + ' ' + esc(getEntityDisplayName(id)) + ' (#' + id + ')';
-        }
+        // ENTITY_CHARS_DEFAULT, getAvatarForEntity, getEntityDisplayName, getEntityLabel
+        // are provided by shared/entity-utils.js
 
         function esc(s) {
             const d = document.createElement('div');
@@ -515,10 +506,7 @@
             try {
                 const data = await apiCall('GET', '/api/entities?deviceId=' + currentUser.deviceId);
                 boundEntities = (data.entities || []).filter(e => e.isBound);
-                entityNameMap = {};
-                boundEntities.forEach(e => {
-                    if (e.name) entityNameMap[e.entityId] = e.name;
-                });
+                updateEntityMaps(boundEntities);
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
             }
@@ -573,8 +561,7 @@
             }
 
             el.innerHTML = items.map(s => {
-                const char = ENTITY_CHARS[s.entityId] || ENTITY_CHARS[0];
-                const entityLabel = char.emoji + ' ' + getEntityDisplayName(s.entityId) + ' #' + s.entityId;
+                const entityLabel = getAvatarForEntity(s.entityId) + ' ' + getEntityDisplayName(s.entityId) + ' #' + s.entityId;
                 const timeStr = formatScheduleTime(s);
                 const statusClass = s.status;
                 const statusLabel = getStatusLabel(s.status);
@@ -606,13 +593,16 @@
 
                 const actionsHtml = showActions
                     ? '<div class="sched-actions">' +
+                      '<button class="btn-edit" onclick="event.stopPropagation();showEditDialog(' + s.id + ')" title="' + (i18n.t('sched_edit') || 'Edit') + '">&#9998;</button>' +
                       '<button class="btn-del" onclick="event.stopPropagation();confirmDelete(' + s.id + ')" title="' + (i18n.t('sched_delete') || 'Delete') + '">&times;</button>' +
                       '</div>'
                     : '';
 
-                const clickAttr = !showActions && s.id
-                    ? ' onclick="showExecutionContext(' + s.id + ')" style="cursor:pointer;" title="' + (i18n.t('sched_view_reply') || 'View Bot Reply') + '"'
-                    : '';
+                const clickAttr = showActions
+                    ? ' onclick="showEditDialog(' + s.id + ')" style="cursor:pointer;" title="' + (i18n.t('sched_edit') || 'Edit') + '"'
+                    : (!showActions && s.id
+                        ? ' onclick="showExecutionContext(' + s.id + ')" style="cursor:pointer;" title="' + (i18n.t('sched_view_reply') || 'View Bot Reply') + '"'
+                        : '');
 
                 return '<div class="sched-item status-' + statusClass + '"' + clickAttr + '>' +
                     '<div class="sched-row">' +
@@ -731,11 +721,11 @@
 
             // Entity chips
             const entityChips = boundEntities.map((e, idx) => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
-                const name = e.name || char.name;
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
                 const activeClass = idx === 0 ? ' active' : '';
                 return '<div class="entity-chip' + activeClass + '" data-entity="' + e.entityId + '" onclick="selectEntity(' + e.entityId + ')">' +
-                    char.emoji + ' ' + esc(name) + ' (#' + e.entityId + ')' +
+                    avatar + ' ' + esc(name) + ' (#' + e.entityId + ')' +
                     '</div>';
             }).join('');
 
@@ -926,6 +916,177 @@
                 showToast(e.message || 'Failed to create schedule', 'error');
                 btn.disabled = false;
                 btn.textContent = i18n.t('sched_btn_create') || 'Create';
+            }
+        }
+
+        // ── Edit Dialog ──
+        function showEditDialog(scheduleId) {
+            const schedule = allSchedules.find(s => s.id === scheduleId);
+            if (!schedule) {
+                showToast('Schedule not found', 'error');
+                return;
+            }
+
+            if (boundEntities.length === 0) {
+                showToast(i18n.t('sched_no_entities') || 'No bound entities. Bind an entity first.', 'error');
+                return;
+            }
+
+            const c = document.getElementById('dialogContainer');
+
+            // Entity chips - pre-select the schedule's entity
+            const entityChips = boundEntities.map(e => {
+                const avatar = getAvatarForEntity(e.entityId);
+                const name = getEntityDisplayName(e.entityId);
+                const activeClass = e.entityId === schedule.entityId ? ' active' : '';
+                return '<div class="entity-chip' + activeClass + '" data-entity="' + e.entityId + '" onclick="selectEntity(' + e.entityId + ')">' +
+                    avatar + ' ' + esc(name) + ' (#' + e.entityId + ')' +
+                    '</div>';
+            }).join('');
+
+            // Pre-fill the entity selection
+            selectedEntityId = schedule.entityId;
+
+            // Pre-fill the scheduled time
+            let defaultTime = '';
+            if (schedule.scheduledAt) {
+                defaultTime = toLocalISOString(new Date(schedule.scheduledAt));
+            } else {
+                const nextHour = new Date();
+                nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+                defaultTime = toLocalISOString(nextHour);
+            }
+
+            const repeatType = schedule.repeatType || 'once';
+            const cronExpr = schedule.cronExpr || '';
+            const showTimeField = repeatType !== 'cron';
+            const showCronField = repeatType === 'cron';
+
+            c.innerHTML = '<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">' +
+                '<div class="dialog">' +
+                '<div class="dialog-title">' + (i18n.t('sched_edit_title') || 'Edit Schedule') + '</div>' +
+
+                '<div class="dialog-field">' +
+                '<label>' + (i18n.t('sched_label_entity') || 'Target Entity') + '</label>' +
+                '<div class="entity-chip-group" id="entityChipGroup">' + entityChips + '</div>' +
+                '</div>' +
+
+                '<div class="dialog-field">' +
+                '<label>' + (i18n.t('sched_label_message') || 'Message') + '</label>' +
+                '<textarea id="dlgMessage" placeholder="' + (i18n.t('sched_placeholder_message') || 'Enter message to send...') + '">' + esc(schedule.message || '') + '</textarea>' +
+                '</div>' +
+
+                '<div class="dialog-field">' +
+                '<label>' + (i18n.t('sched_label_repeat') || 'Repeat') + '</label>' +
+                '<div class="repeat-row">' +
+                '<select id="dlgRepeatType" onchange="onRepeatChange()">' +
+                '<option value="once"' + (repeatType === 'once' ? ' selected' : '') + '>' + (i18n.t('sched_once') || 'One-time') + '</option>' +
+                '<option value="daily"' + (repeatType === 'daily' ? ' selected' : '') + '>' + (i18n.t('sched_repeat_daily') || 'Daily') + '</option>' +
+                '<option value="weekly"' + (repeatType === 'weekly' ? ' selected' : '') + '>' + (i18n.t('sched_repeat_weekly') || 'Weekly') + '</option>' +
+                '<option value="hourly"' + (repeatType === 'hourly' ? ' selected' : '') + '>' + (i18n.t('sched_repeat_hourly') || 'Hourly') + '</option>' +
+                '<option value="cron"' + (repeatType === 'cron' ? ' selected' : '') + '>' + (i18n.t('sched_repeat_cron') || 'Custom (Cron)') + '</option>' +
+                '</select>' +
+                '</div>' +
+                '</div>' +
+
+                '<div class="dialog-field" id="dlgTimeField"' + (showTimeField ? '' : ' style="display:none;"') + '>' +
+                '<label>' + (i18n.t('sched_label_time') || 'Scheduled Time') + '</label>' +
+                '<input type="datetime-local" id="dlgScheduledAt" value="' + defaultTime + '">' +
+                '<div class="quick-time-group">' +
+                '<button class="quick-time-btn" onclick="setQuickTime(5)">' + (i18n.t('sched_5min') || '5 min') + '</button>' +
+                '<button class="quick-time-btn" onclick="setQuickTime(15)">' + (i18n.t('sched_15min') || '15 min') + '</button>' +
+                '<button class="quick-time-btn" onclick="setQuickTime(30)">' + (i18n.t('sched_30min') || '30 min') + '</button>' +
+                '<button class="quick-time-btn" onclick="setQuickTime(60)">' + (i18n.t('sched_1hr') || '1 hr') + '</button>' +
+                '<button class="quick-time-btn" onclick="setQuickTime(180)">' + (i18n.t('sched_3hr') || '3 hr') + '</button>' +
+                '</div>' +
+                '</div>' +
+
+                '<div class="dialog-field" id="dlgCronField"' + (showCronField ? '' : ' style="display:none;"') + '>' +
+                '<label>' + (i18n.t('sched_label_cron') || 'Cron Expression') + '</label>' +
+                '<input type="text" id="dlgCronExpr" placeholder="30 8 * * *" value="' + esc(cronExpr) + '">' +
+                '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">' +
+                (i18n.t('sched_cron_hint') || 'Format: minute hour day month weekday (e.g., "30 8 * * *" = every day at 08:30)') +
+                '</div>' +
+                '</div>' +
+
+                '<div class="dialog-field">' +
+                '<label>' + (i18n.t('sched_label_label') || 'Label (optional)') + '</label>' +
+                '<input type="text" id="dlgLabel" placeholder="' + (i18n.t('sched_placeholder_label') || 'e.g., Morning greeting') + '" value="' + esc(schedule.label || '') + '">' +
+                '</div>' +
+
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" onclick="closeDialog()">' + (i18n.t('mc_dlg_cancel') || 'Cancel') + '</button>' +
+                '<button class="btn btn-primary" id="dlgSaveBtn" onclick="updateSchedule(' + scheduleId + ')">' + (i18n.t('sched_btn_save') || 'Save') + '</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+
+            // Focus message field
+            setTimeout(() => document.getElementById('dlgMessage').focus(), 100);
+        }
+
+        // ── Update Schedule ──
+        async function updateSchedule(scheduleId) {
+            const entityId = getSelectedEntity();
+            const message = document.getElementById('dlgMessage').value.trim();
+            const repeatType = document.getElementById('dlgRepeatType').value;
+            const scheduledAt = document.getElementById('dlgScheduledAt').value;
+            const label = document.getElementById('dlgLabel').value.trim();
+
+            if (!message) {
+                showToast(i18n.t('sched_err_message') || 'Please enter a message', 'error');
+                return;
+            }
+
+            let cronExpr = null;
+            let finalScheduledAt = null;
+
+            if (repeatType === 'once') {
+                if (!scheduledAt) {
+                    showToast(i18n.t('sched_err_time') || 'Please select a time', 'error');
+                    return;
+                }
+                finalScheduledAt = new Date(scheduledAt).toISOString();
+            } else if (repeatType === 'cron') {
+                cronExpr = document.getElementById('dlgCronExpr').value.trim();
+                if (!cronExpr) {
+                    showToast(i18n.t('sched_err_cron') || 'Please enter a cron expression', 'error');
+                    return;
+                }
+            } else {
+                // daily/weekly/hourly
+                if (!scheduledAt) {
+                    showToast(i18n.t('sched_err_time') || 'Please select a time', 'error');
+                    return;
+                }
+                cronExpr = generateCronFromType(repeatType, scheduledAt);
+                finalScheduledAt = new Date(scheduledAt).toISOString();
+            }
+
+            const btn = document.getElementById('dlgSaveBtn');
+            btn.disabled = true;
+            btn.textContent = i18n.t('sched_saving') || 'Saving...';
+
+            try {
+                await apiCall('PUT', '/api/schedules/' + scheduleId, {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: entityId,
+                    message: message,
+                    scheduledAt: finalScheduledAt,
+                    repeatType: repeatType,
+                    cronExpr: cronExpr,
+                    label: label || null,
+                    timezone: cronExpr ? Intl.DateTimeFormat().resolvedOptions().timeZone : null
+                });
+
+                closeDialog();
+                showToast(i18n.t('sched_updated_ok') || 'Schedule updated!', 'success');
+                await loadSchedules();
+            } catch (e) {
+                showToast(e.message || 'Failed to update schedule', 'error');
+                btn.disabled = false;
+                btn.textContent = i18n.t('sched_btn_save') || 'Save';
             }
         }
 

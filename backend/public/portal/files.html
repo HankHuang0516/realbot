@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="files_title">E-Claw - Files</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦞</text></svg>">
     <link rel="stylesheet" href="shared/style.css">
     <style>
         .page-header {
@@ -476,19 +477,15 @@
     <script src="shared/api.js"></script>
     <script src="shared/nav.js"></script>
     <script src="shared/auth.js"></script>
+    <script src="shared/entity-utils.js"></script>
     <script src="../shared/telemetry.js"></script>
     <script src="../shared/i18n.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="shared/socket.js"></script>
     <script src="shared/footer.js"></script>
     <script>
-        // --- Constants ---
-        const ENTITY_CHARS = {
-            0: { name: 'Lobster', emoji: '🦞' },
-            1: { name: 'Pig', emoji: '🐷' },
-            2: { name: 'Lobster', emoji: '🦞' },
-            3: { name: 'Pig', emoji: '🐷' }
-        };
+        // ENTITY_CHARS_DEFAULT, getAvatarForEntity, getEntityDisplayName, getEntityLabel
+        // are provided by shared/entity-utils.js
 
         // --- State ---
         let allFiles = [];
@@ -532,6 +529,7 @@
             try {
                 const data = await apiCall('GET', '/api/entities?deviceId=' + currentUser.deviceId);
                 entities = (data.entities || []).filter(e => e.isBound);
+                updateEntityMaps(entities);
                 renderEntityFilters();
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
@@ -546,9 +544,8 @@
             }
 
             container.innerHTML = entities.map(e => {
-                const char = ENTITY_CHARS[e.entityId] || ENTITY_CHARS[0];
                 const avatar = getAvatarForEntity(e.entityId);
-                const name = e.name || (char.name + ' #' + e.entityId);
+                const name = e.name || (getEntityDisplayName(e.entityId) + ' #' + e.entityId);
                 const isActive = currentEntityFilter === e.entityId;
                 return '<div class="filter-chip' + (isActive ? ' active' : '') + '" data-entity="' + e.entityId + '" onclick="setEntityFilter(' + e.entityId + ')">' +
                     avatar + ' ' + escapeHtml(name) +
@@ -556,12 +553,7 @@
             }).join('');
         }
 
-        function getAvatarForEntity(entityId) {
-            const saved = localStorage.getItem('eclaw_avatar_' + entityId);
-            if (saved) return saved;
-            const defaults = { 0: '🦞', 1: '🐷', 2: '🦞', 3: '🐷' };
-            return defaults[entityId] || '🦞';
-        }
+        // getAvatarForEntity is provided by shared/entity-utils.js
 
         // --- Time Filter ---
         function getTimeRange(filter) {
@@ -754,10 +746,7 @@
         }
 
         function getEntityName(entityId) {
-            const entity = entities.find(e => e.entityId === entityId);
-            if (entity && entity.name) return entity.name;
-            const char = ENTITY_CHARS[entityId] || ENTITY_CHARS[0];
-            return char.name + ' #' + entityId;
+            return getEntityDisplayName(entityId) + ' #' + entityId;
         }
 
         function updateStats() {
