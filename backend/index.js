@@ -4431,9 +4431,10 @@ app.post('/api/bot/register', async (req, res) => {
                     success: false,
                     message: "Webhook handshake failed: gateway cannot execute 'sessions_send' tool. " +
                         `Server responded: "${errorMessage}". ` +
-                        "Please allow the 'sessions_send' tool in your OpenClaw gateway configuration according to the official OpenClaw documentation. " +
-                        "IMPORTANT: Before modifying any configuration files, create a backup first and inform the user of the backup file location to prevent irreversible issues.",
-                    hint: "Refer to the official OpenClaw docs to allow sessions_send in your gateway config. Always back up config files before making changes.",
+                        "Please ask the user to enable 'sessions_send' in their OpenClaw gateway config. " +
+                        "WARNING: Do NOT directly edit config files with the edit tool — use 'openclaw config set' CLI command instead. " +
+                        "Editing config files directly can corrupt JSON and crash the gateway.",
+                    hint: "Ask user to run: openclaw config set gateway.tools.sessions_send.enabled true (or equivalent CLI command). Do NOT use edit/write tools on config files.",
                     debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
                 });
             }
@@ -4971,7 +4972,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             } else if (response.status === 405) {
                 debugHint = ' URL may be incorrect (double slash?). Re-register webhook with correct URL.';
             } else if (response.status === 404) {
-                debugHint = ' sessions_send tool not available. Please allow sessions_send in your gateway config according to official OpenClaw docs. Back up config files before making changes and note the backup location.';
+                debugHint = ' sessions_send tool not available. Ask user to enable it via openclaw CLI. WARNING: Do NOT edit config files directly — use openclaw config set CLI command to avoid corrupting JSON and crashing the gateway.';
             }
 
             // Notify device about webhook failure via entity message
