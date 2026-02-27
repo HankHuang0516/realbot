@@ -4853,6 +4853,27 @@ async function pushToBot(entity, deviceId, eventType, payload) {
                 }
             }
 
+            // Check for gateway disconnection / pairing required errors
+            if (responseText && (responseText.includes('pairing required') || responseText.includes('gateway closed'))) {
+                console.warn(`[Push] ✗ Device ${deviceId} Entity ${entity.entityId}: Bot gateway disconnected (pairing required)`);
+
+                entity.message = `[SYSTEM:BOT_OFFLINE] Bot gateway disconnected — pairing required. Please re-pair the bot on OpenClaw.`;
+                entity.lastUpdated = Date.now();
+
+                // Immediately notify connected clients via Socket.IO
+                io.to(`device:${deviceId}`).emit('entity:update', {
+                    deviceId, entityId: entity.entityId,
+                    name: entity.name, character: entity.character,
+                    state: entity.state, message: entity.message,
+                    parts: entity.parts, lastUpdated: entity.lastUpdated,
+                    xp: entity.xp || 0, level: entity.level || 1
+                });
+
+                serverLog('warn', 'client_push', `Entity ${entity.entityId} bot pairing required`, { deviceId, entityId: entity.entityId });
+
+                return { pushed: false, reason: 'pairing_required', error: 'Bot gateway disconnected — pairing required' };
+            }
+
             if (entity.pendingRename) { entity.pendingRename = null; }
             return { pushed: true };
         } else {
