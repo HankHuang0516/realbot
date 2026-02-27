@@ -720,6 +720,88 @@
         .tappay-field-input.tappay-field-error {
             border-color: #F44336;
         }
+
+        /* ── Edit Mode ── */
+        .edit-mode-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            display: none;
+        }
+        .edit-mode-btn:hover { background: var(--input-bg); color: var(--text); }
+        .edit-mode-btn.active { color: #4FC3F7; }
+
+        .drag-handle {
+            display: none;
+            align-items: center;
+            cursor: grab;
+            font-size: 20px;
+            color: #666;
+            padding: 4px;
+            flex-shrink: 0;
+            user-select: none;
+            touch-action: none;
+        }
+        .drag-handle:active { cursor: grabbing; }
+        .edit-mode .drag-handle { display: flex; }
+
+        .entity-edit-actions {
+            display: none;
+            gap: 8px;
+            padding: 12px 20px;
+            border-top: 1px solid var(--card-border);
+        }
+        .edit-mode .entity-edit-actions { display: flex; }
+        .edit-mode .entity-card-footer { display: none; }
+
+        .btn-refresh {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: transparent;
+            border: 1px solid #4FC3F7;
+            border-radius: var(--radius-sm);
+            color: #4FC3F7;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-refresh:hover { background: rgba(79, 195, 247, 0.1); }
+        .btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-remove-edit {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: transparent;
+            border: 1px solid var(--danger);
+            border-radius: var(--radius-sm);
+            color: var(--danger);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-remove-edit:hover { background: rgba(244, 67, 54, 0.1); }
+
+        .entity-card.dragging { opacity: 0.4; transform: scale(0.97); }
+        .entity-card.drag-over { border-color: #4FC3F7; box-shadow: 0 0 12px rgba(79, 195, 247, 0.3); }
+
+        @media (max-width: 640px) {
+            .entity-edit-actions { padding: 10px 12px; }
+        }
     </style>
 </head>
 
@@ -728,9 +810,12 @@
         <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title" data-i18n="dash_title">Dashboard</h1>
-            <span class="entity-count" id="entityCount">
-                <span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;"></span>
-            </span>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <button class="edit-mode-btn" id="btnEditMode" onclick="toggleEditMode()" title="Edit Mode">&#9998;</button>
+                <span class="entity-count" id="entityCount">
+                    <span class="spinner" style="width:14px;height:14px;border-width:2px;vertical-align:middle;"></span>
+                </span>
+            </div>
         </div>
 
         <!-- Entity Cards Grid -->
@@ -964,6 +1049,8 @@
         let countdownInterval = null;
         let refreshInterval = null;
         let isAddExpanded = false;
+        let isEditMode = false;
+        let originalEntityOrder = [];
 
         // --- Utilities ---
         function escapeHtml(str) {
@@ -1005,6 +1092,8 @@
 
         // --- Entity Loading ---
         async function loadEntities() {
+            // Skip updates during edit mode to preserve drag state (parity with Android)
+            if (isEditMode) return;
             try {
                 const data = await apiCall('GET', '/api/entities?deviceId=' + currentUser.deviceId);
                 const newEntities = (data.entities || []).filter(e => e.isBound);
@@ -1050,6 +1139,9 @@
         function updateEntityCount() {
             document.getElementById('entityCount').innerHTML =
                 '<strong>' + entities.length + '</strong> / ' + maxEntitySlots + ' bound';
+            // Show edit button only when there are entities
+            var editBtn = document.getElementById('btnEditMode');
+            if (editBtn) editBtn.style.display = entities.length > 0 ? '' : 'none';
         }
 
         function renderSlotSelector() {
@@ -1136,6 +1228,7 @@
             }
 
             emptyState.style.display = 'none';
+            grid.classList.toggle('edit-mode', isEditMode);
             grid.innerHTML = entities.map(entity => {
                 const displayName = entity.name || (getEntityDisplayName(entity.entityId) + ' #' + entity.entityId);
                 const avatar = getAvatarForEntity(entity.entityId);
@@ -1143,12 +1236,14 @@
                 const stateBadgeClass = getStateBadgeClass(state);
                 const lastMsg = entity.message || 'No messages yet';
                 const time = formatTime(entity.lastUpdated);
+                const escapedName = escapeHtml(displayName).replace(/'/g, "\\'");
 
-                return '<div class="entity-card card">' +
+                return '<div class="entity-card card" data-entity-id="' + entity.entityId + '"' + (isEditMode ? ' draggable="true"' : '') + '>' +
                     '<div class="entity-card-body">' +
+                    '<div class="drag-handle" title="' + i18n.t('dash_drag_to_reorder') + '">&#9776;</div>' +
                     '<div class="entity-avatar" onclick="openAvatarPicker(' + entity.entityId + ')">' + avatar + '</div>' +
                     '<div class="entity-info">' +
-                    '<div class="entity-name" onclick="openRenamePicker(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')" title="' + i18n.t('dash_rename_title') + '">' + escapeHtml(displayName) + '</div>' +
+                    '<div class="entity-name" onclick="openRenamePicker(' + entity.entityId + ', \'' + escapedName + '\')" title="' + i18n.t('dash_rename_title') + '">' + escapeHtml(displayName) + '</div>' +
                     '<div class="entity-badges">' +
                     '<span class="badge-id">#' + entity.entityId + '</span>' +
                     '<span class="badge ' + stateBadgeClass + '">' + escapeHtml(state) + '</span>' +
@@ -1167,12 +1262,239 @@
                     '</div>' +
                     '<div class="entity-card-footer">' +
                     '<span class="entity-timestamp">' + time + '</span>' +
-                    '<button class="btn btn-danger btn-sm" onclick="confirmRemove(' + entity.entityId + ', \'' + escapeHtml(displayName).replace(/'/g, "\\'") + '\')">' +
-                    i18n.t('dash_btn_remove') +
-                    '</button>' +
+                    '</div>' +
+                    '<div class="entity-edit-actions">' +
+                    '<button class="btn-refresh" onclick="refreshEntity(' + entity.entityId + ', this)">&#x1F504; ' + i18n.t('dash_btn_refresh') + '</button>' +
+                    '<button class="btn-remove-edit" onclick="confirmRemove(' + entity.entityId + ', \'' + escapedName + '\')">' + i18n.t('dash_btn_remove') + '</button>' +
                     '</div>' +
                     '</div>';
             }).join('');
+            if (isEditMode) setupDragListeners();
+        }
+
+        // --- Edit Mode ---
+        function toggleEditMode() {
+            if (isEditMode) {
+                // Exiting: check if order changed, persist if so
+                var currentOrder = entities.map(function(e) { return e.entityId; });
+                var orderChanged = JSON.stringify(currentOrder) !== JSON.stringify(originalEntityOrder);
+                isEditMode = false;
+                document.getElementById('btnEditMode').classList.remove('active');
+                renderEntities();
+                if (orderChanged) {
+                    persistReorder(currentOrder);
+                } else {
+                    // Refresh from server in case entities changed during edit mode
+                    loadEntities();
+                }
+            } else {
+                // Entering: snapshot current order
+                originalEntityOrder = entities.map(function(e) { return e.entityId; });
+                isEditMode = true;
+                document.getElementById('btnEditMode').classList.add('active');
+                renderEntities();
+            }
+            if (window.telemetry) {
+                telemetry.trackAction(isEditMode ? 'edit_mode_on' : 'edit_mode_off');
+            }
+        }
+
+        // --- Drag to Reorder ---
+        var dragSrcEl = null;
+
+        function setupDragListeners() {
+            var cards = document.querySelectorAll('.entity-card[data-entity-id]');
+            cards.forEach(function(card) {
+                card.addEventListener('dragstart', handleDragStart);
+                card.addEventListener('dragover', handleDragOver);
+                card.addEventListener('dragenter', handleDragEnter);
+                card.addEventListener('dragleave', handleDragLeave);
+                card.addEventListener('drop', handleDrop);
+                card.addEventListener('dragend', handleDragEnd);
+                // Touch support for mobile
+                card.addEventListener('touchstart', handleTouchStart, { passive: false });
+                card.addEventListener('touchmove', handleTouchMove, { passive: false });
+                card.addEventListener('touchend', handleTouchEnd);
+            });
+        }
+
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.dataset.entityId);
+        }
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        function handleDragEnter() { this.classList.add('drag-over'); }
+        function handleDragLeave() { this.classList.remove('drag-over'); }
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (dragSrcEl === this) return;
+            var fromId = parseInt(dragSrcEl.dataset.entityId);
+            var toId = parseInt(this.dataset.entityId);
+            var fromIdx = entities.findIndex(function(en) { return en.entityId === fromId; });
+            var toIdx = entities.findIndex(function(en) { return en.entityId === toId; });
+            if (fromIdx !== -1 && toIdx !== -1) {
+                var tmp = entities[fromIdx];
+                entities[fromIdx] = entities[toIdx];
+                entities[toIdx] = tmp;
+                renderEntities();
+            }
+        }
+        function handleDragEnd() {
+            document.querySelectorAll('.entity-card').forEach(function(c) {
+                c.classList.remove('dragging', 'drag-over');
+            });
+        }
+
+        // Touch drag support (mobile)
+        var touchCard = null;
+        function handleTouchStart(e) {
+            if (!e.target.closest('.drag-handle')) return;
+            e.preventDefault();
+            touchCard = this;
+            this.classList.add('dragging');
+        }
+        function handleTouchMove(e) {
+            if (!touchCard) return;
+            e.preventDefault();
+            var touchY = e.touches[0].clientY;
+            var touchX = e.touches[0].clientX;
+            document.querySelectorAll('.entity-card[data-entity-id]').forEach(function(c) {
+                c.classList.remove('drag-over');
+            });
+            var el = document.elementFromPoint(touchX, touchY);
+            var target = el ? el.closest('.entity-card[data-entity-id]') : null;
+            if (target && target !== touchCard) target.classList.add('drag-over');
+        }
+        function handleTouchEnd() {
+            if (!touchCard) return;
+            var overCard = document.querySelector('.entity-card.drag-over');
+            if (overCard && overCard !== touchCard) {
+                var fromId = parseInt(touchCard.dataset.entityId);
+                var toId = parseInt(overCard.dataset.entityId);
+                var fromIdx = entities.findIndex(function(en) { return en.entityId === fromId; });
+                var toIdx = entities.findIndex(function(en) { return en.entityId === toId; });
+                if (fromIdx !== -1 && toIdx !== -1) {
+                    var tmp = entities[fromIdx];
+                    entities[fromIdx] = entities[toIdx];
+                    entities[toIdx] = tmp;
+                    renderEntities();
+                }
+            }
+            document.querySelectorAll('.entity-card').forEach(function(c) {
+                c.classList.remove('dragging', 'drag-over');
+            });
+            touchCard = null;
+        }
+
+        // --- Persist Reorder ---
+        async function persistReorder(currentOrder) {
+            // Build permutation: order[newSlot] = oldEntityId
+            var order = [];
+            for (var i = 0; i < maxEntitySlots; i++) order.push(i);
+            for (var i = 0; i < currentOrder.length; i++) {
+                order[i] = currentOrder[i];
+            }
+            var usedSlots = new Set(currentOrder);
+            var fillIdx = currentOrder.length;
+            for (var slot = 0; slot < maxEntitySlots; slot++) {
+                if (!usedSlots.has(slot) && fillIdx < maxEntitySlots) {
+                    order[fillIdx] = slot;
+                    fillIdx++;
+                }
+            }
+
+            if (window.telemetry) {
+                telemetry.trackAction('reorder_entities', { order: order });
+            }
+            showToast(i18n.t('dash_reorder_saving'), 'info');
+
+            try {
+                var result = await apiCall('POST', '/api/device/reorder-entities', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    order: order
+                });
+                if (result.success) {
+                    showToast(i18n.t('dash_reorder_success'), 'success');
+                    setTimeout(function() { loadEntities(); }, 500);
+                } else {
+                    showToast(i18n.t('dash_reorder_failed'), 'error');
+                    loadEntities();
+                }
+            } catch (e) {
+                if (window.telemetry) telemetry.trackError(e, { action: 'reorder_entities' });
+                showToast(i18n.t('dash_reorder_failed'), 'error');
+                loadEntities();
+            }
+        }
+
+        // --- Refresh Entity ---
+        async function refreshEntity(entityId, btnEl) {
+            var originalText = btnEl.textContent;
+            btnEl.disabled = true;
+            btnEl.textContent = i18n.t('dash_refreshing');
+            if (window.telemetry) telemetry.trackAction('refresh_entity', { entityId: entityId });
+
+            try {
+                var result = await apiCall('POST', '/api/entity/refresh', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    entityId: entityId
+                });
+                if (result.success) {
+                    showToast(i18n.t('dash_refresh_success'), 'success');
+                    setTimeout(function() { loadEntities(); }, 500);
+                } else if (result.webhookBroken) {
+                    showWebhookBrokenDialog(entityId, result.error);
+                } else {
+                    showToast(result.error || 'Refresh failed', 'error');
+                }
+            } catch (e) {
+                if (e.status === 429) {
+                    var remaining = (e.data && e.data.cooldown_remaining) || 60;
+                    showToast(i18n.t('dash_refresh_cooldown', { s: remaining }), 'error');
+                } else {
+                    if (window.telemetry) telemetry.trackError(e, { action: 'refresh_entity' });
+                    showToast(e.message || 'Refresh failed', 'error');
+                }
+            } finally {
+                btnEl.disabled = false;
+                btnEl.textContent = originalText;
+            }
+        }
+
+        function showWebhookBrokenDialog(entityId, errorMsg) {
+            if (window.telemetry) {
+                telemetry.trackAction('refresh_webhook_broken', { entityId: entityId, error: errorMsg || 'unknown' });
+            }
+            var overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML =
+                '<div class="dialog">' +
+                '<div class="dialog-title">' + i18n.t('dash_refresh_broken_title') + '</div>' +
+                '<p style="color:var(--text-secondary);font-size:14px;">' +
+                i18n.t('dash_refresh_broken_message') +
+                (errorMsg ? '<br><br><span style="font-size:12px;color:var(--text-muted);">' + escapeHtml(errorMsg) + '</span>' : '') +
+                '</p>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" onclick="this.closest(\'.confirm-overlay\').remove()">' + i18n.t('mc_dlg_cancel') + '</button>' +
+                '<button class="btn btn-primary" onclick="this.closest(\'.confirm-overlay\').remove(); scrollToRebind(' + entityId + ')">' + i18n.t('dash_refresh_broken_rebind') + '</button>' +
+                '</div>' +
+                '</div>';
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        }
+
+        function scrollToRebind(entityId) {
+            if (!isAddExpanded) toggleAddEntity();
+            selectSlot(entityId);
+            document.getElementById('addEntityCard').scrollIntoView({ behavior: 'smooth' });
         }
 
         // --- Avatar Emoji Picker ---
