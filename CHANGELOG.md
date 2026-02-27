@@ -1,3 +1,10 @@
+## [1.33.1](https://github.com/HankHuang0516/realbot/compare/v1.33.0...v1.33.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* **web:** show edit mode button by using inline-flex display ([b01600a](https://github.com/HankHuang0516/realbot/commit/b01600a61c2814e2bc17ab127fc3d29473d4aa1f))
+
 # [1.33.0](https://github.com/HankHuang0516/realbot/compare/v1.32.1...v1.33.0) (2026-02-27)
 
 
