@@ -1,3 +1,10 @@
+# [1.29.0](https://github.com/HankHuang0516/realbot/compare/v1.28.0...v1.29.0) (2026-02-27)
+
+
+### Features
+
+* record handshake failures to PostgreSQL for analysis ([8ad97be](https://github.com/HankHuang0516/realbot/commit/8ad97be7970669580e351c20e659c0a490cd552e))
+
 # [1.28.0](https://github.com/HankHuang0516/realbot/compare/v1.27.2...v1.28.0) (2026-02-27)
 
 
