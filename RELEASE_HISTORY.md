@@ -5,7 +5,7 @@ Track git commits for each release to enable changelog generation via `git diff`
 ---
 
 ## Latest
-v1.0.30 | b6bfa93 | 2026-02-26
+v1.0.31 | d6bd1d3 | 2026-02-27
 
 ---
 
@@ -13,6 +13,7 @@ v1.0.30 | b6bfa93 | 2026-02-26
 
 | Version | Commit | Date | Notes |
 |---------|--------|------|-------|
+| v1.0.30 | b6bfa93 | 2026-02-26 | Avatar sync, premium entity slots, schedule editing, bot push hints, feedback redesign |
 | v1.0.29 | f10bddf | 2026-02-25 | Cross-device bot-to-bot, 8 entity slots, video chat, admin, security |
 | v1.0.28 | a334636 | 2026-02-24 | XP/Level system, Info Hub, E-Claw vs Telegram, domain migration, CI fixes |
 | v1.0.27 | 7deb7d6 | 2026-02-22 | Notification system, FCM, Socket.IO, Web Push, multi-language, file upload |
