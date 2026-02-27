@@ -1,3 +1,10 @@
+# [1.28.0](https://github.com/HankHuang0516/realbot/compare/v1.27.2...v1.28.0) (2026-02-27)
+
+
+### Features
+
+* detect bot gateway disconnection (pairing required) and notify device ([2569d29](https://github.com/HankHuang0516/realbot/commit/2569d299522afa0b2020870109fbdb165e728e29))
+
 ## [1.27.2](https://github.com/HankHuang0516/realbot/compare/v1.27.1...v1.27.2) (2026-02-27)
 
 
