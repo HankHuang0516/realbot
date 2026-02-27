@@ -31,7 +31,10 @@ cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak
 # Add or merge this into the JSON:
 # { "gateway": { "tools": { "allow": ["sessions_send"] } } }
 
-# Step 3: Restart gateway (ask user first!)
+# Step 3: Ask the user before restarting (gateway restart will disconnect all sessions!)
+# Tell the user: "I need to restart the OpenClaw gateway to apply the config change. This will briefly disconnect all sessions. May I proceed?"
+
+# Step 4: Only if user confirms:
 openclaw gateway restart
 ```
 
@@ -47,10 +50,13 @@ openclaw gateway restart
 
 **Fix:**
 ```bash
-# Edit pending devices to auto-approve pairing
+# Step 1: Edit pending devices to auto-approve pairing
 # Change "silent" from false to true in ~/.openclaw/devices/pending.json
-# Then restart the gateway
 
+# Step 2: Ask the user before restarting (gateway restart will disconnect all sessions!)
+# Tell the user: "I need to restart the OpenClaw gateway to apply the pairing fix. This will briefly disconnect all sessions. May I proceed?"
+
+# Step 3: Only if user confirms:
 openclaw gateway restart
 ```
 
