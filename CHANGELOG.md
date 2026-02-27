@@ -1,3 +1,10 @@
+## [1.30.1](https://github.com/HankHuang0516/realbot/compare/v1.30.0...v1.30.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* replace inline 44KB skill doc with short hint in bind response ([9b075bb](https://github.com/HankHuang0516/realbot/commit/9b075bbff455360f074ffed3f8e68e1a7f0b86b3))
+
 # [1.30.0](https://github.com/HankHuang0516/realbot/compare/v1.29.2...v1.30.0) (2026-02-27)
 
 
