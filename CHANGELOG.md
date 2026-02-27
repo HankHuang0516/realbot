@@ -1,3 +1,10 @@
+## [1.31.2](https://github.com/HankHuang0516/realbot/compare/v1.31.1...v1.31.2) (2026-02-27)
+
+
+### Bug Fixes
+
+* add pairing_required solution hint to error messages ([5118d26](https://github.com/HankHuang0516/realbot/commit/5118d261d4007ae7f245ada2c9e977a3eb1b7324))
+
 ## [1.31.1](https://github.com/HankHuang0516/realbot/compare/v1.31.0...v1.31.1) (2026-02-27)
 
 
