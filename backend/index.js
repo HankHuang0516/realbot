@@ -1035,6 +1035,30 @@ function createDefaultEntity(entityId) {
 // ============================================
 const XP_PER_PRIORITY = { LOW: 10, MEDIUM: 25, HIGH: 50, CRITICAL: 100 };
 
+// Extended XP amounts for all channels
+const XP_AMOUNTS = {
+    BOT_REPLY: 10,           // Bot correctly replies to user message
+    MESSAGE_LIKED: 5,        // User likes a bot message
+    MESSAGE_DISLIKED: -5,    // User dislikes a bot message
+    PLAYER_PRAISE: 15,       // User praises bot via keyword
+    PLAYER_SCOLD: -15,       // User scolds bot via keyword
+    ENTITY_PRAISE: 10,       // Other entity praises this entity
+    ENTITY_SCOLD: -10,       // Other entity scolds this entity
+    MISSED_SCHEDULE: -10     // Bot didn't respond to scheduled task
+};
+
+// Keyword detection for praise/scold
+const PRAISE_KEYWORDS = ['做的好', '做得好', '好棒', '很棒', '真厲害', '太厲害', '幹得好', '表現很好', 'good job', 'well done', 'great job', 'nice work', 'good bot'];
+const SCOLD_KEYWORDS = ['違反規則', '不乖', '太差了', '做錯了', '不要這樣', '表現很差', 'bad bot', 'bad job', 'you did wrong'];
+
+// Rate limit tracking for praise/scold XP (deviceId:entityId -> timestamp)
+const praiseScoldCooldown = {};
+const PRAISE_SCOLD_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+// Rate limit tracking for entity-to-entity feedback XP (fromEntity:toEntity -> timestamp)
+const entityFeedbackCooldown = {};
+const ENTITY_FEEDBACK_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+
 function xpForLevel(level) {
     return Math.pow(level - 1, 2) * 100;
 }
@@ -1057,8 +1081,9 @@ function getXpProgress(xp) {
 }
 
 /**
- * Award XP to an entity. Recalculates level.
- * Returns { xp, level, leveledUp } or null if entity not found/not bound.
+ * Award (or deduct) XP to an entity. Recalculates level.
+ * Supports negative amounts for penalties. XP floor is 0.
+ * Returns { xp, level, leveledUp, leveledDown } or null if entity not found/not bound.
  */
 function awardEntityXP(deviceId, entityId, amount, reason) {
     const device = devices[deviceId];
@@ -1067,16 +1092,20 @@ function awardEntityXP(deviceId, entityId, amount, reason) {
     if (!entity || !entity.isBound) return null;
 
     const oldLevel = entity.level || 1;
-    entity.xp = (entity.xp || 0) + amount;
+    entity.xp = Math.max(0, (entity.xp || 0) + amount);
     entity.level = calculateLevel(entity.xp);
 
     const leveledUp = entity.level > oldLevel;
+    const leveledDown = entity.level < oldLevel;
 
-    console.log(`[XP] Device ${deviceId} Entity ${entityId}: +${amount} XP (${reason}), total: ${entity.xp}, level: ${entity.level}${leveledUp ? ' LEVEL UP!' : ''}`);
+    const prefix = amount >= 0 ? '[XP]' : '[XP-PENALTY]';
+    const sign = amount >= 0 ? '+' : '';
+    const levelMsg = leveledUp ? ' LEVEL UP!' : leveledDown ? ' LEVEL DOWN!' : '';
+    console.log(`${prefix} Device ${deviceId} Entity ${entityId}: ${sign}${amount} XP (${reason}), total: ${entity.xp}, level: ${entity.level}${levelMsg}`);
 
     saveData();
 
-    return { xp: entity.xp, level: entity.level, leveledUp };
+    return { xp: entity.xp, level: entity.level, leveledUp, leveledDown };
 }
 
 // Helper: Get version info for responses
@@ -1788,6 +1817,21 @@ app.post('/api/transform', (req, res) => {
     if (finalMessage) {
         saveChatMessage(deviceId, eId, finalMessage, entity.name || `Entity ${eId}`, false, true);
         markMessagesAsRead(deviceId, eId);
+
+        // XP: Award +10 for correctly replying to a user message
+        const hasPendingUserMsg = entity.messageQueue && entity.messageQueue.some(m => m.from && m.from !== 'system');
+        const now = Date.now();
+        const replyXpCooldown = 30000; // 30 seconds
+        if (hasPendingUserMsg && (!entity._lastReplyXpAt || now - entity._lastReplyXpAt > replyXpCooldown)) {
+            entity._lastReplyXpAt = now;
+            awardEntityXP(deviceId, eId, XP_AMOUNTS.BOT_REPLY, 'bot_reply');
+        }
+
+        // Clear missed-schedule flag if bot responded before deadline
+        if (entity._scheduleAwaitingResponse && now < entity._scheduleAwaitingResponse.deadline) {
+            console.log(`[XP] Entity ${eId} responded to schedule in time, no penalty`);
+            delete entity._scheduleAwaitingResponse;
+        }
     }
 
     console.log(`[Transform] Device ${deviceId} Entity ${eId}: ${state || entity.state} - "${finalMessage || entity.message}"`);
@@ -2522,6 +2566,30 @@ app.post('/api/client/speak', async (req, res) => {
     // Wait for all push operations to complete in parallel
     const results = (await Promise.all(pushPromises)).filter(r => r !== null);
 
+    // XP: Keyword detection for praise/scold
+    if (text) {
+        const lowerText = text.toLowerCase();
+        const isPraise = PRAISE_KEYWORDS.some(k => lowerText.includes(k.toLowerCase()));
+        const isScold = !isPraise && SCOLD_KEYWORDS.some(k => lowerText.includes(k.toLowerCase()));
+
+        if (isPraise || isScold) {
+            const xpAmount = isPraise ? XP_AMOUNTS.PLAYER_PRAISE : XP_AMOUNTS.PLAYER_SCOLD;
+            const reason = isPraise ? 'player_praise' : 'player_scold';
+            const now = Date.now();
+
+            for (const eId of targetIds) {
+                const cooldownKey = `${deviceId}:${eId}:${reason}`;
+                if (!praiseScoldCooldown[cooldownKey] || now - praiseScoldCooldown[cooldownKey] > PRAISE_SCOLD_COOLDOWN_MS) {
+                    praiseScoldCooldown[cooldownKey] = now;
+                    const xpResult = awardEntityXP(deviceId, eId, xpAmount, reason);
+                    if (xpResult) {
+                        console.log(`[XP] ${isPraise ? 'Praise' : 'Scold'} detected in user message for entity ${eId}: "${text.slice(0, 50)}"`);
+                    }
+                }
+            }
+        }
+    }
+
     res.json({
         success: true,
         message: `Sent to ${results.length} entity(s)`,
@@ -2696,6 +2764,29 @@ app.post('/api/entity/speak-to', async (req, res) => {
     if (officialBindTo) {
         const bot = officialBots[officialBindTo.bot_id];
         bindingTypeTo = bot ? bot.bot_type : null;
+    }
+
+    // XP: Entity-to-entity praise/scold detection
+    if (speakToText) {
+        const lowerSpeakText = speakToText.toLowerCase();
+        const ENTITY_PRAISE_PATTERNS = ['good job', 'well done', '做的好', '做得好', '你做對了', '幹得好', '[praise]'];
+        const ENTITY_SCOLD_PATTERNS = ['you did wrong', '做錯了', '不應該', '你搞砸了', '[scold]'];
+        const isPraise = ENTITY_PRAISE_PATTERNS.some(k => lowerSpeakText.includes(k.toLowerCase()));
+        const isScold = !isPraise && ENTITY_SCOLD_PATTERNS.some(k => lowerSpeakText.includes(k.toLowerCase()));
+
+        if (isPraise || isScold) {
+            const feedbackKey = `${deviceId}:${fromId}:${toId}`;
+            const now = Date.now();
+            if (!entityFeedbackCooldown[feedbackKey] || now - entityFeedbackCooldown[feedbackKey] > ENTITY_FEEDBACK_COOLDOWN_MS) {
+                entityFeedbackCooldown[feedbackKey] = now;
+                const xpAmount = isPraise ? XP_AMOUNTS.ENTITY_PRAISE : XP_AMOUNTS.ENTITY_SCOLD;
+                const reason = isPraise ? 'entity_praise' : 'entity_scold';
+                const xpResult = awardEntityXP(deviceId, toId, xpAmount, `${reason}:from_entity_${fromId}`);
+                if (xpResult) {
+                    console.log(`[XP] Entity ${fromId} ${isPraise ? 'praised' : 'scolded'} entity ${toId}: "${speakToText.slice(0, 50)}"`);
+                }
+            }
+        }
     }
 
     res.json({
@@ -3525,10 +3616,7 @@ app.put('/api/admin/official-bot/:botId', async (req, res) => {
  * DELETE /api/admin/official-bot/:botId
  * Remove an official bot from the pool.
  */
-app.delete('/api/admin/official-bot/:botId', async (req, res) => {
-    if (!verifyAdmin(req)) {
-        return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
-    }
+app.delete('/api/admin/official-bot/:botId', adminAuth, adminCheck, async (req, res) => {
 
     const { botId } = req.params;
     const bot = officialBots[botId];
@@ -5556,6 +5644,21 @@ chatPool.query(`
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS media_url TEXT DEFAULT NULL;
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS schedule_id INT DEFAULT NULL;
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS schedule_label TEXT DEFAULT NULL;
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS like_count INTEGER DEFAULT 0;
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS dislike_count INTEGER DEFAULT 0;
+`).catch(() => {});
+
+// Auto-migrate: create message_reactions table
+chatPool.query(`
+    CREATE TABLE IF NOT EXISTS message_reactions (
+        id SERIAL PRIMARY KEY,
+        message_id INTEGER NOT NULL,
+        device_id TEXT NOT NULL,
+        reaction_type VARCHAR(8) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(message_id, device_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_reactions_message ON message_reactions(message_id);
 `).catch(() => {});
 
 // ============================================
@@ -5896,6 +5999,24 @@ async function executeScheduledMessage(schedule) {
             console.log(`[Scheduler] Push OK to device ${deviceId} entity ${entityId}`);
         }
     }
+
+    // XP: Set deadline for bot to respond; penalty applied if missed
+    const SCHEDULE_RESPONSE_DEADLINE_MS = 5 * 60 * 1000; // 5 minutes
+    entity._scheduleAwaitingResponse = {
+        scheduleId: schedule.id,
+        entityId: entityId,
+        deadline: Date.now() + SCHEDULE_RESPONSE_DEADLINE_MS
+    };
+
+    // Check after deadline if bot responded
+    setTimeout(() => {
+        if (entity._scheduleAwaitingResponse && entity._scheduleAwaitingResponse.scheduleId === schedule.id) {
+            // Bot didn't respond in time — penalty
+            console.log(`[XP-PENALTY] Entity ${entityId} missed schedule #${schedule.id} deadline`);
+            awardEntityXP(deviceId, entityId, XP_AMOUNTS.MISSED_SCHEDULE, `missed_schedule:${schedule.id}`);
+            delete entity._scheduleAwaitingResponse;
+        }
+    }, SCHEDULE_RESPONSE_DEADLINE_MS + 1000);
 
     return {
         pushed: pushResult.pushed,
@@ -6471,18 +6592,21 @@ app.get('/api/chat/history', async (req, res) => {
     }
 
     try {
-        let query = 'SELECT * FROM chat_messages WHERE device_id = $1';
+        let query = `SELECT m.*, r.reaction_type AS user_reaction
+            FROM chat_messages m
+            LEFT JOIN message_reactions r ON r.message_id = m.id AND r.device_id = m.device_id
+            WHERE m.device_id = $1`;
         const params = [deviceId];
 
         if (since) {
-            query += ' AND created_at > $' + (params.length + 1);
+            query += ' AND m.created_at > $' + (params.length + 1);
             params.push(new Date(parseInt(since)));
         } else if (before) {
-            query += ' AND created_at < $' + (params.length + 1);
+            query += ' AND m.created_at < $' + (params.length + 1);
             params.push(new Date(parseInt(before)));
         }
 
-        query += ' ORDER BY created_at DESC LIMIT $' + (params.length + 1);
+        query += ' ORDER BY m.created_at DESC LIMIT $' + (params.length + 1);
         params.push(parseInt(limit) || 500);
 
         const result = await chatPool.query(query, params);
@@ -6495,6 +6619,143 @@ app.get('/api/chat/history', async (req, res) => {
     } catch (error) {
         console.error('[Chat] History error:', error);
         res.status(500).json({ success: false, error: 'Failed to get chat history' });
+    }
+});
+
+// ============================================
+// MESSAGE REACTIONS (Like / Dislike)
+// ============================================
+
+/**
+ * POST /api/message/:messageId/react
+ * Toggle like/dislike on a bot message. Awards/deducts XP accordingly.
+ * Body: { deviceId, deviceSecret, reaction: "like" | "dislike" | null }
+ */
+app.post('/api/message/:messageId/react', async (req, res) => {
+    const { messageId } = req.params;
+    const { deviceId, deviceSecret, reaction } = req.body;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'Missing credentials' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (reaction !== null && reaction !== 'like' && reaction !== 'dislike') {
+        return res.status(400).json({ success: false, error: 'reaction must be "like", "dislike", or null' });
+    }
+
+    try {
+        // Verify message exists, belongs to this device, and is from bot
+        const msgResult = await chatPool.query(
+            'SELECT id, device_id, entity_id, is_from_bot FROM chat_messages WHERE id = $1',
+            [messageId]
+        );
+        if (msgResult.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Message not found' });
+        }
+        const msg = msgResult.rows[0];
+        if (msg.device_id !== deviceId) {
+            return res.status(403).json({ success: false, error: 'Not your message' });
+        }
+        if (!msg.is_from_bot) {
+            return res.status(400).json({ success: false, error: 'Can only react to bot messages' });
+        }
+
+        // Get existing reaction (if any)
+        const existingResult = await chatPool.query(
+            'SELECT reaction_type FROM message_reactions WHERE message_id = $1 AND device_id = $2',
+            [messageId, deviceId]
+        );
+        const oldReaction = existingResult.rows[0]?.reaction_type || null;
+
+        // Skip if same reaction
+        if (oldReaction === reaction) {
+            const counts = await chatPool.query(
+                'SELECT like_count, dislike_count FROM chat_messages WHERE id = $1',
+                [messageId]
+            );
+            return res.json({
+                success: true, reaction, unchanged: true,
+                like_count: counts.rows[0]?.like_count || 0,
+                dislike_count: counts.rows[0]?.dislike_count || 0
+            });
+        }
+
+        // Calculate XP delta: reverse old reaction, apply new one
+        let xpDelta = 0;
+        if (oldReaction === 'like') xpDelta -= XP_AMOUNTS.MESSAGE_LIKED;     // reverse +5
+        if (oldReaction === 'dislike') xpDelta -= XP_AMOUNTS.MESSAGE_DISLIKED; // reverse -5 (adds +5)
+        if (reaction === 'like') xpDelta += XP_AMOUNTS.MESSAGE_LIKED;          // apply +5
+        if (reaction === 'dislike') xpDelta += XP_AMOUNTS.MESSAGE_DISLIKED;    // apply -5
+
+        // Update/insert/delete reaction
+        if (reaction === null) {
+            await chatPool.query(
+                'DELETE FROM message_reactions WHERE message_id = $1 AND device_id = $2',
+                [messageId, deviceId]
+            );
+        } else if (oldReaction) {
+            await chatPool.query(
+                'UPDATE message_reactions SET reaction_type = $3, created_at = NOW() WHERE message_id = $1 AND device_id = $2',
+                [messageId, deviceId, reaction]
+            );
+        } else {
+            await chatPool.query(
+                'INSERT INTO message_reactions (message_id, device_id, reaction_type) VALUES ($1, $2, $3)',
+                [messageId, deviceId, reaction]
+            );
+        }
+
+        // Update counts on chat_messages
+        const likeDelta = (reaction === 'like' ? 1 : 0) - (oldReaction === 'like' ? 1 : 0);
+        const dislikeDelta = (reaction === 'dislike' ? 1 : 0) - (oldReaction === 'dislike' ? 1 : 0);
+        await chatPool.query(
+            `UPDATE chat_messages SET
+                like_count = GREATEST(0, COALESCE(like_count, 0) + $2),
+                dislike_count = GREATEST(0, COALESCE(dislike_count, 0) + $3)
+             WHERE id = $1`,
+            [messageId, likeDelta, dislikeDelta]
+        );
+
+        // Award/deduct XP
+        let xpResult = null;
+        if (xpDelta !== 0 && msg.entity_id != null) {
+            const reason = reaction === 'like' ? 'message_liked' : reaction === 'dislike' ? 'message_disliked' : 'reaction_removed';
+            xpResult = awardEntityXP(deviceId, msg.entity_id, xpDelta, reason);
+        }
+
+        // Get updated counts
+        const updatedCounts = await chatPool.query(
+            'SELECT like_count, dislike_count FROM chat_messages WHERE id = $1',
+            [messageId]
+        );
+
+        const responseData = {
+            success: true,
+            reaction,
+            like_count: updatedCounts.rows[0]?.like_count || 0,
+            dislike_count: updatedCounts.rows[0]?.dislike_count || 0,
+            xpResult
+        };
+
+        // Emit Socket.IO event for real-time UI update
+        if (io) {
+            io.to(`device:${deviceId}`).emit('chat:reaction', {
+                messageId: parseInt(messageId),
+                reaction,
+                like_count: responseData.like_count,
+                dislike_count: responseData.dislike_count
+            });
+        }
+
+        res.json(responseData);
+    } catch (error) {
+        console.error('[Reactions] Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to process reaction' });
     }
 });
 
