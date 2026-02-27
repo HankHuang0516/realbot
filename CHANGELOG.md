@@ -1,3 +1,10 @@
+## [1.29.1](https://github.com/HankHuang0516/realbot/compare/v1.29.0...v1.29.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* update sessions_send error messages to reference official docs instead of hardcoded config paths ([554ba72](https://github.com/HankHuang0516/realbot/commit/554ba722188d60d030fc6dfe9d17906bb924fb4c))
+
 # [1.29.0](https://github.com/HankHuang0516/realbot/compare/v1.28.0...v1.29.0) (2026-02-27)
 
 
