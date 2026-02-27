@@ -1,3 +1,10 @@
+## [1.31.1](https://github.com/HankHuang0516/realbot/compare/v1.31.0...v1.31.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* handshake now rejects pairing_required in response body ([e20a949](https://github.com/HankHuang0516/realbot/commit/e20a9497dfdf37289f217c21396366b0096c2f4e))
+
 # [1.31.0](https://github.com/HankHuang0516/realbot/compare/v1.30.1...v1.31.0) (2026-02-27)
 
 
