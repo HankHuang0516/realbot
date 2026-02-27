@@ -4321,17 +4321,20 @@ app.post('/api/bot/register', async (req, res) => {
         });
     }
 
-    // Reject localhost/127.0.0.1 webhook URLs - these won't work from the cloud
+    // Reject localhost/loopback/private-IP webhook URLs - these won't work from the cloud
     try {
         const urlObj = new URL(webhook_url);
-        if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1' || urlObj.hostname === '0.0.0.0') {
-            console.warn(`[Bot Register] Rejected localhost webhook: ${webhook_url}`);
+        const hn = urlObj.hostname;
+        const isLoopback = (hn === 'localhost' || hn === '127.0.0.1' || hn === '0.0.0.0' || hn === '::1');
+        const isPrivateIP = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hn);
+        if (isLoopback || isPrivateIP) {
+            console.warn(`[Bot Register] Rejected local/private webhook: ${webhook_url}`);
             return res.status(400).json({
                 success: false,
-                message: "webhook_url cannot be localhost. Your bot appears to be deployed on a cloud server, " +
-                    "but the webhook URL points to localhost which is unreachable from the internet. " +
-                    "Please use your public URL instead (e.g. ZEABUR_WEB_URL environment variable).",
-                hint: "If using Zeabur: webhook_url = process.env.ZEABUR_WEB_URL + '/tools/invoke'"
+                message: `webhook_url points to a local/private address (${hn}) which is unreachable from the internet. ` +
+                    "Please ask the user to provide the 'WebSocket URL' and 'Gateway Token' from the OpenClaw Overview page, " +
+                    "then use those values to construct the correct webhook_url and token. This is the fastest way to fix the issue.",
+                hint: "Ask user for the WebSocket URL and Gateway Token shown on the OpenClaw Overview page."
             });
         }
     } catch (e) {
