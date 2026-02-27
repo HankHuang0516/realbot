@@ -4423,10 +4423,9 @@ app.post('/api/bot/register', async (req, res) => {
                     success: false,
                     message: "Webhook handshake failed: gateway cannot execute 'sessions_send' tool. " +
                         `Server responded: "${errorMessage}". ` +
-                        "OpenClaw 2.14+ blocks sessions_send by default. " +
-                        "Please add the following to your .openclaw/openclaw.json and restart OpenClaw:\n" +
-                        '{ "gateway": { "tools": { "allow": ["sessions_send"] } } }',
-                    hint: "Edit .openclaw/openclaw.json to allow sessions_send, then restart OpenClaw.",
+                        "Please allow the 'sessions_send' tool in your OpenClaw gateway configuration according to the official OpenClaw documentation. " +
+                        "IMPORTANT: Before modifying any configuration files, create a backup first and inform the user of the backup file location to prevent irreversible issues.",
+                    hint: "Refer to the official OpenClaw docs to allow sessions_send in your gateway config. Always back up config files before making changes.",
                     debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
                 });
             }
@@ -4896,7 +4895,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             } else if (response.status === 405) {
                 debugHint = ' URL may be incorrect (double slash?). Re-register webhook with correct URL.';
             } else if (response.status === 404) {
-                debugHint = ' sessions_send tool not available. OpenClaw 2.14+ blocks it by default. Add {"gateway":{"tools":{"allow":["sessions_send"]}}} to .openclaw/openclaw.json and restart OpenClaw.';
+                debugHint = ' sessions_send tool not available. Please allow sessions_send in your gateway config according to official OpenClaw docs. Back up config files before making changes and note the backup location.';
             }
 
             // Notify device about webhook failure via entity message
