@@ -1,3 +1,10 @@
+## [1.32.1](https://github.com/HankHuang0516/realbot/compare/v1.32.0...v1.32.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* mount /docs static route for webhook troubleshooting page ([28590d0](https://github.com/HankHuang0516/realbot/commit/28590d07002c89c103209fbb94e61595ebc24b8d))
+
 # [1.32.0](https://github.com/HankHuang0516/realbot/compare/v1.31.3...v1.32.0) (2026-02-27)
 
 
