@@ -20,12 +20,18 @@ openclaw config set gateway.tools.allow '["sessions_send", "sessions_spawn", "se
 openclaw gateway restart
 ```
 
-### OpenClaw 2026.2.14+
-```bash
-# Step 1: Enable sessions_send via CLI
-openclaw config set gateway.tools.allow '["sessions_send"]'
+### OpenClaw 2026.2.14 ~ 2026.2.25
+This older version does NOT support `openclaw config set gateway.tools.allow`. You must edit the config file directly:
 
-# Step 2: Restart gateway (ask user first!)
+```bash
+# Step 1: Back up config first!
+cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak
+
+# Step 2: Add sessions_send to allowed tools in .openclaw/openclaw.json
+# Add or merge this into the JSON:
+# { "gateway": { "tools": { "allow": ["sessions_send"] } } }
+
+# Step 3: Restart gateway (ask user first!)
 openclaw gateway restart
 ```
 
