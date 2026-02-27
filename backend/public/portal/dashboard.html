@@ -1141,7 +1141,7 @@
                 '<strong>' + entities.length + '</strong> / ' + maxEntitySlots + ' bound';
             // Show edit button only when there are entities
             var editBtn = document.getElementById('btnEditMode');
-            if (editBtn) editBtn.style.display = entities.length > 0 ? '' : 'none';
+            if (editBtn) editBtn.style.display = entities.length > 0 ? 'inline-flex' : 'none';
         }
 
         function renderSlotSelector() {
