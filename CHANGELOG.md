@@ -1,3 +1,10 @@
+# [1.32.0](https://github.com/HankHuang0516/realbot/compare/v1.31.3...v1.32.0) (2026-02-27)
+
+
+### Features
+
+* add webhook troubleshooting FAQ page, unify error messages ([cb52c16](https://github.com/HankHuang0516/realbot/commit/cb52c16b7a3e30c574a38316c16db4b6fd06f53b))
+
 ## [1.31.3](https://github.com/HankHuang0516/realbot/compare/v1.31.2...v1.31.3) (2026-02-27)
 
 
