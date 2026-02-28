@@ -2391,6 +2391,7 @@ app.post('/api/client/speak', async (req, res) => {
     if (hasLimitedTarget) {
         try {
             const usage = await subscriptionModule.enforceUsageLimit(deviceId);
+            serverLog('info', 'client_push', `Usage: allowed=${usage.allowed} remaining=${usage.remaining} used=${usage.used}`, { deviceId });
             if (!usage.allowed) {
                 return res.status(429).json({
                     success: false,
