@@ -1128,6 +1128,10 @@
                 '<label>' + i18n.t('admin_dlg_token') + '</label>' +
                 '<input type="text" id="newBotToken" placeholder="Bot webhook token">' +
                 '</div>' +
+                '<div class="form-group">' +
+                '<label>Setup Password <span style="color:var(--text-secondary);font-weight:400;font-size:12px;">(Railway only)</span></label>' +
+                '<input type="text" id="newBotSetupPassword" placeholder="Leave empty if not using SETUP_PASSWORD">' +
+                '</div>' +
                 '<div id="createBotResult"></div>' +
                 '<div class="dialog-actions">' +
                 '<button class="btn-cancel" onclick="closeCreateBotDialog()">' + i18n.t('admin_dlg_cancel') + '</button>' +
@@ -1151,6 +1155,7 @@
             const botType = document.getElementById('newBotType').value;
             const webhookUrl = document.getElementById('newBotWebhook').value.trim();
             const token = document.getElementById('newBotToken').value.trim();
+            const setupPassword = document.getElementById('newBotSetupPassword').value.trim();
             const resultDiv = document.getElementById('createBotResult');
             const btn = document.getElementById('btnCreateBot');
 
@@ -1163,10 +1168,14 @@
             btn.textContent = i18n.t('admin_dlg_creating');
             resultDiv.innerHTML = '';
 
+            const body = { botId, botType, webhookUrl, token };
+            if (setupPassword) {
+                body.setupUsername = 'admin';
+                body.setupPassword = setupPassword;
+            }
+
             try {
-                const result = await apiCall('POST', '/api/admin/bots/create', {
-                    botId, botType, webhookUrl, token
-                });
+                const result = await apiCall('POST', '/api/admin/bots/create', body);
 
                 resultDiv.innerHTML =
                     '<div class="bot-secret-result">' +
