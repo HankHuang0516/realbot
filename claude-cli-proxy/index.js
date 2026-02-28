@@ -185,10 +185,16 @@ app.use('/chat', (req, res, next) => {
 function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS, { isAdmin = false } = {}) {
     return new Promise((resolve, reject) => {
         const args = ['--print', '--output-format', 'json', '--model', 'sonnet'];
-        // Enable file access tools if repo is cloned; Bash only for admin
+        // Build tool list: repo tools need clone, Bash always available for admin
+        const tools = [];
         if (fs.existsSync(path.join(REPO_DIR, '.git'))) {
-            const tools = isAdmin ? 'Read,Glob,Grep,Bash' : 'Read,Glob,Grep';
-            args.push('--allowedTools', tools);
+            tools.push('Read', 'Glob', 'Grep');
+        }
+        if (isAdmin) {
+            tools.push('Bash');
+        }
+        if (tools.length > 0) {
+            args.push('--allowedTools', tools.join(','));
         }
         const child = spawn(CLAUDE_BIN, args, {
             cwd: fs.existsSync(REPO_DIR) ? REPO_DIR : __dirname,
