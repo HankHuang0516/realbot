@@ -1,3 +1,10 @@
+## [1.51.1](https://github.com/HankHuang0516/realbot/compare/v1.51.0...v1.51.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* cross-device chat label shows local entity instead of remote target ([7d84753](https://github.com/HankHuang0516/realbot/commit/7d84753514736fc532c086eccb8be7c711214544))
+
 # [1.51.0](https://github.com/HankHuang0516/realbot/compare/v1.50.0...v1.51.0) (2026-02-28)
 
 
