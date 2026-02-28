@@ -1,3 +1,10 @@
+# [1.39.0](https://github.com/HankHuang0516/realbot/compare/v1.38.1...v1.39.0) (2026-02-28)
+
+
+### Features
+
+* **admin:** add AI Support Chat widget on admin dashboard ([f3ed7a9](https://github.com/HankHuang0516/realbot/commit/f3ed7a9f5bf2916dfdbae594dc605e57e1211288))
+
 ## [1.38.1](https://github.com/HankHuang0516/realbot/compare/v1.38.0...v1.38.1) (2026-02-28)
 
 
