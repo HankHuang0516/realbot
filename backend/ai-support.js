@@ -448,6 +448,61 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         return res.json(proxyResult);
     });
 
+    // ── Admin Chat Endpoint (no botSecret needed) ──
+    router.post('/admin-chat', async (req, res) => {
+        const { message, deviceId, entityId } = req.body;
+
+        if (!message || typeof message !== 'string' || !message.trim()) {
+            return res.status(400).json({ success: false, error: 'message is required' });
+        }
+
+        const msgs = [message.trim()];
+
+        // Stage A: Pattern matching
+        const ruleResult = matchRulePatterns(msgs);
+        if (ruleResult.matched) {
+            return res.json({
+                success: true,
+                source: 'rule_engine',
+                matched_rule: ruleResult.rule,
+                diagnosis: ruleResult.diagnosis,
+                suggested_steps: ruleResult.suggested_steps,
+                confidence: 1.0
+            });
+        }
+
+        // Stage B: Log correlation (if deviceId provided)
+        if (deviceId) {
+            const logResult = await correlateWithLogs(deviceId);
+            if (logResult.matched) {
+                return res.json({
+                    success: true,
+                    source: 'log_correlation',
+                    matched_rule: logResult.rule,
+                    diagnosis: logResult.diagnosis,
+                    suggested_steps: logResult.suggested_steps,
+                    confidence: 0.9
+                });
+            }
+        }
+
+        // Stage C: Forward to Claude CLI proxy
+        const { recentLogs, recentFailures } = deviceId
+            ? await fetchRecentData(deviceId)
+            : { recentLogs: [], recentFailures: [] };
+
+        const proxyResult = await forwardToProxy(
+            deviceId || 'admin-test',
+            entityId ?? -1,
+            message.trim(),
+            msgs,
+            recentLogs,
+            recentFailures
+        );
+
+        return res.json(proxyResult);
+    });
+
     // ── DB Table Init ───────────────────────────
     function initSupportTable() {
         chatPool.query(`
