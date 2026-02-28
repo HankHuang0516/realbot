@@ -1,3 +1,10 @@
+## [1.43.1](https://github.com/HankHuang0516/realbot/compare/v1.43.0...v1.43.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* instruct AI to execute tools directly in non-interactive mode ([cceb659](https://github.com/HankHuang0516/realbot/commit/cceb659a2d3ef83bf3ddf2b263dd44b176926644))
+
 # [1.43.0](https://github.com/HankHuang0516/realbot/compare/v1.42.2...v1.43.0) (2026-02-28)
 
 
