@@ -16,6 +16,7 @@ const scheduler = require('./scheduler');
 const notifModule = require('./notifications');
 const feedbackEmail = require('./feedback-email');
 const multer = require('multer');
+const WebSocket = require('ws');
 const app = express();
 const httpServer = http.createServer(app);
 const port = process.env.PORT || 3000;
@@ -4897,21 +4898,266 @@ app.post('/api/bot/pending-messages', async (req, res) => {
 });
 
 /**
+ * WebSocket connection pool for OpenClaw gateways with SETUP_PASSWORD.
+ * HTTP cannot carry both Basic Auth (SETUP_PASSWORD) and Bearer Token (Gateway Token)
+ * simultaneously, so we use WebSocket which separates the two auth layers:
+ * - Basic Auth goes in the HTTP upgrade headers
+ * - Gateway Token + SETUP_PASSWORD go in the WebSocket connect message
+ */
+const wsConnectionPool = new Map(); // wsUrl -> { ws, connected, reqId, pending, lastUsed, closeTimer }
+const WS_POOL_TTL = 120000; // 2 minutes idle before closing
+
+/**
+ * Map HTTP /tools/invoke tool names to WebSocket method names.
+ */
+const TOOL_TO_WS_METHOD = {
+    sessions_list: 'sessions.list',
+    sessions_send: 'chat.send',
+};
+
+/**
+ * Convert HTTP webhook URL to WebSocket URL.
+ * e.g., https://example.com/tools/invoke -> wss://example.com
+ */
+function httpToWsUrl(httpUrl) {
+    const u = new URL(httpUrl);
+    u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+    u.pathname = '/';
+    return u.toString().replace(/\/$/, '');
+}
+
+/**
+ * Get or create a WebSocket connection to a gateway with SETUP_PASSWORD.
+ * Returns a connected, authenticated connection ready for tool invocations.
+ */
+async function getWsConnection(httpUrl, token, setupUsername, setupPassword) {
+    const wsUrl = httpToWsUrl(httpUrl);
+    const existing = wsConnectionPool.get(wsUrl);
+
+    if (existing && existing.ws.readyState === WebSocket.OPEN && existing.connected) {
+        existing.lastUsed = Date.now();
+        // Reset close timer
+        if (existing.closeTimer) { clearTimeout(existing.closeTimer); }
+        existing.closeTimer = setTimeout(() => cleanupWsConnection(wsUrl), WS_POOL_TTL);
+        return existing;
+    }
+
+    // Clean up stale connection if any
+    if (existing) { cleanupWsConnection(wsUrl); }
+
+    console.log(`[GatewayWS] Opening new connection to ${wsUrl}`);
+
+    return new Promise((resolve, reject) => {
+        const ws = new WebSocket(wsUrl, {
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(`${setupUsername}:${setupPassword}`).toString('base64'),
+                'Origin': `https://${new URL(httpUrl).host}`
+            }
+        });
+
+        const conn = {
+            ws,
+            connected: false,
+            reqId: 0,
+            pending: new Map(), // id -> { resolve, reject, timer }
+            lastUsed: Date.now(),
+            closeTimer: null,
+        };
+
+        const connectTimeout = setTimeout(() => {
+            ws.close();
+            reject(new Error('WebSocket connect timeout (10s)'));
+        }, 10000);
+
+        ws.on('open', () => {
+            // Send connect message
+            const id = `eclaw-${++conn.reqId}`;
+            ws.send(JSON.stringify({
+                type: 'req', id, method: 'connect',
+                params: {
+                    minProtocol: 3, maxProtocol: 3,
+                    client: { id: 'openclaw-probe', version: 'dev', platform: 'node', mode: 'probe' },
+                    role: 'operator', scopes: ['operator.admin'],
+                    auth: { token, password: setupPassword },
+                    caps: [],
+                    userAgent: 'eclaw-backend/1.0'
+                }
+            }));
+
+            // Wait for connect response (ignore challenge events)
+            const onMessage = (data) => {
+                try {
+                    const msg = JSON.parse(data.toString());
+                    if (msg.type === 'event') return; // Ignore challenge, health events
+                    if (msg.type === 'res' && msg.id === id) {
+                        ws.removeListener('message', onMessage);
+                        clearTimeout(connectTimeout);
+                        if (msg.ok) {
+                            conn.connected = true;
+                            conn.closeTimer = setTimeout(() => cleanupWsConnection(wsUrl), WS_POOL_TTL);
+                            wsConnectionPool.set(wsUrl, conn);
+
+                            // Set up persistent message handler
+                            ws.on('message', (d) => handleWsMessage(wsUrl, d));
+                            ws.on('close', () => { conn.connected = false; wsConnectionPool.delete(wsUrl); });
+                            ws.on('error', (err) => { console.error(`[GatewayWS] Error on ${wsUrl}:`, err.message); });
+
+                            console.log(`[GatewayWS] Connected to ${wsUrl}`);
+                            resolve(conn);
+                        } else {
+                            ws.close();
+                            reject(new Error(`WebSocket connect rejected: ${JSON.stringify(msg.error)}`));
+                        }
+                    }
+                } catch (e) { /* ignore parse errors */ }
+            };
+            ws.on('message', onMessage);
+        });
+
+        ws.on('error', (err) => {
+            clearTimeout(connectTimeout);
+            reject(new Error(`WebSocket error: ${err.message}`));
+        });
+    });
+}
+
+/**
+ * Handle incoming WebSocket messages (responses to our requests).
+ */
+function handleWsMessage(wsUrl, data) {
+    try {
+        const msg = JSON.parse(data.toString());
+        if (msg.type !== 'res') return; // Ignore events
+
+        const conn = wsConnectionPool.get(wsUrl);
+        if (!conn) return;
+
+        const pending = conn.pending.get(msg.id);
+        if (!pending) return;
+
+        conn.pending.delete(msg.id);
+        if (pending.timer) clearTimeout(pending.timer);
+
+        pending.resolve(msg);
+    } catch (e) { /* ignore */ }
+}
+
+/**
+ * Clean up a WebSocket connection from the pool.
+ */
+function cleanupWsConnection(wsUrl) {
+    const conn = wsConnectionPool.get(wsUrl);
+    if (!conn) return;
+    if (conn.closeTimer) clearTimeout(conn.closeTimer);
+    // Reject all pending requests
+    for (const [, p] of conn.pending) {
+        if (p.timer) clearTimeout(p.timer);
+        p.reject(new Error('WebSocket connection closed'));
+    }
+    conn.pending.clear();
+    try { conn.ws.close(); } catch (e) { /* ignore */ }
+    wsConnectionPool.delete(wsUrl);
+    console.log(`[GatewayWS] Closed connection to ${wsUrl}`);
+}
+
+/**
+ * Invoke a tool on a gateway via WebSocket.
+ * Returns a fake fetch Response-like object for compatibility with existing callers.
+ */
+async function gatewayWsFetch(httpUrl, token, body, options) {
+    const { setupUsername, setupPassword, timeout } = options;
+    const tool = body.tool;
+    const args = body.args || {};
+
+    // Map tool name to WebSocket method
+    const wsMethod = TOOL_TO_WS_METHOD[tool];
+    if (!wsMethod) {
+        return { ok: false, status: 400, text: async () => `Unknown tool: ${tool}` };
+    }
+
+    try {
+        const conn = await getWsConnection(httpUrl, token, setupUsername, setupPassword);
+
+        // Build WebSocket request params
+        const params = { ...args };
+        if (wsMethod === 'chat.send') {
+            // chat.send requires idempotencyKey
+            params.idempotencyKey = `eclaw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        }
+
+        // Send request and wait for response
+        const id = `eclaw-${++conn.reqId}`;
+        const requestTimeout = timeout || 15000;
+
+        const wsResponse = await new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                conn.pending.delete(id);
+                reject(new Error(`WebSocket request timeout (${requestTimeout}ms)`));
+            }, requestTimeout);
+
+            conn.pending.set(id, { resolve, reject, timer });
+
+            conn.ws.send(JSON.stringify({
+                type: 'req', id, method: wsMethod, params
+            }));
+        });
+
+        conn.lastUsed = Date.now();
+
+        // Convert WebSocket response to fetch-Response-like object
+        if (wsResponse.ok) {
+            const payload = wsResponse.payload || {};
+            return {
+                ok: true,
+                status: 200,
+                text: async () => JSON.stringify(payload)
+            };
+        } else {
+            const errMsg = wsResponse.error?.message || 'Unknown error';
+            // Check if this is a "session not found" error — match HTTP behavior
+            const isSessionNotFound = errMsg.toLowerCase().includes('session') ||
+                errMsg.toLowerCase().includes('not found');
+            if (isSessionNotFound) {
+                // HTTP API returns 200 with "No session found" in body
+                return {
+                    ok: true,
+                    status: 200,
+                    text: async () => `No session found: ${errMsg}`
+                };
+            }
+            return {
+                ok: false,
+                status: 400,
+                text: async () => JSON.stringify({ error: errMsg })
+            };
+        }
+    } catch (err) {
+        console.error(`[GatewayWS] Invocation failed:`, err.message);
+        return {
+            ok: false,
+            status: 502,
+            text: async () => `WebSocket gateway error: ${err.message}`
+        };
+    }
+}
+
+/**
  * Helper: Authenticated fetch to an OpenClaw gateway.
  * When setupUsername/setupPassword are provided (Railway with SETUP_PASSWORD),
- * uses HTTP Basic Auth instead of Bearer Token.
- * When not provided, uses Bearer Token (Zeabur default).
+ * routes through WebSocket to bypass the HTTP Basic Auth / Bearer Token conflict.
+ * When not provided, uses standard HTTP with Bearer Token (Zeabur default).
  */
 async function gatewayFetch(url, token, body, options = {}) {
     const { setupUsername, setupPassword, timeout, signal } = options;
-    const headers = { 'Content-Type': 'application/json' };
 
     if (setupUsername && setupPassword) {
-        const basic = Buffer.from(`${setupUsername}:${setupPassword}`).toString('base64');
-        headers['Authorization'] = `Basic ${basic}`;
-    } else {
-        headers['Authorization'] = `Bearer ${token}`;
+        // WebSocket transport for gateways with SETUP_PASSWORD
+        return gatewayWsFetch(url, token, body, options);
     }
+
+    // HTTP transport (existing behavior for gateways without SETUP_PASSWORD)
+    const headers = { 'Content-Type': 'application/json' };
+    headers['Authorization'] = `Bearer ${token}`;
 
     return fetch(url, {
         method: 'POST',

@@ -36,7 +36,8 @@
     "pg": "^8.18.0",
     "resend": "^6.9.2",
     "socket.io": "^4.8.3",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "ws": "^8.19.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
