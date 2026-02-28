@@ -1,3 +1,10 @@
+## [1.41.2](https://github.com/HankHuang0516/realbot/compare/v1.41.1...v1.41.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* fail-safe usage limit with in-memory fallback ([dac91f8](https://github.com/HankHuang0516/realbot/commit/dac91f88e1d8a6d27b0afad4ad69316ba5653259))
+
 ## [1.41.1](https://github.com/HankHuang0516/realbot/compare/v1.41.0...v1.41.1) (2026-02-28)
 
 
