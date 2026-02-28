@@ -4634,11 +4634,43 @@ app.post('/api/bot/register', async (req, res) => {
 
             if (probeResponse.status === 401) {
                 logHandshakeFailure({ deviceId, entityId: eId, webhookUrl: finalUrl, errorType: 'http_401', httpStatus: 401, errorMessage, responseBody: responseText, source: 'bot_register' });
+
+                // Check if this is a SETUP_PASSWORD issue (bot didn't send setup credentials)
+                if (!setup_username || !setup_password) {
+                    return res.status(400).json({
+                        success: false,
+                        error_type: 'setup_password_required',
+                        message: "Webhook handshake failed: your gateway has SETUP_PASSWORD enabled (HTTP 401). " +
+                            "You need to include setup_username and setup_password in the registration request.\n\n" +
+                            "AUTO-FIX STEPS:\n" +
+                            "Step 1: Read your SETUP_PASSWORD:\n  exec: echo $SETUP_PASSWORD\n" +
+                            "Step 2: Retry POST /api/bot/register with the SAME parameters PLUS these two extra fields:\n" +
+                            '  "setup_username": "admin",\n' +
+                            '  "setup_password": "<the value from Step 1>"\n\n' +
+                            "IMPORTANT: Copy the EXACT output of echo $SETUP_PASSWORD — do NOT use a placeholder.",
+                        openclaw_version_received: openclaw_version || null,
+                        retry_hint: {
+                            add_fields: {
+                                setup_username: "admin",
+                                setup_password: "VALUE_OF_$SETUP_PASSWORD"
+                            },
+                            get_password_command: "echo $SETUP_PASSWORD"
+                        },
+                        debug: { probeUrl: finalUrl, httpStatus: 401, tokenPreview }
+                    });
+                }
+
+                // Bot sent setup credentials but still got 401 — token or password is wrong
                 const fix = getWebhookFixInstructions('http_401', openclaw_version);
                 return res.status(400).json({
                     success: false,
                     error_type: 'http_401',
-                    message: `Webhook handshake failed: gateway rejected the token (HTTP 401).\n\n${fix}`,
+                    message: `Webhook handshake failed: gateway rejected credentials (HTTP 401). ` +
+                        `setup_username/setup_password were provided but authentication still failed.\n\n` +
+                        `Possible causes:\n` +
+                        `1. setup_password is incorrect — re-read with: exec: echo $SETUP_PASSWORD\n` +
+                        `2. Gateway token is wrong — re-read with: exec: echo $OPENCLAW_GATEWAY_TOKEN\n` +
+                        `3. Both values may have changed after a gateway restart.\n\n${fix}`,
                     openclaw_version_received: openclaw_version || null,
                     debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, tokenPreview }
                 });
