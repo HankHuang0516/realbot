@@ -14,6 +14,7 @@ const telemetry = require('./device-telemetry');
 const feedbackModule = require('./device-feedback');
 const scheduler = require('./scheduler');
 const notifModule = require('./notifications');
+const feedbackEmail = require('./feedback-email');
 const multer = require('multer');
 const app = express();
 const httpServer = http.createServer(app);
@@ -5629,6 +5630,11 @@ app.patch('/api/feedback/:id', async (req, res) => {
             link: 'feedback.html',
             metadata: { feedbackId: fb.id }
         }).catch(() => {});
+    }
+
+    // Send email notification for status changes (fire-and-forget)
+    if (updated && status) {
+        feedbackEmail.sendFeedbackStatusEmail(chatPool, fb, status, resolution, notifModule).catch(() => {});
     }
 
     res.json({ success: updated, message: updated ? "Updated" : "No changes", photosDeleted });
