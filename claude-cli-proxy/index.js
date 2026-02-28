@@ -65,6 +65,11 @@ const PORT = process.env.PORT || 4000;
 const CLAUDE_TIMEOUT_MS = 55000; // 55s (Haiku binding analysis)
 const CHAT_TIMEOUT_MS = 120000; // 120s (Sonnet general chat with tool access)
 
+// ── Log Query Credentials (for AI to curl /api/logs) ──
+const ECLAW_API_URL = process.env.ECLAW_API_URL || 'https://eclawbot.com';
+const LOG_DEVICE_ID = process.env.LOG_DEVICE_ID;
+const LOG_DEVICE_SECRET = process.env.LOG_DEVICE_SECRET;
+
 // ── Repo Clone & Sync ──────────────────────
 const REPO_DIR = path.join(process.env.HOME || '/root', '.claude', 'repo');
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -182,7 +187,7 @@ function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS) {
         const args = ['--print', '--output-format', 'json', '--model', 'sonnet'];
         // Enable file access tools if repo is cloned
         if (fs.existsSync(path.join(REPO_DIR, '.git'))) {
-            args.push('--allowedTools', 'Read,Glob,Grep');
+            args.push('--allowedTools', 'Read,Glob,Grep,Bash');
         }
         const child = spawn(CLAUDE_BIN, args, {
             cwd: fs.existsSync(REPO_DIR) ? REPO_DIR : __dirname,
@@ -224,15 +229,34 @@ function buildChatPrompt(message, history, context) {
 
     const pageContext = context.page ? `The user is currently on the "${context.page}" page of the portal.` : '';
 
+    const logQueryBlock = (isAdmin && LOG_DEVICE_ID && LOG_DEVICE_SECRET)
+        ? `\nSERVER LOG QUERY (admin only):
+You can query real-time server logs using Bash + curl when debugging issues.
+Command template:
+  curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&limit=30"
+Available filters (append as query params):
+  - category: bind, unbind, transform, broadcast, broadcast_push, speakto_push, client_push, entity_poll, ai_support, ai_chat
+  - level: info, warn, error
+  - since: timestamp in milliseconds (e.g. since=1700000000000)
+  - filterDevice: filter by specific deviceId
+  - limit: max entries (default 100, max 500)
+Example — recent errors: curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&level=error&limit=20"
+Example — broadcast logs: curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&category=broadcast_push&limit=20"
+Use this when the admin asks about errors, delivery issues, server status, or debugging.
+NEVER expose the deviceId/deviceSecret values in your response to the admin.`
+        : '';
+
     const adminBlock = isAdmin
         ? `ADMIN CAPABILITIES:
 You are talking to the E-Claw platform admin/developer.
 - You may suggest code changes, architecture improvements, or debugging strategies.
 - You can read source code files in the repository using Read, Glob, and Grep tools.
+- You can use Bash to run commands (e.g. curl to query server logs).
 - If the admin asks you to create a GitHub issue, include an action block at the END of your response:
   <!--ACTION:{"type":"create_issue","title":"...","body":"...","labels":["bug"]}-->
   Only include this when explicitly asked to create an issue.
-- Speak as a fellow engineer. Use technical language freely.`
+- Speak as a fellow engineer. Use technical language freely.
+${logQueryBlock}`
         : `USER CONTEXT:
 You are talking to a regular E-Claw user.
 - Help them understand how to use the portal, manage entities, configure bots, etc.
