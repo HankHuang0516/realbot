@@ -1,3 +1,10 @@
+## [1.43.6](https://github.com/HankHuang0516/realbot/compare/v1.43.5...v1.43.6) (2026-02-28)
+
+
+### Bug Fixes
+
+* decouple Bash tool from repo clone status ([e2bc96a](https://github.com/HankHuang0516/realbot/commit/e2bc96ab7c217f61bcd6ff08821aed710a330c21))
+
 ## [1.43.5](https://github.com/HankHuang0516/realbot/compare/v1.43.4...v1.43.5) (2026-02-28)
 
 
