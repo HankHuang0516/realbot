@@ -2389,9 +2389,9 @@ app.post('/api/client/speak', async (req, res) => {
     });
 
     if (hasLimitedTarget) {
+        const DAILY_LIMIT = 15;
         try {
             const usage = await subscriptionModule.enforceUsageLimit(deviceId);
-            serverLog('info', 'client_push', `Usage: allowed=${usage.allowed} remaining=${usage.remaining} used=${usage.used}`, { deviceId });
             if (!usage.allowed) {
                 return res.status(429).json({
                     success: false,
@@ -2403,17 +2403,24 @@ app.post('/api/client/speak', async (req, res) => {
                 });
             }
         } catch (usageErr) {
-            console.warn('[Usage] Enforcement check failed, allowing:', usageErr.message);
-            serverLog('warn', 'client_push', `Usage enforcement error: ${usageErr.message}`, { deviceId });
-        }
-    } else {
-        // Debug: log why usage check was skipped
-        const debugInfo = targetEids.map(eId => {
-            const entity = device.entities[eId];
-            return { eId, exists: !!entity, isBound: entity?.isBound };
-        });
-        if (debugInfo.some(d => d.exists)) {
-            serverLog('info', 'client_push', `Usage skipped: targets=${JSON.stringify(debugInfo)}`, { deviceId });
+            // Fail-safe: use in-memory counter when DB is unavailable
+            console.warn('[Usage] DB enforcement failed, using in-memory fallback:', usageErr.message);
+            serverLog('warn', 'client_push', `Usage DB fallback: ${usageErr.message}`, { deviceId });
+            const today = new Date().toISOString().slice(0, 10);
+            const memKey = `${deviceId}:${today}`;
+            if (!global._usageMemCounter) global._usageMemCounter = {};
+            const memCount = (global._usageMemCounter[memKey] || 0) + 1;
+            global._usageMemCounter[memKey] = memCount;
+            if (memCount > DAILY_LIMIT) {
+                return res.status(429).json({
+                    success: false,
+                    message: "Daily message limit reached",
+                    error: "USAGE_LIMIT_EXCEEDED",
+                    remaining: 0,
+                    limit: DAILY_LIMIT,
+                    used: memCount
+                });
+            }
         }
     }
 
