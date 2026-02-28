@@ -210,6 +210,60 @@
 
         </LinearLayout>
 
+        <!-- Reaction buttons (outside bubble, below it) -->
+        <LinearLayout
+            android:id="@+id/layoutReactions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="2dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageButton
+                android:id="@+id/btnLike"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_thumb_up_outline"
+                android:scaleType="centerInside"
+                android:contentDescription="Like"
+                android:padding="4dp" />
+
+            <TextView
+                android:id="@+id/tvLikeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#4CAF50"
+                android:textSize="11sp"
+                android:layout_marginEnd="8dp"
+                android:visibility="gone"
+                tools:text="1"
+                tools:visibility="visible" />
+
+            <ImageButton
+                android:id="@+id/btnDislike"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_thumb_down_outline"
+                android:scaleType="centerInside"
+                android:contentDescription="Dislike"
+                android:padding="4dp" />
+
+            <TextView
+                android:id="@+id/tvDislikeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#F44336"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="0"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>

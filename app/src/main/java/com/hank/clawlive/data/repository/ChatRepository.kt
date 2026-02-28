@@ -358,7 +358,10 @@ class ChatRepository private constructor(
                     deliveredTo = msg.delivered_to,
                     mediaType = msg.media_type,
                     mediaUrl = msg.media_url,
-                    scheduleLabel = msg.schedule_label
+                    scheduleLabel = msg.schedule_label,
+                    likeCount = msg.like_count,
+                    dislikeCount = msg.dislike_count,
+                    userReaction = msg.user_reaction
                 )
             } else if (msg.source.startsWith("mission_notify")) {
                 // Mission Control notification - source format: "mission_notify:0,1"
@@ -375,7 +378,10 @@ class ChatRepository private constructor(
                     isDelivered = msg.is_delivered,
                     deliveredTo = msg.delivered_to,
                     mediaType = msg.media_type,
-                    mediaUrl = msg.media_url
+                    mediaUrl = msg.media_url,
+                    likeCount = msg.like_count,
+                    dislikeCount = msg.dislike_count,
+                    userReaction = msg.user_reaction
                 )
             } else if (entityMatch != null) {
                 val senderEntityId = entityMatch.groupValues[1].toIntOrNull()
@@ -396,7 +402,10 @@ class ChatRepository private constructor(
                     isDelivered = msg.is_delivered,
                     deliveredTo = msg.delivered_to,
                     mediaType = msg.media_type,
-                    mediaUrl = msg.media_url
+                    mediaUrl = msg.media_url,
+                    likeCount = msg.like_count,
+                    dislikeCount = msg.dislike_count,
+                    userReaction = msg.user_reaction
                 )
             } else {
                 ChatMessage(
@@ -409,7 +418,10 @@ class ChatRepository private constructor(
                     deduplicationKey = deduplicationKey,
                     isSynced = true,
                     mediaType = msg.media_type,
-                    mediaUrl = msg.media_url
+                    mediaUrl = msg.media_url,
+                    likeCount = msg.like_count,
+                    dislikeCount = msg.dislike_count,
+                    userReaction = msg.user_reaction
                 )
             }
 

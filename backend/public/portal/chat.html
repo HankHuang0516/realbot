@@ -153,6 +153,50 @@
             margin-top: 3px;
         }
 
+        /* ── Message Reactions ── */
+        .chat-reactions {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-top: 3px;
+        }
+
+        .btn-reaction {
+            background: none;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 2px 6px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .btn-reaction:hover {
+            background: var(--input-bg);
+            border-color: var(--card-border);
+        }
+
+        .btn-reaction.active-like {
+            color: #4CAF50;
+            border-color: #4CAF5040;
+            background: #4CAF5010;
+        }
+
+        .btn-reaction.active-dislike {
+            color: #F44336;
+            border-color: #F4433640;
+            background: #F4433610;
+        }
+
+        .reaction-count {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
         /* ── Entity Label Coloring ── */
         .entity-label { font-weight: 600; }
         .entity-label[data-entity="0"],
@@ -1387,11 +1431,26 @@
                     }
                 }
 
+                // Reaction buttons (only for received/bot messages)
+                let reactionsHtml = '';
+                if (!isSent && msg.is_from_bot) {
+                    const likeActive = msg.user_reaction === 'like' ? ' active-like' : '';
+                    const dislikeActive = msg.user_reaction === 'dislike' ? ' active-dislike' : '';
+                    const likeCountStr = (msg.like_count || 0) > 0 ? `<span class="reaction-count">${msg.like_count}</span>` : '';
+                    const dislikeCountStr = (msg.dislike_count || 0) > 0 ? `<span class="reaction-count">${msg.dislike_count}</span>` : '';
+                    reactionsHtml = `
+                        <div class="chat-reactions">
+                            <button class="btn-reaction${likeActive}" data-msg-id="${msg.id}" onclick="toggleReaction('${msg.id}','like')">&#x1F44D;${likeCountStr}</button>
+                            <button class="btn-reaction${dislikeActive}" data-msg-id="${msg.id}" onclick="toggleReaction('${msg.id}','dislike')">&#x1F44E;${dislikeCountStr}</button>
+                        </div>`;
+                }
+
                 return `
                     <div class="chat-msg ${msgClass}">
                         <div class="chat-source">${sourceLabel}</div>
                         <div class="chat-bubble">${textHtml}${mediaHtml}</div>
                         ${previewId ? `<div class="link-preview-slot" id="${previewId}" data-url="${escapeHtml(firstUrl)}"></div>` : ''}
+                        ${reactionsHtml}
                         <div class="chat-meta">${time}</div>
                         ${receipt ? `<div class="chat-receipt">${receipt}</div>` : ''}
                     </div>`;
@@ -1495,6 +1554,46 @@
 
             // Fallback for other sources
             return `${entityHtml} &middot; ${escapeHtml(msg.source || 'unknown')}`;
+        }
+
+        // ── Message Reactions ──
+        async function toggleReaction(messageId, type) {
+            // Find current reaction
+            const msg = allMessages.find(m => String(m.id) === String(messageId));
+            if (!msg) return;
+
+            // Toggle: if same reaction, remove it
+            const newReaction = msg.user_reaction === type ? null : type;
+
+            try {
+                const data = await apiCall('POST', `/api/message/${messageId}/react`, {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    reaction: newReaction
+                });
+                if (data.success) {
+                    // Update local state
+                    msg.user_reaction = data.reaction;
+                    msg.like_count = data.like_count;
+                    msg.dislike_count = data.dislike_count;
+                    renderMessages(false);
+                }
+            } catch (err) {
+                console.error('Reaction failed:', err);
+            }
+        }
+
+        // Listen for real-time reaction updates
+        if (typeof socket !== 'undefined' && socket) {
+            socket.on('chat:reaction', (data) => {
+                const msg = allMessages.find(m => m.id === data.messageId);
+                if (msg) {
+                    msg.like_count = data.like_count;
+                    msg.dislike_count = data.dislike_count;
+                    if (data.reaction !== undefined) msg.user_reaction = data.reaction;
+                    renderMessages(false);
+                }
+            });
         }
 
         // ── Send Message ──

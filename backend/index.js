@@ -898,7 +898,7 @@ app.get('/api/admin/bots', adminAuth, adminCheck, async (req, res) => {
 // POST /api/admin/bots/create - Create new official bot (cookie-based admin auth)
 app.post('/api/admin/bots/create', adminAuth, adminCheck, async (req, res) => {
     try {
-        const { botId, botType, webhookUrl, token } = req.body;
+        const { botId, botType, webhookUrl, token, setupUsername, setupPassword } = req.body;
 
         if (!botId || !botType || !webhookUrl || !token) {
             return res.status(400).json({ success: false, error: 'botId, botType, webhookUrl, and token are required' });
@@ -926,7 +926,9 @@ app.post('/api/admin/bots/create', adminAuth, adminCheck, async (req, res) => {
             assigned_device_id: null,
             assigned_entity_id: null,
             assigned_at: null,
-            created_at: Date.now()
+            created_at: Date.now(),
+            setup_username: setupUsername || null,
+            setup_password: setupPassword || null
         };
 
         officialBots[botId] = bot;
@@ -1181,7 +1183,7 @@ function getEntity(deviceId, entityId) {
  * Called after bind-free and bind-personal to give the bot its credentials and API docs.
  * Fire-and-forget (non-blocking) - binding is already complete.
  */
-function sendBindCredentialsToBot(webhookUrl, webhookToken, sessionKey, deviceId, entityId, botSecret, botType) {
+function sendBindCredentialsToBot(webhookUrl, webhookToken, sessionKey, deviceId, entityId, botSecret, botType, authOpts = {}) {
     const skillDoc = loadSkillDoc();
     const apiBase = 'https://eclawbot.com';
     const msg = `[SYSTEM:BIND_COMPLETE] Official borrow binding established.
@@ -1214,7 +1216,7 @@ exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/j
 --- E-Claw API Documentation (Latest) ---
 ${skillDoc}`;
 
-    sendToSession(webhookUrl, webhookToken, sessionKey, msg)
+    sendToSession(webhookUrl, webhookToken, sessionKey, msg, authOpts)
         .then(result => {
             if (result.success) {
                 console.log(`[Borrow] ✓ Sent credentials + skill doc to bot (device ${deviceId} entity ${entityId})`);
@@ -3528,7 +3530,7 @@ app.post('/api/admin/official-bot/register', async (req, res) => {
         return res.status(403).json({ success: false, error: 'Forbidden: admin token required' });
     }
 
-    const { botId, botType, webhookUrl, token, botSecret, sessionKeyTemplate } = req.body;
+    const { botId, botType, webhookUrl, token, botSecret, sessionKeyTemplate, setupUsername, setupPassword } = req.body;
 
     if (!botId || !botType || !webhookUrl || !token) {
         return res.status(400).json({ success: false, error: 'botId, botType, webhookUrl, and token are required' });
@@ -3553,7 +3555,9 @@ app.post('/api/admin/official-bot/register', async (req, res) => {
         assigned_device_id: null,
         assigned_entity_id: null,
         assigned_at: null,
-        created_at: Date.now()
+        created_at: Date.now(),
+        setup_username: setupUsername || null,
+        setup_password: setupPassword || null
     };
 
     officialBots[botId] = bot;
@@ -3600,11 +3604,13 @@ app.put('/api/admin/official-bot/:botId', async (req, res) => {
         return res.status(404).json({ success: false, error: 'Bot not found' });
     }
 
-    const { webhookUrl, token, sessionKeyTemplate, status } = req.body;
+    const { webhookUrl, token, sessionKeyTemplate, status, setupUsername, setupPassword } = req.body;
     if (webhookUrl) bot.webhook_url = webhookUrl;
     if (token) bot.token = token;
     if (sessionKeyTemplate !== undefined) bot.session_key_template = sessionKeyTemplate;
     if (status && ['available', 'assigned', 'disabled'].includes(status)) bot.status = status;
+    if (setupUsername !== undefined) bot.setup_username = setupUsername || null;
+    if (setupPassword !== undefined) bot.setup_password = setupPassword || null;
 
     if (usePostgreSQL) await db.saveOfficialBot(bot);
 
@@ -3859,7 +3865,8 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
 
     // Handshake with bot to discover a working session key and get welcome message
     const preferredKey = freeBot.session_key_template || 'default';
-    const handshake = await handshakeWithBot(freeBot.webhook_url, freeBot.token, preferredKey, deviceId, eId, 'free');
+    const freeBotAuthOpts = { setupUsername: freeBot.setup_username, setupPassword: freeBot.setup_password };
+    const handshake = await handshakeWithBot(freeBot.webhook_url, freeBot.token, preferredKey, deviceId, eId, 'free', freeBotAuthOpts);
 
     if (!handshake.success) {
         return res.status(502).json({
@@ -3888,7 +3895,9 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
             url: freeBot.webhook_url,
             token: freeBot.token,
             sessionKey: sessionKey,
-            registeredAt: Date.now()
+            registeredAt: Date.now(),
+            setupUsername: freeBot.setup_username || null,
+            setupPassword: freeBot.setup_password || null
         }
     };
 
@@ -3913,7 +3922,7 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     console.log(`[Borrow] Free bot ${freeBot.bot_id} bound to device ${deviceId} entity ${eId} (session: ${sessionKey})`);
 
     // Fire-and-forget: send credentials + skill doc to bot
-    sendBindCredentialsToBot(freeBot.webhook_url, freeBot.token, sessionKey, deviceId, eId, botSecret, 'free');
+    sendBindCredentialsToBot(freeBot.webhook_url, freeBot.token, sessionKey, deviceId, eId, botSecret, 'free', freeBotAuthOpts);
 
     res.json({
         success: true,
@@ -3990,7 +3999,8 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
 
     // Handshake with bot to discover a working session key and get welcome message
     const preferredKey = personalBot.session_key_template || 'default';
-    const handshake = await handshakeWithBot(personalBot.webhook_url, personalBot.token, preferredKey, deviceId, eId, 'personal');
+    const personalBotAuthOpts = { setupUsername: personalBot.setup_username, setupPassword: personalBot.setup_password };
+    const handshake = await handshakeWithBot(personalBot.webhook_url, personalBot.token, preferredKey, deviceId, eId, 'personal', personalBotAuthOpts);
 
     if (!handshake.success) {
         return res.status(502).json({
@@ -4019,7 +4029,9 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
             url: personalBot.webhook_url,
             token: personalBot.token,
             sessionKey: sessionKey,
-            registeredAt: Date.now()
+            registeredAt: Date.now(),
+            setupUsername: personalBot.setup_username || null,
+            setupPassword: personalBot.setup_password || null
         }
     };
 
@@ -4047,7 +4059,7 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
     console.log(`[Borrow] Personal bot ${personalBot.bot_id} assigned to device ${deviceId} entity ${eId} (session: ${sessionKey}, usedSlot: ${usedSlot})`);
 
     // Fire-and-forget: send credentials + skill doc to bot
-    sendBindCredentialsToBot(personalBot.webhook_url, personalBot.token, sessionKey, deviceId, eId, botSecret, 'personal');
+    sendBindCredentialsToBot(personalBot.webhook_url, personalBot.token, sessionKey, deviceId, eId, botSecret, 'personal', personalBotAuthOpts);
 
     res.json({
         success: true,
@@ -4279,7 +4291,8 @@ app.post('/api/entity/refresh', async (req, res) => {
 
         // Attempt handshake
         const preferredKey = binding.session_key || bot.session_key_template || 'default';
-        const handshake = await handshakeWithBot(bot.webhook_url, bot.token, preferredKey, deviceId, eId, bot.bot_type);
+        const botAuthOpts = { setupUsername: bot.setup_username, setupPassword: bot.setup_password };
+        const handshake = await handshakeWithBot(bot.webhook_url, bot.token, preferredKey, deviceId, eId, bot.bot_type, botAuthOpts);
 
         if (!handshake.success) {
             // Set cooldown even on failure to prevent spamming
@@ -4299,7 +4312,9 @@ app.post('/api/entity/refresh', async (req, res) => {
             url: bot.webhook_url,
             token: bot.token,
             sessionKey: newSessionKey,
-            registeredAt: Date.now()
+            registeredAt: Date.now(),
+            setupUsername: bot.setup_username || null,
+            setupPassword: bot.setup_password || null
         };
         entity.lastUpdated = Date.now();
 
@@ -4310,7 +4325,7 @@ app.post('/api/entity/refresh', async (req, res) => {
         await saveData();
 
         // Fire-and-forget: resend credentials + skills doc
-        sendBindCredentialsToBot(bot.webhook_url, bot.token, newSessionKey, deviceId, eId, entity.botSecret, bot.bot_type);
+        sendBindCredentialsToBot(bot.webhook_url, bot.token, newSessionKey, deviceId, eId, entity.botSecret, bot.bot_type, botAuthOpts);
 
         // Set cooldown
         refreshCooldowns[cooldownKey] = Date.now();
@@ -4372,12 +4387,128 @@ app.post('/api/entity/refresh', async (req, res) => {
 // ============================================
 
 /**
+ * Generate version-specific fix instructions for webhook handshake failures.
+ * Returns a multi-line string with exact exec commands the bot can run.
+ * @param {'tool_not_available'|'pairing_required'|'http_401'|'localhost_rejected'} errorType
+ * @param {string|undefined} openclawVersion - e.g. "2026.2.28"
+ */
+function getWebhookFixInstructions(errorType, openclawVersion) {
+    // Parse version string into comparable parts
+    let vParts = null;
+    if (openclawVersion) {
+        const match = openclawVersion.match(/(\d{4})\.(\d+)\.(\d+)/);
+        if (match) vParts = [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])];
+    }
+
+    const isV226Plus = vParts && (
+        vParts[0] > 2026 ||
+        (vParts[0] === 2026 && vParts[1] > 2) ||
+        (vParts[0] === 2026 && vParts[1] === 2 && vParts[2] >= 26)
+    );
+    const isV214to225 = vParts && (
+        vParts[0] === 2026 && vParts[1] === 2 && vParts[2] >= 14 && vParts[2] <= 25
+    );
+
+    const safetyRules =
+        "SAFETY RULES:\n" +
+        "- ALWAYS ask the user before restarting the gateway (it disconnects all active sessions)\n" +
+        "- ALWAYS back up config first: exec: cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak\n" +
+        "- After fixing, retry POST /api/bot/register with the same parameters\n";
+
+    switch (errorType) {
+        case 'tool_not_available': {
+            if (isV226Plus) {
+                return safetyRules + "\n" +
+                    `FIX (OpenClaw ${openclawVersion} — use CLI):\n` +
+                    "Step 1: Allow sessions_send tool:\n" +
+                    `  exec: openclaw config set gateway.tools.allow '["sessions_send", "sessions_spawn", "session_status"]'\n` +
+                    'Step 2: Ask the user: "I need to restart the OpenClaw gateway to apply the config change. This will briefly disconnect all sessions. May I proceed?"\n' +
+                    "Step 3: Only if user confirms:\n" +
+                    "  exec: openclaw gateway restart\n" +
+                    "Step 4: Retry POST /api/bot/register with the same parameters.";
+            } else if (isV214to225) {
+                return safetyRules + "\n" +
+                    `FIX (OpenClaw ${openclawVersion} — config file edit required):\n` +
+                    "Step 1: Back up config:\n" +
+                    "  exec: cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak\n" +
+                    "Step 2: Read current config:\n" +
+                    "  exec: cat ~/.openclaw/openclaw.json\n" +
+                    'Step 3: Add sessions_send to gateway.tools.allow in the JSON. The result should include:\n' +
+                    '  { "gateway": { "tools": { "allow": ["sessions_send", "sessions_spawn", "session_status"] } } }\n' +
+                    "  WARNING: Merge carefully — do NOT overwrite other fields in the JSON.\n" +
+                    'Step 4: Ask the user: "I need to restart the OpenClaw gateway to apply the config change. This will briefly disconnect all sessions. May I proceed?"\n' +
+                    "Step 5: Only if user confirms:\n" +
+                    "  exec: openclaw gateway restart\n" +
+                    "Step 6: Retry POST /api/bot/register with the same parameters.";
+            } else {
+                // No version provided or unrecognized — tell bot to detect version first
+                return safetyRules + "\n" +
+                    "FIX: sessions_send tool is blocked on your gateway.\n" +
+                    "First, detect your OpenClaw version:\n" +
+                    "  exec: openclaw --version\n\n" +
+                    "Then retry POST /api/bot/register with openclaw_version included in the request body, " +
+                    "and the server will return version-specific fix instructions.\n\n" +
+                    "Quick reference (if you prefer to fix now):\n" +
+                    "  If version >= 2026.2.26:\n" +
+                    `    exec: openclaw config set gateway.tools.allow '["sessions_send", "sessions_spawn", "session_status"]'\n` +
+                    "  If version 2026.2.14 ~ 2026.2.25:\n" +
+                    "    Edit ~/.openclaw/openclaw.json — add sessions_send to gateway.tools.allow\n" +
+                    "  Then ask the user before restarting:\n" +
+                    "    exec: openclaw gateway restart\n" +
+                    "  Then retry POST /api/bot/register.";
+            }
+        }
+
+        case 'pairing_required': {
+            return safetyRules + "\n" +
+                "FIX: Gateway requires device re-pairing.\n" +
+                "Step 1: Read pending devices config:\n" +
+                "  exec: cat ~/.openclaw/devices/pending.json\n" +
+                'Step 2: Change "silent" from false to true in that file to auto-approve pairing.\n' +
+                'Step 3: Ask the user: "I need to restart the OpenClaw gateway to apply the pairing fix. This will briefly disconnect all sessions. May I proceed?"\n' +
+                "Step 4: Only if user confirms:\n" +
+                "  exec: openclaw gateway restart\n" +
+                "Step 5: Retry POST /api/bot/register with the same parameters.";
+        }
+
+        case 'http_401': {
+            return "FIX: Gateway rejected your token (HTTP 401).\n" +
+                "Step 1: Re-read the correct token:\n" +
+                "  exec: echo $OPENCLAW_GATEWAY_TOKEN\n" +
+                "  or: exec: openclaw config get gateway.token\n" +
+                "Step 2: Retry POST /api/bot/register with the correct token value.\n" +
+                "Note: If the token changed after a gateway restart, you need the new one.";
+        }
+
+        case 'localhost_rejected': {
+            return "FIX: Your webhook_url points to localhost, which is unreachable from the internet.\n" +
+                "Try these methods in order:\n\n" +
+                "Method A (Recommended for Zeabur):\n" +
+                "  exec: echo $ZEABUR_WEB_URL\n" +
+                "  exec: echo $OPENCLAW_GATEWAY_TOKEN\n" +
+                "  Then use: webhook_url = {ZEABUR_WEB_URL}/tools/invoke, token = {OPENCLAW_GATEWAY_TOKEN}\n\n" +
+                "Method B: Query gateway config:\n" +
+                "  exec: openclaw config get gateway.publicUrl\n" +
+                "  exec: openclaw config get gateway.token\n" +
+                "  If publicUrl is still localhost, use Method A or C.\n\n" +
+                "Method C: Ask the user for the WebSocket URL and Gateway Token from the OpenClaw Overview page.\n" +
+                "  CRITICAL: Replace wss:// with https:// in the URL!\n" +
+                "  Example: wss://eclaw0.zeabur.app → https://eclaw0.zeabur.app/tools/invoke\n\n" +
+                "Then retry POST /api/bot/register with the corrected webhook_url and token.";
+        }
+
+        default:
+            return "Refer to https://eclawbot.com/docs/webhook-troubleshooting.md for troubleshooting steps.";
+    }
+}
+
+/**
  * POST /api/bot/register
  * Bot registers its webhook URL to receive push notifications.
- * Body: { deviceId, entityId, botSecret, webhook_url, token, session_key }
+ * Body: { deviceId, entityId, botSecret, webhook_url, token, session_key, openclaw_version? }
  */
 app.post('/api/bot/register', async (req, res) => {
-    const { deviceId, entityId, botSecret, webhook_url, token, session_key } = req.body;
+    const { deviceId, entityId, botSecret, webhook_url, token, session_key, openclaw_version, setup_username, setup_password } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -4423,11 +4554,12 @@ app.post('/api/bot/register', async (req, res) => {
         const isPrivateIP = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(hn);
         if (isLoopback || isPrivateIP) {
             console.warn(`[Bot Register] Rejected local/private webhook: ${webhook_url}`);
+            const fix = getWebhookFixInstructions('localhost_rejected', openclaw_version);
             return res.status(400).json({
                 success: false,
-                message: `webhook_url points to a local/private address (${hn}) which is unreachable from the internet. ` +
-                    "Fetch the troubleshooting guide for step-by-step fix: https://eclawbot.com/docs/webhook-troubleshooting.md",
-                hint: "Fetch https://eclawbot.com/docs/webhook-troubleshooting.md — see 'localhost / private IP' section."
+                error_type: 'localhost_rejected',
+                message: `Webhook registration failed: webhook_url points to a local/private address (${hn}) which is unreachable from the internet.\n\n${fix}`,
+                openclaw_version_received: openclaw_version || null
             });
         }
     } catch (e) {
@@ -4481,14 +4613,10 @@ app.post('/api/bot/register', async (req, res) => {
     console.log(`[Bot Register] Handshake: dry-run invoking sessions_send at ${finalUrl}...`);
 
     try {
-        const probeResponse = await fetch(finalUrl, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${cleanToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(handshakePayload),
-            signal: AbortSignal.timeout(5000) // 5s timeout - real failures return in < 1s; timeout = success
+        const probeResponse = await gatewayFetch(finalUrl, cleanToken, handshakePayload, {
+            setupUsername: setup_username,
+            setupPassword: setup_password,
+            timeout: 5000 // 5s timeout - real failures return in < 1s; timeout = success
         });
 
         const responseText = await probeResponse.text().catch(() => '');
@@ -4504,23 +4632,24 @@ app.post('/api/bot/register', async (req, res) => {
 
             if (probeResponse.status === 401) {
                 logHandshakeFailure({ deviceId, entityId: eId, webhookUrl: finalUrl, errorType: 'http_401', httpStatus: 401, errorMessage, responseBody: responseText, source: 'bot_register' });
+                const fix = getWebhookFixInstructions('http_401', openclaw_version);
                 return res.status(400).json({
                     success: false,
-                    message: "Webhook handshake failed: gateway rejected the token (HTTP 401). " +
-                        "Please verify that the token matches your OPENCLAW_GATEWAY_TOKEN.",
-                    hint: "Re-read gateway config and use the correct token.",
+                    error_type: 'http_401',
+                    message: `Webhook handshake failed: gateway rejected the token (HTTP 401).\n\n${fix}`,
+                    openclaw_version_received: openclaw_version || null,
                     debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, tokenPreview }
                 });
             }
 
             if (probeResponse.status === 404 || errorMessage.includes('not available') || errorMessage.includes('not found')) {
                 logHandshakeFailure({ deviceId, entityId: eId, webhookUrl: finalUrl, errorType: 'tool_not_available', httpStatus: probeResponse.status, errorMessage, responseBody: responseText, source: 'bot_register' });
+                const fix = getWebhookFixInstructions('tool_not_available', openclaw_version);
                 return res.status(400).json({
                     success: false,
-                    message: "Webhook handshake failed: gateway cannot execute 'sessions_send' tool. " +
-                        `Server responded: "${errorMessage}". ` +
-                        "Fetch the troubleshooting guide for step-by-step fix: https://eclawbot.com/docs/webhook-troubleshooting.md",
-                    hint: "Fetch https://eclawbot.com/docs/webhook-troubleshooting.md for the fix. Do NOT edit config files directly — use openclaw CLI.",
+                    error_type: 'tool_not_available',
+                    message: `Webhook handshake failed: gateway cannot execute 'sessions_send' tool. Server responded: "${errorMessage}".\n\n${fix}`,
+                    openclaw_version_received: openclaw_version || null,
                     debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
                 });
             }
@@ -4529,9 +4658,9 @@ app.post('/api/bot/register', async (req, res) => {
             logHandshakeFailure({ deviceId, entityId: eId, webhookUrl: finalUrl, errorType: `http_${probeResponse.status}`, httpStatus: probeResponse.status, errorMessage, responseBody: responseText, source: 'bot_register' });
             return res.status(400).json({
                 success: false,
-                message: `Webhook handshake failed: gateway returned HTTP ${probeResponse.status}. ` +
-                    `Server responded: "${errorMessage}".`,
-                hint: "Check your gateway logs for more details.",
+                error_type: `http_${probeResponse.status}`,
+                message: `Webhook handshake failed: gateway returned HTTP ${probeResponse.status}. Server responded: "${errorMessage}". Check your gateway logs for more details.`,
+                openclaw_version_received: openclaw_version || null,
                 debug: { probeUrl: finalUrl, httpStatus: probeResponse.status, serverError: errorMessage }
             });
         }
@@ -4542,11 +4671,12 @@ app.post('/api/bot/register', async (req, res) => {
             console.error(`[Bot Register] ✗ Handshake FAILED: gateway disconnected (pairing required)`);
             console.error(`[Bot Register] Response: ${responseText.substring(0, 300)}`);
             logHandshakeFailure({ deviceId, entityId: eId, webhookUrl: finalUrl, errorType: 'pairing_required', httpStatus: 200, errorMessage: 'gateway closed (1008): pairing required', responseBody: responseText?.substring(0, 500), source: 'bot_register_handshake' });
+            const fix = getWebhookFixInstructions('pairing_required', openclaw_version);
             return res.status(400).json({
                 success: false,
-                message: "Webhook handshake failed: bot gateway is disconnected (pairing required). " +
-                    "Fetch the troubleshooting guide for step-by-step fix: https://eclawbot.com/docs/webhook-troubleshooting.md",
-                hint: "Fetch https://eclawbot.com/docs/webhook-troubleshooting.md for the fix.",
+                error_type: 'pairing_required',
+                message: `Webhook handshake failed: bot gateway is disconnected (pairing required).\n\n${fix}`,
+                openclaw_version_received: openclaw_version || null,
                 debug: { probeUrl: finalUrl, httpStatus: 200, bodyError: 'pairing_required' }
             });
         }
@@ -4570,12 +4700,12 @@ app.post('/api/bot/register', async (req, res) => {
             // Actual connection failure - gateway is unreachable
             console.error(`[Bot Register] ✗ Handshake connection failed: ${probeErr.message}`);
             logHandshakeFailure({ deviceId, entityId: eId, webhookUrl: finalUrl, errorType: 'connection_failed', errorMessage: probeErr.message, source: 'bot_register' });
+            const fix = getWebhookFixInstructions('localhost_rejected', openclaw_version);
             return res.status(400).json({
                 success: false,
-                message: `Webhook handshake failed: cannot reach gateway at ${finalUrl}. ` +
-                    `Error: ${probeErr.message}. ` +
-                    `Please verify that your bot server is running and the webhook URL is correct.`,
-                hint: "If using Zeabur: ensure the service is deployed and the URL matches ZEABUR_WEB_URL.",
+                error_type: 'connection_failed',
+                message: `Webhook handshake failed: cannot reach gateway at ${finalUrl}. Error: ${probeErr.message}.\n\n${fix}`,
+                openclaw_version_received: openclaw_version || null,
                 debug: { probeUrl: finalUrl, error: probeErr.message }
             });
         }
@@ -4586,7 +4716,9 @@ app.post('/api/bot/register', async (req, res) => {
         url: finalUrl,
         token: cleanToken,
         sessionKey: session_key,
-        registeredAt: Date.now()
+        registeredAt: Date.now(),
+        setupUsername: setup_username || null,
+        setupPassword: setup_password || null
     };
     entity.pushStatus = { ok: true, at: Date.now() };
 
@@ -4764,20 +4896,38 @@ app.post('/api/bot/pending-messages', async (req, res) => {
 });
 
 /**
+ * Helper: Authenticated fetch to an OpenClaw gateway.
+ * When setupUsername/setupPassword are provided (Railway with SETUP_PASSWORD),
+ * uses HTTP Basic Auth instead of Bearer Token.
+ * When not provided, uses Bearer Token (Zeabur default).
+ */
+async function gatewayFetch(url, token, body, options = {}) {
+    const { setupUsername, setupPassword, timeout, signal } = options;
+    const headers = { 'Content-Type': 'application/json' };
+
+    if (setupUsername && setupPassword) {
+        const basic = Buffer.from(`${setupUsername}:${setupPassword}`).toString('base64');
+        headers['Authorization'] = `Basic ${basic}`;
+    } else {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: signal || (timeout ? AbortSignal.timeout(timeout) : undefined)
+    });
+}
+
+/**
  * Helper: Discover existing sessions on the OpenClaw gateway via sessions_list.
  * Returns array of session key strings, or empty array on failure.
  */
-async function discoverSessions(url, token) {
+async function discoverSessions(url, token, authOpts = {}) {
     try {
         console.log(`[Session] Discovering sessions on gateway ${url}`);
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ tool: "sessions_list", args: {} })
-        });
+        const response = await gatewayFetch(url, token, { tool: "sessions_list", args: {} }, authOpts);
 
         const text = await response.text().catch(() => '');
         console.log(`[Session] sessions_list response (${response.status}): ${text.substring(0, 500)}`);
@@ -4822,12 +4972,12 @@ async function discoverSessions(url, token) {
  * 3. Use first available session, send binding notification
  * 4. Return working session key and bot's response
  */
-async function handshakeWithBot(url, token, preferredSessionKey, deviceId, entityId, botType) {
+async function handshakeWithBot(url, token, preferredSessionKey, deviceId, entityId, botType, authOpts = {}) {
     const bindMsg = `[SYSTEM:BIND_HANDSHAKE] New binding: Device ${deviceId}, Entity ${entityId}, Type: ${botType}. Reply OK to confirm.`;
 
     // Step 1: Try preferred session key
     console.log(`[Handshake] Trying preferred session key: ${preferredSessionKey}...`);
-    let result = await sendToSession(url, token, preferredSessionKey, bindMsg);
+    let result = await sendToSession(url, token, preferredSessionKey, bindMsg, authOpts);
 
     if (result.success) {
         console.log(`[Handshake] ✓ Handshake OK with preferred key`);
@@ -4837,12 +4987,12 @@ async function handshakeWithBot(url, token, preferredSessionKey, deviceId, entit
     // Step 2: If session not found, discover existing sessions
     if (result.sessionNotFound) {
         console.log(`[Handshake] Preferred session not found, discovering sessions...`);
-        const sessions = await discoverSessions(url, token);
+        const sessions = await discoverSessions(url, token, authOpts);
         console.log(`[Handshake] Discovered ${sessions.length} sessions: ${JSON.stringify(sessions)}`);
 
         for (const sk of sessions) {
             console.log(`[Handshake] Trying discovered session: ${sk}...`);
-            result = await sendToSession(url, token, sk, bindMsg);
+            result = await sendToSession(url, token, sk, bindMsg, authOpts);
             if (result.success) {
                 console.log(`[Handshake] ✓ Handshake OK with discovered key: ${sk}`);
                 return { success: true, sessionKey: sk, botResponse: result.botResponse };
@@ -4858,19 +5008,12 @@ async function handshakeWithBot(url, token, preferredSessionKey, deviceId, entit
 /**
  * Helper: Send a message to a specific session and parse the response.
  */
-async function sendToSession(url, token, sessionKey, message) {
+async function sendToSession(url, token, sessionKey, message, authOpts = {}) {
     try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                tool: "sessions_send",
-                args: { sessionKey, message }
-            })
-        });
+        const response = await gatewayFetch(url, token, {
+            tool: "sessions_send",
+            args: { sessionKey, message }
+        }, authOpts);
 
         const text = await response.text().catch(() => '');
 
@@ -4929,7 +5072,8 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         return { pushed: false, reason: "no_webhook" };
     }
 
-    const { url, token, sessionKey } = entity.webhook;
+    const { url, token, sessionKey, setupUsername, setupPassword } = entity.webhook;
+    const authOpts = { setupUsername, setupPassword };
 
     // For official bot bindings, use the per-user session key
     let effectiveSessionKey = sessionKey;
@@ -4961,14 +5105,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         console.log(`[Push] Payload:`, JSON.stringify(requestPayload, null, 2));
 
         // OpenClaw /tools/invoke format
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestPayload)
-        });
+        const response = await gatewayFetch(url, token, requestPayload, authOpts);
 
         if (response.ok) {
             const responseText = await response.text().catch(() => '');
@@ -4981,7 +5118,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             // Gateway returns 200 but with error in body when session doesn't exist
             if (responseText && responseText.includes('No session found')) {
                 console.warn(`[Push] Session "${effectiveSessionKey}" not found, discovering available sessions...`);
-                const sessions = await discoverSessions(url, token);
+                const sessions = await discoverSessions(url, token, authOpts);
                 if (sessions.length > 0) {
                     console.log(`[Push] Found ${sessions.length} sessions, trying first: ${sessions[0]}`);
                     // Try sending with the first discovered session
@@ -4989,14 +5126,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
                         ...requestPayload,
                         args: { ...requestPayload.args, sessionKey: sessions[0] }
                     };
-                    const retryResponse = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(retryPayload)
-                    });
+                    const retryResponse = await gatewayFetch(url, token, retryPayload, authOpts);
                     const retryText = await retryResponse.text().catch(() => '');
                     if (retryResponse.ok && !retryText.includes('No session found')) {
                         console.log(`[Push] ✓ Retry successful with discovered session: ${sessions[0]}`);
