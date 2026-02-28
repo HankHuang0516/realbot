@@ -6174,6 +6174,7 @@ const aiSupportModule = require('./ai-support')(devices, chatPool, { serverLog, 
 // Admin-chat requires admin auth; other ai-support routes use bot auth
 app.use('/api/ai-support/admin-chat', adminAuth, adminCheck);
 // Increase body limit for chat (images can be large)
+app.use('/api/ai-support/chat/submit', express.json({ limit: '10mb' }));
 app.use('/api/ai-support/chat', express.json({ limit: '10mb' }));
 app.use('/api/ai-support', aiSupportModule.router);
 aiSupportModule.initSupportTable();

@@ -7,15 +7,19 @@
     'use strict';
 
     const STORAGE_KEY = 'eclaw_ai_chat_history';
+    const PENDING_KEY = 'eclaw_ai_chat_pending';
     const MAX_HISTORY = 20;
     const MAX_IMAGES = 3;
     const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB after compression
     const MAX_IMAGE_DIM = 1024; // max width/height for compression
+    const POLL_INTERVAL = 3000; // 3 seconds
+    const POLL_MAX_DURATION = 150000; // 2.5 minutes
 
     let chatHistory = [];
     let isOpen = false;
     let isLoading = false;
     let pendingImages = []; // { data: base64, mimeType: string }
+    let pollTimer = null;
 
     // ── localStorage ──────────────────────────
     function loadHistory() {
@@ -274,6 +278,9 @@
             chatHistory = [];
             pendingImages = [];
             localStorage.removeItem(STORAGE_KEY);
+            clearPending();
+            isLoading = false;
+            hideTyping();
             renderMessages();
             renderImagePreview();
         });
@@ -430,8 +437,7 @@
         if (el) el.remove();
     }
 
-    // ── Send ──────────────────────────────────
-    const MAX_RETRY = 3;
+    // ── Send (async submit + polling) ─────────
 
     async function sendMessage() {
         const input = document.getElementById('aiChatInput');
@@ -455,13 +461,19 @@
         isLoading = true;
         showTyping();
 
-        // Show upload status when images are present
         if (images) {
             updateTypingText(t('ai_chat_uploading') || 'Uploading image(s)...');
         }
 
+        // Generate requestId before fetch (survives page refresh)
+        const requestId = crypto.randomUUID();
+        try {
+            localStorage.setItem(PENDING_KEY, JSON.stringify({ requestId, sentAt: Date.now() }));
+        } catch (_) {}
+
         const body = {
-            message: text || '(user attached image(s) — please analyze them)',
+            requestId,
+            message: text || '(user attached image(s) \u2014 please analyze them)',
             history: chatHistory.slice(-MAX_HISTORY).map(m => ({
                 role: m.role,
                 content: m.content
@@ -472,62 +484,131 @@
             body.images = images;
         }
 
-        await callWithRetry(body, 0);
-    }
-
-    async function callWithRetry(body, attempt) {
-        // Progressive status for image uploads
-        let statusTimer;
-        if (body.images && attempt === 0) {
-            const phases = [
-                { delay: 4000, text: t('ai_chat_analyzing') || 'AI is analyzing your image(s)...' },
-                { delay: 15000, text: t('ai_chat_thinking') || 'Still working on it...' }
-            ];
-            for (const phase of phases) {
-                const timer = setTimeout(() => updateTypingText(phase.text), phase.delay);
-                statusTimer = () => { clearTimeout(timer); };
-            }
-            // Keep references for cleanup
-            const timers = phases.map(p => setTimeout(() => updateTypingText(p.text), p.delay));
-            statusTimer = () => timers.forEach(t => clearTimeout(t));
-        }
-
         try {
-            const data = await apiCall('POST', '/api/ai-support/chat', body);
-            if (statusTimer) statusTimer();
-
-            // Handle busy response — auto-retry with countdown
-            if (data.busy && attempt < MAX_RETRY) {
-                const waitSec = data.retry_after || 15;
-                updateTypingText(`AI is busy, retrying in ${waitSec}s... (${attempt + 1}/${MAX_RETRY})`);
-                await countdown(waitSec);
-                return callWithRetry(body, attempt + 1);
-            }
-
-            hideTyping();
-
-            if (data.busy) {
-                // Exhausted retries
-                chatHistory.push({ role: 'assistant', content: 'AI is currently busy with other requests. Please try again in a moment.' });
-            } else if (data.response) {
-                chatHistory.push({ role: 'assistant', content: data.response });
-            }
-            saveHistory();
-            renderMessages();
-            scrollToBottom();
-
-            if (data.actions && data.actions.length > 0) {
-                showActionBar(data.actions);
-            }
+            await apiCall('POST', '/api/ai-support/chat/submit', body);
+            // Submit accepted, start polling for the response
+            startPolling(requestId);
         } catch (err) {
+            clearPending();
             hideTyping();
             chatHistory.push({ role: 'assistant', content: 'Sorry, something went wrong. Please try again.' });
             saveHistory();
             renderMessages();
             scrollToBottom();
-        } finally {
             isLoading = false;
-            document.getElementById('aiChatInput').focus();
+        }
+    }
+
+    // ── Polling ──────────────────────────────────
+
+    function startPolling(requestId) {
+        const startedAt = Date.now();
+        let pollAttemptErrors = 0;
+
+        async function poll() {
+            const elapsed = Date.now() - startedAt;
+
+            // Timeout guard
+            if (elapsed > POLL_MAX_DURATION) {
+                clearPending();
+                hideTyping();
+                chatHistory.push({ role: 'assistant', content: 'Request timed out. Please try again.' });
+                saveHistory();
+                renderMessages();
+                scrollToBottom();
+                isLoading = false;
+                return;
+            }
+
+            // Progressive status text
+            if (elapsed > 60000) {
+                updateTypingText(t('ai_chat_still_working') || 'This is taking a while, still working...');
+            } else if (elapsed > 15000) {
+                updateTypingText(t('ai_chat_thinking') || 'Still working on it...');
+            } else if (elapsed > 5000) {
+                updateTypingText(t('ai_chat_analyzing') || 'AI is analyzing...');
+            }
+
+            try {
+                const data = await apiCall('GET', '/api/ai-support/chat/poll/' + requestId);
+                pollAttemptErrors = 0;
+
+                if (data.status === 'completed') {
+                    clearPending();
+                    hideTyping();
+
+                    if (data.busy) {
+                        chatHistory.push({ role: 'assistant', content: 'AI is currently busy. Please try again in a moment.' });
+                    } else if (data.response) {
+                        chatHistory.push({ role: 'assistant', content: data.response });
+                    }
+                    saveHistory();
+                    renderMessages();
+                    scrollToBottom();
+
+                    if (data.actions && data.actions.length > 0) {
+                        showActionBar(data.actions);
+                    }
+                    isLoading = false;
+                    document.getElementById('aiChatInput')?.focus();
+                    return;
+                }
+
+                if (data.status === 'failed' || data.status === 'expired') {
+                    clearPending();
+                    hideTyping();
+                    chatHistory.push({ role: 'assistant', content: data.error || 'Something went wrong. Please try again.' });
+                    saveHistory();
+                    renderMessages();
+                    scrollToBottom();
+                    isLoading = false;
+                    return;
+                }
+
+                // Still pending/processing — continue polling
+                pollTimer = setTimeout(poll, POLL_INTERVAL);
+            } catch (err) {
+                pollAttemptErrors++;
+                if (pollAttemptErrors < 5) {
+                    pollTimer = setTimeout(poll, POLL_INTERVAL * 2);
+                } else {
+                    clearPending();
+                    hideTyping();
+                    chatHistory.push({ role: 'assistant', content: 'Lost connection. Please try again.' });
+                    saveHistory();
+                    renderMessages();
+                    scrollToBottom();
+                    isLoading = false;
+                }
+            }
+        }
+
+        pollTimer = setTimeout(poll, POLL_INTERVAL);
+    }
+
+    function clearPending() {
+        try { localStorage.removeItem(PENDING_KEY); } catch (_) {}
+        if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    }
+
+    function resumePendingRequest() {
+        try {
+            const raw = localStorage.getItem(PENDING_KEY);
+            if (!raw) return;
+            const pending = JSON.parse(raw);
+            if (!pending.requestId) return;
+            // Discard if older than 3 minutes
+            if (Date.now() - pending.sentAt > 180000) {
+                localStorage.removeItem(PENDING_KEY);
+                return;
+            }
+            // Resume: show typing and start polling
+            isLoading = true;
+            showTyping();
+            updateTypingText(t('ai_chat_thinking') || 'Retrieving AI response...');
+            startPolling(pending.requestId);
+        } catch (_) {
+            localStorage.removeItem(PENDING_KEY);
         }
     }
 
@@ -536,22 +617,6 @@
         if (el) {
             el.innerHTML = '<span class="ai-chat-busy-text">' + escapeHtml(text) + '</span>';
         }
-    }
-
-    function countdown(seconds) {
-        return new Promise(resolve => {
-            let remaining = seconds;
-            const interval = setInterval(() => {
-                remaining--;
-                if (remaining <= 0) {
-                    clearInterval(interval);
-                    showTyping(); // restore dots
-                    resolve();
-                } else {
-                    updateTypingText(`AI is busy, retrying in ${remaining}s...`);
-                }
-            }, 1000);
-        });
     }
 
     // ── Admin Actions ─────────────────────────
@@ -599,6 +664,7 @@
                 clearInterval(check);
                 loadHistory();
                 createWidget();
+                resumePendingRequest();
             }
         }, 200);
         setTimeout(() => clearInterval(check), 10000);
