@@ -1,3 +1,10 @@
+## [1.51.2](https://github.com/HankHuang0516/realbot/compare/v1.51.1...v1.51.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* prevent AI chat timeout — optimize prompt and fix spawn bugs ([539aadf](https://github.com/HankHuang0516/realbot/commit/539aadfb0d4b2c2ee2664c0cdcf992adba485d4f))
+
 ## [1.51.1](https://github.com/HankHuang0516/realbot/compare/v1.51.0...v1.51.1) (2026-02-28)
 
 
