@@ -182,12 +182,13 @@ app.use('/chat', (req, res, next) => {
 });
 
 // ── Chat Endpoint (Sonnet + repo tools) ────
-function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS) {
+function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS, { isAdmin = false } = {}) {
     return new Promise((resolve, reject) => {
         const args = ['--print', '--output-format', 'json', '--model', 'sonnet', '--dangerouslySkipPermissions'];
-        // Enable file access tools if repo is cloned
+        // Enable file access tools if repo is cloned; Bash only for admin
         if (fs.existsSync(path.join(REPO_DIR, '.git'))) {
-            args.push('--allowedTools', 'Read,Glob,Grep,Bash');
+            const tools = isAdmin ? 'Read,Glob,Grep,Bash' : 'Read,Glob,Grep';
+            args.push('--allowedTools', tools);
         }
         const child = spawn(CLAUDE_BIN, args, {
             cwd: fs.existsSync(REPO_DIR) ? REPO_DIR : __dirname,
@@ -330,7 +331,7 @@ app.post('/chat', async (req, res) => {
 
     const startTime = Date.now();
     try {
-        const { stdout, stderr } = await runClaudeChat(prompt, CHAT_TIMEOUT_MS);
+        const { stdout, stderr } = await runClaudeChat(prompt, CHAT_TIMEOUT_MS, { isAdmin: role === 'admin' });
         const latencyMs = Date.now() - startTime;
         console.log(`[Chat] Sonnet responded (${latencyMs}ms), stdout: ${stdout.length} chars`);
         if (stderr) console.warn(`[Chat] stderr: ${stderr.slice(0, 300)}`);
