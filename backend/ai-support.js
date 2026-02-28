@@ -808,6 +808,231 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         }
     });
 
+    // ── Async Chat: Background Processor ────────
+    async function processRequest(id) {
+        const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
+        const proxyKey = process.env.SUPPORT_API_KEY;
+
+        await chatPool.query(`UPDATE ai_chat_requests SET status = 'processing' WHERE id = $1`, [id]);
+
+        const { rows } = await chatPool.query('SELECT * FROM ai_chat_requests WHERE id = $1', [id]);
+        if (!rows[0]) return;
+        const row = rows[0];
+
+        if (!proxyUrl || !proxyKey) {
+            await chatPool.query(
+                `UPDATE ai_chat_requests SET status = 'failed', error = $2, completed_at = NOW(), images = NULL WHERE id = $1`,
+                [id, 'AI assistant is not available at this time.']
+            );
+            return;
+        }
+
+        const startTime = Date.now();
+        try {
+            const history = row.history || [];
+            const images = row.images || [];
+            const ctx = row.device_context || {};
+
+            const response = await fetch(proxyUrl + '/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${proxyKey}` },
+                body: JSON.stringify({
+                    message: row.message,
+                    history,
+                    images: images.length > 0 ? images : undefined,
+                    device_context: ctx
+                }),
+                signal: AbortSignal.timeout(130000)
+            });
+
+            const latencyMs = Date.now() - startTime;
+
+            if (response.status === 503) {
+                const body = await response.json().catch(() => ({}));
+                await chatPool.query(
+                    `UPDATE ai_chat_requests SET status = 'completed', busy = true, retry_after = $2, latency_ms = $3, completed_at = NOW(), images = NULL WHERE id = $1`,
+                    [id, body.retry_after || 15, latencyMs]
+                );
+                return;
+            }
+
+            if (!response.ok) throw new Error(`Proxy HTTP ${response.status}`);
+
+            const result = await response.json();
+            let responseText = result.response;
+
+            // Auto-create GitHub issues for regular users
+            if (!row.is_admin && result.actions && result.actions.length > 0) {
+                for (const action of result.actions) {
+                    if (action.type === 'create_issue' && action.title) {
+                        const issueResult = await autoCreateIssue(action, { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId });
+                        if (issueResult) {
+                            responseText += `\n\n---\n\ud83d\udccb GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
+                        }
+                    }
+                }
+            }
+
+            await chatPool.query(
+                `UPDATE ai_chat_requests SET status = 'completed', response = $2, actions = $3, latency_ms = $4, completed_at = NOW(), images = NULL WHERE id = $1`,
+                [id, responseText, row.is_admin && result.actions ? JSON.stringify(result.actions) : null, latencyMs]
+            );
+
+            // Log to ai_chat_queries for analytics
+            chatPool.query('INSERT INTO ai_chat_queries (user_id, is_admin, page, latency_ms) VALUES ($1, $2, $3, $4)',
+                [row.user_id, row.is_admin, row.page, latencyMs]).catch(() => {});
+
+        } catch (err) {
+            const latencyMs = Date.now() - startTime;
+            console.error(`[AI Chat] processRequest error (${latencyMs}ms): ${err.message}`);
+            await chatPool.query(
+                `UPDATE ai_chat_requests SET status = 'failed', error = $2, latency_ms = $3, completed_at = NOW(), images = NULL WHERE id = $1`,
+                [id, 'AI assistant temporarily unavailable. Please try again.', latencyMs]
+            ).catch(() => {});
+        }
+    }
+
+    // ── Async Chat: Submit Endpoint ──────────────
+    router.post('/chat/submit', async (req, res) => {
+        // Auth: same as /chat
+        if (!req.user || !req.user.userId) {
+            const { deviceId, deviceSecret } = req.body;
+            if (deviceId && deviceSecret) {
+                const dev = devices[deviceId];
+                if (dev && dev.deviceSecret === deviceSecret) {
+                    req.user = { userId: `device_${deviceId}`, deviceId, email: null };
+                } else {
+                    return res.status(401).json({ success: false, error: 'Invalid device credentials' });
+                }
+            } else {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+        }
+
+        const { requestId, message, history, page, images } = req.body;
+
+        if (!requestId || !/^[0-9a-f-]{36}$/i.test(requestId)) {
+            return res.status(400).json({ success: false, error: 'Invalid requestId (must be UUID)' });
+        }
+        if (!message || typeof message !== 'string' || !message.trim()) {
+            return res.status(400).json({ success: false, error: 'message is required' });
+        }
+
+        const validImages = (images || []).filter(img =>
+            img && typeof img.data === 'string' && typeof img.mimeType === 'string' && img.mimeType.startsWith('image/')
+        ).slice(0, 3);
+
+        // Admin check
+        let isAdmin = false;
+        try {
+            const r = await chatPool.query('SELECT is_admin FROM user_accounts WHERE id = $1', [req.user.userId]);
+            isAdmin = r.rows[0]?.is_admin || false;
+        } catch (_) {}
+
+        // Rate limit
+        const rateCheck = checkChatRateLimit(req.user.userId, isAdmin);
+        if (!rateCheck.allowed) {
+            return res.status(429).json({
+                success: false,
+                error: 'rate_limited',
+                message: 'Maximum messages per hour reached. Try again later.',
+                retry_after_ms: rateCheck.retryAfterMs
+            });
+        }
+
+        // Idempotency: if requestId already exists, return existing status
+        try {
+            const existing = await chatPool.query('SELECT id, status FROM ai_chat_requests WHERE id = $1', [requestId]);
+            if (existing.rows.length > 0) {
+                return res.json({ success: true, requestId, status: existing.rows[0].status });
+            }
+        } catch (_) {}
+
+        // Insert pending request
+        try {
+            await chatPool.query(
+                `INSERT INTO ai_chat_requests (id, user_id, is_admin, page, message, history, images, device_context, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
+                [requestId, req.user.userId, isAdmin, page || null, message.trim(),
+                 JSON.stringify((history || []).slice(-20)),
+                 validImages.length > 0 ? JSON.stringify(validImages) : null,
+                 JSON.stringify({ deviceId: req.user.deviceId, page, role: isAdmin ? 'admin' : 'user', email: req.user.email })]
+            );
+        } catch (err) {
+            console.error('[AI Chat] Submit insert error:', err.message);
+            return res.status(500).json({ success: false, error: 'Failed to save request' });
+        }
+
+        // Respond immediately
+        res.json({ success: true, requestId });
+
+        // Fire-and-forget background processing
+        processRequest(requestId).catch(err => {
+            console.error(`[AI Chat] Background processing error for ${requestId}:`, err.message);
+        });
+    });
+
+    // ── Async Chat: Poll Endpoint ────────────────
+    router.get('/chat/poll/:requestId', async (req, res) => {
+        if (!req.user || !req.user.userId) {
+            // Try device auth from query params
+            const { deviceId, deviceSecret } = req.query;
+            if (deviceId && deviceSecret) {
+                const dev = devices[deviceId];
+                if (dev && dev.deviceSecret === deviceSecret) {
+                    req.user = { userId: `device_${deviceId}`, deviceId, email: null };
+                } else {
+                    return res.status(401).json({ success: false, error: 'Not authenticated' });
+                }
+            } else {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
+        }
+
+        const { requestId } = req.params;
+
+        try {
+            const { rows } = await chatPool.query(
+                'SELECT status, response, actions, busy, retry_after, error, latency_ms FROM ai_chat_requests WHERE id = $1 AND user_id = $2',
+                [requestId, req.user.userId]
+            );
+
+            if (!rows[0]) {
+                return res.status(404).json({ success: false, error: 'Request not found' });
+            }
+
+            const r = rows[0];
+            return res.json({
+                success: true,
+                status: r.status,
+                response: r.response,
+                actions: r.actions,
+                busy: r.busy || false,
+                retry_after: r.retry_after,
+                error: r.error,
+                latency_ms: r.latency_ms
+            });
+        } catch (err) {
+            console.error('[AI Chat] Poll error:', err.message);
+            return res.status(500).json({ success: false, error: 'Internal error' });
+        }
+    });
+
+    // ── Async Chat: Cleanup Job ──────────────────
+    setInterval(async () => {
+        try {
+            await chatPool.query(
+                `UPDATE ai_chat_requests SET status = 'expired', error = 'Request timed out', images = NULL, completed_at = NOW()
+                 WHERE status IN ('pending', 'processing') AND created_at < NOW() - INTERVAL '10 minutes'`
+            );
+            await chatPool.query(
+                `DELETE FROM ai_chat_requests WHERE status IN ('completed', 'failed', 'expired') AND created_at < NOW() - INTERVAL '24 hours'`
+            );
+        } catch (err) {
+            console.error('[AI Chat] Cleanup error:', err.message);
+        }
+    }, 300000); // every 5 minutes
+
     // ── DB Table Init ───────────────────────────
     function initSupportTable() {
         chatPool.query(`
@@ -841,6 +1066,34 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             CREATE INDEX IF NOT EXISTS idx_acq_created ON ai_chat_queries(created_at DESC);
         `).catch(err => {
             console.error('[AI Chat] Table init error:', err.message);
+        });
+
+        chatPool.query(`
+            CREATE TABLE IF NOT EXISTS ai_chat_requests (
+                id VARCHAR(36) PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                is_admin BOOLEAN DEFAULT false,
+                page VARCHAR(32),
+                message TEXT NOT NULL,
+                history JSONB,
+                images JSONB,
+                device_context JSONB,
+                status VARCHAR(16) NOT NULL DEFAULT 'pending',
+                response TEXT,
+                actions JSONB,
+                error TEXT,
+                busy BOOLEAN DEFAULT false,
+                retry_after INTEGER,
+                remaining INTEGER,
+                latency_ms INTEGER,
+                created_at TIMESTAMP DEFAULT NOW(),
+                completed_at TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_acr_user ON ai_chat_requests(user_id);
+            CREATE INDEX IF NOT EXISTS idx_acr_status ON ai_chat_requests(status);
+            CREATE INDEX IF NOT EXISTS idx_acr_created ON ai_chat_requests(created_at DESC);
+        `).catch(err => {
+            console.error('[AI Chat] Requests table init error:', err.message);
         });
     }
 
