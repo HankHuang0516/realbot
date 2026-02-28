@@ -1,3 +1,10 @@
+## [1.49.2](https://github.com/HankHuang0516/realbot/compare/v1.49.1...v1.49.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* resolve cross-device display codes and prevent bubble count false positives ([e89eeca](https://github.com/HankHuang0516/realbot/commit/e89eecaf2a217a4b386ab90ceac8eba2667a847e)), closes [#86](https://github.com/HankHuang0516/realbot/issues/86) [#88](https://github.com/HankHuang0516/realbot/issues/88) [#89](https://github.com/HankHuang0516/realbot/issues/89)
+
 ## [1.49.1](https://github.com/HankHuang0516/realbot/compare/v1.49.0...v1.49.1) (2026-02-28)
 
 
