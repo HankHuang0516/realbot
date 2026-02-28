@@ -189,8 +189,26 @@ async function saveDeviceData(deviceId, deviceData) {
                 const entity = deviceData.entities[i];
                 if (!entity) continue;
 
-                await client.query(
-                    `INSERT INTO entities (
+                const entityParams = [
+                    deviceId,
+                    i,
+                    entity.botSecret,
+                    entity.isBound,
+                    entity.name,
+                    entity.character,
+                    entity.state,
+                    entity.message,
+                    JSON.stringify(entity.parts),
+                    entity.lastUpdated,
+                    JSON.stringify(entity.messageQueue || []),
+                    entity.webhook ? JSON.stringify(entity.webhook) : null,
+                    entity.appVersion,
+                    entity.xp || 0,
+                    entity.level || 1,
+                    entity.avatar || null,
+                    entity.publicCode || null
+                ];
+                const entitySql = `INSERT INTO entities (
                         device_id, entity_id, bot_secret, is_bound, name,
                         character, state, message, parts,
                         last_updated, message_queue, webhook, app_version,
@@ -212,27 +230,24 @@ async function saveDeviceData(deviceId, deviceData) {
                         xp = $14,
                         level = $15,
                         avatar = $16,
-                        public_code = $17`,
-                    [
-                        deviceId,
-                        i,
-                        entity.botSecret,
-                        entity.isBound,
-                        entity.name,
-                        entity.character,
-                        entity.state,
-                        entity.message,
-                        JSON.stringify(entity.parts),
-                        entity.lastUpdated,
-                        JSON.stringify(entity.messageQueue || []),
-                        entity.webhook ? JSON.stringify(entity.webhook) : null,
-                        entity.appVersion,
-                        entity.xp || 0,
-                        entity.level || 1,
-                        entity.avatar || null,
-                        entity.publicCode || null
-                    ]
-                );
+                        public_code = $17`;
+
+                await client.query(`SAVEPOINT entity_${i}`);
+                try {
+                    await client.query(entitySql, entityParams);
+                    await client.query(`RELEASE SAVEPOINT entity_${i}`);
+                } catch (entityErr) {
+                    await client.query(`ROLLBACK TO SAVEPOINT entity_${i}`);
+                    if (entityErr.message.includes('idx_entities_public_code')) {
+                        // Duplicate public_code — clear it and save without code
+                        console.warn(`[DB] Duplicate public_code for device ${deviceId} entity ${i}, clearing code`);
+                        entity.publicCode = null;
+                        entityParams[16] = null;
+                        await client.query(entitySql, entityParams);
+                    } else {
+                        throw entityErr;
+                    }
+                }
             }
 
             await client.query('COMMIT');
