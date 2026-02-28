@@ -7,6 +7,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "^4.21.0"
+    "express": "^4.21.0",
+    "@anthropic-ai/claude-code": "*"
   }
 }

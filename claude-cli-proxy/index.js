@@ -3,10 +3,14 @@
 // Receives binding issue data, calls Claude CLI for analysis
 // ============================================
 const express = require('express');
+const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 
 const execFileAsync = promisify(execFile);
+
+// Resolve claude binary from node_modules/.bin (installed as dependency)
+const CLAUDE_BIN = path.join(__dirname, 'node_modules', '.bin', 'claude');
 
 const app = express();
 app.use(express.json({ limit: '256kb' }));
@@ -19,7 +23,7 @@ const CLAUDE_TIMEOUT_MS = 25000; // 25s (leave 5s buffer for HTTP)
 app.get('/health', async (req, res) => {
     const health = { status: 'ok', service: 'eclaw-claude-cli-proxy', claude_cli: 'unknown' };
     try {
-        const { stdout } = await execFileAsync('claude', ['--version'], {
+        const { stdout } = await execFileAsync(CLAUDE_BIN, ['--version'], {
             timeout: 5000, encoding: 'utf8',
             env: { ...process.env, HOME: process.env.HOME || '/root' }
         });
@@ -57,7 +61,7 @@ app.post('/analyze', async (req, res) => {
         console.log('[Proxy] Calling claude CLI...');
         const startTime = Date.now();
 
-        const { stdout, stderr } = await execFileAsync('claude', ['-p', prompt, '--output-format', 'json'], {
+        const { stdout, stderr } = await execFileAsync(CLAUDE_BIN, ['-p', prompt, '--output-format', 'json'], {
             timeout: CLAUDE_TIMEOUT_MS,
             encoding: 'utf8',
             maxBuffer: 1024 * 1024,
