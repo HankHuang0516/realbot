@@ -1794,7 +1794,9 @@
                         // Cross-device message — show resolved name instead of raw code
                         const senderLabel = getXDeviceLabel(parsed.fromPublicCode);
                         const senderHtml = `<span class="entity-label" style="color:var(--primary);">${senderLabel}</span>`;
-                        return `${senderHtml} &rarr; ${entityHtml} (${i18n.t('chat_cross_device_label')})`;
+                        const targetLabel = getXDeviceLabel(parsed.targets[0]);
+                        const targetHtml = `<span class="entity-label" style="color:var(--primary);">${targetLabel}</span>`;
+                        return `${senderHtml} &rarr; ${targetHtml} (${i18n.t('chat_cross_device_label')})`;
                     }
 
                     const senderHtml = `<span class="entity-label" data-entity="${parsed.fromEntityId}">${getEntityLabel(parsed.fromEntityId)}</span>`;
