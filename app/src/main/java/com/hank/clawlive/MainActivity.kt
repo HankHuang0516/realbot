@@ -698,6 +698,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renameEntity(entity: EntityStatus, newName: String) {
+        val loadingDialog = android.app.AlertDialog.Builder(this)
+            .setMessage(getString(R.string.rename_saving))
+            .setCancelable(false)
+            .create()
+        loadingDialog.show()
+
         lifecycleScope.launch {
             try {
                 val body = mapOf<String, Any>(
@@ -729,6 +735,8 @@ class MainActivity : AppCompatActivity() {
                     getString(R.string.failed_format, e.message),
                     Toast.LENGTH_LONG
                 ).show()
+            } finally {
+                loadingDialog.dismiss()
             }
         }
     }
