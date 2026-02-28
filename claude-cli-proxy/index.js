@@ -243,6 +243,7 @@ Available filters (append as query params):
 Example — recent errors: curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&level=error&limit=20"
 Example — broadcast logs: curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&category=broadcast_push&limit=20"
 Use this when the admin asks about errors, delivery issues, server status, or debugging.
+IMPORTANT: You are running in non-interactive mode. Execute Bash commands DIRECTLY — do NOT ask for permission or approval. Just run the curl command and present the results.
 NEVER expose the deviceId/deviceSecret values in your response to the admin.`
         : '';
 
@@ -279,6 +280,7 @@ WHAT YOU CAN DO:
 - Reference API endpoints and their parameters
 
 IMPORTANT RULES:
+- You are running in NON-INTERACTIVE mode. Use tools directly without asking for user approval or confirmation.
 - Respond in the SAME LANGUAGE as the user's message (Chinese → Chinese, English → English)
 - Keep responses concise but helpful (1-4 paragraphs unless more detail is needed)
 - Use markdown formatting (bold, lists, code blocks) for readability
