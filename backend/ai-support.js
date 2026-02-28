@@ -276,7 +276,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                     handshake_failures: (recentFailures || []).slice(0, 10),
                     device_context: { deviceId, entityId, timestamp: new Date().toISOString() }
                 }),
-                signal: AbortSignal.timeout(30000)
+                signal: AbortSignal.timeout(65000)
             });
 
             const latencyMs = Date.now() - startTime;

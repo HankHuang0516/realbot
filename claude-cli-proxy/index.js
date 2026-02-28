@@ -4,7 +4,7 @@
 // ============================================
 const express = require('express');
 const path = require('path');
-const { execFile } = require('child_process');
+const { execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 
 const execFileAsync = promisify(execFile);
@@ -12,12 +12,56 @@ const execFileAsync = promisify(execFile);
 // Resolve claude binary from node_modules/.bin (installed as dependency)
 const CLAUDE_BIN = path.join(__dirname, 'node_modules', '.bin', 'claude');
 
+// Run claude CLI with prompt via stdin (avoids CLI arg length limits)
+function runClaude(prompt, timeoutMs) {
+    return new Promise((resolve, reject) => {
+        const child = spawn(CLAUDE_BIN, ['--print', '--output-format', 'json', '--model', 'haiku'], {
+            env: { ...process.env, HOME: process.env.HOME || '/root' },
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: timeoutMs
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', d => { stdout += d; });
+        child.stderr.on('data', d => { stderr += d; });
+
+        child.on('error', err => reject(err));
+        child.on('close', (code, signal) => {
+            if (signal === 'SIGTERM' || signal === 'SIGKILL') {
+                const err = new Error(`Claude CLI killed by ${signal} (timeout)`);
+                err.killed = true;
+                err.signal = signal;
+                err.stderr = stderr;
+                return reject(err);
+            }
+            if (code !== 0) {
+                const err = new Error(`Claude CLI exited with code ${code}: ${stderr.slice(0, 300)}`);
+                err.code = code;
+                err.stderr = stderr;
+                return reject(err);
+            }
+            resolve({ stdout, stderr });
+        });
+
+        // Write prompt to stdin and close
+        child.stdin.write(prompt);
+        child.stdin.end();
+
+        // Safety: kill if timeout fires before 'close'
+        setTimeout(() => {
+            try { child.kill('SIGTERM'); } catch (_) {}
+        }, timeoutMs);
+    });
+}
+
 const app = express();
 app.use(express.json({ limit: '256kb' }));
 
 const SUPPORT_API_KEY = process.env.SUPPORT_API_KEY;
 const PORT = process.env.PORT || 4000;
-const CLAUDE_TIMEOUT_MS = 25000; // 25s (leave 5s buffer for HTTP)
+const CLAUDE_TIMEOUT_MS = 55000; // 55s (Claude CLI needs startup + inference time)
 
 // ── Health Check ────────────────────────────
 app.get('/health', async (req, res) => {
@@ -57,16 +101,10 @@ app.post('/analyze', async (req, res) => {
     console.log(`[Proxy] Received analysis request for device: ${device_context?.deviceId || '?'}`);
 
     try {
-        // Check if claude CLI is available
-        console.log('[Proxy] Calling claude CLI...');
+        console.log(`[Proxy] Calling claude CLI via stdin (prompt length: ${prompt.length})...`);
         const startTime = Date.now();
 
-        const { stdout, stderr } = await execFileAsync(CLAUDE_BIN, ['-p', prompt, '--output-format', 'json'], {
-            timeout: CLAUDE_TIMEOUT_MS,
-            encoding: 'utf8',
-            maxBuffer: 1024 * 1024,
-            env: { ...process.env, HOME: process.env.HOME || '/root' }
-        });
+        const { stdout, stderr } = await runClaude(prompt, CLAUDE_TIMEOUT_MS);
 
         const latencyMs = Date.now() - startTime;
         console.log(`[Proxy] Claude CLI responded (${latencyMs}ms), stdout length: ${stdout.length}`);
