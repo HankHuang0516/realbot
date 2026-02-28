@@ -1,3 +1,10 @@
+## [1.43.2](https://github.com/HankHuang0516/realbot/compare/v1.43.1...v1.43.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* add --dangerouslySkipPermissions to CLI chat spawn ([18a16ba](https://github.com/HankHuang0516/realbot/commit/18a16ba9b3073f88092b66e64171bd81b89fcfbf))
+
 ## [1.43.1](https://github.com/HankHuang0516/realbot/compare/v1.43.0...v1.43.1) (2026-02-28)
 
 
