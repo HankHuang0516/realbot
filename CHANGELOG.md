@@ -1,3 +1,10 @@
+# [1.49.0](https://github.com/HankHuang0516/realbot/compare/v1.48.0...v1.49.0) (2026-02-28)
+
+
+### Features
+
+* AI chat can query user's server logs without asking for credentials ([8252fba](https://github.com/HankHuang0516/realbot/commit/8252fba8c3b22006d31aa490a1001abdd960221a))
+
 # [1.48.0](https://github.com/HankHuang0516/realbot/compare/v1.47.1...v1.48.0) (2026-02-28)
 
 
