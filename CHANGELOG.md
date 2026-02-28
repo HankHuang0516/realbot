@@ -1,3 +1,10 @@
+## [1.41.1](https://github.com/HankHuang0516/realbot/compare/v1.41.0...v1.41.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* telemetry path in sub-routers, duration=0 handling, usage limit scope ([f0203f1](https://github.com/HankHuang0516/realbot/commit/f0203f1b381cfc197d29047c636ae027ca5c26e9))
+
 # [1.41.0](https://github.com/HankHuang0516/realbot/compare/v1.40.1...v1.41.0) (2026-02-28)
 
 
