@@ -1,3 +1,10 @@
+# [1.37.0](https://github.com/HankHuang0516/realbot/compare/v1.36.0...v1.37.0) (2026-02-28)
+
+
+### Features
+
+* **admin:** add Setup Password field to create bot dialog ([6f44ad4](https://github.com/HankHuang0516/realbot/commit/6f44ad40fae92754c141d3cf8f85b4eec8e7d851))
+
 # [1.36.0](https://github.com/HankHuang0516/realbot/compare/v1.35.1...v1.36.0) (2026-02-28)
 
 
