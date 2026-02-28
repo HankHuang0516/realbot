@@ -212,12 +212,17 @@ class OfficialBorrowActivity : AppCompatActivity() {
             btnBindFree.isEnabled = status.free.available
         }
 
-        if (status.availableSlots > 0) {
+        if (status.personal.available <= 0) {
+            btnBindPersonal.text = getString(R.string.request_rental)
+            btnBindPersonal.isEnabled = true
+            btnBindPersonal.setOnClickListener { showRentalDemandDialog() }
+        } else if (status.availableSlots > 0) {
             btnBindPersonal.text = getString(R.string.rebind_free)
+            btnBindPersonal.isEnabled = true
         } else {
             btnBindPersonal.text = getString(R.string.subscribe_and_bind)
+            btnBindPersonal.isEnabled = true
         }
-        btnBindPersonal.isEnabled = status.personal.available > 0
     }
 
     private fun bindFree() {
@@ -397,6 +402,35 @@ class OfficialBorrowActivity : AppCompatActivity() {
                 hideLoading()
                 Toast.makeText(this@OfficialBorrowActivity, getString(R.string.bind_failed, e.message), Toast.LENGTH_SHORT).show()
                 updateButtonStates()
+            }
+        }
+    }
+
+    private fun showRentalDemandDialog() {
+        AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setTitle(getString(R.string.rental_demand_title))
+            .setMessage(getString(R.string.rental_demand_message))
+            .setPositiveButton(getString(R.string.rental_demand_submit)) { _, _ ->
+                submitRentalDemand()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun submitRentalDemand() {
+        lifecycleScope.launch {
+            try {
+                api.sendFeedback(mapOf(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "message" to "Monthly bot rental demand",
+                    "category" to "rental_demand",
+                    "source" to "android"
+                ))
+                Toast.makeText(this@OfficialBorrowActivity, getString(R.string.rental_demand_success), Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to submit rental demand")
+                Toast.makeText(this@OfficialBorrowActivity, getString(R.string.rental_demand_fail, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
             }
         }
     }

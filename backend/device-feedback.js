@@ -263,7 +263,7 @@ function autoTriage(logSnapshot) {
 function generateAiPrompt(feedback, photos) {
     const lines = [];
 
-    const promptTitleMap = { bug: 'Bug Report', feature: 'Feature Request', question: 'Question' };
+    const promptTitleMap = { bug: 'Bug Report', feature: 'Feature Request', question: 'Question', rental_demand: 'Rental Demand' };
     const promptTitle = promptTitleMap[feedback.category] || 'Bug Report';
     lines.push(`## ${promptTitle} #${feedback.id}`);
     lines.push('');
@@ -557,8 +557,8 @@ async function createGithubIssue(feedback, photos) {
 
     const prompt = generateAiPrompt(feedback, photos);
     const cat = feedback.category || 'bug';
-    const categoryLabelMap = { bug: 'bug', feature: 'enhancement', question: 'question' };
-    const categoryPrefixMap = { bug: 'Bug', feature: 'Feature', question: 'Question' };
+    const categoryLabelMap = { bug: 'bug', feature: 'enhancement', question: 'question', rental_demand: 'rental-demand' };
+    const categoryPrefixMap = { bug: 'Bug', feature: 'Feature', question: 'Question', rental_demand: 'Rental Demand' };
     const categoryLabel = categoryLabelMap[cat] || 'bug';
     const prefix = categoryPrefixMap[cat] || 'Bug';
 

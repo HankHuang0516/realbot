@@ -317,6 +317,13 @@ E-claw (電子蝦) 團隊深知隱私對您的重要性。我們在此鄭重聲�
     <string name="no_free_bot">目前無可用免費版</string>
     <string name="subscription_required">需要月租訂閱</string>
     <string name="entity_already_bound">實體 #%d 已被佔用，請先移除</string>
+    <string name="free_limit_hint">每個裝置僅能綁定一個免費版 Bot</string>
+    <string name="request_rental">提出租用需求</string>
+    <string name="rental_demand_title">已售完</string>
+    <string name="rental_demand_message">月租版 Bot 目前已售完。\n\n您可以提出租用需求申請，我們會在有名額時通知您（通常需要 1-2 個工作天）。</string>
+    <string name="rental_demand_submit">提出申請</string>
+    <string name="rental_demand_success">已發出租用需求，等待回覆，通常需要 1-2 個工作天。</string>
+    <string name="rental_demand_fail">發送失敗：%s</string>
     <string name="borrow_cost_title">為什麼租用？自建成本比較</string>
     <string name="borrow_cost_eclaw">E-Claw 官方 Bot: 如上方所示 (24/7 穩定)</string>
     <string name="borrow_cost_vs">VS 自建：</string>

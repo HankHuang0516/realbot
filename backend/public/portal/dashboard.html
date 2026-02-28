@@ -921,6 +921,9 @@
                             <li data-i18n="borrow_free_feat_shared">Shared memory with all free users</li>
                             <li data-i18n="borrow_free_feat_limit">15 messages/day limit (free bot only)</li>
                         </ul>
+                        <div style="background:rgba(33,150,243,0.1);border:1px solid rgba(33,150,243,0.3);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#64B5F6;">
+                            <span data-i18n="borrow_free_limit_hint">Each device can only bind one free bot</span>
+                        </div>
                         <button class="btn btn-primary btn-block btn-sm" id="btnBindFree" onclick="bindFree()" disabled
                             data-i18n="borrow_btn_bind_free">Use Free Version</button>
                     </div>
@@ -938,6 +941,8 @@
                             <span>&#9888;</span>
                             <span data-i18n="maintenance_payment_title">Payment Under Maintenance</span>
                         </div>
+                        <button class="btn btn-primary btn-block btn-sm" id="btnBindPersonal" onclick="bindPersonal()" disabled
+                            data-i18n="borrow_btn_bind_personal" style="margin-top:12px;">Buy Monthly Plan</button>
                     </div>
                 </div>
 
@@ -2037,14 +2042,19 @@
                 btnFree.disabled = !borrowStatus.free.available;
             }
 
-            // Personal - hidden during payment maintenance
+            // Personal - handle sold-out with rental demand
             if (btnPersonal) {
-                if (borrowStatus.availableSlots > 0) {
+                if (borrowStatus.personal.available <= 0) {
+                    btnPersonal.textContent = i18n.t('borrow_btn_request_rental');
+                    btnPersonal.disabled = false;
+                    btnPersonal.onclick = showRentalDemandDialog;
+                } else if (borrowStatus.availableSlots > 0) {
                     btnPersonal.textContent = i18n.t('borrow_btn_rebind_free');
+                    btnPersonal.disabled = false;
                 } else {
                     btnPersonal.textContent = i18n.t('borrow_btn_bind_personal');
+                    btnPersonal.disabled = false;
                 }
-                btnPersonal.disabled = borrowStatus.personal.available <= 0;
             }
 
             // Override mode: backend auto-unbinds existing binding, no client-side blocking
@@ -2344,6 +2354,44 @@
                 btn.disabled = false;
                 updateBorrowButtons();
             }
+        }
+
+        function showRentalDemandDialog() {
+            const overlay = document.createElement('div');
+            overlay.className = 'confirm-overlay';
+            overlay.innerHTML =
+                '<div class="dialog">' +
+                '<div class="dialog-title">' + i18n.t('borrow_sold_out_title') + '</div>' +
+                '<p style="color:var(--text-secondary);font-size:14px;white-space:pre-line;">' +
+                i18n.t('borrow_sold_out_message') +
+                '</p>' +
+                '<div class="dialog-actions">' +
+                '<button class="btn btn-outline" id="btnCancelDemand">' + i18n.t('borrow_sold_out_cancel') + '</button>' +
+                '<button class="btn btn-primary" id="btnSubmitDemand">' + i18n.t('borrow_sold_out_submit') + '</button>' +
+                '</div>' +
+                '</div>';
+
+            document.body.appendChild(overlay);
+
+            document.getElementById('btnCancelDemand').onclick = function () { overlay.remove(); };
+            document.getElementById('btnSubmitDemand').onclick = async function () {
+                this.disabled = true;
+                this.textContent = '...';
+                try {
+                    await apiCall('POST', '/api/feedback', {
+                        deviceId: currentUser.deviceId,
+                        deviceSecret: currentUser.deviceSecret,
+                        message: 'Monthly bot rental demand',
+                        category: 'rental_demand',
+                        source: 'web'
+                    });
+                    overlay.remove();
+                    showToast(i18n.t('borrow_rental_demand_success'), 'success');
+                } catch (e) {
+                    overlay.remove();
+                    showToast(i18n.t('borrow_rental_demand_fail'), 'error');
+                }
+            };
         }
 
         function confirmUnbind(entityId, botType) {

@@ -285,6 +285,13 @@
     <string name="subscription_required">Subscription required</string>
     <string name="entity_already_bound">Entity #%d is occupied, please remove first</string>
     <string name="bound_on_entity">Bound to Entity #%d</string>
+    <string name="free_limit_hint">Each device can only bind one free bot</string>
+    <string name="request_rental">Submit Rental Request</string>
+    <string name="rental_demand_title">Sold Out</string>
+    <string name="rental_demand_message">Monthly bots are currently sold out.\n\nYou can submit a rental demand request and we\'ll notify you when available (usually 1-2 business days).</string>
+    <string name="rental_demand_submit">Submit Request</string>
+    <string name="rental_demand_success">Request submitted! We\'ll respond within 1-2 business days.</string>
+    <string name="rental_demand_fail">Failed to submit request: %s</string>
     <string name="borrow_cost_title">Why rent? Self-hosting cost comparison</string>
     <string name="borrow_cost_eclaw">E-Claw Official Bot: as shown above (24/7 stable)</string>
     <string name="borrow_cost_vs">VS Self-hosting:</string>

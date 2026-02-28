@@ -166,6 +166,16 @@
                         android:textColor="#FF9800"
                         android:background="#2D1A00"
                         android:padding="8dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/free_limit_hint"
+                        android:textSize="12sp"
+                        android:textColor="#64B5F6"
+                        android:background="#0D2137"
+                        android:padding="8dp"
                         android:layout_marginBottom="16dp" />
 
                     <com.google.android.material.button.MaterialButton
