@@ -1,3 +1,10 @@
+## [1.42.1](https://github.com/HankHuang0516/realbot/compare/v1.42.0...v1.42.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* entity reorder now syncs all associated data atomically ([0ef28ca](https://github.com/HankHuang0516/realbot/commit/0ef28cacb23a65e0ec6693d5050b16fdc012a3ab))
+
 # [1.42.0](https://github.com/HankHuang0516/realbot/compare/v1.41.4...v1.42.0) (2026-02-28)
 
 
