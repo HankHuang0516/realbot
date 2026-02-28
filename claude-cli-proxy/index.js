@@ -4,6 +4,7 @@
 // ============================================
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { execFile, spawn } = require('child_process');
 const { promisify } = require('util');
 
@@ -265,6 +266,22 @@ app.post('/warmup', (req, res) => {
     warmup(); // Fire-and-forget, don't wait
     res.json({ status: 'warming' });
 });
+
+// ── Auto-restore .claude.json from backup ──
+(function restoreClaudeConfig() {
+    const configPath = path.join(process.env.HOME || '/root', '.claude.json');
+    if (!fs.existsSync(configPath)) {
+        const backupDir = path.join(process.env.HOME || '/root', '.claude', 'backups');
+        try {
+            const files = fs.readdirSync(backupDir).filter(f => f.startsWith('.claude.json.backup.')).sort();
+            if (files.length > 0) {
+                const latest = path.join(backupDir, files[files.length - 1]);
+                fs.copyFileSync(latest, configPath);
+                console.log(`[Startup] Restored ${configPath} from backup: ${files[files.length - 1]}`);
+            }
+        } catch (_) { /* no backup dir — first run, ignore */ }
+    }
+})();
 
 // ── Start Server ────────────────────────────
 app.listen(PORT, () => {
