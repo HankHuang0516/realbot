@@ -581,15 +581,30 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
 
     // ── Universal AI Chat Endpoint ─────────────
     router.post('/chat', async (req, res) => {
-        // Auth: requires logged-in user (softAuthMiddleware populates req.user)
+        // Auth: web users via cookie (softAuthMiddleware), Android via deviceId+deviceSecret
         if (!req.user || !req.user.userId) {
-            return res.status(401).json({ success: false, error: 'Not authenticated' });
+            const { deviceId, deviceSecret } = req.body;
+            if (deviceId && deviceSecret) {
+                const dev = devices[deviceId];
+                if (dev && dev.deviceSecret === deviceSecret) {
+                    req.user = { userId: `device_${deviceId}`, deviceId, email: null };
+                } else {
+                    return res.status(401).json({ success: false, error: 'Invalid device credentials' });
+                }
+            } else {
+                return res.status(401).json({ success: false, error: 'Not authenticated' });
+            }
         }
 
-        const { message, history, page } = req.body;
+        const { message, history, page, images } = req.body;
         if (!message || typeof message !== 'string' || !message.trim()) {
             return res.status(400).json({ success: false, error: 'message is required' });
         }
+
+        // Validate images (max 3, must have data + mimeType)
+        const validImages = (images || []).filter(img =>
+            img && typeof img.data === 'string' && typeof img.mimeType === 'string' && img.mimeType.startsWith('image/')
+        ).slice(0, 3);
 
         // Admin check via DB
         let isAdmin = false;
@@ -624,6 +639,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                 body: JSON.stringify({
                     message: message.trim(),
                     history: (history || []).slice(-20),
+                    images: validImages.length > 0 ? validImages : undefined,
                     device_context: {
                         deviceId: req.user.deviceId,
                         page: page || 'unknown',

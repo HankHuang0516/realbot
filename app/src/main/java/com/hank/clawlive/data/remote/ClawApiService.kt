@@ -319,6 +319,13 @@ interface ClawApiService {
         @Query("deviceId") deviceId: String,
         @Query("deviceSecret") deviceSecret: String
     ): ScheduleDeleteResponse
+
+    // ============================================
+    // AI SUPPORT CHAT
+    // ============================================
+
+    @POST("api/ai-support/chat")
+    suspend fun aiChat(@Body body: Map<String, @JvmSuppressWildcards Any>): AiChatResponse
 }
 
 // ============ Mission Control Response Models ============
@@ -494,4 +501,15 @@ data class NotificationPreferencesResponse(
     val success: Boolean,
     val prefs: Map<String, Boolean> = emptyMap(),
     val error: String? = null
+)
+
+// ============ AI Chat Response ============
+
+data class AiChatResponse(
+    val success: Boolean = false,
+    val response: String? = null,
+    val remaining: Int? = null,
+    val latency_ms: Long? = null,
+    val error: String? = null,
+    val message: String? = null
 )

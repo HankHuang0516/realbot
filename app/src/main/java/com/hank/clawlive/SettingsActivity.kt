@@ -58,6 +58,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var tvEntityCount: TextView
     private lateinit var progressUsage: ProgressBar
     private lateinit var btnSubscribe: MaterialButton
+    private lateinit var btnAiChat: MaterialButton
     private lateinit var btnFeedback: MaterialButton
     private lateinit var btnPrivacyPolicy: MaterialButton
     private lateinit var btnWebPortal: MaterialButton
@@ -159,6 +160,7 @@ class SettingsActivity : AppCompatActivity() {
         topBar = findViewById(R.id.topBar)
         btnSetWallpaper = findViewById(R.id.btnSetWallpaper)
         tvEntityCount = findViewById(R.id.tvEntityCount)
+        btnAiChat = findViewById(R.id.btnAiChat)
         btnFeedback = findViewById(R.id.btnFeedback)
         btnPrivacyPolicy = findViewById(R.id.btnPrivacyPolicy)
         btnWebPortal = findViewById(R.id.btnWebPortal)
@@ -186,6 +188,10 @@ class SettingsActivity : AppCompatActivity() {
 
         btnSetWallpaper.setOnClickListener {
             startActivity(Intent(this, WallpaperPreviewActivity::class.java))
+        }
+
+        btnAiChat.setOnClickListener {
+            startActivity(Intent(this, AiChatActivity::class.java))
         }
 
         btnFeedback.setOnClickListener {

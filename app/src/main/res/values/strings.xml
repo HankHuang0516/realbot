@@ -92,6 +92,15 @@
     <string name="size_large">Large</string>
     <string name="refresh">Refresh</string>
 
+    <!-- AI Chat -->
+    <string name="ai_chat_title">AI Assistant</string>
+    <string name="ai_chat_welcome">Hi! I\'m E-Claw AI.\nAsk me anything about the platform.</string>
+    <string name="ai_chat_hint">Ask a question…</string>
+    <string name="ai_chat_attach_image">Attach image</string>
+    <string name="ai_chat_clear_title">Clear History</string>
+    <string name="ai_chat_clear_message">Clear all chat history?</string>
+    <string name="ai_chat_clear_confirm">Clear</string>
+
     <!-- Chat -->
     <string name="chat_history">Chat</string>
     <string name="filter_all">All</string>

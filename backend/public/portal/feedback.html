@@ -615,6 +615,46 @@
             color: var(--warning);
             text-decoration: none;
         }
+
+        .ask-ai-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            border-radius: var(--radius);
+            border: 1px solid rgba(124, 77, 255, 0.3);
+            background: rgba(124, 77, 255, 0.06);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .ask-ai-banner:hover {
+            border-color: #7C4DFF;
+            background: rgba(124, 77, 255, 0.12);
+        }
+
+        .ask-ai-banner-icon { font-size: 24px; flex-shrink: 0; }
+
+        .ask-ai-banner-text { flex: 1; }
+
+        .ask-ai-banner-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .ask-ai-banner-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .ask-ai-banner-arrow {
+            color: #7C4DFF;
+            font-size: 18px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -623,6 +663,16 @@
         <div class="page-header">
             <h2 data-i18n="feedback_title">My Feedback</h2>
             <a href="settings.html" class="back-link">&larr; Settings</a>
+        </div>
+
+        <!-- Ask AI Banner -->
+        <div class="ask-ai-banner" onclick="openAiChat()">
+            <span class="ask-ai-banner-icon">🤖</span>
+            <div class="ask-ai-banner-text">
+                <div class="ask-ai-banner-title" data-i18n="feedback_ask_ai_title">Need quick help? Ask AI</div>
+                <div class="ask-ai-banner-desc" data-i18n="feedback_ask_ai_desc">Get instant answers before submitting feedback</div>
+            </div>
+            <span class="ask-ai-banner-arrow">&rarr;</span>
         </div>
 
         <!-- Submit new feedback section -->

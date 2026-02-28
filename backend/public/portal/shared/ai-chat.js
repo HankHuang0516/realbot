@@ -8,10 +8,14 @@
 
     const STORAGE_KEY = 'eclaw_ai_chat_history';
     const MAX_HISTORY = 20;
+    const MAX_IMAGES = 3;
+    const MAX_IMAGE_SIZE = 2 * 1024 * 1024; // 2MB after compression
+    const MAX_IMAGE_DIM = 1024; // max width/height for compression
 
     let chatHistory = [];
     let isOpen = false;
     let isLoading = false;
+    let pendingImages = []; // { data: base64, mimeType: string }
 
     // ── localStorage ──────────────────────────
     function loadHistory() {
@@ -21,13 +25,108 @@
     }
 
     function saveHistory() {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory.slice(-MAX_HISTORY))); }
+        // Don't persist image data in localStorage (too large)
+        const slim = chatHistory.slice(-MAX_HISTORY).map(m => ({
+            role: m.role,
+            content: m.content,
+            imageCount: m.images ? m.images.length : undefined
+        }));
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(slim)); }
         catch (_) {}
     }
 
     function getCurrentPage() {
         const m = window.location.pathname.match(/\/([^/]+)\.html/);
         return m ? m[1] : 'unknown';
+    }
+
+    // ── Image Utilities ──────────────────────
+    function compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    let { width, height } = img;
+                    // Scale down if needed
+                    if (width > MAX_IMAGE_DIM || height > MAX_IMAGE_DIM) {
+                        const ratio = Math.min(MAX_IMAGE_DIM / width, MAX_IMAGE_DIM / height);
+                        width = Math.round(width * ratio);
+                        height = Math.round(height * ratio);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    // Use JPEG for photos, PNG for screenshots with transparency
+                    const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+                    const quality = mimeType === 'image/jpeg' ? 0.85 : undefined;
+                    const dataUrl = canvas.toDataURL(mimeType, quality);
+                    const base64 = dataUrl.split(',')[1];
+                    // Check size
+                    const byteSize = atob(base64).length;
+                    if (byteSize > MAX_IMAGE_SIZE) {
+                        // Retry with lower quality JPEG
+                        const jpegUrl = canvas.toDataURL('image/jpeg', 0.6);
+                        const jpegBase64 = jpegUrl.split(',')[1];
+                        resolve({ data: jpegBase64, mimeType: 'image/jpeg' });
+                    } else {
+                        resolve({ data: base64, mimeType });
+                    }
+                };
+                img.onerror = () => reject(new Error('Failed to load image'));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async function addImage(file) {
+        if (pendingImages.length >= MAX_IMAGES) {
+            if (typeof showToast === 'function') showToast(`Maximum ${MAX_IMAGES} images`, 'warn');
+            return;
+        }
+        if (!file.type.startsWith('image/')) return;
+        try {
+            const compressed = await compressImage(file);
+            pendingImages.push(compressed);
+            renderImagePreview();
+            updateSendButton();
+        } catch (err) {
+            console.error('[AI Chat] Image compression failed:', err);
+        }
+    }
+
+    function removeImage(index) {
+        pendingImages.splice(index, 1);
+        renderImagePreview();
+        updateSendButton();
+    }
+
+    function renderImagePreview() {
+        const strip = document.getElementById('aiChatImagePreview');
+        if (!strip) return;
+        if (pendingImages.length === 0) {
+            strip.style.display = 'none';
+            strip.innerHTML = '';
+            return;
+        }
+        strip.style.display = 'flex';
+        strip.innerHTML = pendingImages.map((img, i) =>
+            `<div class="ai-chat-img-thumb">
+                <img src="data:${img.mimeType};base64,${img.data}" alt="Image ${i + 1}">
+                <button class="ai-chat-img-remove" onclick="window._aiChatRemoveImage(${i})">&times;</button>
+            </div>`
+        ).join('');
+    }
+
+    function updateSendButton() {
+        const input = document.getElementById('aiChatInput');
+        const sendBtn = document.getElementById('aiChatSend');
+        if (!input || !sendBtn) return;
+        sendBtn.disabled = (!input.value.trim() && pendingImages.length === 0) || isLoading;
     }
 
     // ── Build DOM ─────────────────────────────
@@ -58,7 +157,14 @@
             </div>
             <div class="ai-chat-messages" id="aiChatMessages"></div>
             <div class="ai-chat-action-bar" id="aiChatActionBar" style="display:none"></div>
+            <div class="ai-chat-img-preview" id="aiChatImagePreview" style="display:none"></div>
             <div class="ai-chat-input-area">
+                <input type="file" id="aiChatFileInput" accept="image/*" multiple style="display:none">
+                <button class="ai-chat-attach-btn" id="aiChatAttach" title="Attach image">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                    </svg>
+                </button>
                 <textarea id="aiChatInput" class="ai-chat-input" rows="1"
                           placeholder="Ask a question..." maxlength="2000"></textarea>
                 <button id="aiChatSend" class="ai-chat-send-btn" disabled>
@@ -69,6 +175,87 @@
                 </button>
             </div>`;
 
+        // Inject CSS for image features
+        const style = document.createElement('style');
+        style.textContent = `
+            .ai-chat-attach-btn {
+                background: none;
+                border: none;
+                color: var(--text-secondary, #888);
+                cursor: pointer;
+                padding: 4px;
+                flex-shrink: 0;
+                border-radius: 4px;
+                transition: color 0.2s;
+            }
+            .ai-chat-attach-btn:hover { color: var(--primary, #7C4DFF); }
+            .ai-chat-img-preview {
+                display: flex;
+                gap: 8px;
+                padding: 8px 12px 0;
+                flex-wrap: wrap;
+            }
+            .ai-chat-img-thumb {
+                position: relative;
+                width: 56px;
+                height: 56px;
+                border-radius: 8px;
+                overflow: hidden;
+                border: 1px solid var(--card-border, #333);
+            }
+            .ai-chat-img-thumb img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .ai-chat-img-remove {
+                position: absolute;
+                top: 0;
+                right: 0;
+                background: rgba(0,0,0,0.7);
+                color: #fff;
+                border: none;
+                width: 18px;
+                height: 18px;
+                font-size: 12px;
+                line-height: 18px;
+                text-align: center;
+                cursor: pointer;
+                border-radius: 0 0 0 6px;
+                padding: 0;
+            }
+            .ai-chat-msg-images {
+                display: flex;
+                gap: 6px;
+                margin-top: 6px;
+                flex-wrap: wrap;
+            }
+            .ai-chat-msg-img {
+                width: 80px;
+                height: 80px;
+                object-fit: cover;
+                border-radius: 6px;
+                border: 1px solid var(--card-border, #333);
+                cursor: pointer;
+            }
+            .ai-chat-img-overlay {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.85);
+                z-index: 100001;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+            .ai-chat-img-overlay img {
+                max-width: 90%;
+                max-height: 90%;
+                border-radius: 8px;
+            }
+        `;
+        document.head.appendChild(style);
+
         document.body.appendChild(fab);
         document.body.appendChild(panel);
 
@@ -76,15 +263,19 @@
         panel.querySelector('.ai-chat-close-btn').addEventListener('click', toggleChat);
         panel.querySelector('.ai-chat-clear-btn').addEventListener('click', () => {
             chatHistory = [];
+            pendingImages = [];
             localStorage.removeItem(STORAGE_KEY);
             renderMessages();
+            renderImagePreview();
         });
 
         const input = document.getElementById('aiChatInput');
         const sendBtn = document.getElementById('aiChatSend');
+        const fileInput = document.getElementById('aiChatFileInput');
+        const attachBtn = document.getElementById('aiChatAttach');
 
         input.addEventListener('input', () => {
-            sendBtn.disabled = !input.value.trim() || isLoading;
+            updateSendButton();
             input.style.height = 'auto';
             input.style.height = Math.min(input.scrollHeight, 100) + 'px';
         });
@@ -92,11 +283,39 @@
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (!isLoading && input.value.trim()) sendMessage();
+                if (!isLoading && (input.value.trim() || pendingImages.length > 0)) sendMessage();
             }
         });
 
+        // Paste image from clipboard
+        input.addEventListener('paste', (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (file) addImage(file);
+                    return;
+                }
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', () => {
+            for (const file of fileInput.files) {
+                addImage(file);
+            }
+            fileInput.value = '';
+        });
+
+        // Attach button
+        attachBtn.addEventListener('click', () => fileInput.click());
+
         sendBtn.addEventListener('click', sendMessage);
+
+        // Expose remove helper for inline onclick
+        window._aiChatRemoveImage = removeImage;
 
         renderMessages();
     }
@@ -135,10 +354,35 @@
         for (const msg of chatHistory) {
             const div = document.createElement('div');
             div.className = 'ai-chat-msg ai-chat-msg-' + msg.role;
-            div.innerHTML = msg.role === 'user' ? escapeHtml(msg.content) : renderMarkdown(msg.content);
+
+            if (msg.role === 'user') {
+                let html = escapeHtml(msg.content);
+                // Show image thumbnails if this message had images
+                if (msg.images && msg.images.length > 0) {
+                    html += '<div class="ai-chat-msg-images">';
+                    for (const img of msg.images) {
+                        html += `<img class="ai-chat-msg-img" src="data:${img.mimeType};base64,${img.data}" onclick="window._aiChatZoomImage(this.src)">`;
+                    }
+                    html += '</div>';
+                } else if (msg.imageCount) {
+                    html += `<div class="ai-chat-msg-images" style="color:var(--text-secondary,#888);font-size:12px;">[${msg.imageCount} image(s) attached]</div>`;
+                }
+                div.innerHTML = html;
+            } else {
+                div.innerHTML = renderMarkdown(msg.content);
+            }
             container.appendChild(div);
         }
     }
+
+    // Image zoom overlay
+    window._aiChatZoomImage = function (src) {
+        const overlay = document.createElement('div');
+        overlay.className = 'ai-chat-img-overlay';
+        overlay.innerHTML = `<img src="${src}">`;
+        overlay.addEventListener('click', () => overlay.remove());
+        document.body.appendChild(overlay);
+    };
 
     function escapeHtml(str) {
         const d = document.createElement('div');
@@ -181,25 +425,39 @@
     async function sendMessage() {
         const input = document.getElementById('aiChatInput');
         const text = input.value.trim();
-        if (!text || isLoading) return;
+        if ((!text && pendingImages.length === 0) || isLoading) return;
 
-        chatHistory.push({ role: 'user', content: text });
+        // Capture images before clearing
+        const images = pendingImages.length > 0 ? [...pendingImages] : undefined;
+
+        chatHistory.push({ role: 'user', content: text || '(image)', images });
         saveHistory();
         renderMessages();
         scrollToBottom();
 
+        // Clear input
         input.value = '';
         input.style.height = 'auto';
-        document.getElementById('aiChatSend').disabled = true;
+        pendingImages = [];
+        renderImagePreview();
+        updateSendButton();
         isLoading = true;
         showTyping();
 
         try {
-            const data = await apiCall('POST', '/api/ai-support/chat', {
-                message: text,
-                history: chatHistory.slice(-MAX_HISTORY),
+            const body = {
+                message: text || '(user attached image(s) — please analyze them)',
+                history: chatHistory.slice(-MAX_HISTORY).map(m => ({
+                    role: m.role,
+                    content: m.content
+                })),
                 page: getCurrentPage()
-            });
+            };
+            if (images) {
+                body.images = images;
+            }
+
+            const data = await apiCall('POST', '/api/ai-support/chat', body);
 
             hideTyping();
 
@@ -274,6 +532,11 @@
         }, 200);
         setTimeout(() => clearInterval(check), 10000);
     }
+
+    // ── Public API ────────────────────────────
+    window.openAiChat = function () {
+        if (!isOpen) toggleChat();
+    };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
