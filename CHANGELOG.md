@@ -1,3 +1,10 @@
+## [1.43.5](https://github.com/HankHuang0516/realbot/compare/v1.43.4...v1.43.5) (2026-02-28)
+
+
+### Bug Fixes
+
+* add git via both nixPkgs and aptPkgs for Nixpacks compatibility ([b31dcf9](https://github.com/HankHuang0516/realbot/commit/b31dcf90ecc7599a7d8dc63d8891e1bcc8905bde))
+
 ## [1.43.4](https://github.com/HankHuang0516/realbot/compare/v1.43.3...v1.43.4) (2026-02-28)
 
 
