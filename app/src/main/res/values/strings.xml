@@ -189,6 +189,7 @@
     <!-- Entity Rename -->
     <string name="rename_title">Rename Entity</string>
     <string name="rename_hint">Enter new name (max 20 chars)</string>
+    <string name="rename_saving">Saving…</string>
     <string name="rename_success">Name updated!</string>
 
     <!-- System Messages -->

@@ -268,6 +268,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "Rename Entity",
         "dash_rename_placeholder": "Enter new name (max 20 chars)",
         "dash_rename_save": "Save",
+        "dash_rename_saving": "Saving...",
         "dash_rename_success": "Name updated!",
 
         // Official Borrow (dashboard.html)
@@ -996,6 +997,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "更改名稱",
         "dash_rename_placeholder": "輸入新名稱（最多 20 字）",
         "dash_rename_save": "儲存",
+        "dash_rename_saving": "儲存中...",
         "dash_rename_success": "名稱已更新！",
 
         // Official Borrow (dashboard.html)
@@ -1664,6 +1666,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "更改名称",
         "dash_rename_placeholder": "输入新名称（最多 20 字）",
         "dash_rename_save": "保存",
+        "dash_rename_saving": "保存中...",
         "dash_rename_success": "名称已更新！",
         "webhook_error_title": "推送通知失败",
         "webhook_error_message": "请将以下消息粘贴给OpenClaw：\"webhook绑定有错误或是没有使用POST /api/bot/register，请重新读取'公开webhook URL'(gateway config) 以及重新读取'gateway token'，立即调用 /api/bot/register: 用刚绑到的 deviceId/entityId/botSecret 再带上 webhook_url、gateway token 把推送注册好。\"",
@@ -2221,6 +2224,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "名前の変更",
         "dash_rename_placeholder": "新しい名前を入力（最大20文字）",
         "dash_rename_save": "保存",
+        "dash_rename_saving": "保存中...",
         "dash_rename_success": "名前を更新しました！",
         "webhook_error_title": "プッシュ通知に失敗",
         "webhook_error_message": "以下のメッセージをOpenClawに貼り付けてください：\"Webhookバインディングエラーまたは POST /api/bot/register が使用されていません。'Public Webhook URL'（gateway config）と'Gateway Token'を再読み込みし、直ちに /api/bot/register を呼び出してください。\"",
@@ -2773,6 +2777,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "이름 변경",
         "dash_rename_placeholder": "새 이름 입력 (최대 20자)",
         "dash_rename_save": "저장",
+        "dash_rename_saving": "저장 중...",
         "dash_rename_success": "이름이 업데이트되었습니다!",
         "webhook_error_title": "푸시 알림 실패",
         "webhook_error_message": "다음 메시지를 OpenClaw에 붙여넣으세요: \"Webhook 바인딩 오류 또는 POST /api/bot/register가 사용되지 않았습니다. 'Public Webhook URL'(gateway config)과 'Gateway Token'을 다시 읽고 즉시 /api/bot/register를 호출하세요.\"",
@@ -3326,6 +3331,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "เปลี่ยนชื่อ",
         "dash_rename_placeholder": "ป้อนชื่อใหม่ (สูงสุด 20 ตัวอักษร)",
         "dash_rename_save": "บันทึก",
+        "dash_rename_saving": "กำลังบันทึก...",
         "dash_rename_success": "อัปเดตชื่อแล้ว!",
         "webhook_error_title": "การแจ้งเตือนแบบพุชล้มเหลว",
         "webhook_error_message": "กรุณาวางข้อความต่อไปนี้ใน OpenClaw: \"Webhook binding error หรือไม่ได้ใช้ POST /api/bot/register กรุณาโหลด 'Public Webhook URL' และ 'Gateway Token' ใหม่ แล้วเรียก /api/bot/register ทันที\"",
@@ -3884,6 +3890,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "Đổi tên",
         "dash_rename_placeholder": "Nhập tên mới (tối đa 20 ký tự)",
         "dash_rename_save": "Lưu",
+        "dash_rename_saving": "Đang lưu...",
         "dash_rename_success": "Đã cập nhật tên!",
         "webhook_error_title": "Thông báo đẩy thất bại",
         "webhook_error_message": "Vui lòng dán thông báo sau vào OpenClaw: \"Lỗi liên kết Webhook hoặc không sử dụng POST /api/bot/register. Vui lòng tải lại 'Public Webhook URL' và 'Gateway Token', sau đó gọi /api/bot/register ngay.\"",
@@ -4442,6 +4449,7 @@ const TRANSLATIONS = {
         "dash_rename_title": "Ubah Nama",
         "dash_rename_placeholder": "Masukkan nama baru (maks 20 karakter)",
         "dash_rename_save": "Simpan",
+        "dash_rename_saving": "Menyimpan...",
         "dash_rename_success": "Nama diperbarui!",
         "webhook_error_title": "Notifikasi Push Gagal",
         "webhook_error_message": "Silakan tempel pesan berikut di OpenClaw: \"Error pengikatan Webhook atau tidak menggunakan POST /api/bot/register. Silakan muat ulang 'Public Webhook URL' dan 'Gateway Token', lalu panggil /api/bot/register segera.\"",

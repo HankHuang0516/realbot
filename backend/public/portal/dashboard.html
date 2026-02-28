@@ -861,11 +861,11 @@
                     <div class="binding-code" id="bindingCode">--- ---</div>
                     <div class="code-countdown" id="codeCountdown"></div>
                     <div class="code-actions">
-                        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="copyCommand()"
+                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="copyCommand()"
                             data-i18n="dash_btn_copy">
                             Copy Command
                         </button>
-                        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="generateCode()"
+                        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="generateCode()"
                             data-i18n="dash_btn_regenerate">
                             Regenerate
                         </button>
@@ -1576,6 +1576,10 @@
                     overlay.remove();
                     return;
                 }
+                var saveBtn = overlay.querySelector('.rename-save');
+                saveBtn.disabled = true;
+                saveBtn.textContent = i18n.t('dash_rename_saving') || '儲存中...';
+                input.disabled = true;
                 try {
                     var data = await apiCall('PUT', '/api/device/entity/name', { entityId: entityId, name: newName });
                     if (data.success) {
@@ -1588,8 +1592,9 @@
                     }
                 } catch (err) {
                     showToast(err.message || 'Error', 'error');
+                } finally {
+                    overlay.remove();
                 }
-                overlay.remove();
             }
 
             overlay.querySelector('.rename-save').addEventListener('click', doRename);
@@ -1664,7 +1669,9 @@
                 startCountdown(expirySeconds);
 
                 btn.textContent = i18n.t('dash_btn_regenerate');
-                showToast('Binding code generated!', 'success');
+
+                // Auto-copy command to clipboard
+                copyCommand();
             } catch (e) {
                 showToast(e.message, 'error');
                 btn.textContent = i18n.t('dash_btn_generate');
@@ -1815,6 +1822,9 @@
                 if (overlay) overlay.remove();
 
                 showToast('Entity removed successfully', 'success');
+
+                // Exit edit mode before refreshing so loadEntities doesn't skip
+                if (isEditMode) toggleEditMode();
 
                 // Refresh entities
                 await loadEntities();
