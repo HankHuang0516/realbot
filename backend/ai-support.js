@@ -1,6 +1,7 @@
 // ============================================
-// AI SUPPORT — Binding Troubleshooter
+// AI SUPPORT — Binding Troubleshooter + Universal AI Chat
 // Two-tier diagnosis: rule engine (free) + Claude CLI proxy (Max subscription)
+// Universal chat: Sonnet with repo access for users & admins
 // ============================================
 const express = require('express');
 
@@ -27,12 +28,37 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         return { allowed: true };
     }
 
+    // ── Chat Rate Limiter ──────────────────────
+    const chatRateLimit = {}; // key: userId -> { count, windowStart }
+    const CHAT_RATE_USER = 20;
+    const CHAT_RATE_ADMIN = 100;
+
+    function checkChatRateLimit(userId, isAdmin) {
+        const max = isAdmin ? CHAT_RATE_ADMIN : CHAT_RATE_USER;
+        const now = Date.now();
+        const entry = chatRateLimit[userId];
+        if (!entry || now - entry.windowStart > SUPPORT_WINDOW_MS) {
+            chatRateLimit[userId] = { count: 1, windowStart: now };
+            return { allowed: true, remaining: max - 1 };
+        }
+        if (entry.count >= max) {
+            return { allowed: false, retryAfterMs: SUPPORT_WINDOW_MS - (now - entry.windowStart), remaining: 0 };
+        }
+        entry.count++;
+        return { allowed: true, remaining: max - entry.count };
+    }
+
     // Clean up stale rate limit entries every 30 minutes
     setInterval(() => {
         const now = Date.now();
         for (const key of Object.keys(supportRateLimit)) {
             if (now - supportRateLimit[key].windowStart > SUPPORT_WINDOW_MS * 2) {
                 delete supportRateLimit[key];
+            }
+        }
+        for (const key of Object.keys(chatRateLimit)) {
+            if (now - chatRateLimit[key].windowStart > SUPPORT_WINDOW_MS * 2) {
+                delete chatRateLimit[key];
             }
         }
     }, 1800000);
@@ -553,6 +579,152 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         return res.json(proxyResult);
     });
 
+    // ── Universal AI Chat Endpoint ─────────────
+    router.post('/chat', async (req, res) => {
+        // Auth: requires logged-in user (softAuthMiddleware populates req.user)
+        if (!req.user || !req.user.userId) {
+            return res.status(401).json({ success: false, error: 'Not authenticated' });
+        }
+
+        const { message, history, page } = req.body;
+        if (!message || typeof message !== 'string' || !message.trim()) {
+            return res.status(400).json({ success: false, error: 'message is required' });
+        }
+
+        // Admin check via DB
+        let isAdmin = false;
+        try {
+            const r = await chatPool.query('SELECT is_admin FROM user_accounts WHERE id = $1', [req.user.userId]);
+            isAdmin = r.rows[0]?.is_admin || false;
+        } catch (_) {}
+
+        // Rate limit
+        const rateCheck = checkChatRateLimit(req.user.userId, isAdmin);
+        if (!rateCheck.allowed) {
+            return res.status(429).json({
+                success: false,
+                error: 'rate_limited',
+                message: 'Maximum messages per hour reached. Try again later.',
+                retry_after_ms: rateCheck.retryAfterMs
+            });
+        }
+
+        // Forward to proxy /chat
+        const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
+        const proxyKey = process.env.SUPPORT_API_KEY;
+        if (!proxyUrl || !proxyKey) {
+            return res.status(503).json({ success: false, response: 'AI assistant is not available at this time.' });
+        }
+
+        const startTime = Date.now();
+        try {
+            const response = await fetch(proxyUrl + '/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${proxyKey}` },
+                body: JSON.stringify({
+                    message: message.trim(),
+                    history: (history || []).slice(-20),
+                    device_context: {
+                        deviceId: req.user.deviceId,
+                        page: page || 'unknown',
+                        role: isAdmin ? 'admin' : 'user',
+                        email: req.user.email
+                    }
+                }),
+                signal: AbortSignal.timeout(130000)
+            });
+
+            const latencyMs = Date.now() - startTime;
+
+            if (!response.ok) {
+                const body = await response.text().catch(() => '');
+                throw new Error(`Proxy HTTP ${response.status}: ${body.slice(0, 200)}`);
+            }
+
+            const result = await response.json();
+
+            // Log chat query
+            chatPool.query(
+                'INSERT INTO ai_chat_queries (user_id, is_admin, page, latency_ms) VALUES ($1, $2, $3, $4)',
+                [req.user.userId, isAdmin, page || null, latencyMs]
+            ).catch(() => {});
+
+            return res.json({
+                success: true,
+                response: result.response,
+                actions: isAdmin ? result.actions : undefined,
+                remaining: rateCheck.remaining,
+                latency_ms: latencyMs
+            });
+        } catch (err) {
+            const latencyMs = Date.now() - startTime;
+            console.error(`[AI Chat] Error (${latencyMs}ms): ${err.message}`);
+            return res.json({
+                success: true,
+                response: 'Sorry, the AI assistant is temporarily unavailable. Please try again shortly.',
+                remaining: rateCheck.remaining,
+                latency_ms: latencyMs
+            });
+        }
+    });
+
+    // ── GitHub Issue Creation (admin only) ────
+    router.post('/create-issue', async (req, res) => {
+        if (!req.user || !req.user.userId) {
+            return res.status(401).json({ success: false, error: 'Not authenticated' });
+        }
+
+        // Admin check
+        let isAdmin = false;
+        try {
+            const r = await chatPool.query('SELECT is_admin FROM user_accounts WHERE id = $1', [req.user.userId]);
+            isAdmin = r.rows[0]?.is_admin || false;
+        } catch (_) {}
+        if (!isAdmin) {
+            return res.status(403).json({ success: false, error: 'Admin access required' });
+        }
+
+        const { title, body, labels } = req.body;
+        if (!title || !body) {
+            return res.status(400).json({ success: false, error: 'title and body are required' });
+        }
+
+        const token = process.env.GITHUB_TOKEN;
+        const repo = process.env.GITHUB_REPO || 'HankHuang0516/realbot';
+        if (!token) {
+            return res.status(503).json({ success: false, error: 'GitHub integration not configured' });
+        }
+
+        try {
+            const ghRes = await fetch(`https://api.github.com/repos/${repo}/issues`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title,
+                    body: body + '\n\n---\n_Created via E-Claw AI Assistant_',
+                    labels: Array.isArray(labels) ? labels : ['ai-assistant']
+                })
+            });
+
+            if (!ghRes.ok) {
+                const err = await ghRes.text();
+                console.error(`[AI Chat] GitHub issue failed (${ghRes.status}):`, err.slice(0, 300));
+                return res.status(500).json({ success: false, error: 'Failed to create GitHub issue' });
+            }
+
+            const data = await ghRes.json();
+            serverLog('info', 'ai_chat', `Admin created GitHub issue #${data.number}`, { userId: req.user.userId });
+            return res.json({ success: true, url: data.html_url, number: data.number });
+        } catch (err) {
+            console.error('[AI Chat] GitHub API error:', err.message);
+            return res.status(500).json({ success: false, error: 'GitHub API error' });
+        }
+    });
+
     // ── DB Table Init ───────────────────────────
     function initSupportTable() {
         chatPool.query(`
@@ -571,6 +743,21 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             CREATE INDEX IF NOT EXISTS idx_asq_created ON ai_support_queries(created_at DESC);
         `).catch(err => {
             console.error('[AI Support] Table init error:', err.message);
+        });
+
+        chatPool.query(`
+            CREATE TABLE IF NOT EXISTS ai_chat_queries (
+                id SERIAL PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                is_admin BOOLEAN DEFAULT false,
+                page VARCHAR(32),
+                latency_ms INTEGER,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_acq_user ON ai_chat_queries(user_id);
+            CREATE INDEX IF NOT EXISTS idx_acq_created ON ai_chat_queries(created_at DESC);
+        `).catch(err => {
+            console.error('[AI Chat] Table init error:', err.message);
         });
     }
 

@@ -737,7 +737,14 @@ const TRANSLATIONS = {
         "cmp_tg_best_4": "Free Bot API with full developer control",
         "cmp_cta_text": "E-Claw delivers the most complete AI companion experience. Why settle for just chat?",
         "cmp_cta_eclaw": "Get Started with E-Claw",
-        "cmp_cta_telegram": "Learn about Telegram Bots"
+        "cmp_cta_telegram": "Learn about Telegram Bots",
+
+        // AI Chat Widget
+        "ai_chat_title": "E-Claw AI",
+        "ai_chat_placeholder": "Ask a question...",
+        "ai_chat_welcome": "Hi! I'm E-Claw AI. Ask me anything about the platform.",
+        "ai_chat_error": "Sorry, something went wrong. Please try again.",
+        "ai_chat_rate_limited": "Message limit reached. Try again later."
     },
     zh: {
         // Mission Control (mission.html)
@@ -1472,7 +1479,14 @@ const TRANSLATIONS = {
         "cmp_tg_best_4": "免費 Bot API，開發者完全掌控",
         "cmp_cta_text": "E-Claw 提供最完整的 AI 夥伴體驗，何必只用聊天？",
         "cmp_cta_eclaw": "開始使用 E-Claw",
-        "cmp_cta_telegram": "了解 Telegram Bots"
+        "cmp_cta_telegram": "了解 Telegram Bots",
+
+        // AI Chat Widget
+        "ai_chat_title": "E-Claw AI",
+        "ai_chat_placeholder": "有什麼問題想問嗎...",
+        "ai_chat_welcome": "嗨！我是 E-Claw AI，歡迎問我任何關於平台的問題。",
+        "ai_chat_error": "抱歉，出了點問題，請稍後再試。",
+        "ai_chat_rate_limited": "已達到訊息上限，請稍後再試。"
     },
     "zh-CN": {
         "mc_title": "E-Claw 任务控制",
