@@ -141,6 +141,7 @@ app.post('/analyze', async (req, res) => {
 
 // ── Prompt Builder ──────────────────────────
 function buildAnalysisPrompt(problem, errors, logs, failures, context) {
+    const isAdmin = context?.role === 'admin';
     const errorList = (errors || []).map(e => `- ${e}`).join('\n') || '(none provided)';
 
     const logList = (logs || []).slice(0, 20).map(l =>
@@ -151,7 +152,22 @@ function buildAnalysisPrompt(problem, errors, logs, failures, context) {
         `[${f.error_type}] ${f.error_message || 'no detail'} | URL: ${f.webhook_url || '?'} | source: ${f.source || '?'} (${f.created_at})`
     ).join('\n') || '(no recent failures)';
 
-    return `You are an E-Claw backend support engineer. Analyze this binding/webhook issue and provide a diagnosis.
+    const roleContext = isAdmin
+        ? `ROLE: You are talking to the E-Claw ADMIN (the developer/owner of the platform).
+The admin is testing, training, or debugging the AI support system directly.
+- Do NOT assume the admin is an OpenClaw bot — they built this system.
+- Speak to them as a fellow engineer. Use technical language freely.
+- If they ask a question about the system, answer directly (don't suggest "exec:" commands for them).
+- If they describe a hypothetical bot scenario, analyze it but clarify your reasoning.
+- You may suggest code changes, architectural improvements, or config fixes.`
+        : `ROLE: You are helping an OpenClaw BOT that encountered a binding/webhook issue.
+The bot communicates via exec: commands (shell commands) and HTTP requests.
+- Provide actionable steps with exact exec: commands the bot can run.
+- Keep instructions simple — the bot follows step-by-step.`;
+
+    return `You are an E-Claw backend support engineer.
+
+${roleContext}
 
 DEVICE: ${context?.deviceId || '?'} Entity ${context?.entityId ?? '?'}
 TIMESTAMP: ${context?.timestamp || new Date().toISOString()}
@@ -159,7 +175,7 @@ TIMESTAMP: ${context?.timestamp || new Date().toISOString()}
 PROBLEM DESCRIPTION:
 ${problem || '(not provided)'}
 
-ERROR MESSAGES FROM BOT:
+${isAdmin ? 'MESSAGES:' : 'ERROR MESSAGES FROM BOT:'}
 ${errorList}
 
 RECENT SERVER LOGS (newest first):
@@ -184,13 +200,12 @@ E-CLAW API REFERENCE:
 
 Respond in this EXACT JSON format (no markdown, no code fences, just raw JSON):
 {
-  "diagnosis": "Clear, concise explanation of what is wrong and why",
-  "suggested_steps": ["Step 1: exact action with exec: commands where applicable", "Step 2: ...", "Step 3: ..."],
+  "diagnosis": "Clear, concise explanation",
+  "suggested_steps": ["Step 1...", "Step 2...", "Step 3..."],
   "confidence": 0.85
 }
 
 Rules:
-- Include exact exec: commands the bot can run (e.g., exec: echo $OPENCLAW_GATEWAY_TOKEN)
 - Be concise — max 3-5 steps
 - Confidence: 0.0 to 1.0 based on how certain you are
 - If you cannot determine the issue, say so and suggest general debugging steps`;
