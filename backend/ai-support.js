@@ -234,7 +234,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
     }
 
     // ── Proxy Forwarding ────────────────────────
-    async function forwardToProxy(deviceId, entityId, problemDescription, errorMessages, recentLogs, recentFailures) {
+    async function forwardToProxy(deviceId, entityId, problemDescription, errorMessages, recentLogs, recentFailures, opts = {}) {
         const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
         const proxyKey = process.env.SUPPORT_API_KEY;
 
@@ -274,7 +274,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                     error_messages: errorMessages,
                     logs: (recentLogs || []).slice(0, 30),
                     handshake_failures: (recentFailures || []).slice(0, 10),
-                    device_context: { deviceId, entityId, timestamp: new Date().toISOString() }
+                    device_context: { deviceId, entityId, timestamp: new Date().toISOString(), role: opts.role || 'bot' }
                 }),
                 signal: AbortSignal.timeout(65000)
             });
@@ -546,7 +546,8 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             message.trim(),
             msgs,
             recentLogs,
-            recentFailures
+            recentFailures,
+            { role: 'admin' }
         );
 
         return res.json(proxyResult);
