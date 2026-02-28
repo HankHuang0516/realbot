@@ -900,7 +900,7 @@
             <div class="chat-messages" id="chatMessages">
                 <div class="chat-loading" id="chatLoading">
                     <div class="spinner"></div>
-                    <span>Loading...</span>
+                    <span data-i18n="chat_loading">Loading...</span>
                 </div>
             </div>
 
@@ -931,8 +931,8 @@
                     <span class="recording-dot"></span>
                     <span id="recordingTime">0:00</span>
                     <div class="recording-actions">
-                        <button class="btn-cancel-record" onclick="stopRecording(false)">Cancel</button>
-                        <button class="btn-send-record" onclick="stopRecording(true)">Send</button>
+                        <button class="btn-cancel-record" onclick="stopRecording(false)" data-i18n="chat_cancel">Cancel</button>
+                        <button class="btn-send-record" onclick="stopRecording(true)" data-i18n="chat_btn_send">Send</button>
                     </div>
                 </div>
                 <div class="file-preview-bar" id="filePreviewBar"></div>
@@ -1005,6 +1005,9 @@
         let refreshInterval = null;
         let isFirstLoad = true;
         let crossDeviceMode = false;
+        let _renderVersion = 0;
+        let myPublicCodeMap = {};   // publicCode -> { entityId, label }
+        let xdeviceLabelCache = {}; // publicCode -> label (remote entities)
 
         // ── Chat Integrity Validator ──
         const ChatIntegrityValidator = (() => {
@@ -1084,8 +1087,11 @@
             // DISPLAY LAYER: compare rendered DOM vs displayMessages
             function validateDisplayLayer(displayMessages) {
                 if (!displayMessages || displayMessages.length === 0) return;
+                const snapshotVersion = _renderVersion;
                 setTimeout(() => {
                     try {
+                        // Skip if a newer render happened since scheduling
+                        if (snapshotVersion !== _renderVersion) return;
                         const container = document.getElementById('chatMessages');
                         if (!container) return;
                         const bubbles = container.querySelectorAll('.chat-msg');
@@ -1165,10 +1171,11 @@
             isFirstLoad = false;
 
             // Socket.IO real-time chat handler
-            window.onSocketChatMessage = function(msg) {
+            window.onSocketChatMessage = async function(msg) {
                 const exists = allMessages.some(m => m.id === msg.id);
                 if (!exists) {
                     allMessages.push(msg);
+                    await resolveXDeviceCodes([msg]);
                     renderFilterChips();
                     renderMessages(true);
                 }
@@ -1247,7 +1254,7 @@
                 const hint = document.createElement('span');
                 hint.className = 'target-loading-hint';
                 hint.style.cssText = 'color:var(--text-muted);font-size:12px;';
-                hint.textContent = 'Loading entities...';
+                hint.textContent = i18n.t('chat_loading_entities');
                 bar.appendChild(hint);
             }
             try {
@@ -1255,6 +1262,13 @@
                 boundEntities = (data.entities || []).filter(e => e.isBound);
                 boundEntityIds = new Set(boundEntities.map(e => e.entityId));
                 updateEntityMaps(boundEntities);
+                // Build publicCode -> label map for own device
+                myPublicCodeMap = {};
+                boundEntities.forEach(e => {
+                    if (e.publicCode) {
+                        myPublicCodeMap[e.publicCode] = { entityId: e.entityId, label: getEntityLabel(e.entityId) };
+                    }
+                });
                 renderTargetBar();
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
@@ -1349,11 +1363,11 @@
                     info.textContent = `${e.name || e.character} (Lv.${e.level}) - ${e.state}`;
                     info.style.color = 'var(--text-primary)';
                 } else {
-                    info.textContent = 'Not found';
+                    info.textContent = i18n.t('chat_not_found');
                     info.style.color = 'var(--danger)';
                 }
             } catch (err) {
-                info.textContent = 'Not found';
+                info.textContent = i18n.t('chat_not_found');
                 info.style.color = 'var(--danger)';
             }
         }
@@ -1365,14 +1379,14 @@
 
             const targetCode = document.getElementById('crossDeviceCode').value.trim().toLowerCase();
             if (!targetCode || targetCode.length < 3) {
-                showToast('Enter a valid target code', 'error');
+                showToast(i18n.t('chat_enter_valid_code'), 'error');
                 return;
             }
 
             // Pick first bound entity as sender
             const fromEntity = boundEntities[0];
             if (!fromEntity) {
-                showToast('No bound entities', 'error');
+                showToast(i18n.t('chat_no_bound_entities'), 'error');
                 return;
             }
 
@@ -1394,7 +1408,7 @@
                 container.scrollTop = container.scrollHeight;
             } catch (err) {
                 input.value = saved;
-                showToast(err.message || 'Failed to send', 'error');
+                showToast(err.message || i18n.t('chat_send_failed'), 'error');
             } finally {
                 btn.disabled = false;
             }
@@ -1410,6 +1424,7 @@
                 if (data.success && data.messages) {
                     const prevCount = allMessages.length;
                     allMessages = data.messages;
+                    await resolveXDeviceCodes(allMessages);
                     renderFilterChips();
                     renderMessages(prevCount < allMessages.length);
                     ChatIntegrityValidator.validateDataLayer(data.messages);
@@ -1417,7 +1432,7 @@
             } catch (e) {
                 if (isFirstLoad) {
                     const container = document.getElementById('chatMessages');
-                    container.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">&#x26A0;</div><div>Failed to load messages</div></div>';
+                    container.innerHTML = '<div class="chat-empty"><div class="chat-empty-icon">&#x26A0;</div><div>' + i18n.t('chat_load_failed') + '</div></div>';
                 }
             }
         }
@@ -1530,8 +1545,40 @@
             return grouped;
         }
 
+        // ── Cross-Device Code Resolution ──
+        function getXDeviceLabel(code) {
+            if (myPublicCodeMap[code]) return myPublicCodeMap[code].label;
+            if (xdeviceLabelCache[code]) return xdeviceLabelCache[code];
+            return `&#x1F310; ${escapeHtml(code)}`;
+        }
+
+        async function resolveXDeviceCodes(messages) {
+            const unknownCodes = new Set();
+            for (const msg of messages) {
+                const parsed = parseEntitySource(msg.source);
+                if (!parsed || !parsed.crossDevice) continue;
+                const code = parsed.fromPublicCode;
+                if (!myPublicCodeMap[code] && !xdeviceLabelCache[code]) unknownCodes.add(code);
+                for (const t of parsed.targets) {
+                    if (!myPublicCodeMap[t] && !xdeviceLabelCache[t]) unknownCodes.add(t);
+                }
+            }
+            const lookups = Array.from(unknownCodes).map(async code => {
+                try {
+                    const data = await apiCall('GET', `/api/entity/lookup?code=${encodeURIComponent(code)}`);
+                    if (data.success && data.entity) {
+                        const e = data.entity;
+                        const avatar = e.avatar || (e.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
+                        xdeviceLabelCache[code] = `${avatar} ${escapeHtml(e.name || e.character)}`;
+                    }
+                } catch (_) { /* silent — will show raw code as fallback */ }
+            });
+            await Promise.all(lookups);
+        }
+
         // ── Render Messages ──
         function renderMessages(hasNewMessages) {
+            _renderVersion++;
             const container = document.getElementById('chatMessages');
             const wasAtBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
             const filtered = getFilteredMessages();
@@ -1599,11 +1646,11 @@
                         const targetIds = targetPart ? targetPart.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id)) : [];
                         const deliveredIds = new Set((msg.delivered_to || '').split(',').map(id => id.trim()).filter(Boolean));
                         const sendTo = targetIds.length > 0
-                            ? '發送至: ' + targetIds.map(id => getEntityLabel(id)).join(', ')
+                            ? i18n.t('chat_sent_to') + targetIds.map(id => getEntityLabel(id)).join(', ')
                             : '';
                         const statusBadges = targetIds.map(id =>
                             deliveredIds.has(String(id))
-                                ? `<span class="read-receipt">${getEntityLabel(id)} \u2713 已讀</span>`
+                                ? `<span class="read-receipt">${getEntityLabel(id)} \u2713 ${i18n.t('chat_read_label')}</span>`
                                 : `<span class="read-receipt" style="opacity:0.5">${getEntityLabel(id)} ...</span>`
                         ).join(' ');
                         receipt = (sendTo ? `<div style="opacity:0.7;margin-bottom:2px">${sendTo}</div>` : '')
@@ -1621,14 +1668,14 @@
                             receipt = msg._groupedMessages.map(m => {
                                 const label = getEntityLabel(m.entity_id);
                                 return (m.is_delivered || m.read_at)
-                                    ? `<span class="read-receipt">${label} \u2713 已讀</span>`
-                                    : `<span class="read-receipt" style="opacity:0.5">${label} 已送出</span>`;
+                                    ? `<span class="read-receipt">${label} \u2713 ${i18n.t('chat_read_label')}</span>`
+                                    : `<span class="read-receipt" style="opacity:0.5">${label} ${i18n.t('chat_delivered_label')}</span>`;
                             }).join(' ');
                         }
                     } else if (msg.read_at) {
                         receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
                     } else if (msg.is_delivered) {
-                        receipt = `<span class="read-receipt">\u2713 已讀</span>`;
+                        receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_read') || '\u2713 Read')}</span>`;
                     } else {
                         receipt = `<span class="read-receipt">${escapeHtml(i18n.t('chat_sent') || '\u2713 Sent')}</span>`;
                     }
@@ -1707,11 +1754,12 @@
                 // Cross-device message sent by user
                 const xdParsed = parseEntitySource(msg.source);
                 if (xdParsed && xdParsed.crossDevice) {
-                    return `You &rarr; &#x1F310; ${escapeHtml(xdParsed.targets[0])} (cross-device)`;
+                    const targetLabel = getXDeviceLabel(xdParsed.targets[0]);
+                    return `You &rarr; ${targetLabel} (${i18n.t('chat_cross_device_label')})`;
                 }
                 // Mission notify: consolidated notification bubble
                 if (msg.source && msg.source.startsWith('mission_notify')) {
-                    return 'Mission Control';
+                    return i18n.t('chat_mission_control');
                 }
                 // Scheduled message
                 if (msg.source === 'scheduled') {
@@ -1743,9 +1791,10 @@
                 const parsed = parseEntitySource(msg.source);
                 if (parsed) {
                     if (parsed.crossDevice) {
-                        // Cross-device message
-                        const senderHtml = `<span class="entity-label" style="color:var(--primary);">&#x1F310; ${escapeHtml(parsed.fromPublicCode)}</span>`;
-                        return `${senderHtml} &rarr; ${entityHtml} (cross-device)`;
+                        // Cross-device message — show resolved name instead of raw code
+                        const senderLabel = getXDeviceLabel(parsed.fromPublicCode);
+                        const senderHtml = `<span class="entity-label" style="color:var(--primary);">${senderLabel}</span>`;
+                        return `${senderHtml} &rarr; ${entityHtml} (${i18n.t('chat_cross_device_label')})`;
                     }
 
                     const senderHtml = `<span class="entity-label" data-entity="${parsed.fromEntityId}">${getEntityLabel(parsed.fromEntityId)}</span>`;
@@ -1757,10 +1806,10 @@
 
                     const targetLabels = parsed.targets.map(tid => {
                         const label = getEntityLabel(tid);
-                        return deliveredIds.has(tid) ? `${label} 已讀` : label;
+                        return deliveredIds.has(tid) ? `${label} ${i18n.t('chat_read_label')}` : label;
                     });
 
-                    return `${senderHtml} &rarr; 發送至: ${targetLabels.join(', ')}`;
+                    return `${senderHtml} &rarr; ${i18n.t('chat_sent_to')}${targetLabels.join(', ')}`;
                 }
 
                 return entityHtml;
@@ -1833,7 +1882,7 @@
 
             const targets = getSelectedTargets();
             if (targets.length === 0) {
-                showToast('Please select at least one entity', 'error');
+                showToast(i18n.t('chat_select_entity'), 'error');
                 return;
             }
 
@@ -1901,7 +1950,7 @@
                 if (e.status === 429) {
                     showUsageLimitModal();
                 } else if (e.status === 403 && e.data && (e.data.error === 'GATEKEEPER_BLOCKED_MESSAGE' || e.data.error === 'GATEKEEPER_BLOCKED')) {
-                    const reason = e.data.message || '訊息已被安全機制攔截';
+                    const reason = e.data.message || i18n.t('chat_gatekeeper_blocked');
                     if (e.data.error === 'GATEKEEPER_BLOCKED') {
                         showToast('⚠️ ' + reason, 'error');
                     } else {
@@ -1910,7 +1959,7 @@
                         showToast(`⚠️ ${reason}（${strikes}/${maxStrikes}）`, 'error');
                     }
                 } else {
-                    showToast('Send failed: ' + e.message, 'error');
+                    showToast(i18n.t('chat_send_failed') + ': ' + e.message, 'error');
                 }
                 input.value = savedContent;
             } finally {
@@ -2157,7 +2206,7 @@
                 }, 500);
 
             } catch (e) {
-                showToast('Microphone access denied', 'error');
+                showToast(i18n.t('chat_mic_denied'), 'error');
             }
         }
 
@@ -2197,7 +2246,7 @@
         async function uploadVoice(blob, durationSec) {
             const targets = getSelectedTargets();
             if (targets.length === 0) {
-                showToast('Please select at least one entity', 'error');
+                showToast(i18n.t('chat_select_entity'), 'error');
                 return;
             }
 
@@ -2237,7 +2286,7 @@
                 const container = document.getElementById('chatMessages');
                 container.scrollTop = container.scrollHeight;
             } catch (e) {
-                showToast('Voice upload failed: ' + e.message, 'error');
+                showToast(i18n.t('chat_voice_upload_failed') + ': ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
             }
@@ -2289,7 +2338,7 @@
             });
 
             audio.play().catch(() => {
-                showToast('Playback failed', 'error');
+                showToast(i18n.t('chat_playback_failed'), 'error');
                 btn.innerHTML = '&#9654;';
                 currentAudio = null;
                 currentPlayBtn = null;
