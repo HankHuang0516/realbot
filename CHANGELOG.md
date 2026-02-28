@@ -1,3 +1,10 @@
+## [1.39.4](https://github.com/HankHuang0516/realbot/compare/v1.39.3...v1.39.4) (2026-02-28)
+
+
+### Bug Fixes
+
+* use stdin for Claude CLI prompt + increase timeout to 55s ([f8aad9d](https://github.com/HankHuang0516/realbot/commit/f8aad9d6d02c7d2a895428a339173fca6537ecd4))
+
 ## [1.39.3](https://github.com/HankHuang0516/realbot/compare/v1.39.2...v1.39.3) (2026-02-28)
 
 
