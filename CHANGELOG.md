@@ -1,3 +1,15 @@
+# [1.45.0](https://github.com/HankHuang0516/realbot/compare/v1.44.1...v1.45.0) (2026-02-28)
+
+
+### Bug Fixes
+
+* filter Android user messages from ChatIntegrity validation ([71bef4a](https://github.com/HankHuang0516/realbot/commit/71bef4a54a0376c4d91e32f5c29cb9e7ccf762c8)), closes [#82](https://github.com/HankHuang0516/realbot/issues/82) [#83](https://github.com/HankHuang0516/realbot/issues/83)
+
+
+### Features
+
+* add free bot limit hint and sold-out rental demand flow ([#81](https://github.com/HankHuang0516/realbot/issues/81)) ([2f57b26](https://github.com/HankHuang0516/realbot/commit/2f57b263c628f66ef8b66f34df981523c1a7e530))
+
 ## [1.44.1](https://github.com/HankHuang0516/realbot/compare/v1.44.0...v1.44.1) (2026-02-28)
 
 
