@@ -68,7 +68,14 @@ data class ChatMessage(
     val mediaUrl: String? = null,
 
     /** Schedule label when source='scheduled' (from schedule_label field) */
-    val scheduleLabel: String? = null
+    val scheduleLabel: String? = null,
+
+    /** Reaction counts from server */
+    val likeCount: Int = 0,
+    val dislikeCount: Int = 0,
+
+    /** Current user's reaction: "like", "dislike", or null */
+    val userReaction: String? = null
 ) {
     /**
      * Get display name for the message sender

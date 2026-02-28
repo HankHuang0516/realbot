@@ -39,6 +39,9 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
     /** Entity name lookup map (entityId -> name), set from Activity */
     var entityNames: Map<Int, String> = emptyMap()
 
+    /** Callback for reaction button clicks: (messageId, reaction: "like"|"dislike"|null) */
+    var onReactionClick: ((Long, String?) -> Unit)? = null
+
     fun getEntityDisplayName(entityId: Int): String {
         return entityNames[entityId]?.let { "$it (#$entityId)" } ?: "Entity $entityId"
     }
@@ -315,6 +318,13 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         private val tvLinkDesc: TextView = itemView.findViewById(R.id.tvLinkDesc)
         private val tvLinkDomain: TextView = itemView.findViewById(R.id.tvLinkDomain)
 
+        // Reaction UI
+        private val layoutReactions: LinearLayout = itemView.findViewById(R.id.layoutReactions)
+        private val btnLike: ImageButton = itemView.findViewById(R.id.btnLike)
+        private val tvLikeCount: TextView = itemView.findViewById(R.id.tvLikeCount)
+        private val btnDislike: ImageButton = itemView.findViewById(R.id.btnDislike)
+        private val tvDislikeCount: TextView = itemView.findViewById(R.id.tvDislikeCount)
+
         private var mediaPlayer: MediaPlayer? = null
         private var tempFile: File? = null
 
@@ -353,8 +363,50 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 tvReadReceipt.visibility = View.GONE
             }
 
+            // Reaction buttons (only for bot messages, not entity-to-entity)
+            bindReactions(message, adapter)
+
             // Link preview
             bindLinkPreview(message)
+        }
+
+        private fun bindReactions(message: ChatMessage, adapter: ChatAdapter) {
+            // Show reactions for all received messages
+            layoutReactions.visibility = View.VISIBLE
+
+            // Update like button state
+            val isLiked = message.userReaction == "like"
+            btnLike.setImageResource(
+                if (isLiked) R.drawable.ic_thumb_up_filled else R.drawable.ic_thumb_up_outline
+            )
+            if (message.likeCount > 0) {
+                tvLikeCount.text = message.likeCount.toString()
+                tvLikeCount.visibility = View.VISIBLE
+            } else {
+                tvLikeCount.visibility = View.GONE
+            }
+
+            // Update dislike button state
+            val isDisliked = message.userReaction == "dislike"
+            btnDislike.setImageResource(
+                if (isDisliked) R.drawable.ic_thumb_down_filled else R.drawable.ic_thumb_down_outline
+            )
+            if (message.dislikeCount > 0) {
+                tvDislikeCount.text = message.dislikeCount.toString()
+                tvDislikeCount.visibility = View.VISIBLE
+            } else {
+                tvDislikeCount.visibility = View.GONE
+            }
+
+            // Click handlers — toggle reaction
+            btnLike.setOnClickListener {
+                val newReaction = if (isLiked) null else "like"
+                adapter.onReactionClick?.invoke(message.id, newReaction)
+            }
+            btnDislike.setOnClickListener {
+                val newReaction = if (isDisliked) null else "dislike"
+                adapter.onReactionClick?.invoke(message.id, newReaction)
+            }
         }
 
         private fun bindLinkPreview(message: ChatMessage) {

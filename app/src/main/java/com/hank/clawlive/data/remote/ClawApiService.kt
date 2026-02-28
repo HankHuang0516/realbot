@@ -165,6 +165,13 @@ interface ClawApiService {
         @Query("limit") limit: Int = 100
     ): ChatHistoryResponse
 
+    // React to a message (like/dislike)
+    @POST("api/message/{messageId}/react")
+    suspend fun reactToMessage(
+        @Path("messageId") messageId: String,
+        @Body body: Map<String, @JvmSuppressWildcards Any?>
+    ): ReactToMessageResponse
+
     // Upload media (photo/voice) for chat
     @Multipart
     @POST("api/chat/upload-media")
@@ -370,7 +377,18 @@ data class ChatHistoryMessage(
     val created_at: String, // ISO timestamp from PostgreSQL
     val media_type: String? = null,
     val media_url: String? = null,
-    val schedule_label: String? = null
+    val schedule_label: String? = null,
+    val like_count: Int = 0,
+    val dislike_count: Int = 0,
+    val user_reaction: String? = null
+)
+
+data class ReactToMessageResponse(
+    val success: Boolean,
+    val reaction: String? = null,
+    val like_count: Int = 0,
+    val dislike_count: Int = 0,
+    val error: String? = null
 )
 
 data class MediaUploadResponse(
