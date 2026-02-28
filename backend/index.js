@@ -6087,6 +6087,8 @@ chatPool.query(`
 // AI SUPPORT — Binding Troubleshooter
 // ============================================
 const aiSupportModule = require('./ai-support')(devices, chatPool, { serverLog, getWebhookFixInstructions });
+// Admin-chat requires admin auth; other ai-support routes use bot auth
+app.use('/api/ai-support/admin-chat', adminAuth, adminCheck);
 app.use('/api/ai-support', aiSupportModule.router);
 aiSupportModule.initSupportTable();
 
