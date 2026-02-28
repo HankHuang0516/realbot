@@ -1,3 +1,10 @@
+# [1.34.0](https://github.com/HankHuang0516/realbot/compare/v1.33.2...v1.34.0) (2026-02-28)
+
+
+### Features
+
+* expand XP system with 8 new channels + message like/dislike UI ([96a95ef](https://github.com/HankHuang0516/realbot/commit/96a95efd46c0b48d8ff2ff0ac4e809c70205b9ea))
+
 ## [1.33.2](https://github.com/HankHuang0516/realbot/compare/v1.33.1...v1.33.2) (2026-02-27)
 
 
