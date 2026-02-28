@@ -165,10 +165,12 @@ function getBotToBotRemaining(deviceId, entityId) {
 
 // Reset bot-to-bot counter when human sends a message (called from /api/client/speak)
 function resetBotToBotCounter(deviceId) {
-    for (let i = 0; i < 4; i++) {
-        const key = `${deviceId}:${i}`;
-        if (botToBotCounter[key]) botToBotCounter[key] = 0;
-        if (crossSpeakCounter[key]) crossSpeakCounter[key] = 0;
+    const prefix = `${deviceId}:`;
+    for (const key of Object.keys(botToBotCounter)) {
+        if (key.startsWith(prefix)) botToBotCounter[key] = 0;
+    }
+    for (const key of Object.keys(crossSpeakCounter)) {
+        if (key.startsWith(prefix)) crossSpeakCounter[key] = 0;
     }
     // Also clear broadcast dedup cache for this device so human-initiated broadcasts work fresh
     delete recentBroadcasts[deviceId];
