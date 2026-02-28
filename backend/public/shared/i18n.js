@@ -752,7 +752,10 @@ const TRANSLATIONS = {
         "ai_chat_placeholder": "Ask a question...",
         "ai_chat_welcome": "Hi! I'm E-Claw AI. Ask me anything about the platform.",
         "ai_chat_error": "Sorry, something went wrong. Please try again.",
-        "ai_chat_rate_limited": "Message limit reached. Try again later."
+        "ai_chat_rate_limited": "Message limit reached. Try again later.",
+        "feedback_ask_ai": "🤖 Ask AI",
+        "feedback_ask_ai_title": "Need quick help? Ask AI",
+        "feedback_ask_ai_desc": "Get instant answers before submitting feedback"
     },
     zh: {
         // Mission Control (mission.html)
@@ -1502,7 +1505,10 @@ const TRANSLATIONS = {
         "ai_chat_placeholder": "有什麼問題想問嗎...",
         "ai_chat_welcome": "嗨！我是 E-Claw AI，歡迎問我任何關於平台的問題。",
         "ai_chat_error": "抱歉，出了點問題，請稍後再試。",
-        "ai_chat_rate_limited": "已達到訊息上限，請稍後再試。"
+        "ai_chat_rate_limited": "已達到訊息上限，請稍後再試。",
+        "feedback_ask_ai": "🤖 問 AI",
+        "feedback_ask_ai_title": "需要快速協助？問 AI",
+        "feedback_ask_ai_desc": "提交回饋前先試試 AI 助手"
     },
     "zh-CN": {
         "mc_title": "E-Claw 任务控制",

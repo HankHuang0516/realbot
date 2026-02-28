@@ -91,6 +91,15 @@
     <string name="size_large">大</string>
     <string name="refresh">重新整理</string>
 
+    <!-- AI Chat -->
+    <string name="ai_chat_title">AI 客服</string>
+    <string name="ai_chat_welcome">嗨！我是 E-Claw AI。\n歡迎問我任何關於平台的問題。</string>
+    <string name="ai_chat_hint">輸入問題…</string>
+    <string name="ai_chat_attach_image">附加圖片</string>
+    <string name="ai_chat_clear_title">清除記錄</string>
+    <string name="ai_chat_clear_message">確定清除所有聊天記錄？</string>
+    <string name="ai_chat_clear_confirm">清除</string>
+
     <!-- Chat -->
     <string name="chat_history">聊天</string>
     <string name="filter_all">全部</string>

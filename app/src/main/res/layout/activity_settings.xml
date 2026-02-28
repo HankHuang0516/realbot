@@ -187,6 +187,22 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- AI Chat Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAiChat"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/ai_chat_title"
+                android:textColor="#CCFFFFFF"
+                app:backgroundTint="#1A1A1A"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_ai_chat"
+                app:iconTint="#7C4DFF"
+                app:strokeColor="#7C4DFF"
+                app:strokeWidth="1dp"
+                style="@style/Widget.Material3.Button.TonalButton"/>
+
             <!-- Feedback Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnFeedback"

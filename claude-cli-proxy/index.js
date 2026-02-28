@@ -58,7 +58,7 @@ function runClaude(prompt, timeoutMs) {
 }
 
 const app = express();
-app.use(express.json({ limit: '256kb' }));
+app.use(express.json({ limit: '10mb' }));
 
 const SUPPORT_API_KEY = process.env.SUPPORT_API_KEY;
 const PORT = process.env.PORT || 4000;
@@ -182,13 +182,16 @@ app.use('/chat', (req, res, next) => {
 });
 
 // ── Chat Endpoint (Sonnet + repo tools) ────
-function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS, { isAdmin = false } = {}) {
+function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS, { isAdmin = false, hasImages = false } = {}) {
     return new Promise((resolve, reject) => {
         const args = ['--print', '--output-format', 'json', '--model', 'sonnet'];
         // Build tool list: repo tools need clone, Bash always available for admin
         const tools = [];
         if (fs.existsSync(path.join(REPO_DIR, '.git'))) {
             tools.push('Read', 'Glob', 'Grep');
+        } else if (hasImages) {
+            // Read tool needed for viewing user-attached images even without repo
+            tools.push('Read');
         }
         if (isAdmin) {
             tools.push('Bash');
@@ -232,7 +235,7 @@ function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS, { isAdmin = false } 
     });
 }
 
-function buildChatPrompt(message, history, context) {
+function buildChatPrompt(message, history, context, imagePaths = []) {
     const isAdmin = context.role === 'admin';
     const historyText = (history || []).slice(-20).map(h =>
         `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content}`
@@ -298,7 +301,10 @@ IMPORTANT RULES:
 - Never reveal sensitive data (tokens, secrets, passwords, device IDs)
 - If unsure, say so honestly — don't fabricate information
 
-${historyText ? `CONVERSATION HISTORY:\n${historyText}\n` : ''}User: ${message}
+${imagePaths.length > 0 ? `USER ATTACHED ${imagePaths.length} IMAGE(S):
+The user has pasted/uploaded screenshot(s). Use the Read tool to view each image file below, then incorporate what you see into your response.
+${imagePaths.map((p, i) => `  Image ${i + 1}: ${p}`).join('\n')}
+` : ''}${historyText ? `CONVERSATION HISTORY:\n${historyText}\n` : ''}User: ${message}
 
 Respond naturally as E-Claw AI.`;
 }
@@ -327,21 +333,38 @@ function parseChatResponse(output) {
 }
 
 app.post('/chat', async (req, res) => {
-    const { message, history, device_context } = req.body;
+    const { message, history, images, device_context } = req.body;
 
     if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'message is required' });
     }
 
-    const prompt = buildChatPrompt(message, history || [], device_context || {});
+    // Save images to temp files so Claude can Read them
+    const imagePaths = [];
+    if (images && Array.isArray(images)) {
+        for (let i = 0; i < Math.min(images.length, 3); i++) {
+            const img = images[i];
+            if (!img.data || !img.mimeType) continue;
+            const ext = img.mimeType === 'image/png' ? 'png' : 'jpg';
+            const tmpPath = `/tmp/eclaw_chat_img_${Date.now()}_${i}.${ext}`;
+            try {
+                fs.writeFileSync(tmpPath, Buffer.from(img.data, 'base64'));
+                imagePaths.push(tmpPath);
+            } catch (err) {
+                console.error(`[Chat] Failed to write temp image: ${err.message}`);
+            }
+        }
+    }
+
+    const prompt = buildChatPrompt(message, history || [], device_context || {}, imagePaths);
     const role = device_context?.role || 'user';
     const page = device_context?.page || '?';
 
-    console.log(`[Chat] Request from ${role} on page "${page}" (prompt: ${prompt.length} chars)`);
+    console.log(`[Chat] Request from ${role} on page "${page}" (prompt: ${prompt.length} chars, images: ${imagePaths.length})`);
 
     const startTime = Date.now();
     try {
-        const { stdout, stderr } = await runClaudeChat(prompt, CHAT_TIMEOUT_MS, { isAdmin: role === 'admin' });
+        const { stdout, stderr } = await runClaudeChat(prompt, CHAT_TIMEOUT_MS, { isAdmin: role === 'admin', hasImages: imagePaths.length > 0 });
         const latencyMs = Date.now() - startTime;
         console.log(`[Chat] Sonnet responded (${latencyMs}ms), stdout: ${stdout.length} chars`);
         if (stderr) console.warn(`[Chat] stderr: ${stderr.slice(0, 300)}`);
@@ -356,6 +379,11 @@ app.post('/chat', async (req, res) => {
             response: 'Sorry, I was unable to process your request. Please try again in a moment.',
             latency_ms: latencyMs
         });
+    } finally {
+        // Clean up temp image files
+        for (const p of imagePaths) {
+            try { fs.unlinkSync(p); } catch (_) {}
+        }
     }
 });
 

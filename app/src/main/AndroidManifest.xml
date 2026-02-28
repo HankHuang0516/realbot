@@ -106,6 +106,13 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".AiChatActivity"
+            android:exported="false"
+            android:label="@string/ai_chat_title"
+            android:parentActivityName=".SettingsActivity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".MissionControlActivity"
             android:exported="false"
             android:label="@string/mission_control"

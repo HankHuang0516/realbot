@@ -294,12 +294,38 @@
             display: none;
         }
 
+        .feedback-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
         .feedback-history-link {
             display: inline-block;
-            margin-top: 8px;
             font-size: 13px;
             color: var(--warning);
             text-decoration: underline;
+        }
+
+        .btn-ask-ai {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid #7C4DFF;
+            background: rgba(124, 77, 255, 0.1);
+            color: #7C4DFF;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .btn-ask-ai:hover {
+            background: rgba(124, 77, 255, 0.2);
         }
 
         /* ── Feedback dialog category cards ── */
@@ -642,9 +668,11 @@
                 <button class="btn-mark" onclick="markBugMoment()" id="btnMark">Mark</button>
             </div>
             <div class="mark-status" id="markStatus"></div>
-            <div>
+            <div class="feedback-actions">
                 <a href="feedback.html" class="feedback-history-link"
                     data-i18n="settings_feedback_view_history">View feedback history</a>
+                <button class="btn-ask-ai" onclick="openAiChat()"
+                    data-i18n="feedback_ask_ai">🤖 Ask AI</button>
             </div>
         </div>
 
