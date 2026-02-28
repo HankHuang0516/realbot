@@ -2403,6 +2403,16 @@ app.post('/api/client/speak', async (req, res) => {
             }
         } catch (usageErr) {
             console.warn('[Usage] Enforcement check failed, allowing:', usageErr.message);
+            serverLog('warn', 'client_push', `Usage enforcement error: ${usageErr.message}`, { deviceId });
+        }
+    } else {
+        // Debug: log why usage check was skipped
+        const debugInfo = targetEids.map(eId => {
+            const entity = device.entities[eId];
+            return { eId, exists: !!entity, isBound: entity?.isBound };
+        });
+        if (debugInfo.some(d => d.exists)) {
+            console.log(`[Usage] Skipped for ${deviceId}: targets=${JSON.stringify(debugInfo)}`);
         }
     }
 
