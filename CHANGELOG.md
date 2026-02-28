@@ -1,3 +1,10 @@
+# [1.35.0](https://github.com/HankHuang0516/realbot/compare/v1.34.1...v1.35.0) (2026-02-28)
+
+
+### Features
+
+* send email notification when feedback status changes ([641fbf4](https://github.com/HankHuang0516/realbot/commit/641fbf4aa69ae8c916162618e6e870a19e74b112))
+
 ## [1.34.1](https://github.com/HankHuang0516/realbot/compare/v1.34.0...v1.34.1) (2026-02-28)
 
 
