@@ -3959,9 +3959,11 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
 
     // Set up entity with official bot's webhook (preserve user-set name)
     const existingNameFree = device.entities[eId]?.name;
+    const freePublicCode = generatePublicCode();
     device.entities[eId] = {
         ...createDefaultEntity(eId),
         botSecret: botSecret,
+        publicCode: freePublicCode,
         isBound: true,
         name: existingNameFree || '免費版',
         state: 'IDLE',
@@ -3976,6 +3978,7 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
             setupPassword: freeBot.setup_password || null
         }
     };
+    publicCodeIndex[freePublicCode] = { deviceId, entityId: eId };
 
     // Save binding record
     const binding = {
@@ -4004,6 +4007,7 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
         success: true,
         entityId: eId,
         botType: 'free',
+        publicCode: freePublicCode,
         message: 'Free bot bound successfully'
     });
 });
