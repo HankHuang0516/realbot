@@ -1,3 +1,10 @@
+# [1.42.0](https://github.com/HankHuang0516/realbot/compare/v1.41.4...v1.42.0) (2026-02-28)
+
+
+### Features
+
+* universal AI chat widget + admin assistant with repo access ([0fee0b0](https://github.com/HankHuang0516/realbot/commit/0fee0b09138caacb2e206efc50bcbfd1a800d0f6))
+
 ## [1.41.4](https://github.com/HankHuang0516/realbot/compare/v1.41.3...v1.41.4) (2026-02-28)
 
 
