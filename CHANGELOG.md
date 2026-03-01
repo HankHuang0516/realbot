@@ -1,3 +1,10 @@
+## [1.61.2](https://github.com/HankHuang0516/realbot/compare/v1.61.1...v1.61.2) (2026-03-01)
+
+
+### Bug Fixes
+
+* persist DATABASE_URL to file for Claude CLI child processes ([7f1975e](https://github.com/HankHuang0516/realbot/commit/7f1975e479abeeccf68176f4332fab4e7da15a81))
+
 ## [1.61.1](https://github.com/HankHuang0516/realbot/compare/v1.61.0...v1.61.1) (2026-03-01)
 
 
