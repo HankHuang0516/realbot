@@ -1,3 +1,10 @@
+## [1.59.4](https://github.com/HankHuang0516/realbot/compare/v1.59.3...v1.59.4) (2026-03-01)
+
+
+### Bug Fixes
+
+* remove AD_ID permission and add changesNotSentForReview flag ([f2ae128](https://github.com/HankHuang0516/realbot/commit/f2ae1287cc52ae3bf8a45ce65754ca8f9e499c2b))
+
 ## [1.59.3](https://github.com/HankHuang0516/realbot/compare/v1.59.2...v1.59.3) (2026-03-01)
 
 
