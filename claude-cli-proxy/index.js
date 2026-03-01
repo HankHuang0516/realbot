@@ -723,9 +723,10 @@ function buildChatPrompt(message, history, context, imagePaths = []) {
 
     // Database query block — available when DATABASE_URL is set
     const hasDB = !!process.env.DATABASE_URL;
+    const dbQueryPath = path.join(__dirname, 'db-query.js');
     const dbQueryBlock = hasDB ? `
 DATABASE ACCESS (read-only):
-  node db-query.js "SELECT ..."
+  node ${dbQueryPath} "SELECT ..."
 - Only SELECT/WITH allowed. Returns JSON array.
 - KEY TABLES:
   * entities (device_id, entity_id, is_bound, name, character, state, message, webhook JSONB, xp, level, avatar, public_code)
