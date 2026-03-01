@@ -97,6 +97,7 @@ function finalizeSession(session) {
 
 // ── Stream-JSON Runner (unified for chat & analyze) ──
 // Uses --output-format stream-json for full event visibility.
+// Falls back to single-JSON parsing if stream-json produces no NDJSON lines.
 // Always resolves (never rejects) — caller checks events/status.
 function runClaudeStream(prompt, extraArgs, timeoutMs, { cwd, env } = {}) {
     return new Promise((resolve) => {
@@ -109,12 +110,15 @@ function runClaudeStream(prompt, extraArgs, timeoutMs, { cwd, env } = {}) {
         });
 
         const events = [];
+        let rawStdout = '';  // keep full raw stdout for fallback
         let buffer = '';
         let stderr = '';
         let killed = false;
 
         child.stdout.on('data', chunk => {
-            buffer += chunk.toString();
+            const str = chunk.toString();
+            rawStdout += str;
+            buffer += str;
             const lines = buffer.split('\n');
             buffer = lines.pop(); // keep incomplete last line
             for (const line of lines) {
@@ -133,7 +137,7 @@ function runClaudeStream(prompt, extraArgs, timeoutMs, { cwd, env } = {}) {
         child.stderr.on('data', d => { stderr += d; });
 
         child.on('error', err => {
-            resolve({ events, stderr, code: -1, signal: null, killed: false, error: err.message });
+            resolve({ events, rawStdout, stderr, code: -1, signal: null, killed: false, error: err.message });
         });
 
         child.on('close', (code, signal) => {
@@ -147,8 +151,45 @@ function runClaudeStream(prompt, extraArgs, timeoutMs, { cwd, env } = {}) {
                 } catch (_) {}
             }
 
+            console.log(`[Stream] close — code: ${code}, signal: ${signal}, events: ${events.length}, stdout: ${rawStdout.length} chars, stderr: ${stderr.length} chars`);
+
+            // Fallback: if no events parsed but stdout has content, try single-JSON parse
+            if (events.length === 0 && rawStdout.trim()) {
+                console.warn(`[Stream] No NDJSON events parsed, attempting single-JSON fallback...`);
+                try {
+                    const parsed = JSON.parse(rawStdout.trim());
+                    // Wrap single JSON result as a "result" event
+                    const fallbackEvent = {
+                        _ts: Date.now(),
+                        _fallback: true,
+                        type: parsed.type || 'result',
+                        subtype: parsed.subtype || (parsed.result ? 'success' : 'unknown'),
+                        result: parsed.result || parsed.content || '',
+                        session_id: parsed.session_id,
+                        num_turns: parsed.num_turns,
+                        total_cost_usd: parsed.total_cost_usd,
+                        duration_ms: parsed.duration_ms,
+                        modelUsage: parsed.modelUsage,
+                        is_error: parsed.is_error
+                    };
+                    events.push(fallbackEvent);
+                    console.log(`[Stream] Fallback parsed — type: ${fallbackEvent.type}, subtype: ${fallbackEvent.subtype}, result: ${(fallbackEvent.result || '').length} chars`);
+                } catch (e) {
+                    // Not JSON either — treat raw stdout as plain text response
+                    console.warn(`[Stream] Fallback JSON parse failed, treating stdout as plain text (${rawStdout.length} chars)`);
+                    events.push({
+                        _ts: Date.now(),
+                        _fallback: true,
+                        type: 'result',
+                        subtype: 'success',
+                        result: rawStdout.trim()
+                    });
+                }
+            }
+
             resolve({
                 events,
+                rawStdout,
                 stderr,
                 code,
                 signal,
