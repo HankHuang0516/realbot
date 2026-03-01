@@ -5,6 +5,15 @@
 // ============================================
 const express = require('express');
 
+// Lazy-load Anthropic client (only when ANTHROPIC_API_KEY is set)
+let _anthropicClient = null;
+function getAnthropicClient() {
+    if (!_anthropicClient && process.env.ANTHROPIC_API_KEY) {
+        _anthropicClient = require('./anthropic-client');
+    }
+    return _anthropicClient;
+}
+
 module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstructions, feedbackModule }) {
     const router = express.Router();
 
@@ -337,16 +346,46 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         return { matched: false };
     }
 
-    // ── Proxy Forwarding ────────────────────────
+    // ── Proxy Forwarding (Anthropic direct or CLI proxy) ──
     async function forwardToProxy(deviceId, entityId, problemDescription, errorMessages, recentLogs, recentFailures, opts = {}) {
+        // Priority: Anthropic direct API > CLI proxy > fallback
+        const anthropic = getAnthropicClient();
+        if (anthropic) {
+            console.log('[AI Support] Using Anthropic direct API for analysis');
+            const startTime = Date.now();
+            try {
+                const result = await anthropic.analyzeWithClaude({
+                    problemDescription,
+                    errorMessages,
+                    logs: recentLogs,
+                    handshakeFailures: recentFailures,
+                    deviceContext: { deviceId, entityId, timestamp: new Date().toISOString(), role: opts.role || 'bot' }
+                });
+                const latencyMs = Date.now() - startTime;
+                console.log(`[AI Support] Anthropic analysis done (${latencyMs}ms, confidence: ${result.confidence})`);
+                return {
+                    success: true,
+                    source: 'anthropic_direct',
+                    diagnosis: result.diagnosis,
+                    suggested_steps: result.suggested_steps,
+                    confidence: result.confidence,
+                    latency_ms: latencyMs
+                };
+            } catch (err) {
+                console.error(`[AI Support] Anthropic analysis error: ${err.message}`);
+                // Fall through to proxy or fallback
+            }
+        }
+
         const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
         const proxyKey = process.env.SUPPORT_API_KEY;
 
         if (!proxyUrl || !proxyKey) {
             const missing = [];
+            if (!process.env.ANTHROPIC_API_KEY) missing.push('ANTHROPIC_API_KEY');
             if (!proxyUrl) missing.push('CLAUDE_CLI_PROXY_URL');
             if (!proxyKey) missing.push('SUPPORT_API_KEY');
-            console.warn(`[AI Support] Proxy not configured — missing env: ${missing.join(', ')}`);
+            console.warn(`[AI Support] No AI backend configured — missing env: ${missing.join(', ')}`);
             return {
                 success: true,
                 source: 'fallback',
@@ -358,7 +397,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                     'Retry POST /api/bot/register with openclaw_version included.'
                 ],
                 confidence: 0,
-                debug: { reason: 'proxy_not_configured', missing_env: missing }
+                debug: { reason: 'no_ai_backend', missing_env: missing }
             };
         }
 
@@ -702,7 +741,42 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             });
         }
 
-        // Forward to proxy /chat
+        // Priority: Anthropic direct API > CLI proxy > fallback
+        const anthropic = getAnthropicClient();
+        if (anthropic) {
+            const startTime = Date.now();
+            try {
+                const result = await anthropic.chatWithClaude({
+                    message: message.trim(),
+                    history: (history || []).slice(-20),
+                    images: validImages.length > 0 ? validImages : undefined,
+                    deviceContext: {
+                        deviceId: req.user.deviceId,
+                        page: page || 'unknown',
+                        role: isAdmin ? 'admin' : 'user',
+                        email: req.user.email
+                    }
+                });
+                const latencyMs = Date.now() - startTime;
+
+                chatPool.query(
+                    'INSERT INTO ai_chat_queries (user_id, is_admin, page, latency_ms) VALUES ($1, $2, $3, $4)',
+                    [req.user.userId, isAdmin, page || null, latencyMs]
+                ).catch(() => {});
+
+                return res.json({
+                    success: true,
+                    response: result.response,
+                    remaining: rateCheck.remaining,
+                    latency_ms: latencyMs
+                });
+            } catch (err) {
+                console.error(`[AI Chat] Anthropic direct error: ${err.message}`);
+                // Fall through to proxy
+            }
+        }
+
+        // Proxy path
         const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
         const proxyKey = process.env.SUPPORT_API_KEY;
         if (!proxyUrl || !proxyKey) {
@@ -883,29 +957,71 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
 
     // ── Async Chat: Background Processor ────────
     async function processRequest(id) {
-        const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
-        const proxyKey = process.env.SUPPORT_API_KEY;
-
         await chatPool.query(`UPDATE ai_chat_requests SET status = 'processing' WHERE id = $1`, [id]);
 
         const { rows } = await chatPool.query('SELECT * FROM ai_chat_requests WHERE id = $1', [id]);
         if (!rows[0]) return;
         const row = rows[0];
 
+        const startTime = Date.now();
+        const history = row.history || [];
+        const images = row.images || [];
+        const ctx = row.device_context || {};
+
+        // Priority: Anthropic direct API > CLI proxy > fallback
+        const anthropic = getAnthropicClient();
+        if (anthropic) {
+            try {
+                const result = await anthropic.chatWithClaude({
+                    message: row.message,
+                    history,
+                    images: images.length > 0 ? images : undefined,
+                    deviceContext: ctx
+                });
+
+                const latencyMs = Date.now() - startTime;
+                let responseText = result.response;
+
+                // Auto-create GitHub issues for regular users
+                if (!row.is_admin && result.actions && result.actions.length > 0) {
+                    for (const action of result.actions) {
+                        if (action.type === 'create_issue' && action.title) {
+                            const issueResult = await autoCreateIssue(action, { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId });
+                            if (issueResult) {
+                                responseText += `\n\n---\n\ud83d\udccb GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
+                            }
+                        }
+                    }
+                }
+
+                await chatPool.query(
+                    `UPDATE ai_chat_requests SET status = 'completed', response = $2, actions = $3, latency_ms = $4, completed_at = NOW(), images = NULL WHERE id = $1`,
+                    [id, responseText, row.is_admin && result.actions ? JSON.stringify(result.actions) : null, latencyMs]
+                );
+
+                chatPool.query('INSERT INTO ai_chat_queries (user_id, is_admin, page, latency_ms) VALUES ($1, $2, $3, $4)',
+                    [row.user_id, row.is_admin, row.page, latencyMs]).catch(() => {});
+                return;
+            } catch (err) {
+                console.error(`[AI Chat] Anthropic direct error for ${id}: ${err.message}`);
+                // Fall through to proxy
+            }
+        }
+
+        // Proxy path
+        const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
+        const proxyKey = process.env.SUPPORT_API_KEY;
+
         if (!proxyUrl || !proxyKey) {
+            const latencyMs = Date.now() - startTime;
             await chatPool.query(
-                `UPDATE ai_chat_requests SET status = 'failed', error = $2, completed_at = NOW(), images = NULL WHERE id = $1`,
-                [id, 'AI assistant is not available at this time.']
+                `UPDATE ai_chat_requests SET status = 'failed', error = $2, latency_ms = $3, completed_at = NOW(), images = NULL WHERE id = $1`,
+                [id, 'AI assistant is not available at this time.', latencyMs]
             );
             return;
         }
 
-        const startTime = Date.now();
         try {
-            const history = row.history || [];
-            const images = row.images || [];
-            const ctx = row.device_context || {};
-
             const response = await fetch(proxyUrl + '/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${proxyKey}` },

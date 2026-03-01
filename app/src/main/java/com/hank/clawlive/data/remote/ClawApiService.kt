@@ -349,6 +349,24 @@ interface ClawApiService {
 
     @POST("api/ai-support/chat")
     suspend fun aiChat(@Body body: Map<String, @JvmSuppressWildcards Any>): AiChatResponse
+
+    @POST("api/ai-support/chat/submit")
+    suspend fun aiChatSubmit(@Body body: Map<String, @JvmSuppressWildcards Any>): AiChatSubmitResponse
+
+    @GET("api/ai-support/chat/poll/{requestId}")
+    suspend fun aiChatPoll(
+        @Path("requestId") requestId: String,
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
+    ): AiChatPollResponse
+
+    // ============ OAuth Social Login ============
+
+    @POST("api/auth/oauth/google")
+    suspend fun oauthGoogle(@Body body: Map<String, String>): OAuthLoginResponse
+
+    @POST("api/auth/oauth/facebook")
+    suspend fun oauthFacebook(@Body body: Map<String, String>): OAuthLoginResponse
 }
 
 // ============ Mission Control Response Models ============
@@ -484,6 +502,9 @@ data class BindEmailStatusResponse(
     val bound: Boolean = false,
     val email: String? = null,
     val emailVerified: Boolean = false,
+    val googleLinked: Boolean = false,
+    val facebookLinked: Boolean = false,
+    val displayName: String? = null,
     val error: String? = null
 )
 
@@ -493,6 +514,22 @@ data class AppLoginResponse(
     val deviceSecret: String? = null,
     val email: String? = null,
     val error: String? = null
+)
+
+data class OAuthLoginResponse(
+    val success: Boolean,
+    val isNewAccount: Boolean = false,
+    val deviceId: String? = null,
+    val deviceSecret: String? = null,
+    val user: OAuthUser? = null,
+    val error: String? = null
+)
+
+data class OAuthUser(
+    val id: String? = null,
+    val email: String? = null,
+    val displayName: String? = null,
+    val avatarUrl: String? = null
 )
 
 // ============ Notification Response Models ============
@@ -537,4 +574,23 @@ data class AiChatResponse(
     val message: String? = null,
     val busy: Boolean = false,
     val retry_after: Int? = null
+)
+
+data class AiChatSubmitResponse(
+    val success: Boolean = false,
+    val requestId: String? = null,
+    val status: String? = null,
+    val error: String? = null,
+    val message: String? = null,
+    val retry_after_ms: Long? = null
+)
+
+data class AiChatPollResponse(
+    val success: Boolean = false,
+    val status: String? = null,
+    val response: String? = null,
+    val busy: Boolean = false,
+    val retry_after: Int? = null,
+    val error: String? = null,
+    val latency_ms: Long? = null
 )
