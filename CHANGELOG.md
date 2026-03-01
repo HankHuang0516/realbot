@@ -1,3 +1,10 @@
+## [1.54.2](https://github.com/HankHuang0516/realbot/compare/v1.54.1...v1.54.2) (2026-03-01)
+
+
+### Bug Fixes
+
+* sanitize raw JSON from AI chat proxy response ([1bd6248](https://github.com/HankHuang0516/realbot/commit/1bd6248b6ce88b0ade3c96ae8d08d7ababdba401))
+
 ## [1.54.1](https://github.com/HankHuang0516/realbot/compare/v1.54.0...v1.54.1) (2026-03-01)
 
 
