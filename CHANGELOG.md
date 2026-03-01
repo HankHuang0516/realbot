@@ -1,3 +1,10 @@
+## [1.53.2](https://github.com/HankHuang0516/realbot/compare/v1.53.1...v1.53.2) (2026-03-01)
+
+
+### Bug Fixes
+
+* chat filter shows broadcast/speak-to messages for recipient entities ([1772877](https://github.com/HankHuang0516/realbot/commit/17728779d12acf7ad95e22be39ebc39f09b9bb6c))
+
 ## [1.53.1](https://github.com/HankHuang0516/realbot/compare/v1.53.0...v1.53.1) (2026-03-01)
 
 
