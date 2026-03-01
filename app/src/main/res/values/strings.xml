@@ -106,6 +106,7 @@
     <string name="ai_chat_analyzing">AI is analyzing your image(s)…</string>
     <string name="ai_chat_thinking">Still working on it…</string>
     <string name="ai_chat_fallback_error">Sorry, I was unable to process your request. Please try rephrasing your question.</string>
+    <string name="ai_chat_view_feedback">View Feedback History →</string>
 
     <!-- Chat -->
     <string name="chat_history">Chat</string>
@@ -368,6 +369,15 @@
     <string name="account_recovery_link">Already have an account? Restore here</string>
     <string name="account_open_portal">Open Web Portal</string>
     <string name="account_copy_credentials">Copy Device Credentials</string>
+    <string name="account_or">or</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_in_facebook">Sign in with Facebook</string>
+    <string name="social_login_failed">Social login failed</string>
+    <string name="connected_accounts">Connected Accounts</string>
+    <string name="facebook_app_id" translatable="false">YOUR_FACEBOOK_APP_ID</string>
+    <string name="facebook_client_token" translatable="false">YOUR_FACEBOOK_CLIENT_TOKEN</string>
+    <string name="fb_login_protocol_scheme" translatable="false">fbYOUR_FACEBOOK_APP_ID</string>
+    <string name="google_server_client_id" translatable="false">YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
 
     <!-- Account Login -->
     <string name="account_login">Account Login</string>
