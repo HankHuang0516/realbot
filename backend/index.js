@@ -2684,7 +2684,8 @@ app.post('/api/client/speak', async (req, res) => {
  * The receiving entity gets the message with source marked as the sending entity.
  */
 app.post('/api/entity/speak-to', async (req, res) => {
-    const { deviceId, fromEntityId, toEntityId, botSecret, text, mediaType, mediaUrl } = req.body;
+    const { deviceId, fromEntityId, toEntityId, botSecret, text, mediaType, mediaUrl, expects_reply } = req.body;
+    const expectsReply = expects_reply !== false; // default true for backward compat
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -2800,11 +2801,17 @@ app.post('/api/entity/speak-to', async (req, res) => {
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
         pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
         pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${toId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
-        pushMsg += `To reply directly to Entity ${fromId}:\n`;
-        pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
-        pushMsg += `[BOT-TO-BOT] Remaining quota: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}. If the other entity is just repeating emotions with no new info, do NOT reply — just update your wallpaper status.`;
-        if (toRemaining <= 2) {
-            pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
+        if (expectsReply) {
+            pushMsg += `To reply directly to Entity ${fromId}:\n`;
+            pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
+            pushMsg += `[BOT-TO-BOT] Remaining quota: ${toRemaining}/${BOT2BOT_MAX_MESSAGES}. If the other entity is just repeating emotions with no new info, do NOT reply — just update your wallpaper status.`;
+            if (toRemaining <= 2) {
+                pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
+            }
+        } else {
+            pushMsg += `(Optional — only reply if truly necessary) To reply directly to Entity ${fromId}:\n`;
+            pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
+            pushMsg += `[NOTIFICATION — NO REPLY EXPECTED] This is an informational message. Do NOT reply via speak-to. If you want to acknowledge, just update your wallpaper status.`;
         }
         pushMsg += `\n\n[MESSAGE] From: ${sourceLabel}\n`;
         pushMsg += `Content: ${speakToText}`;
@@ -2874,6 +2881,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         pushed: hasWebhook ? "pending" : false,
         mode: hasWebhook ? "push" : "polling",
         reason: hasWebhook ? "fire_and_forget" : "no_webhook",
+        expects_reply: expectsReply,
         bindingType: bindingTypeTo,
         push_status: fromEntity.pushStatus || null
     });
@@ -3231,13 +3239,14 @@ app.post('/api/client/cross-speak', async (req, res) => {
 /**
  * POST /api/entity/broadcast
  * Broadcast message from one entity to all other bound entities on the same device.
- * Body: { deviceId, fromEntityId, botSecret, text }
+ * Body: { deviceId, fromEntityId, botSecret, text, expects_reply? }
  *
  * Requires botSecret of the SENDING entity for authentication.
  * All other bound entities on the same device will receive the message.
  */
 app.post('/api/entity/broadcast', async (req, res) => {
-    const { deviceId, fromEntityId, botSecret, text, mediaType, mediaUrl } = req.body;
+    const { deviceId, fromEntityId, botSecret, text, mediaType, mediaUrl, expects_reply } = req.body;
+    const expectsReplyBcast = expects_reply !== false; // default true for backward compat
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -3388,11 +3397,17 @@ app.post('/api/entity/broadcast', async (req, res) => {
             let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
             pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
             pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${toId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
-            pushMsg += `To reply directly to Entity ${fromId}:\n`;
-            pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
-            pushMsg += `[BOT-TO-BOT BROADCAST] Remaining quota: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}. IMPORTANT: Do NOT re-broadcast this message. Do NOT call /api/entity/broadcast with similar content. If you want to respond, use speak-to (reply directly) or just update your wallpaper status. If the broadcast is just repeating emotions with no new info, do NOT reply at all.`;
-            if (toRemainingBcast <= 2) {
-                pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
+            if (expectsReplyBcast) {
+                pushMsg += `To reply directly to Entity ${fromId}:\n`;
+                pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
+                pushMsg += `[BOT-TO-BOT BROADCAST] Remaining quota: ${toRemainingBcast}/${BOT2BOT_MAX_MESSAGES}. IMPORTANT: Do NOT re-broadcast this message. Do NOT call /api/entity/broadcast with similar content. If you want to respond, use speak-to (reply directly) or just update your wallpaper status. If the broadcast is just repeating emotions with no new info, do NOT reply at all.`;
+                if (toRemainingBcast <= 2) {
+                    pushMsg += ` WARNING: Quota almost exhausted, do NOT auto-reply.`;
+                }
+            } else {
+                pushMsg += `(Optional — only reply if truly necessary) To reply directly to Entity ${fromId}:\n`;
+                pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
+                pushMsg += `[NOTIFICATION BROADCAST — NO REPLY EXPECTED] This is an informational broadcast. Do NOT reply via speak-to or re-broadcast. If you want to acknowledge, just update your wallpaper status.`;
             }
             pushMsg += `\n\n[BROADCAST] From: ${sourceLabel}\n`;
             pushMsg += `Content: ${broadcastText}`;
@@ -3448,6 +3463,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
         sentCount: results.length,
         targets: results,
         broadcast: targetIds.length > 1,
+        expects_reply: expectsReplyBcast,
         push_status: fromEntity.pushStatus || null
     });
 });

@@ -611,9 +611,11 @@ The system employs a hidden logic to prevent identity spoofing during entity-to-
       "fromEntityId": 0,
       "toEntityId": 1,
       "botSecret": "sending-entity-bot-secret",
-      "text": "Hey Entity 1!"
+      "text": "Hey Entity 1!",
+      "expects_reply": true
     }
     ```
+    * `expects_reply` (optional, default `true`): Set to `false` when your message is informational and does NOT need a response (e.g., "goodnight", "FYI: weather is sunny", status updates). The receiving bot will be instructed not to reply.
 *   **Returns**:
     ```json
     {
@@ -709,9 +711,11 @@ Useful for group announcements or coordinated actions.
       "deviceId": "device-xxx",
       "fromEntityId": 0,
       "botSecret": "sending-entity-bot-secret",
-      "text": "Hello everyone!"
+      "text": "Hello everyone!",
+      "expects_reply": true
     }
     ```
+    * `expects_reply` (optional, default `true`): Set to `false` for informational broadcasts that don't need responses (e.g., "goodnight everyone", status updates).
 *   **Returns**:
     ```json
     {
