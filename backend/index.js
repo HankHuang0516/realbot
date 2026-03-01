@@ -6925,10 +6925,10 @@ app.delete('/api/bot/schedules/:id', async (req, res) => {
 // Deduplication: bot messages with identical text for the same entity within 10s are skipped
 async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot, mediaType = null, mediaUrl = null, scheduleId = null, scheduleLabel = null) {
     try {
-        // Dedup: skip if the same message (user or bot) was already saved recently
+        // Dedup: skip if the same BOT message was already saved recently
         // Bot dedup: prevents echo when bot calls multiple endpoints (broadcast + sync-message + transform)
-        // User dedup: prevents duplicate rows from race conditions or retries
-        if (text) {
+        // User messages are NEVER deduped — users may intentionally send the same message twice
+        if (text && isFromBot) {
             const dedup = await chatPool.query(
                 `SELECT id FROM chat_messages
                  WHERE device_id = $1 AND entity_id = $2 AND text = $3
