@@ -1,3 +1,10 @@
+## [1.59.5](https://github.com/HankHuang0516/realbot/compare/v1.59.4...v1.59.5) (2026-03-01)
+
+
+### Bug Fixes
+
+* sanitize raw CLI JSON in async path + stream-json monitoring for proxy ([b8ab09b](https://github.com/HankHuang0516/realbot/commit/b8ab09ba6c12f842e386734ba8fc55c40004e53b))
+
 ## [1.59.4](https://github.com/HankHuang0516/realbot/compare/v1.59.3...v1.59.4) (2026-03-01)
 
 
