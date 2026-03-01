@@ -288,6 +288,21 @@ function summarizeEvent(event) {
         summary.content_length = content.length;
         summary.preview = content.slice(0, 300);
         summary.is_error = event.is_error || false;
+    } else if (event.type === 'user' && event.message?.content) {
+        // Tool results come as "user" messages in stream-json
+        const content = event.message.content;
+        if (typeof content === 'string') {
+            summary.content_length = content.length;
+            summary.preview = content.slice(0, 300);
+        } else if (Array.isArray(content)) {
+            summary.content = content.map(c => {
+                if (c.type === 'tool_result') {
+                    const text = typeof c.content === 'string' ? c.content : JSON.stringify(c.content || '');
+                    return { type: 'tool_result', tool_use_id: c.tool_use_id, is_error: c.is_error || false, length: text.length, preview: text.slice(0, 300) };
+                }
+                return { type: c.type };
+            });
+        }
     } else if (event.type === 'result') {
         summary.subtype = event.subtype;
         summary.num_turns = event.num_turns;
@@ -523,7 +538,7 @@ app.post('/chat', async (req, res) => {
     const startTime = Date.now();
     try {
         // Build Claude CLI args
-        const cliArgs = ['--model', 'sonnet', '--max-turns', '6'];
+        const cliArgs = ['--model', 'sonnet', '--max-turns', '15'];
         const tools = [];
         if (fs.existsSync(path.join(REPO_DIR, '.git'))) {
             tools.push('Read', 'Glob', 'Grep');
@@ -577,7 +592,25 @@ app.post('/chat', async (req, res) => {
 
         if (parsed.status === 'error_max_turns') {
             session.status = 'error_max_turns';
-            const partialText = parsed.responseText || 'Sorry, this question was too complex for me to fully analyze. Could you try asking a more specific question?';
+            // Try to extract partial text from intermediate assistant events
+            let partialText = parsed.responseText;
+            if (!partialText) {
+                // Fallback: collect any text blocks from assistant events
+                const textParts = [];
+                for (const e of events) {
+                    if (e.type === 'assistant' && e.message?.content) {
+                        for (const block of e.message.content) {
+                            if (block.type === 'text' && block.text) textParts.push(block.text);
+                        }
+                    }
+                }
+                if (textParts.length > 0) {
+                    partialText = textParts.join('\n');
+                }
+            }
+            if (!partialText) {
+                partialText = 'Sorry, this question required more analysis steps than allowed. Could you try asking a more specific question?';
+            }
             session.response = partialText.slice(0, 500);
             finalizeSession(session);
 
@@ -726,6 +759,7 @@ RULES:
 - NON-INTERACTIVE mode: use tools directly, no permission prompts.
 - Respond in the SAME LANGUAGE as the user (Chinese → Chinese, English → English).
 - Concise (1-4 paragraphs). Use markdown. Never reveal secrets/tokens/device IDs.
+- IMPORTANT: After using tools to gather data, ALWAYS produce a text response summarizing your findings. Never end a turn with only tool calls and no text output.
 
 ${imagePaths.length > 0 ? `USER ATTACHED ${imagePaths.length} IMAGE(S):
 Use Read tool to view: ${imagePaths.map((p, i) => `${p}`).join(', ')}
