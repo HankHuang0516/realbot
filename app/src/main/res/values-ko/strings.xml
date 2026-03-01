@@ -305,6 +305,11 @@
     <string name="account_recovery_link">이미 계정이 있으신가요? 여기서 복원</string>
     <string name="account_open_portal">Web Portal 열기</string>
     <string name="account_copy_credentials">기기 인증 정보 복사</string>
+    <string name="account_or">또는</string>
+    <string name="sign_in_google">Google로 로그인</string>
+    <string name="sign_in_facebook">Facebook으로 로그인</string>
+    <string name="social_login_failed">소셜 로그인 실패</string>
+    <string name="connected_accounts">연결된 계정</string>
 
     <string name="account_login">계정 로그인</string>
     <string name="account_login_hint">연동된 이메일로 로그인하여 재설치 후 기기 데이터를 복원하세요.</string>

@@ -271,6 +271,11 @@
     <string name="account_recovery_link">已有帳號？點此恢復</string>
     <string name="account_open_portal">開啟 Web Portal</string>
     <string name="account_copy_credentials">複製裝置憑證</string>
+    <string name="account_or">或</string>
+    <string name="sign_in_google">使用 Google 登入</string>
+    <string name="sign_in_facebook">使用 Facebook 登入</string>
+    <string name="social_login_failed">社群登入失敗</string>
+    <string name="connected_accounts">已連結帳號</string>
 
     <!-- Account Login -->
     <string name="account_login">帳號登入</string>

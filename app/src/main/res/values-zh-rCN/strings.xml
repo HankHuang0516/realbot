@@ -306,6 +306,11 @@
     <string name="account_recovery_link">已有账号？点此恢复</string>
     <string name="account_open_portal">打开 Web Portal</string>
     <string name="account_copy_credentials">复制设备凭证</string>
+    <string name="account_or">或</string>
+    <string name="sign_in_google">使用 Google 登录</string>
+    <string name="sign_in_facebook">使用 Facebook 登录</string>
+    <string name="social_login_failed">社交登录失败</string>
+    <string name="connected_accounts">已关联账号</string>
 
     <string name="account_login">账号登录</string>
     <string name="account_login_hint">使用已绑定的邮箱登录，可在重新安装后恢复设备数据。</string>

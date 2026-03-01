@@ -305,6 +305,11 @@
     <string name="account_recovery_link">มีบัญชีอยู่แล้ว? กู้คืนที่นี่</string>
     <string name="account_open_portal">เปิด Web Portal</string>
     <string name="account_copy_credentials">คัดลอกข้อมูลรับรองอุปกรณ์</string>
+    <string name="account_or">หรือ</string>
+    <string name="sign_in_google">เข้าสู่ระบบด้วย Google</string>
+    <string name="sign_in_facebook">เข้าสู่ระบบด้วย Facebook</string>
+    <string name="social_login_failed">เข้าสู่ระบบโซเชียลล้มเหลว</string>
+    <string name="connected_accounts">บัญชีที่เชื่อมต่อ</string>
 
     <string name="account_login">เข้าสู่ระบบบัญชี</string>
     <string name="account_login_hint">เข้าสู่ระบบด้วยอีเมลที่ผูกไว้เพื่อกู้คืนข้อมูลอุปกรณ์หลังจากติดตั้งใหม่</string>

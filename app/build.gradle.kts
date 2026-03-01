@@ -106,6 +106,14 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
 
+    // Google Sign-In (Credential Manager)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services)
+    implementation(libs.google.id)
+
+    // Facebook Login
+    implementation(libs.facebook.login)
+
     // Unit test dependencies
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.code.gson:gson:2.10.1")
