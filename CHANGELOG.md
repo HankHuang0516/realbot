@@ -1,3 +1,10 @@
+## [1.60.1](https://github.com/HankHuang0516/realbot/compare/v1.60.0...v1.60.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* add fallback parsing when stream-json produces no NDJSON events ([8034150](https://github.com/HankHuang0516/realbot/commit/8034150517093c2fdffd340eca892c1d24af94bc))
+
 # [1.60.0](https://github.com/HankHuang0516/realbot/compare/v1.59.5...v1.60.0) (2026-03-01)
 
 
