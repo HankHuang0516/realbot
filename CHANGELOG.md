@@ -1,3 +1,10 @@
+## [1.60.3](https://github.com/HankHuang0516/realbot/compare/v1.60.2...v1.60.3) (2026-03-01)
+
+
+### Bug Fixes
+
+* add Cache-Control no-cache for i18n.js to prevent stale translations ([4318f75](https://github.com/HankHuang0516/realbot/commit/4318f75487ae9316aafc633d3ebf71e417cb5a23))
+
 ## [1.60.2](https://github.com/HankHuang0516/realbot/compare/v1.60.1...v1.60.2) (2026-03-01)
 
 
