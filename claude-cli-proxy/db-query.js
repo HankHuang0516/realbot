@@ -10,6 +10,20 @@
 // ============================================
 
 const { Client } = require('pg');
+const fss = require('fs');
+const pathh = require('path');
+
+// Resolve DATABASE_URL: env var → config file fallback
+const DATABASE_URL = process.env.DATABASE_URL || (() => {
+    try {
+        return fss.readFileSync(pathh.join(__dirname, '.db-config'), 'utf8').trim();
+    } catch { return null; }
+})();
+
+if (!DATABASE_URL) {
+    console.error('ERROR: No DATABASE_URL (env var not set and .db-config not found)');
+    process.exit(1);
+}
 
 const sql = process.argv[2];
 
@@ -35,7 +49,7 @@ for (const kw of forbidden) {
 }
 
 (async () => {
-    const client = new Client(); // uses DATABASE_URL env var
+    const client = new Client({ connectionString: DATABASE_URL });
     try {
         await client.connect();
         const result = await client.query(sql);
