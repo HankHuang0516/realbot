@@ -1,3 +1,10 @@
+# [1.60.0](https://github.com/HankHuang0516/realbot/compare/v1.59.5...v1.60.0) (2026-03-01)
+
+
+### Features
+
+* add /api/ai-support/proxy-sessions admin endpoint for session monitoring ([ca06dd8](https://github.com/HankHuang0516/realbot/commit/ca06dd86a005dcb8aa6c0830cf6ca14d9f7f9781))
+
 ## [1.59.5](https://github.com/HankHuang0516/realbot/compare/v1.59.4...v1.59.5) (2026-03-01)
 
 
