@@ -641,16 +641,15 @@
             if (!facebookAppId) return showMsg('loginError', 'Facebook login not configured');
             if (typeof FB === 'undefined') return showMsg('loginError', 'Facebook SDK loading...');
 
-            FB.login(async function (response) {
+            FB.login(function (response) {
                 if (response.authResponse) {
-                    try {
-                        await apiCall('POST', '/api/auth/oauth/facebook', {
-                            accessToken: response.authResponse.accessToken
-                        });
+                    apiCall('POST', '/api/auth/oauth/facebook', {
+                        accessToken: response.authResponse.accessToken
+                    }).then(function () {
                         window.location.href = 'dashboard.html';
-                    } catch (e) {
+                    }).catch(function (e) {
                         showMsg('loginError', e.message || 'Facebook login failed');
-                    }
+                    });
                 }
             }, { scope: 'email,public_profile' });
         }
