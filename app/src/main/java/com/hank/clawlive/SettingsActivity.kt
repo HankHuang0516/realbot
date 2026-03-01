@@ -35,6 +35,15 @@ import com.hank.clawlive.data.local.LayoutPreferences
 import com.hank.clawlive.data.local.UsageManager
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.remote.TelemetryHelper
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 import com.hank.clawlive.ui.AiChatFabHelper
 import com.hank.clawlive.ui.BottomNavHelper
 import com.hank.clawlive.ui.EntityChipHelper
@@ -72,6 +81,10 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var tvAccountCopyCredentials: TextView
     private lateinit var btnAccountBindEmail: MaterialButton
     private lateinit var tvAccountRecoveryLink: TextView
+    private lateinit var btnGoogleSignIn: MaterialButton
+    private lateinit var btnFacebookSignIn: MaterialButton
+    private lateinit var tvConnectedProviders: TextView
+    private lateinit var facebookCallbackManager: CallbackManager
     private lateinit var chipGroupLanguage: ChipGroup
     private lateinit var chipLangEn: Chip
     private lateinit var chipLangZh: Chip
@@ -183,6 +196,9 @@ class SettingsActivity : AppCompatActivity() {
         tvAccountCopyCredentials = findViewById(R.id.tvAccountCopyCredentials)
         btnAccountBindEmail = findViewById(R.id.btnAccountBindEmail)
         tvAccountRecoveryLink = findViewById(R.id.tvAccountRecoveryLink)
+        btnGoogleSignIn = findViewById(R.id.btnGoogleSignIn)
+        btnFacebookSignIn = findViewById(R.id.btnFacebookSignIn)
+        tvConnectedProviders = findViewById(R.id.tvConnectedProviders)
         btnDebugEntityLimit = findViewById(R.id.btnDebugEntityLimit)
         notifPrefsContainer = findViewById(R.id.notifPrefsContainer)
         notifHeader = findViewById(R.id.notifHeader)
@@ -239,6 +255,19 @@ class SettingsActivity : AppCompatActivity() {
             TelemetryHelper.trackAction("account_card_recovery")
             showAccountLoginDialog()
         }
+
+        btnGoogleSignIn.setOnClickListener {
+            TelemetryHelper.trackAction("account_card_google_sign_in")
+            startGoogleSignIn()
+        }
+
+        btnFacebookSignIn.setOnClickListener {
+            TelemetryHelper.trackAction("account_card_facebook_sign_in")
+            startFacebookLogin()
+        }
+
+        // Initialize Facebook CallbackManager
+        facebookCallbackManager = CallbackManager.Factory.create()
 
         btnDebugEntityLimit.setOnClickListener {
             val current = layoutPrefs.debugEntityLimit
@@ -375,8 +404,13 @@ class SettingsActivity : AppCompatActivity() {
                     deviceManager.deviceId,
                     deviceManager.deviceSecret
                 )
-                if (status.bound && status.email != null) {
-                    showAccountBoundState(status.email, status.emailVerified)
+                if (status.bound && (status.email != null || status.googleLinked || status.facebookLinked)) {
+                    showAccountBoundState(
+                        status.email ?: status.displayName ?: "",
+                        status.emailVerified,
+                        status.googleLinked,
+                        status.facebookLinked
+                    )
                 } else {
                     showAccountUnboundState()
                 }
@@ -387,7 +421,12 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun showAccountBoundState(email: String, verified: Boolean) {
+    private fun showAccountBoundState(
+        email: String,
+        verified: Boolean,
+        googleLinked: Boolean = false,
+        facebookLinked: Boolean = false
+    ) {
         accountStatusLoading.visibility = View.GONE
         accountBoundLayout.visibility = View.VISIBLE
         accountUnboundLayout.visibility = View.GONE
@@ -401,12 +440,113 @@ class SettingsActivity : AppCompatActivity() {
             tvAccountVerified.text = getString(R.string.bind_email_not_verified)
             tvAccountVerified.setTextColor(0xFFFF9800.toInt())
         }
+
+        // Show connected providers
+        val providers = mutableListOf<String>()
+        if (googleLinked) providers.add("Google")
+        if (facebookLinked) providers.add("Facebook")
+        if (providers.isNotEmpty()) {
+            tvConnectedProviders.text = "${getString(R.string.connected_accounts)}: ${providers.joinToString(", ")}"
+            tvConnectedProviders.visibility = View.VISIBLE
+        } else {
+            tvConnectedProviders.visibility = View.GONE
+        }
     }
 
     private fun showAccountUnboundState() {
         accountStatusLoading.visibility = View.GONE
         accountBoundLayout.visibility = View.GONE
         accountUnboundLayout.visibility = View.VISIBLE
+    }
+
+    private fun startGoogleSignIn() {
+        lifecycleScope.launch {
+            try {
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setServerClientId(getString(R.string.google_server_client_id))
+                    .setFilterByAuthorizedAccounts(false)
+                    .build()
+
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+
+                val credentialManager = CredentialManager.create(this@SettingsActivity)
+                val result = credentialManager.getCredential(this@SettingsActivity, request)
+                val credential = result.credential
+
+                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                val idToken = googleIdTokenCredential.idToken
+
+                sendOAuthToBackend("google", mapOf(
+                    "idToken" to idToken,
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret
+                ))
+            } catch (e: Exception) {
+                Timber.e(e, "Google Sign-In failed")
+                Toast.makeText(this@SettingsActivity, getString(R.string.social_login_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun startFacebookLogin() {
+        LoginManager.getInstance().registerCallback(facebookCallbackManager,
+            object : FacebookCallback<LoginResult> {
+                override fun onSuccess(result: LoginResult) {
+                    val accessToken = result.accessToken.token
+                    sendOAuthToBackend("facebook", mapOf(
+                        "accessToken" to accessToken,
+                        "deviceId" to deviceManager.deviceId,
+                        "deviceSecret" to deviceManager.deviceSecret
+                    ))
+                }
+
+                override fun onCancel() {
+                    Timber.d("Facebook login cancelled")
+                }
+
+                override fun onError(error: FacebookException) {
+                    Timber.e(error, "Facebook login failed")
+                    Toast.makeText(this@SettingsActivity, getString(R.string.social_login_failed), Toast.LENGTH_SHORT).show()
+                }
+            })
+        LoginManager.getInstance().logInWithReadPermissions(this, listOf("email", "public_profile"))
+    }
+
+    private fun sendOAuthToBackend(provider: String, body: Map<String, String>) {
+        lifecycleScope.launch {
+            try {
+                val response = if (provider == "google") {
+                    NetworkModule.api.oauthGoogle(body)
+                } else {
+                    NetworkModule.api.oauthFacebook(body)
+                }
+
+                if (response.success) {
+                    // Update device credentials if returned
+                    if (response.deviceId != null && response.deviceSecret != null) {
+                        deviceManager.setCredentials(response.deviceId, response.deviceSecret)
+                    }
+                    Toast.makeText(this@SettingsActivity,
+                        getString(R.string.account_login_success_title), Toast.LENGTH_SHORT).show()
+                    loadAccountStatus()
+                } else {
+                    Toast.makeText(this@SettingsActivity,
+                        response.error ?: getString(R.string.social_login_failed), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "OAuth backend call failed")
+                Toast.makeText(this@SettingsActivity,
+                    getString(R.string.social_login_failed), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        facebookCallbackManager.onActivityResult(requestCode, resultCode, data)
     }
 
     private fun showBindEmailDialog(deviceId: String, deviceSecret: String) {

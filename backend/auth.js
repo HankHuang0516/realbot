@@ -1158,6 +1158,38 @@ module.exports = function(devices, getOrCreateDevice) {
         }
     });
 
+    // Facebook Data Deletion Callback (required by Facebook platform policy)
+    router.post('/oauth/facebook/data-deletion', (req, res) => {
+        const signedRequest = req.body.signed_request;
+        if (!signedRequest || !FACEBOOK_APP_SECRET) {
+            return res.json({ url: `${BASE_URL}/portal/index.html`, confirmation_code: 'no_data' });
+        }
+
+        try {
+            const [encodedSig, payload] = signedRequest.split('.');
+            const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8'));
+            const userId = data.user_id;
+
+            // Delete user's Facebook link asynchronously
+            pool.query(
+                `UPDATE users SET facebook_id = NULL WHERE facebook_id = $1`,
+                [userId]
+            ).then(() => {
+                console.log(`[Auth] Facebook data deletion for fb user ${userId}`);
+            }).catch(err => {
+                console.error('[Auth] Facebook data deletion error:', err.message);
+            });
+
+            res.json({
+                url: `${BASE_URL}/portal/index.html`,
+                confirmation_code: `fb_del_${userId}`
+            });
+        } catch (err) {
+            console.error('[Auth] Facebook data deletion parse error:', err.message);
+            res.json({ url: `${BASE_URL}/portal/index.html`, confirmation_code: 'parse_error' });
+        }
+    });
+
     // Soft auth: populate req.user from cookie if valid, but never reject
     function softAuthMiddleware(req, res, next) {
         const token = req.cookies && req.cookies.eclaw_session;

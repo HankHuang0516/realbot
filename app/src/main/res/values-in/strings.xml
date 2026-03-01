@@ -305,6 +305,11 @@
     <string name="account_recovery_link">Sudah punya akun? Pulihkan di sini</string>
     <string name="account_open_portal">Buka Web Portal</string>
     <string name="account_copy_credentials">Salin Kredensial Perangkat</string>
+    <string name="account_or">atau</string>
+    <string name="sign_in_google">Masuk dengan Google</string>
+    <string name="sign_in_facebook">Masuk dengan Facebook</string>
+    <string name="social_login_failed">Login sosial gagal</string>
+    <string name="connected_accounts">Akun Terhubung</string>
 
     <string name="account_login">Login Akun</string>
     <string name="account_login_hint">Masuk dengan email terikat Anda untuk memulihkan data perangkat setelah menginstal ulang.</string>

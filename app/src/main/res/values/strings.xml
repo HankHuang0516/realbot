@@ -374,10 +374,10 @@
     <string name="sign_in_facebook">Sign in with Facebook</string>
     <string name="social_login_failed">Social login failed</string>
     <string name="connected_accounts">Connected Accounts</string>
-    <string name="facebook_app_id" translatable="false">YOUR_FACEBOOK_APP_ID</string>
-    <string name="facebook_client_token" translatable="false">YOUR_FACEBOOK_CLIENT_TOKEN</string>
-    <string name="fb_login_protocol_scheme" translatable="false">fbYOUR_FACEBOOK_APP_ID</string>
-    <string name="google_server_client_id" translatable="false">YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
+    <string name="facebook_app_id" translatable="false">772387505935344</string>
+    <string name="facebook_client_token" translatable="false">139b350cf525d7785d370b1813e77838</string>
+    <string name="fb_login_protocol_scheme" translatable="false">fb772387505935344</string>
+    <string name="google_server_client_id" translatable="false">857252321032-3e8ajfc30up4957l8lqns562dee7ll72.apps.googleusercontent.com</string>
 
     <!-- Account Login -->
     <string name="account_login">Account Login</string>

@@ -305,6 +305,11 @@
     <string name="account_recovery_link">Đã có tài khoản? Khôi phục tại đây</string>
     <string name="account_open_portal">Mở Web Portal</string>
     <string name="account_copy_credentials">Sao chép thông tin thiết bị</string>
+    <string name="account_or">hoặc</string>
+    <string name="sign_in_google">Đăng nhập bằng Google</string>
+    <string name="sign_in_facebook">Đăng nhập bằng Facebook</string>
+    <string name="social_login_failed">Đăng nhập mạng xã hội thất bại</string>
+    <string name="connected_accounts">Tài khoản liên kết</string>
 
     <string name="account_login">Đăng nhập tài khoản</string>
     <string name="account_login_hint">Đăng nhập bằng email đã liên kết để khôi phục dữ liệu thiết bị sau khi cài đặt lại.</string>

@@ -301,6 +301,16 @@
                             android:layout_marginBottom="8dp"
                             style="@style/Widget.Material3.Button"/>
 
+                        <!-- Connected Accounts -->
+                        <TextView
+                            android:id="@+id/tvConnectedProviders"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="12sp"
+                            android:textColor="#99FFFFFF"
+                            android:layout_marginBottom="8dp"
+                            android:visibility="gone"/>
+
                         <!-- Copy Credentials link -->
                         <TextView
                             android:id="@+id/tvAccountCopyCredentials"
@@ -353,6 +363,46 @@
                             android:textSize="12sp"
                             android:textColor="#99FFFFFF"
                             android:layout_marginBottom="12dp"/>
+
+                        <!-- Google Sign-In button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnGoogleSignIn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/sign_in_google"
+                            android:textColor="#DDFFFFFF"
+                            app:backgroundTint="#333333"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_google"
+                            app:iconGravity="textStart"
+                            app:iconSize="20dp"
+                            android:layout_marginBottom="8dp"
+                            style="@style/Widget.Material3.Button"/>
+
+                        <!-- Facebook Sign-In button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnFacebookSignIn"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/sign_in_facebook"
+                            android:textColor="#DDFFFFFF"
+                            app:backgroundTint="#333333"
+                            app:cornerRadius="8dp"
+                            app:icon="@drawable/ic_facebook"
+                            app:iconGravity="textStart"
+                            app:iconSize="20dp"
+                            android:layout_marginBottom="8dp"
+                            style="@style/Widget.Material3.Button"/>
+
+                        <!-- "or" divider -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/account_or"
+                            android:textSize="12sp"
+                            android:textColor="#66FFFFFF"
+                            android:gravity="center"
+                            android:layout_marginBottom="8dp"/>
 
                         <!-- Bind Email button -->
                         <com.google.android.material.button.MaterialButton

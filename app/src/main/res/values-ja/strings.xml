@@ -305,6 +305,11 @@
     <string name="account_recovery_link">アカウントをお持ちですか？こちらから復元</string>
     <string name="account_open_portal">Web Portal を開く</string>
     <string name="account_copy_credentials">デバイス認証情報をコピー</string>
+    <string name="account_or">または</string>
+    <string name="sign_in_google">Googleでログイン</string>
+    <string name="sign_in_facebook">Facebookでログイン</string>
+    <string name="social_login_failed">ソーシャルログインに失敗しました</string>
+    <string name="connected_accounts">連携済みアカウント</string>
 
     <string name="account_login">アカウントログイン</string>
     <string name="account_login_hint">紐付け済みのメールアドレスでログインすると、再インストール後にデバイスデータを復元できます。</string>
