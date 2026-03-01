@@ -923,6 +923,14 @@ app.post('/warmup', (req, res) => {
     }
 })();
 
+// ── Write DB config for child processes ─────
+// Claude CLI's Bash tool may not inherit env vars, so persist DATABASE_URL to file
+if (process.env.DATABASE_URL) {
+    const dbConfigPath = path.join(__dirname, '.db-config');
+    fs.writeFileSync(dbConfigPath, process.env.DATABASE_URL);
+    console.log(`[Startup] DATABASE_URL written to ${dbConfigPath}`);
+}
+
 // ── Start Server ────────────────────────────
 app.listen(PORT, () => {
     console.log(`[Claude CLI Proxy] Listening on port ${PORT}`);
