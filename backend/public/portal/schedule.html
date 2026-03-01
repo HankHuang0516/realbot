@@ -453,6 +453,9 @@
             <div class="section-title" data-i18n="sched_history">History</div>
             <div class="card" id="historyCard">
                 <div id="historyList"></div>
+                <div id="loadMoreContainer" style="text-align:center;padding:12px 0;display:none;">
+                    <button class="btn btn-outline" id="loadMoreBtn" onclick="loadMoreHistory()" data-i18n="sched_load_more">Load More</button>
+                </div>
             </div>
         </div>
     </div>
@@ -475,6 +478,9 @@
         let allSchedules = [];
         let boundEntities = [];
         let refreshTimer = null;
+        const HISTORY_PAGE_SIZE = 20;
+        let historyOffset = 0;
+        let historyHasMore = false;
 
         // ENTITY_CHARS_DEFAULT, getAvatarForEntity, getEntityDisplayName, getEntityLabel
         // are provided by shared/entity-utils.js
@@ -526,19 +532,55 @@
                     allSchedules = data.schedules || [];
                 }
 
-                // Load execution history
+                // Load execution history (reset pagination)
+                historyOffset = 0;
                 const execData = await apiCall('GET',
                     '/api/schedule-executions?deviceId=' + encodeURIComponent(currentUser.deviceId) +
-                    '&deviceSecret=' + encodeURIComponent(currentUser.deviceSecret)
+                    '&deviceSecret=' + encodeURIComponent(currentUser.deviceSecret) +
+                    '&limit=' + HISTORY_PAGE_SIZE
                 );
                 if (execData.success) {
                     executionHistory = execData.schedules || [];
+                    historyHasMore = executionHistory.length >= HISTORY_PAGE_SIZE;
                 }
 
                 renderSchedules();
+                updateLoadMoreButton();
             } catch (e) {
                 console.error('Failed to load schedules:', e);
             }
+        }
+
+        async function loadMoreHistory() {
+            const btn = document.getElementById('loadMoreBtn');
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                historyOffset += HISTORY_PAGE_SIZE;
+                const execData = await apiCall('GET',
+                    '/api/schedule-executions?deviceId=' + encodeURIComponent(currentUser.deviceId) +
+                    '&deviceSecret=' + encodeURIComponent(currentUser.deviceSecret) +
+                    '&limit=' + HISTORY_PAGE_SIZE + '&offset=' + historyOffset
+                );
+                if (execData.success) {
+                    const newItems = execData.schedules || [];
+                    executionHistory = executionHistory.concat(newItems);
+                    historyHasMore = newItems.length >= HISTORY_PAGE_SIZE;
+                }
+                renderList('historyList', executionHistory, false);
+                updateLoadMoreButton();
+            } catch (e) {
+                console.error('Failed to load more history:', e);
+                historyOffset -= HISTORY_PAGE_SIZE; // rollback
+            } finally {
+                btn.disabled = false;
+                btn.textContent = i18n.t('sched_load_more') || 'Load More';
+            }
+        }
+
+        function updateLoadMoreButton() {
+            const container = document.getElementById('loadMoreContainer');
+            container.style.display = (historyHasMore && executionHistory.length > 0) ? '' : 'none';
         }
 
         // ── Render ──
@@ -574,9 +616,12 @@
                 if (s.label) {
                     detailHtml += '<span class="sched-label">' + esc(s.label) + '</span> &middot; ';
                 }
-                detailHtml += i18n.t('sched_created') + ': ' + formatTime(s.createdAt);
+                if (s.createdAt) {
+                    detailHtml += i18n.t('sched_created') + ': ' + formatTime(s.createdAt);
+                }
                 if (s.executedAt) {
-                    detailHtml += ' &middot; ' + i18n.t('sched_executed') + ': ' + formatTime(s.executedAt);
+                    if (s.createdAt) detailHtml += ' &middot; ';
+                    detailHtml += i18n.t('sched_executed') + ': ' + formatTime(s.executedAt);
                 }
 
                 let resultHtml = '';

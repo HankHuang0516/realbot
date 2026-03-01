@@ -6745,24 +6745,39 @@ app.get('/api/schedule-executions/:executionId/context', async (req, res) => {
         }
         const execution = execResult.rows[0];
 
-        // Find the scheduled chat message (source='scheduled', around execution time)
-        const scheduledMsg = await chatPool.query(
-            `SELECT * FROM chat_messages
-             WHERE device_id = $1 AND entity_id = $2 AND source = 'scheduled'
-             AND created_at BETWEEN ($3::timestamptz - INTERVAL '30 seconds') AND ($3::timestamptz + INTERVAL '30 seconds')
-             ORDER BY ABS(EXTRACT(EPOCH FROM (created_at - $3::timestamptz)))
-             LIMIT 1`,
-            [deviceId, execution.entity_id, execution.executed_at]
-        );
+        // Find the scheduled chat message by schedule_id (exact match), fallback to time window
+        let scheduledMsg;
+        if (execution.schedule_id) {
+            scheduledMsg = await chatPool.query(
+                `SELECT * FROM chat_messages
+                 WHERE device_id = $1 AND entity_id = $2 AND schedule_id = $3
+                 ORDER BY created_at DESC LIMIT 1`,
+                [deviceId, execution.entity_id, execution.schedule_id]
+            );
+        }
+        // Fallback: time-based matching if no schedule_id or no result
+        if (!scheduledMsg || scheduledMsg.rows.length === 0) {
+            scheduledMsg = await chatPool.query(
+                `SELECT * FROM chat_messages
+                 WHERE device_id = $1 AND entity_id = $2 AND source = 'scheduled'
+                 AND created_at BETWEEN ($3::timestamptz - INTERVAL '30 seconds') AND ($3::timestamptz + INTERVAL '30 seconds')
+                 ORDER BY ABS(EXTRACT(EPOCH FROM (created_at - $3::timestamptz)))
+                 LIMIT 1`,
+                [deviceId, execution.entity_id, execution.executed_at]
+            );
+        }
 
-        // Find bot replies to this entity within 5 minutes after execution
+        // Find bot replies: anchor from scheduled message time (more precise) or execution time
+        const replyAnchor = scheduledMsg.rows.length > 0
+            ? scheduledMsg.rows[0].created_at
+            : execution.executed_at;
         const botReplies = await chatPool.query(
             `SELECT * FROM chat_messages
              WHERE device_id = $1 AND entity_id = $2 AND is_from_bot = true
-             AND created_at > $3::timestamptz AND created_at < ($3::timestamptz + INTERVAL '5 minutes')
+             AND created_at > $3::timestamptz AND created_at < ($3::timestamptz + INTERVAL '10 minutes')
              ORDER BY created_at ASC
              LIMIT 5`,
-            [deviceId, execution.entity_id, execution.executed_at]
+            [deviceId, execution.entity_id, replyAnchor]
         );
 
         res.json({
