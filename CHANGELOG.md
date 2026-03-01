@@ -1,3 +1,10 @@
+# [1.61.0](https://github.com/HankHuang0516/realbot/compare/v1.60.4...v1.61.0) (2026-03-01)
+
+
+### Features
+
+* connect claude-cli-proxy to Postgres for direct DB queries ([5022543](https://github.com/HankHuang0516/realbot/commit/5022543780b04717812740d8de4c6acac21db711))
+
 ## [1.60.4](https://github.com/HankHuang0516/realbot/compare/v1.60.3...v1.60.4) (2026-03-01)
 
 
