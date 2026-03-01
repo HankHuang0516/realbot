@@ -1,3 +1,10 @@
+# [1.59.0](https://github.com/HankHuang0516/realbot/compare/v1.58.0...v1.59.0) (2026-03-01)
+
+
+### Features
+
+* complete Google + Facebook OAuth social login integration ([aae345a](https://github.com/HankHuang0516/realbot/commit/aae345ae0c0f0d3509e9d28c14d721e4f4516380))
+
 # [1.58.0](https://github.com/HankHuang0516/realbot/compare/v1.57.1...v1.58.0) (2026-03-01)
 
 
