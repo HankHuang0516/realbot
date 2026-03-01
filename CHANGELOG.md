@@ -1,3 +1,10 @@
+# [1.52.0](https://github.com/HankHuang0516/realbot/compare/v1.51.3...v1.52.0) (2026-03-01)
+
+
+### Features
+
+* add expects_reply field to bot-to-bot speak-to and broadcast APIs ([015c302](https://github.com/HankHuang0516/realbot/commit/015c302ec31dce9687f6b63fda289024a7008292))
+
 ## [1.51.3](https://github.com/HankHuang0516/realbot/compare/v1.51.2...v1.51.3) (2026-03-01)
 
 
