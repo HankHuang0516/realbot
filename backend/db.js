@@ -154,6 +154,23 @@ async function createTables() {
             )
         `);
 
+        // Cross-device contacts (friends system)
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS cross_device_contacts (
+                id SERIAL PRIMARY KEY,
+                device_id TEXT NOT NULL REFERENCES devices(device_id) ON DELETE CASCADE,
+                contact_public_code VARCHAR(8) NOT NULL,
+                contact_name TEXT,
+                contact_character TEXT,
+                contact_avatar TEXT,
+                added_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000,
+                UNIQUE(device_id, contact_public_code)
+            )
+        `);
+        await client.query(`
+            CREATE INDEX IF NOT EXISTS idx_contacts_device ON cross_device_contacts(device_id)
+        `);
+
         console.log('[DB] Database tables ready');
         client.release();
     } catch (err) {
@@ -685,6 +702,70 @@ async function saveFeedback(deviceId, message, appVersion) {
     }
 }
 
+// ── Cross-Device Contacts ──
+async function getContacts(deviceId) {
+    if (!pool) return [];
+    try {
+        const result = await pool.query(
+            `SELECT contact_public_code AS "publicCode", contact_name AS name, contact_character AS character, contact_avatar AS avatar, added_at AS "addedAt"
+             FROM cross_device_contacts WHERE device_id = $1 ORDER BY added_at ASC`,
+            [deviceId]
+        );
+        return result.rows;
+    } catch (err) {
+        console.error('[DB] Failed to get contacts:', err.message);
+        return [];
+    }
+}
+
+async function addContact(deviceId, publicCode, name, character, avatar) {
+    if (!pool) return null;
+    try {
+        const result = await pool.query(
+            `INSERT INTO cross_device_contacts (device_id, contact_public_code, contact_name, contact_character, contact_avatar, added_at)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (device_id, contact_public_code) DO UPDATE SET
+                contact_name = EXCLUDED.contact_name,
+                contact_character = EXCLUDED.contact_character,
+                contact_avatar = EXCLUDED.contact_avatar
+             RETURNING id, contact_public_code AS "publicCode", contact_name AS name, contact_character AS character, contact_avatar AS avatar, added_at AS "addedAt"`,
+            [deviceId, publicCode, name || null, character || null, avatar || null, Date.now()]
+        );
+        return result.rows[0];
+    } catch (err) {
+        console.error('[DB] Failed to add contact:', err.message);
+        return null;
+    }
+}
+
+async function removeContact(deviceId, publicCode) {
+    if (!pool) return false;
+    try {
+        await pool.query(
+            `DELETE FROM cross_device_contacts WHERE device_id = $1 AND contact_public_code = $2`,
+            [deviceId, publicCode]
+        );
+        return true;
+    } catch (err) {
+        console.error('[DB] Failed to remove contact:', err.message);
+        return false;
+    }
+}
+
+async function getContactCount(deviceId) {
+    if (!pool) return 0;
+    try {
+        const result = await pool.query(
+            `SELECT COUNT(*) AS count FROM cross_device_contacts WHERE device_id = $1`,
+            [deviceId]
+        );
+        return parseInt(result.rows[0].count);
+    } catch (err) {
+        console.error('[DB] Failed to get contact count:', err.message);
+        return 0;
+    }
+}
+
 // Close database connection
 async function closeDatabase() {
     if (pool) {
@@ -716,5 +797,10 @@ module.exports = {
     getPaidBorrowSlots,
     incrementPaidBorrowSlots,
     // Feedback
-    saveFeedback
+    saveFeedback,
+    // Cross-device contacts
+    getContacts,
+    addContact,
+    removeContact,
+    getContactCount
 };

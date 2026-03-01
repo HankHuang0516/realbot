@@ -3096,6 +3096,116 @@ app.get('/api/entity/lookup', (req, res) => {
     });
 });
 
+// ── Cross-Device Contacts (Friends System) ──
+const MAX_CONTACTS_PER_DEVICE = 20;
+
+/**
+ * GET /api/contacts — List contacts for a device, enriched with live data
+ */
+app.get('/api/contacts', async (req, res) => {
+    let deviceId = req.query.deviceId;
+    if (!deviceId && req.user) deviceId = req.user.deviceId;
+    if (!deviceId) return res.status(400).json({ success: false, error: 'Missing deviceId' });
+
+    const contacts = await db.getContacts(deviceId);
+    // Enrich with live data from publicCodeIndex
+    const enriched = contacts.map(c => {
+        const live = publicCodeIndex[c.publicCode];
+        if (live) {
+            const dev = devices[live.deviceId];
+            const ent = dev?.entities?.[live.entityId];
+            return {
+                ...c,
+                name: ent?.name || c.name,
+                character: ent?.character || c.character,
+                avatar: ent?.avatar || c.avatar,
+                online: true
+            };
+        }
+        return { ...c, online: false };
+    });
+    res.json({ success: true, contacts: enriched });
+});
+
+/**
+ * POST /api/contacts — Add a contact
+ * Body: { deviceId, deviceSecret, publicCode }
+ */
+app.post('/api/contacts', async (req, res) => {
+    let { deviceId, deviceSecret, publicCode } = req.body;
+    if (!deviceId && req.user) { deviceId = req.user.deviceId; deviceSecret = req.user.deviceSecret; }
+    if (!deviceId || !publicCode) return res.status(400).json({ success: false, error: 'Missing deviceId or publicCode' });
+
+    // Auth check
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        if (!req.user || req.user.deviceId !== deviceId) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+    }
+
+    // Validate code format
+    publicCode = publicCode.trim().toLowerCase();
+    if (!/^[a-z0-9]{3,8}$/.test(publicCode)) {
+        return res.status(400).json({ success: false, error: 'Invalid code format' });
+    }
+
+    // Check self
+    const selfEntry = publicCodeIndex[publicCode];
+    if (selfEntry && selfEntry.deviceId === deviceId) {
+        return res.status(400).json({ success: false, error: 'Cannot add own entity' });
+    }
+
+    // Check entity exists
+    if (!selfEntry) {
+        return res.status(404).json({ success: false, error: 'Entity not found' });
+    }
+
+    // Check limit
+    const count = await db.getContactCount(deviceId);
+    if (count >= MAX_CONTACTS_PER_DEVICE) {
+        return res.status(429).json({ success: false, error: 'Contact limit reached' });
+    }
+
+    // Check duplicate
+    const existing = await db.getContacts(deviceId);
+    if (existing.some(c => c.publicCode === publicCode)) {
+        return res.status(409).json({ success: false, error: 'Already in contacts' });
+    }
+
+    // Get live entity data
+    const dev = devices[selfEntry.deviceId];
+    const ent = dev?.entities?.[selfEntry.entityId];
+    const name = ent?.name || ent?.character || null;
+    const character = ent?.character || null;
+    const avatar = ent?.avatar || null;
+
+    const contact = await db.addContact(deviceId, publicCode, name, character, avatar);
+    if (!contact) return res.status(500).json({ success: false, error: 'Failed to add contact' });
+
+    res.json({ success: true, contact: { ...contact, online: true } });
+});
+
+/**
+ * DELETE /api/contacts — Remove a contact
+ * Body: { deviceId, deviceSecret, publicCode }
+ */
+app.delete('/api/contacts', async (req, res) => {
+    let { deviceId, deviceSecret, publicCode } = req.body;
+    if (!deviceId && req.user) { deviceId = req.user.deviceId; deviceSecret = req.user.deviceSecret; }
+    if (!deviceId || !publicCode) return res.status(400).json({ success: false, error: 'Missing deviceId or publicCode' });
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        if (!req.user || req.user.deviceId !== deviceId) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+    }
+
+    await db.removeContact(deviceId, publicCode.trim().toLowerCase());
+    res.json({ success: true });
+});
+
 /**
  * POST /api/client/cross-speak
  * Web portal user sends cross-device message (authenticates via session, not botSecret).

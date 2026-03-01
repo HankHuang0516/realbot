@@ -236,48 +236,83 @@
             white-space: nowrap;
         }
 
-        .btn-cross-device {
-            font-size: 11px;
-            padding: 2px 10px;
+        .target-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--card-border);
+            margin: 0 4px;
+            flex-shrink: 0;
+        }
+        .btn-add-contact {
+            font-size: 13px;
+            padding: 2px 8px;
             border-radius: 12px;
-            border: 1px solid var(--primary);
+            border: 1px dashed var(--primary);
             background: transparent;
             color: var(--primary);
             cursor: pointer;
             white-space: nowrap;
-            margin-left: auto;
         }
-        .btn-cross-device:hover, .btn-cross-device.active {
+        .btn-add-contact:hover {
             background: var(--primary);
             color: #fff;
         }
-        .cross-device-bar {
-            padding: 8px 16px;
-            background: var(--input-bg);
-            border-top: 1px solid var(--card-border);
+        .contact-chip {
+            position: relative;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 4px;
         }
-        .cross-device-input {
+        .contact-chip .btn-remove-contact {
+            font-size: 10px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: none;
+            background: var(--text-muted);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+        .contact-chip .btn-remove-contact:hover {
+            background: var(--danger);
+        }
+        .contact-chip.offline span {
+            opacity: 0.5;
+        }
+        .contact-offline-tag {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        .contact-add-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .contact-add-inline input {
             font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 14px;
-            letter-spacing: 2px;
-            width: 100px;
-            padding: 4px 8px;
+            font-size: 13px;
+            letter-spacing: 1px;
+            width: 80px;
+            padding: 2px 6px;
             border: 1px solid var(--card-border);
             border-radius: 6px;
             background: var(--bg);
             color: var(--text-primary);
             text-transform: lowercase;
         }
-        .cross-device-info {
+        .contact-add-inline .preview {
             font-size: 12px;
             color: var(--text-secondary);
-            flex: 1;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+        }
+        .contact-add-inline .btn-sm {
+            font-size: 11px;
+            padding: 2px 8px;
         }
 
         .target-check {
@@ -911,15 +946,6 @@
                     <input type="checkbox" checked onchange="toggleTargetAll(this)">
                     <span data-i18n="chat_filter_all">All</span>
                 </label>
-                <button class="btn-cross-device" id="btnCrossDevice" onclick="toggleCrossDeviceMode()" data-i18n="chat_cross_device">Cross-Device</button>
-            </div>
-            <!-- Cross-Device Target Input (hidden by default) -->
-            <div class="cross-device-bar" id="crossDeviceBar" style="display:none;">
-                <span class="target-label">&#x1F310;</span>
-                <input type="text" id="crossDeviceCode" class="cross-device-input" maxlength="6" placeholder="abc123" data-i18n-placeholder="chat_cross_device_placeholder">
-                <button class="btn btn-outline btn-sm" onclick="lookupCrossDeviceEntity()" data-i18n="chat_cross_device_lookup">Lookup</button>
-                <span class="cross-device-info" id="crossDeviceInfo"></span>
-                <button class="btn-cross-device active" onclick="toggleCrossDeviceMode()">&#x2715;</button>
             </div>
 
             <!-- Input Bar -->
@@ -1004,7 +1030,8 @@
         let currentFilter = 'all';
         let refreshInterval = null;
         let isFirstLoad = true;
-        let crossDeviceMode = false;
+        let contacts = [];           // from /api/contacts
+        let contactsLoaded = false;
         let _renderVersion = 0;
         let myPublicCodeMap = {};   // publicCode -> { entityId, label }
         let xdeviceLabelCache = {}; // publicCode -> label (remote entities)
@@ -1270,8 +1297,24 @@
                     }
                 });
                 renderTargetBar();
+                loadContacts();
             } catch (e) {
                 console.warn('Failed to load entities:', e.message);
+            }
+        }
+
+        async function loadContacts() {
+            try {
+                const data = await apiCall('GET', `/api/contacts?deviceId=${currentUser.deviceId}`);
+                contacts = data.contacts || [];
+                contactsLoaded = true;
+                contacts.forEach(c => {
+                    const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
+                    xdeviceLabelCache[c.publicCode] = `${avatar} ${escapeHtml(c.name || c.character || c.publicCode)}`;
+                });
+                renderTargetBar();
+            } catch (e) {
+                console.warn('Failed to load contacts:', e.message);
             }
         }
 
@@ -1279,8 +1322,8 @@
             const bar = document.getElementById('targetBar');
             const allLabel = document.getElementById('targetAll');
 
-            // Remove old dynamic checkboxes and loading hints
-            bar.querySelectorAll('.target-entity-check, .target-loading-hint').forEach(el => el.remove());
+            // Remove old dynamic elements
+            bar.querySelectorAll('.target-entity-check, .target-loading-hint, .target-separator, .target-contact-check, .btn-add-contact, .contact-add-inline').forEach(el => el.remove());
 
             if (boundEntities.length === 0) {
                 allLabel.style.display = 'none';
@@ -1290,7 +1333,7 @@
             // Show "All" only if more than 1 entity
             allLabel.style.display = boundEntities.length > 1 ? '' : 'none';
 
-            // Restore last selected targets (null = first time, default all checked)
+            // Restore last selected targets
             const saved = localStorage.getItem('chat_last_targets');
             const savedTargets = saved ? new Set(saved.split(',').map(Number)) : null;
 
@@ -1304,6 +1347,38 @@
                     <span>${avatar} ${escapeHtml(name)} (#${e.entityId})</span>`;
                 bar.appendChild(label);
             });
+
+            // ── Contacts section ──
+            if (contacts.length > 0 || contactsLoaded) {
+                const sep = document.createElement('span');
+                sep.className = 'target-separator';
+                bar.appendChild(sep);
+
+                const savedContacts = localStorage.getItem('chat_last_contact_targets');
+                const savedContactSet = savedContacts ? new Set(savedContacts.split(',')) : new Set();
+
+                contacts.forEach(c => {
+                    const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
+                    const name = c.name || c.character || c.publicCode;
+                    const isOffline = !c.online;
+                    const isChecked = savedContactSet.has(c.publicCode);
+
+                    const chip = document.createElement('label');
+                    chip.className = `target-check target-contact-check contact-chip${isOffline ? ' offline' : ''}`;
+                    chip.innerHTML = `<input type="checkbox" data-contact-code="${escapeHtml(c.publicCode)}" ${isChecked ? 'checked' : ''}>
+                        <span>${avatar} ${escapeHtml(name)}</span>
+                        ${isOffline ? `<span class="contact-offline-tag">${i18n.t('chat_contacts_offline')}</span>` : ''}
+                        <button class="btn-remove-contact" onclick="removeContact('${escapeHtml(c.publicCode)}', event)" title="Remove">&#x2715;</button>`;
+                    bar.appendChild(chip);
+                });
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn-add-contact';
+                addBtn.textContent = '\u2795';
+                addBtn.title = i18n.t('chat_contacts_add');
+                addBtn.onclick = () => showAddContactForm();
+                bar.appendChild(addBtn);
+            }
 
             // Sync "All" checkbox state
             updateTargetAll();
@@ -1325,92 +1400,137 @@
         }
 
         function getSelectedTargets() {
-            const targets = [];
+            const local = [];
             document.querySelectorAll('.target-entity-check input[type="checkbox"]').forEach(cb => {
-                if (cb.checked) {
-                    targets.push(parseInt(cb.dataset.entity));
+                if (cb.checked) local.push(parseInt(cb.dataset.entity));
+            });
+            if (local.length === 0 && boundEntities.length > 0) {
+                boundEntities.forEach(e => local.push(e.entityId));
+            }
+            const contactCodes = [];
+            document.querySelectorAll('.target-contact-check input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) contactCodes.push(cb.dataset.contactCode);
+            });
+            return { local, contacts: contactCodes };
+        }
+
+        // ── Contacts Management ──
+        function showAddContactForm() {
+            const bar = document.getElementById('targetBar');
+            bar.querySelectorAll('.contact-add-inline').forEach(el => el.remove());
+            bar.querySelectorAll('.btn-add-contact').forEach(el => el.remove());
+
+            const form = document.createElement('span');
+            form.className = 'contact-add-inline';
+            form.innerHTML = `<input type="text" maxlength="8" placeholder="${i18n.t('chat_contacts_add_placeholder')}" class="contact-code-input">
+                <span class="preview" id="contactPreview"></span>
+                <button class="btn btn-primary btn-sm" onclick="addContactFromForm()" disabled id="btnAddContact">${i18n.t('chat_contacts_add_btn')}</button>
+                <button class="btn btn-outline btn-sm" onclick="renderTargetBar()">${i18n.t('chat_contacts_add_cancel')}</button>`;
+            bar.appendChild(form);
+
+            const input = form.querySelector('.contact-code-input');
+            input.focus();
+            let debounceTimer = null;
+            input.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                const code = input.value.trim().toLowerCase();
+                const preview = document.getElementById('contactPreview');
+                const addBtn = document.getElementById('btnAddContact');
+                if (!code || code.length < 3) {
+                    preview.textContent = '';
+                    addBtn.disabled = true;
+                    return;
+                }
+                debounceTimer = setTimeout(async () => {
+                    try {
+                        const data = await apiCall('GET', `/api/entity/lookup?code=${encodeURIComponent(code)}`);
+                        if (data.success && data.entity) {
+                            const e = data.entity;
+                            const avatar = e.avatar || (e.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
+                            preview.textContent = `${avatar} ${e.name || e.character}`;
+                            preview.style.color = 'var(--text-primary)';
+                            addBtn.disabled = false;
+                            addBtn.dataset.code = code;
+                        } else {
+                            preview.textContent = i18n.t('chat_contacts_not_found');
+                            preview.style.color = 'var(--danger)';
+                            addBtn.disabled = true;
+                        }
+                    } catch (_) {
+                        preview.textContent = i18n.t('chat_contacts_not_found');
+                        preview.style.color = 'var(--danger)';
+                        addBtn.disabled = true;
+                    }
+                }, 500);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const addBtn = document.getElementById('btnAddContact');
+                    if (!addBtn.disabled) addContactFromForm();
                 }
             });
-            // Fallback: if nothing selected but entities exist, auto-select all bound
-            if (targets.length === 0 && boundEntities.length > 0) {
-                boundEntities.forEach(e => targets.push(e.entityId));
-            }
-            return targets;
         }
 
-        // ── Cross-Device Mode ──
-        function toggleCrossDeviceMode() {
-            crossDeviceMode = !crossDeviceMode;
-            document.getElementById('targetBar').style.display = crossDeviceMode ? 'none' : '';
-            document.getElementById('crossDeviceBar').style.display = crossDeviceMode ? 'flex' : 'none';
-            document.getElementById('btnCrossDevice').classList.toggle('active', crossDeviceMode);
-            if (crossDeviceMode) {
-                document.getElementById('crossDeviceCode').focus();
-            }
-        }
-
-        async function lookupCrossDeviceEntity() {
-            const code = document.getElementById('crossDeviceCode').value.trim().toLowerCase();
-            const info = document.getElementById('crossDeviceInfo');
-            if (!code || code.length < 3) {
-                info.textContent = '';
-                return;
-            }
+        async function addContactFromForm() {
+            const input = document.querySelector('.contact-code-input');
+            const code = input ? input.value.trim().toLowerCase() : '';
+            if (!code) return;
             try {
-                const data = await apiCall('GET', `/api/entity/lookup?code=${encodeURIComponent(code)}`);
-                if (data.success && data.entity) {
-                    const e = data.entity;
-                    info.textContent = `${e.name || e.character} (Lv.${e.level}) - ${e.state}`;
-                    info.style.color = 'var(--text-primary)';
-                } else {
-                    info.textContent = i18n.t('chat_not_found');
-                    info.style.color = 'var(--danger)';
+                const data = await apiCall('POST', '/api/contacts', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    publicCode: code
+                });
+                if (data.success) {
+                    contacts.push(data.contact);
+                    const savedContacts = localStorage.getItem('chat_last_contact_targets');
+                    const codes = savedContacts ? savedContacts.split(',') : [];
+                    codes.push(code);
+                    localStorage.setItem('chat_last_contact_targets', codes.join(','));
+                    const c = data.contact;
+                    const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
+                    xdeviceLabelCache[c.publicCode] = `${avatar} ${escapeHtml(c.name || c.character || c.publicCode)}`;
+                    showToast(i18n.t('chat_contacts_added'), 'success');
+                    renderTargetBar();
                 }
             } catch (err) {
-                info.textContent = i18n.t('chat_not_found');
-                info.style.color = 'var(--danger)';
+                const msg = err.data?.error || err.message;
+                if (err.status === 400 && msg && msg.includes('own')) {
+                    showToast(i18n.t('chat_contacts_self'), 'error');
+                } else if (err.status === 409) {
+                    showToast(i18n.t('chat_contacts_duplicate'), 'error');
+                } else if (err.status === 429) {
+                    showToast(i18n.t('chat_contacts_limit'), 'error');
+                } else if (err.status === 404) {
+                    showToast(i18n.t('chat_contacts_not_found'), 'error');
+                } else {
+                    showToast(msg || i18n.t('chat_send_failed'), 'error');
+                }
             }
         }
 
-        async function sendCrossDeviceMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const targetCode = document.getElementById('crossDeviceCode').value.trim().toLowerCase();
-            if (!targetCode || targetCode.length < 3) {
-                showToast(i18n.t('chat_enter_valid_code'), 'error');
-                return;
-            }
-
-            // Pick first bound entity as sender
-            const fromEntity = boundEntities[0];
-            if (!fromEntity) {
-                showToast(i18n.t('chat_no_bound_entities'), 'error');
-                return;
-            }
-
-            const btn = document.getElementById('btnSend');
-            btn.disabled = true;
-            const saved = input.value;
-            input.value = '';
-
+        async function removeContact(publicCode, event) {
+            if (event) event.stopPropagation();
+            const contact = contacts.find(c => c.publicCode === publicCode);
+            const name = contact ? (contact.name || contact.publicCode) : publicCode;
+            if (!confirm(i18n.t('chat_contacts_remove_confirm').replace('{name}', name))) return;
             try {
-                await apiCall('POST', '/api/client/cross-speak', {
+                await apiCall('DELETE', '/api/contacts', {
                     deviceId: currentUser.deviceId,
-                    fromEntityId: fromEntity.entityId,
-                    targetCode: targetCode,
-                    text: text,
-                    source: 'web_chat'
+                    deviceSecret: currentUser.deviceSecret,
+                    publicCode: publicCode
                 });
-                await loadMessages();
-                const container = document.getElementById('chatMessages');
-                container.scrollTop = container.scrollHeight;
+                contacts = contacts.filter(c => c.publicCode !== publicCode);
+                const savedContacts = localStorage.getItem('chat_last_contact_targets');
+                if (savedContacts) {
+                    const codes = savedContacts.split(',').filter(c => c !== publicCode);
+                    localStorage.setItem('chat_last_contact_targets', codes.join(','));
+                }
+                showToast(i18n.t('chat_contacts_removed'), 'success');
+                renderTargetBar();
             } catch (err) {
-                input.value = saved;
                 showToast(err.message || i18n.t('chat_send_failed'), 'error');
-            } finally {
-                btn.disabled = false;
             }
         }
 
@@ -1441,14 +1561,26 @@
         function renderFilterChips() {
             const group = document.getElementById('filterChips');
 
-            // Remove old entity chips
-            group.querySelectorAll('.filter-chip-entity').forEach(el => el.remove());
+            // Remove old entity/contact chips
+            group.querySelectorAll('.filter-chip-entity, .filter-chip-contact').forEach(el => el.remove());
 
-            // Determine which entities have messages
+            // Determine which entities and cross-device codes have messages
             const entityIdsWithMessages = new Set();
+            const xdeviceCodesWithMessages = new Set();
             allMessages.forEach(m => {
                 if (m.entity_id !== null && m.entity_id !== undefined) {
                     entityIdsWithMessages.add(m.entity_id);
+                }
+                if (m.source) {
+                    const parsed = parseEntitySource(m.source);
+                    if (parsed && parsed.crossDevice) {
+                        if (parsed.fromPublicCode && !myPublicCodeMap[parsed.fromPublicCode]) {
+                            xdeviceCodesWithMessages.add(parsed.fromPublicCode);
+                        }
+                        for (const t of (parsed.targets || [])) {
+                            if (!myPublicCodeMap[t]) xdeviceCodesWithMessages.add(t);
+                        }
+                    }
                 }
             });
 
@@ -1460,7 +1592,6 @@
                 const avatar = getAvatarForEntity(id);
                 const existing = group.querySelector(`[data-filter="entity-${id}"]`);
                 if (existing) {
-                    // Update name in case it changed
                     existing.textContent = `${avatar} ${getEntityDisplayName(id)} (#${id})`;
                     return;
                 }
@@ -1470,6 +1601,19 @@
                 chip.dataset.filter = `entity-${id}`;
                 chip.onclick = () => setFilter(`entity-${id}`);
                 chip.textContent = `${avatar} ${getEntityDisplayName(id)} (#${id})`;
+                group.insertBefore(chip, myChip);
+            });
+
+            // Cross-device contact filter chips
+            xdeviceCodesWithMessages.forEach(code => {
+                const existing = group.querySelector(`[data-filter="xdevice-${code}"]`);
+                if (existing) return;
+                const label = xdeviceLabelCache[code] || `\u{1F310} ${code}`;
+                const chip = document.createElement('span');
+                chip.className = `filter-chip filter-chip-entity filter-chip-contact${currentFilter === 'xdevice-' + code ? ' active' : ''}`;
+                chip.dataset.filter = `xdevice-${code}`;
+                chip.onclick = () => setFilter(`xdevice-${code}`);
+                chip.textContent = label;
                 group.insertBefore(chip, myChip);
             });
         }
@@ -1490,6 +1634,17 @@
 
             if (currentFilter === 'my') {
                 return allMessages.filter(m => m.is_from_user);
+            }
+
+            // xdevice-CODE filter: show messages involving this cross-device code
+            if (currentFilter.startsWith('xdevice-')) {
+                const code = currentFilter.substring(8);
+                return allMessages.filter(m => {
+                    if (!m.source) return false;
+                    const parsed = parseEntitySource(m.source);
+                    if (!parsed || !parsed.crossDevice) return false;
+                    return parsed.fromPublicCode === code || (parsed.targets || []).includes(code);
+                });
             }
 
             // entity-N filter: also include mission_notify messages that target this entity
@@ -1863,11 +2018,6 @@
 
         // ── Send Message ──
         async function sendMessage() {
-            // Cross-device mode
-            if (crossDeviceMode) {
-                return sendCrossDeviceMessage();
-            }
-
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
             const readyFiles = pendingFiles.filter(f => f.status === 'ready');
@@ -1883,7 +2033,7 @@
             }
 
             const targets = getSelectedTargets();
-            if (targets.length === 0) {
+            if (targets.local.length === 0 && targets.contacts.length === 0) {
                 showToast(i18n.t('chat_select_entity'), 'error');
                 return;
             }
@@ -1903,35 +2053,65 @@
             input.value = '';
 
             try {
-                const entityId = targets.length === 1 ? targets[0] : targets;
-
-                if (hasFiles) {
-                    // Send one message per file; first file carries caption text
-                    for (let i = 0; i < readyFiles.length; i++) {
-                        const f = readyFiles[i];
-                        const msgText = (i === 0 && text) ? text : (f.type === 'photo' ? '[Photo]' : f.type === 'video' ? '[Video]' : `[File] ${f.fileName}`);
+                // ── Local broadcast ──
+                if (targets.local.length > 0) {
+                    const entityId = targets.local.length === 1 ? targets.local[0] : targets.local;
+                    if (hasFiles) {
+                        for (let i = 0; i < readyFiles.length; i++) {
+                            const f = readyFiles[i];
+                            const msgText = (i === 0 && text) ? text : (f.type === 'photo' ? '[Photo]' : f.type === 'video' ? '[Video]' : `[File] ${f.fileName}`);
+                            await apiCall('POST', '/api/client/speak', {
+                                deviceId: currentUser.deviceId,
+                                entityId: entityId,
+                                text: msgText,
+                                source: 'web_chat',
+                                mediaType: f.type,
+                                mediaUrl: f.mediaUrl
+                            });
+                        }
+                    } else {
                         await apiCall('POST', '/api/client/speak', {
                             deviceId: currentUser.deviceId,
                             entityId: entityId,
-                            text: msgText,
-                            source: 'web_chat',
-                            mediaType: f.type,
-                            mediaUrl: f.mediaUrl
+                            text: text,
+                            source: 'web_chat'
                         });
                     }
-                    // If user typed text but there's no file to carry it as first, shouldn't happen (handled above)
-                } else {
-                    // Text-only message
-                    await apiCall('POST', '/api/client/speak', {
-                        deviceId: currentUser.deviceId,
-                        entityId: entityId,
-                        text: text,
-                        source: 'web_chat'
-                    });
                 }
 
-                // Save selected targets for next session
-                localStorage.setItem('chat_last_targets', targets.join(','));
+                // ── Cross-device contacts ──
+                if (targets.contacts.length > 0 && text) {
+                    // Sender: first checked local entity, or boundEntities[0]
+                    const senderEntity = targets.local.length > 0
+                        ? boundEntities.find(e => e.entityId === targets.local[0])
+                        : boundEntities[0];
+                    if (!senderEntity) {
+                        showToast(i18n.t('chat_no_bound_entities'), 'error');
+                        throw new Error('No sender entity');
+                    }
+                    const crossSpeakPromises = targets.contacts.map(async (code) => {
+                        try {
+                            await apiCall('POST', '/api/client/cross-speak', {
+                                deviceId: currentUser.deviceId,
+                                fromEntityId: senderEntity.entityId,
+                                targetCode: code,
+                                text: text,
+                                source: 'web_chat'
+                            });
+                        } catch (err) {
+                            if (err.status === 404) {
+                                showToast(i18n.t('chat_contacts_offline_send'), 'error');
+                            } else {
+                                throw err;
+                            }
+                        }
+                    });
+                    await Promise.all(crossSpeakPromises);
+                }
+
+                // Save selected targets
+                localStorage.setItem('chat_last_targets', targets.local.join(','));
+                localStorage.setItem('chat_last_contact_targets', targets.contacts.join(','));
 
                 // Clear pending files
                 if (hasFiles) clearAllPendingFiles();
@@ -1939,7 +2119,7 @@
                 // Bump local usage
                 if (currentUser.usageToday !== undefined) {
                     const msgCount = hasFiles ? readyFiles.length : 1;
-                    currentUser.usageToday += msgCount * targets.length;
+                    currentUser.usageToday += msgCount * (targets.local.length + targets.contacts.length);
                     updateUsageBadge();
                 }
 
@@ -1954,13 +2134,13 @@
                 } else if (e.status === 403 && e.data && (e.data.error === 'GATEKEEPER_BLOCKED_MESSAGE' || e.data.error === 'GATEKEEPER_BLOCKED')) {
                     const reason = e.data.message || i18n.t('chat_gatekeeper_blocked');
                     if (e.data.error === 'GATEKEEPER_BLOCKED') {
-                        showToast('⚠️ ' + reason, 'error');
+                        showToast(e.data.message, 'error');
                     } else {
                         const strikes = e.data.strikes || 0;
                         const maxStrikes = e.data.maxStrikes || 3;
-                        showToast(`⚠️ ${reason}（${strikes}/${maxStrikes}）`, 'error');
+                        showToast(`${reason} (${strikes}/${maxStrikes})`, 'error');
                     }
-                } else {
+                } else if (e.message !== 'No sender entity') {
                     showToast(i18n.t('chat_send_failed') + ': ' + e.message, 'error');
                 }
                 input.value = savedContent;
