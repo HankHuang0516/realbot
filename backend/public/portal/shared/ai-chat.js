@@ -443,6 +443,7 @@
         const input = document.getElementById('aiChatInput');
         const text = input.value.trim();
         if ((!text && pendingImages.length === 0) || isLoading) return;
+        console.log('[AI Chat] sendMessage() called, text:', text, 'images:', pendingImages.length);
 
         // Capture images before clearing
         const images = pendingImages.length > 0 ? [...pendingImages] : undefined;
@@ -485,10 +486,13 @@
         }
 
         try {
-            await apiCall('POST', '/api/ai-support/chat/submit', body);
+            console.log('[AI Chat] Submitting request:', requestId, 'page:', body.page);
+            const submitResult = await apiCall('POST', '/api/ai-support/chat/submit', body);
+            console.log('[AI Chat] Submit response:', JSON.stringify(submitResult));
             // Submit accepted, start polling for the response
             startPolling(requestId);
         } catch (err) {
+            console.error('[AI Chat] Submit FAILED:', err.message || err, err);
             clearPending();
             hideTyping();
             chatHistory.push({ role: 'assistant', content: 'Sorry, something went wrong. Please try again.' });
@@ -504,9 +508,11 @@
     function startPolling(requestId) {
         const startedAt = Date.now();
         let pollAttemptErrors = 0;
+        console.log('[AI Chat] startPolling() requestId:', requestId);
 
         async function poll() {
             const elapsed = Date.now() - startedAt;
+            console.log('[AI Chat] poll() elapsed:', Math.round(elapsed / 1000) + 's', 'errors:', pollAttemptErrors);
 
             // Timeout guard
             if (elapsed > POLL_MAX_DURATION) {
@@ -531,9 +537,11 @@
 
             try {
                 const data = await apiCall('GET', '/api/ai-support/chat/poll/' + requestId);
+                console.log('[AI Chat] poll response:', JSON.stringify({ status: data.status, busy: data.busy, hasResponse: !!data.response, error: data.error, latency_ms: data.latency_ms }));
                 pollAttemptErrors = 0;
 
                 if (data.status === 'completed') {
+                    console.log('[AI Chat] ✅ completed! response length:', data.response?.length, 'busy:', data.busy);
                     clearPending();
                     hideTyping();
 
@@ -555,6 +563,7 @@
                 }
 
                 if (data.status === 'failed' || data.status === 'expired') {
+                    console.error('[AI Chat] ❌ status:', data.status, 'error:', data.error);
                     clearPending();
                     hideTyping();
                     chatHistory.push({ role: 'assistant', content: data.error || 'Something went wrong. Please try again.' });
@@ -566,9 +575,11 @@
                 }
 
                 // Still pending/processing — continue polling
+                console.log('[AI Chat] status:', data.status, '— will poll again in', POLL_INTERVAL + 'ms');
                 pollTimer = setTimeout(poll, POLL_INTERVAL);
             } catch (err) {
                 pollAttemptErrors++;
+                console.error('[AI Chat] poll error #' + pollAttemptErrors + ':', err.message || err);
                 if (pollAttemptErrors < 5) {
                     pollTimer = setTimeout(poll, POLL_INTERVAL * 2);
                 } else {
@@ -594,20 +605,25 @@
     function resumePendingRequest() {
         try {
             const raw = localStorage.getItem(PENDING_KEY);
-            if (!raw) return;
+            if (!raw) { console.log('[AI Chat] No pending request to resume'); return; }
             const pending = JSON.parse(raw);
             if (!pending.requestId) return;
+            const ageMs = Date.now() - pending.sentAt;
+            console.log('[AI Chat] Found pending request:', pending.requestId, 'age:', Math.round(ageMs / 1000) + 's');
             // Discard if older than 3 minutes
-            if (Date.now() - pending.sentAt > 180000) {
+            if (ageMs > 180000) {
+                console.log('[AI Chat] Pending request too old, discarding');
                 localStorage.removeItem(PENDING_KEY);
                 return;
             }
             // Resume: show typing and start polling
+            console.log('[AI Chat] Resuming pending request');
             isLoading = true;
             showTyping();
             updateTypingText(t('ai_chat_thinking') || 'Retrieving AI response...');
             startPolling(pending.requestId);
-        } catch (_) {
+        } catch (err) {
+            console.error('[AI Chat] resumePendingRequest error:', err);
             localStorage.removeItem(PENDING_KEY);
         }
     }
