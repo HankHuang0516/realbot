@@ -1,3 +1,10 @@
+## [1.59.3](https://github.com/HankHuang0516/realbot/compare/v1.59.2...v1.59.3) (2026-03-01)
+
+
+### Bug Fixes
+
+* only dedup bot messages, not user messages in saveChatMessage ([bf6236d](https://github.com/HankHuang0516/realbot/commit/bf6236ddce3f17b56443a68fc444a7161d2d5d70))
+
 ## [1.59.2](https://github.com/HankHuang0516/realbot/compare/v1.59.1...v1.59.2) (2026-03-01)
 
 
