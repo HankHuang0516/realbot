@@ -1,3 +1,10 @@
+# [1.57.0](https://github.com/HankHuang0516/realbot/compare/v1.56.0...v1.57.0) (2026-03-01)
+
+
+### Features
+
+* social login (Google/Facebook) + AI chat feedback dual-track ([62bc8ff](https://github.com/HankHuang0516/realbot/commit/62bc8ffc63e029dfe90d4d92bc9e177ee5444152))
+
 # [1.56.0](https://github.com/HankHuang0516/realbot/compare/v1.55.0...v1.56.0) (2026-03-01)
 
 
