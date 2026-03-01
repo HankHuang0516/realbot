@@ -36,7 +36,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
+import retrofit2.HttpException
 import java.io.ByteArrayOutputStream
+import java.util.UUID
 
 class AiChatBottomSheet : BottomSheetDialogFragment() {
 
@@ -59,6 +61,7 @@ class AiChatBottomSheet : BottomSheetDialogFragment() {
     private val pendingImages = mutableListOf<ImageData>()
     private var isLoading = false
     private var statusJob: Job? = null
+    private var pollingJob: Job? = null
 
     private val pageName: String
         get() = arguments?.getString(ARG_PAGE_NAME) ?: ""
@@ -211,9 +214,11 @@ class AiChatBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
-    // ── Send Message ─────────────────────────
+    // ── Send Message (async submit/poll) ─────
 
-    private val MAX_RETRY = 3
+    private val MAX_BUSY_RETRY = 3
+    private val MAX_POLL_ATTEMPTS = 50  // 50 * 3s = 150s
+    private val POLL_INTERVAL_MS = 3000L
 
     private fun sendMessage() {
         val text = editMessage.text?.toString()?.trim() ?: ""
@@ -240,6 +245,7 @@ class AiChatBottomSheet : BottomSheetDialogFragment() {
         isLoading = true
 
         val body = mutableMapOf<String, Any>(
+            "requestId" to UUID.randomUUID().toString(),
             "deviceId" to deviceManager.deviceId,
             "deviceSecret" to deviceManager.deviceSecret,
             "message" to (text.ifEmpty { "(user attached image(s) — please analyze them)" }),
@@ -253,75 +259,175 @@ class AiChatBottomSheet : BottomSheetDialogFragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            callWithRetry(body, 0)
+            submitAndPoll(body, 0)
         }
     }
 
-    private suspend fun callWithRetry(body: Map<String, Any>, attempt: Int) {
-        val hasImages = body.containsKey("images")
-        if (hasImages && attempt == 0) {
+    private suspend fun submitAndPoll(body: MutableMap<String, Any>, busyAttempt: Int) {
+        try {
+            // ── SUBMIT ──
+            val submitResponse = try {
+                api.aiChatSubmit(body)
+            } catch (e: Exception) {
+                messages.removeAll { it.role == "typing" }
+                messages.add(AiMessage("assistant", resolveHttpError(e)))
+                return
+            }
+
+            if (!submitResponse.success) {
+                messages.removeAll { it.role == "typing" }
+                messages.add(AiMessage("assistant",
+                    submitResponse.message ?: submitResponse.error ?: "Failed to send message."))
+                return
+            }
+
+            val requestId = submitResponse.requestId ?: run {
+                messages.removeAll { it.role == "typing" }
+                messages.add(AiMessage("assistant", "Failed to send message."))
+                return
+            }
+
+            // ── PROGRESSIVE TYPING INDICATOR ──
             statusJob = viewLifecycleOwner.lifecycleScope.launch {
-                delay(4000)
+                delay(5000)
+                if (!isAdded) return@launch
                 messages.removeAll { it.role == "typing" }
                 messages.add(AiMessage("typing", getString(R.string.ai_chat_analyzing)))
                 updateUi()
-                delay(11000)
+                delay(10000)
+                if (!isAdded) return@launch
                 messages.removeAll { it.role == "typing" }
                 messages.add(AiMessage("typing", getString(R.string.ai_chat_thinking)))
                 updateUi()
+                delay(45000)
+                if (!isAdded) return@launch
+                messages.removeAll { it.role == "typing" }
+                messages.add(AiMessage("typing", "This is taking a while..."))
+                updateUi()
             }
-        }
 
-        try {
-            val response = api.aiChat(body)
+            // ── POLL ──
+            var pollResult: com.hank.clawlive.data.remote.AiChatPollResponse? = null
+            pollingJob = viewLifecycleOwner.lifecycleScope.launch {
+                for (attempt in 1..MAX_POLL_ATTEMPTS) {
+                    delay(POLL_INTERVAL_MS)
+                    if (!isAdded) break
+                    try {
+                        val poll = api.aiChatPoll(
+                            requestId,
+                            deviceManager.deviceId,
+                            deviceManager.deviceSecret
+                        )
+                        when (poll.status) {
+                            "completed", "failed", "expired" -> {
+                                pollResult = poll
+                                break
+                            }
+                        }
+                    } catch (_: Exception) {
+                        // Transient network error — keep polling
+                    }
+                }
+            }
+            pollingJob?.join()
             statusJob?.cancel()
 
-            if (response.busy && attempt < MAX_RETRY) {
-                val waitSec = response.retry_after ?: 15
-                for (sec in waitSec downTo 1) {
-                    messages.removeAll { it.role == "typing" }
-                    messages.add(AiMessage("typing", getString(R.string.ai_chat_busy_retry, sec, attempt + 1, MAX_RETRY)))
-                    updateUi()
-                    scrollToBottom()
-                    delay(1000)
-                }
-                messages.removeAll { it.role == "typing" }
-                messages.add(AiMessage("typing", "..."))
-                updateUi()
-                scrollToBottom()
-                return callWithRetry(body, attempt + 1)
-            }
-
+            // ── HANDLE RESULT ──
             messages.removeAll { it.role == "typing" }
+            val poll = pollResult
 
-            if (response.busy) {
-                messages.add(AiMessage("assistant", getString(R.string.ai_chat_busy_exhausted)))
-            } else if (response.success && response.response != null) {
-                // Guard against raw JSON leaking from proxy (e.g. {"type":"result","subtype":"error_max_turns",...})
-                val text = response.response.trim()
-                val displayText = if (text.startsWith("{") && text.contains("\"type\"")) {
-                    getString(R.string.ai_chat_fallback_error)
-                } else {
-                    response.response
+            when {
+                poll == null -> {
+                    messages.add(AiMessage("assistant", "The request is taking too long. Please try again."))
                 }
-                messages.add(AiMessage("assistant", displayText))
-                // Show feedback navigation if issue + feedback was created
-                if (displayText.contains("Feedback #") && displayText.contains("recorded")) {
-                    messages.add(AiMessage("action", getString(R.string.ai_chat_view_feedback)))
+                poll.status == "completed" && poll.busy -> {
+                    if (busyAttempt < MAX_BUSY_RETRY) {
+                        val waitSec = poll.retry_after ?: 15
+                        for (sec in waitSec downTo 1) {
+                            messages.removeAll { it.role == "typing" }
+                            messages.add(AiMessage("typing",
+                                getString(R.string.ai_chat_busy_retry, sec, busyAttempt + 1, MAX_BUSY_RETRY)))
+                            updateUi()
+                            scrollToBottom()
+                            delay(1000)
+                        }
+                        messages.removeAll { it.role == "typing" }
+                        messages.add(AiMessage("typing", "..."))
+                        updateUi()
+                        scrollToBottom()
+                        body["requestId"] = UUID.randomUUID().toString()
+                        return submitAndPoll(body, busyAttempt + 1)
+                    } else {
+                        messages.add(AiMessage("assistant", getString(R.string.ai_chat_busy_exhausted)))
+                    }
                 }
-            } else {
-                val errorMsg = response.message ?: response.error ?: "AI is temporarily unavailable"
-                messages.add(AiMessage("assistant", errorMsg))
+                poll.status == "completed" && poll.response != null -> {
+                    val text = poll.response.trim()
+                    val displayText = if (text.startsWith("{") && text.contains("\"type\"")) {
+                        getString(R.string.ai_chat_fallback_error)
+                    } else text
+                    messages.add(AiMessage("assistant", displayText))
+                    if (displayText.contains("Feedback #") && displayText.contains("recorded")) {
+                        messages.add(AiMessage("action", getString(R.string.ai_chat_view_feedback)))
+                    }
+                }
+                poll.status == "failed" -> {
+                    messages.add(AiMessage("assistant",
+                        poll.error ?: "AI is temporarily unavailable."))
+                }
+                poll.status == "expired" -> {
+                    messages.add(AiMessage("assistant", "Request expired. Please try again."))
+                }
+                else -> {
+                    messages.add(AiMessage("assistant", "Something went wrong. Please try again."))
+                }
             }
         } catch (e: Exception) {
+            statusJob?.cancel()
             messages.removeAll { it.role == "typing" }
-            messages.add(AiMessage("assistant", "Sorry, something went wrong. Please try again."))
+            messages.add(AiMessage("assistant", resolveHttpError(e)))
         } finally {
             isLoading = false
             saveHistory()
             updateUi()
             scrollToBottom()
         }
+    }
+
+    // ── Error Handling ────────────────────────
+
+    private fun resolveHttpError(e: Exception): String {
+        if (e !is HttpException) {
+            return "Network error. Please check your connection."
+        }
+        val errorBody = try {
+            e.response()?.errorBody()?.string()
+        } catch (_: Exception) { null }
+
+        val json = try {
+            JSONObject(errorBody ?: "{}")
+        } catch (_: Exception) { JSONObject() }
+
+        return when (e.code()) {
+            401 -> "Device not registered. Please restart the app."
+            429 -> {
+                val retryMs = json.optLong("retry_after_ms", 0)
+                if (retryMs > 0) "Message limit reached. Try again in ${retryMs / 1000}s."
+                else "Message limit reached. Try again later."
+            }
+            503 -> "AI assistant is currently unavailable."
+            else -> json.optString("message", "").ifEmpty {
+                json.optString("error", "").ifEmpty {
+                    "Something went wrong. Please try again."
+                }
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        pollingJob?.cancel()
+        statusJob?.cancel()
     }
 
     // ── UI Updates ───────────────────────────
