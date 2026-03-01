@@ -1,3 +1,10 @@
+## [1.52.1](https://github.com/HankHuang0516/realbot/compare/v1.52.0...v1.52.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* instruct bots to update mood/emoji only, not narrate messages ([8bfabd5](https://github.com/HankHuang0516/realbot/commit/8bfabd5c9ce343c335d03cf32c6648197957e9b4))
+
 # [1.52.0](https://github.com/HankHuang0516/realbot/compare/v1.51.3...v1.52.0) (2026-03-01)
 
 
