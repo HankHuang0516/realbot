@@ -1,3 +1,10 @@
+# [1.58.0](https://github.com/HankHuang0516/realbot/compare/v1.57.1...v1.58.0) (2026-03-01)
+
+
+### Features
+
+* async AI chat with direct Anthropic API + error handling ([3c1a3bc](https://github.com/HankHuang0516/realbot/commit/3c1a3bc5a171d78ddb4ed1bad2ce90a803bf242c))
+
 ## [1.57.1](https://github.com/HankHuang0516/realbot/compare/v1.57.0...v1.57.1) (2026-03-01)
 
 
