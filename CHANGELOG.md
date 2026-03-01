@@ -1,3 +1,10 @@
+## [1.54.1](https://github.com/HankHuang0516/realbot/compare/v1.54.0...v1.54.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* enable EYE_LID/EYE_ANGLE rendering and fix test scripts ([baec14d](https://github.com/HankHuang0516/realbot/commit/baec14d72d0f7abe794383ec7561e30805aac010))
+
 # [1.54.0](https://github.com/HankHuang0516/realbot/compare/v1.53.2...v1.54.0) (2026-03-01)
 
 
