@@ -335,10 +335,8 @@ const PORT = process.env.PORT || 4000;
 const CLAUDE_TIMEOUT_MS = 55000; // 55s (Haiku binding analysis)
 const CHAT_TIMEOUT_MS = 180000; // 180s (Sonnet general chat with tool access)
 
-// ── Log Query Credentials (for AI to curl /api/logs) ──
-const ECLAW_API_URL = process.env.ECLAW_API_URL || 'https://eclawbot.com';
-const LOG_DEVICE_ID = process.env.LOG_DEVICE_ID;
-const LOG_DEVICE_SECRET = process.env.LOG_DEVICE_SECRET;
+// ── Database (read-only queries via db-query.js) ──
+// Set DATABASE_URL in Railway to connect to same Postgres as eclaw backend
 
 // ── Repo Clone & Sync ──────────────────────
 const REPO_DIR = path.join(process.env.HOME || '/root', '.claude', 'repo');
@@ -723,32 +721,41 @@ function buildChatPrompt(message, history, context, imagePaths = []) {
 
     const pageContext = context.page ? `The user is currently on the "${context.page}" page of the portal.` : '';
 
-    // Only include log query instructions when user is debugging (or admin)
-    const debugKeywords = /error|debug|log|fail|broken|issue|bug|crash|問題|錯誤|失敗|壞|不行|卡住/i;
-    const needsLogQuery = isAdmin || debugKeywords.test(message);
-
-    const logQueryBlock = (needsLogQuery && LOG_DEVICE_ID && LOG_DEVICE_SECRET)
-        ? (isAdmin
-            ? `\nLOG QUERY: curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&limit=30"
-Filters: category (bind,unbind,transform,broadcast,broadcast_push,speakto_push,client_push,entity_poll,push_error,handshake,system), level (info,warn,error), since (ms), filterDevice, limit (max 500).
-Execute Bash commands DIRECTLY. NEVER expose credentials in response.`
-            : `\nLOG QUERY (user device ${context.deviceId || '?'}): curl -s "${ECLAW_API_URL}/api/logs?deviceId=${LOG_DEVICE_ID}&deviceSecret=${LOG_DEVICE_SECRET}&filterDevice=${context.deviceId}&limit=30"
-Filters: category (bind,unbind,transform,broadcast,broadcast_push,speakto_push,client_push,entity_poll), level (info,warn,error), since (ms).
-Execute Bash commands DIRECTLY. NEVER expose credentials in response.`)
-        : '';
+    // Database query block — available when DATABASE_URL is set
+    const hasDB = !!process.env.DATABASE_URL;
+    const dbQueryBlock = hasDB ? `
+DATABASE ACCESS (read-only):
+  node db-query.js "SELECT ..."
+- Only SELECT/WITH allowed. Returns JSON array.
+- KEY TABLES:
+  * entities (device_id, entity_id, is_bound, name, character, state, message, webhook JSONB, xp, level, avatar, public_code)
+  * devices (device_id, device_secret, created_at, paid_borrow_slots)
+  * server_logs (id, level, category, message, device_id, entity_id, metadata JSONB, created_at)
+    categories: bind, unbind, transform, broadcast, broadcast_push, speakto_push, client_push, entity_poll, push_error, handshake, system
+  * handshake_failures (device_id, entity_id, webhook_url, error_type, http_status, error_message, source, created_at)
+  * device_telemetry (device_id, ts, type, action, page, input JSONB, output JSONB, duration, meta JSONB)
+  * scheduled_messages (device_id, entity_id, message, scheduled_at, repeat_type, status, label)
+  * official_bots (bot_id, bot_type, webhook_url, status, assigned_device_id, assigned_entity_id)
+  * official_bot_bindings (bot_id, device_id, entity_id, session_key, bound_at)
+- COMMON QUERIES:
+  Entity status: SELECT entity_id, name, character, is_bound, state, webhook, last_updated FROM entities WHERE device_id='...'
+  Recent logs:   SELECT level, category, message, created_at FROM server_logs WHERE device_id='...' ORDER BY created_at DESC LIMIT 30
+  Binding hist:  SELECT category, message, created_at FROM server_logs WHERE device_id='...' AND category IN ('bind','unbind') ORDER BY created_at DESC LIMIT 20
+  Webhook fails: SELECT error_type, error_message, webhook_url, created_at FROM handshake_failures WHERE device_id='...' ORDER BY created_at DESC LIMIT 10
+- NEVER expose device_secret, tokens, or raw credentials in your response.` : '';
 
     const adminBlock = isAdmin
         ? `ADMIN CAPABILITIES:
 You are talking to the E-Claw platform admin/developer.
 - Suggest code changes, architecture improvements, or debugging strategies.
-- Use Read, Glob, Grep tools to read source code; Bash for curl/commands.
+- Use Read, Glob, Grep tools to read source code; Bash for commands.
 - On request, create GitHub issues via: <!--ACTION:{"type":"create_issue","title":"...","body":"...","labels":["bug"]}-->
-- Speak as a fellow engineer.${logQueryBlock}`
+- Speak as a fellow engineer.${dbQueryBlock}`
         : `USER CONTEXT:
 You are talking to a regular E-Claw user (Device ID: ${context.deviceId || 'unknown'}).
 - Help them use the portal, manage entities, configure bots. Keep language friendly.
 - When user reports a bug or suggests a feature, proactively create a GitHub issue: <!--ACTION:{"type":"create_issue","title":"[Bug/Feature] ...","body":"...","labels":["bug"]}-->
-  Tell user you've recorded their feedback.${logQueryBlock}`;
+  Tell user you've recorded their feedback.${dbQueryBlock}`;
 
     return `You are E-Claw AI, assistant for the E-Claw platform — an AI-powered Android live wallpaper app where users bind AI bots (OpenClaw) to entities (Lobster, Pig) on their phone. Web portal: eclawbot.com.
 ${pageContext}
