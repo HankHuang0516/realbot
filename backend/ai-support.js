@@ -673,6 +673,82 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         res.json(status);
     });
 
+    // ── Proxy Session Logs (admin-only, forwarded) ──
+    router.get('/proxy-sessions', async (req, res) => {
+        // Admin auth check
+        if (!req.user || !req.user.userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+        let isAdmin = false;
+        try {
+            const r = await chatPool.query('SELECT is_admin FROM user_accounts WHERE id = $1', [req.user.userId]);
+            isAdmin = r.rows[0]?.is_admin || false;
+        } catch (_) {}
+        if (!isAdmin) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
+        const proxyKey = process.env.SUPPORT_API_KEY;
+        if (!proxyUrl || !proxyKey) {
+            return res.status(503).json({ error: 'Proxy not configured' });
+        }
+
+        // Forward query params
+        const qs = new URLSearchParams();
+        if (req.query.limit) qs.set('limit', req.query.limit);
+        if (req.query.status) qs.set('status', req.query.status);
+        if (req.query.since) qs.set('since', req.query.since);
+
+        try {
+            const target = `${proxyUrl}/sessions?${qs}`;
+            const response = await fetch(target, {
+                headers: { 'Authorization': `Bearer ${proxyKey}` },
+                signal: AbortSignal.timeout(10000)
+            });
+            const data = await response.json();
+            return res.json(data);
+        } catch (err) {
+            return res.status(502).json({ error: 'Proxy unreachable', detail: err.message });
+        }
+    });
+
+    router.get('/proxy-sessions/:id', async (req, res) => {
+        // Admin auth check
+        if (!req.user || !req.user.userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+        let isAdmin = false;
+        try {
+            const r = await chatPool.query('SELECT is_admin FROM user_accounts WHERE id = $1', [req.user.userId]);
+            isAdmin = r.rows[0]?.is_admin || false;
+        } catch (_) {}
+        if (!isAdmin) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        const proxyUrl = process.env.CLAUDE_CLI_PROXY_URL;
+        const proxyKey = process.env.SUPPORT_API_KEY;
+        if (!proxyUrl || !proxyKey) {
+            return res.status(503).json({ error: 'Proxy not configured' });
+        }
+
+        try {
+            const target = `${proxyUrl}/sessions/${req.params.id}`;
+            const response = await fetch(target, {
+                headers: { 'Authorization': `Bearer ${proxyKey}` },
+                signal: AbortSignal.timeout(10000)
+            });
+            if (!response.ok) {
+                return res.status(response.status).json(await response.json().catch(() => ({ error: 'Not found' })));
+            }
+            const data = await response.json();
+            return res.json(data);
+        } catch (err) {
+            return res.status(502).json({ error: 'Proxy unreachable', detail: err.message });
+        }
+    });
+
     // ── Admin Chat Endpoint (no botSecret needed) ──
     router.post('/admin-chat', async (req, res) => {
         const { message, deviceId, entityId } = req.body;
