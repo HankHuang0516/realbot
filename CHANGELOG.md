@@ -1,3 +1,10 @@
+## [1.53.1](https://github.com/HankHuang0516/realbot/compare/v1.53.0...v1.53.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* improve schedule history display, matching accuracy, and pagination ([f721628](https://github.com/HankHuang0516/realbot/commit/f721628777d066d2058103daf7047aacd27b082a))
+
 # [1.53.0](https://github.com/HankHuang0516/realbot/compare/v1.52.1...v1.53.0) (2026-03-01)
 
 
