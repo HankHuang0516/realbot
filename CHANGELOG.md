@@ -1,3 +1,10 @@
+## [1.51.3](https://github.com/HankHuang0516/realbot/compare/v1.51.2...v1.51.3) (2026-03-01)
+
+
+### Bug Fixes
+
+* AI chat stuck on "thinking" — t() not defined, use i18n.t() ([4ce6b26](https://github.com/HankHuang0516/realbot/commit/4ce6b2619cfa335e58bd699bb8601de1abc5d000))
+
 ## [1.51.2](https://github.com/HankHuang0516/realbot/compare/v1.51.1...v1.51.2) (2026-02-28)
 
 
