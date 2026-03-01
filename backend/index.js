@@ -6300,7 +6300,7 @@ chatPool.query(`
 // ============================================
 // AI SUPPORT — Binding Troubleshooter
 // ============================================
-const aiSupportModule = require('./ai-support')(devices, chatPool, { serverLog, getWebhookFixInstructions });
+const aiSupportModule = require('./ai-support')(devices, chatPool, { serverLog, getWebhookFixInstructions, feedbackModule });
 // Admin-chat requires admin auth; other ai-support routes use bot auth
 app.use('/api/ai-support/admin-chat', adminAuth, adminCheck);
 // Increase body limit for chat (images can be large)

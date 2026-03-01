@@ -5,7 +5,7 @@
 // ============================================
 const express = require('express');
 
-module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstructions }) {
+module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstructions, feedbackModule }) {
     const router = express.Router();
 
     // ── Rate Limiter ────────────────────────────
@@ -100,6 +100,45 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             console.error('[AI Chat] Auto-issue error:', err.message);
             return null;
         }
+    }
+
+    // ── Dual-track: create feedback record alongside GitHub issue ──
+    async function createFeedbackFromAiIssue(issueResult, action, user) {
+        if (!feedbackModule || !issueResult) return null;
+        const deviceId = user.deviceId;
+        if (!deviceId) return null;
+
+        try {
+            const device = devices[deviceId];
+            const deviceSecret = device ? device.deviceSecret : null;
+            const logSnapshot = await feedbackModule.captureLogSnapshot(chatPool, deviceId);
+            const deviceState = feedbackModule.captureDeviceState(devices, deviceId);
+
+            const saved = await feedbackModule.saveFeedback(chatPool, {
+                deviceId,
+                deviceSecret,
+                message: action.body || action.title,
+                category: 'bug',
+                appVersion: '',
+                source: 'ai_chat',
+                logSnapshot,
+                deviceState,
+                markTs: null
+            });
+
+            if (saved) {
+                await feedbackModule.updateFeedback(chatPool, saved.id, {
+                    github_issue_url: issueResult.url
+                });
+                serverLog('info', 'ai_chat', `Feedback #${saved.id} created from AI issue #${issueResult.number}`, {
+                    userId: user.userId, deviceId
+                });
+                return { feedbackId: saved.id, severity: saved.severity, tags: saved.tags };
+            }
+        } catch (err) {
+            console.error('[AI Chat] createFeedbackFromAiIssue error:', err.message);
+        }
+        return null;
     }
 
     // ── Rule Patterns ───────────────────────────
@@ -748,13 +787,18 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                 responseText = 'Sorry, I could not generate a response. Please try again.';
             }
 
-            // Auto-execute create_issue actions for regular users
+            // Auto-execute create_issue actions for regular users (dual-track: issue + feedback)
+            let feedbackCreated = null;
             if (!isAdmin && result.actions && result.actions.length > 0) {
                 for (const action of result.actions) {
                     if (action.type === 'create_issue' && action.title) {
                         const issueResult = await autoCreateIssue(action, req.user);
                         if (issueResult) {
+                            feedbackCreated = await createFeedbackFromAiIssue(issueResult, action, req.user);
                             responseText += `\n\n---\n📋 GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
+                            if (feedbackCreated) {
+                                responseText += `\n📝 Feedback #${feedbackCreated.feedbackId} recorded`;
+                            }
                         }
                     }
                 }
@@ -764,6 +808,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                 success: true,
                 response: responseText,
                 actions: isAdmin ? result.actions : undefined,
+                feedbackId: feedbackCreated ? feedbackCreated.feedbackId : undefined,
                 remaining: rateCheck.remaining,
                 latency_ms: latencyMs
             });
@@ -889,21 +934,30 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             const result = await response.json();
             let responseText = result.response;
 
-            // Auto-create GitHub issues for regular users
+            // Auto-create GitHub issues for regular users (dual-track: issue + feedback)
+            let feedbackCreated = null;
             if (!row.is_admin && result.actions && result.actions.length > 0) {
                 for (const action of result.actions) {
                     if (action.type === 'create_issue' && action.title) {
-                        const issueResult = await autoCreateIssue(action, { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId });
+                        const user = { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId };
+                        const issueResult = await autoCreateIssue(action, user);
                         if (issueResult) {
+                            feedbackCreated = await createFeedbackFromAiIssue(issueResult, action, user);
                             responseText += `\n\n---\n\ud83d\udccb GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
+                            if (feedbackCreated) {
+                                responseText += `\n📝 Feedback #${feedbackCreated.feedbackId} recorded`;
+                            }
                         }
                     }
                 }
             }
 
+            const actionsToStore = feedbackCreated
+                ? JSON.stringify({ feedbackId: feedbackCreated.feedbackId })
+                : (row.is_admin && result.actions ? JSON.stringify(result.actions) : null);
             await chatPool.query(
                 `UPDATE ai_chat_requests SET status = 'completed', response = $2, actions = $3, latency_ms = $4, completed_at = NOW(), images = NULL WHERE id = $1`,
-                [id, responseText, row.is_admin && result.actions ? JSON.stringify(result.actions) : null, latencyMs]
+                [id, responseText, actionsToStore, latencyMs]
             );
 
             // Log to ai_chat_queries for analytics
