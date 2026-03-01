@@ -1,10 +1,12 @@
 // ============================================
 // Claude CLI Proxy — E-Claw AI Binding Support
 // Receives binding issue data, calls Claude CLI for analysis
+// Uses stream-json for full visibility into tool calls & thinking
 // ============================================
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { execFile, execFileSync, spawn } = require('child_process');
 const { promisify } = require('util');
 
@@ -58,44 +60,108 @@ function releaseSlot() {
     }
 }
 
-// Run claude CLI with prompt via stdin (avoids CLI arg length limits)
-function runClaude(prompt, timeoutMs) {
-    return new Promise((resolve, reject) => {
-        const child = spawn(CLAUDE_BIN, ['--print', '--output-format', 'json', '--model', 'haiku'], {
-            env: { ...process.env, HOME: process.env.HOME || '/root' },
+// ── Session Store (in-memory ring buffer) ─────
+const MAX_SESSIONS = 50;
+const SESSION_TTL_MS = 3600000; // 1 hour
+const sessionStore = []; // newest first
+
+function createSession(type, promptPreview) {
+    const session = {
+        id: crypto.randomUUID(),
+        startedAt: Date.now(),
+        completedAt: null,
+        type, // 'chat' | 'analyze'
+        status: 'running',
+        prompt: (promptPreview || '').slice(0, 200),
+        response: null,
+        events: [],
+        turns: 0,
+        cost_usd: 0,
+        model: null,
+        error: null
+    };
+    sessionStore.unshift(session);
+    // Trim to max size
+    while (sessionStore.length > MAX_SESSIONS) sessionStore.pop();
+    return session;
+}
+
+function finalizeSession(session) {
+    session.completedAt = Date.now();
+    // Clean up expired sessions
+    const cutoff = Date.now() - SESSION_TTL_MS;
+    while (sessionStore.length > 0 && sessionStore[sessionStore.length - 1].startedAt < cutoff) {
+        sessionStore.pop();
+    }
+}
+
+// ── Stream-JSON Runner (unified for chat & analyze) ──
+// Uses --output-format stream-json for full event visibility.
+// Always resolves (never rejects) — caller checks events/status.
+function runClaudeStream(prompt, extraArgs, timeoutMs, { cwd, env } = {}) {
+    return new Promise((resolve) => {
+        const args = ['--print', '--output-format', 'stream-json', ...extraArgs];
+
+        const child = spawn(CLAUDE_BIN, args, {
+            cwd: cwd || __dirname,
+            env: env || { ...process.env, HOME: process.env.HOME || '/root' },
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
-        let stdout = '';
+        const events = [];
+        let buffer = '';
         let stderr = '';
         let killed = false;
 
-        child.stdout.on('data', d => { stdout += d; });
+        child.stdout.on('data', chunk => {
+            buffer += chunk.toString();
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // keep incomplete last line
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                try {
+                    const event = JSON.parse(line);
+                    event._ts = Date.now();
+                    events.push(event);
+                    logStreamEvent(event);
+                } catch (_) {
+                    // Not valid JSON line, skip
+                }
+            }
+        });
+
         child.stderr.on('data', d => { stderr += d; });
 
-        child.on('error', err => reject(err));
+        child.on('error', err => {
+            resolve({ events, stderr, code: -1, signal: null, killed: false, error: err.message });
+        });
+
         child.on('close', (code, signal) => {
-            if (killed || signal === 'SIGTERM' || signal === 'SIGKILL' || code === 143 || code === 137) {
-                const err = new Error(`Claude CLI killed by ${signal || 'timeout'} (timeout after ${timeoutMs}ms)`);
-                err.killed = true;
-                err.signal = signal;
-                err.stderr = stderr;
-                return reject(err);
+            // Parse remaining buffer
+            if (buffer.trim()) {
+                try {
+                    const event = JSON.parse(buffer.trim());
+                    event._ts = Date.now();
+                    events.push(event);
+                    logStreamEvent(event);
+                } catch (_) {}
             }
-            if (code !== 0) {
-                const err = new Error(`Claude CLI exited with code ${code}: ${stderr.slice(0, 300)}`);
-                err.code = code;
-                err.stderr = stderr;
-                return reject(err);
-            }
-            resolve({ stdout, stderr });
+
+            resolve({
+                events,
+                stderr,
+                code,
+                signal,
+                killed,
+                timedOut: killed
+            });
         });
 
         // Write prompt to stdin and close
         child.stdin.write(prompt);
         child.stdin.end();
 
-        // Single timeout mechanism
+        // Timeout: kill process
         setTimeout(() => {
             killed = true;
             try { child.kill('SIGTERM'); } catch (_) {}
@@ -103,6 +169,108 @@ function runClaude(prompt, timeoutMs) {
     });
 }
 
+// Log each stream event to console for real-time monitoring
+function logStreamEvent(event) {
+    const type = event.type;
+    if (type === 'system') {
+        console.log(`[Stream] init — session: ${event.session_id || '?'}, tools: ${(event.tools || []).length}`);
+    } else if (type === 'assistant') {
+        const content = event.message?.content || [];
+        for (const block of content) {
+            if (block.type === 'text') {
+                console.log(`[Stream] text (${block.text.length} chars): ${block.text.slice(0, 100)}${block.text.length > 100 ? '...' : ''}`);
+            } else if (block.type === 'tool_use') {
+                const inputStr = JSON.stringify(block.input || {}).slice(0, 120);
+                console.log(`[Stream] tool_use: ${block.name} — ${inputStr}`);
+            }
+        }
+    } else if (type === 'tool_result') {
+        const contentLen = typeof event.content === 'string' ? event.content.length : JSON.stringify(event.content || '').length;
+        console.log(`[Stream] tool_result (${contentLen} chars)`);
+    } else if (type === 'result') {
+        console.log(`[Stream] result — subtype: ${event.subtype}, turns: ${event.num_turns}, cost: $${event.total_cost_usd?.toFixed(4) || '?'}`);
+    }
+}
+
+// ── Parse Stream Events ──────────────────────
+function parseStreamEvents(events) {
+    const resultEvent = events.filter(e => e.type === 'result').pop();
+
+    // Collect all assistant text blocks
+    const textParts = [];
+    for (const e of events) {
+        if (e.type === 'assistant' && e.message?.content) {
+            for (const block of e.message.content) {
+                if (block.type === 'text') textParts.push(block.text);
+            }
+        }
+    }
+
+    // Prefer result.result for the final response text; fall back to concatenated text blocks
+    let responseText = resultEvent?.result || '';
+    if (!responseText && textParts.length > 0) {
+        responseText = textParts.join('\n');
+    }
+
+    const status = resultEvent?.subtype || 'unknown';
+
+    return {
+        responseText,
+        status,        // 'success', 'error_max_turns', 'error_tool_execution', etc.
+        turns: resultEvent?.num_turns || 0,
+        cost_usd: resultEvent?.total_cost_usd || 0,
+        model: Object.keys(resultEvent?.modelUsage || {})[0] || 'unknown',
+        sessionId: resultEvent?.session_id || null
+    };
+}
+
+// Summarize events for storage (avoid storing huge tool_result content)
+function summarizeEvent(event) {
+    const summary = { ts: event._ts || Date.now(), type: event.type };
+
+    if (event.type === 'system') {
+        summary.session_id = event.session_id;
+        summary.tools = event.tools;
+    } else if (event.type === 'assistant' && event.message?.content) {
+        summary.content = event.message.content.map(c => {
+            if (c.type === 'text') {
+                return { type: 'text', length: c.text.length, preview: c.text.slice(0, 300) };
+            }
+            if (c.type === 'tool_use') {
+                return { type: 'tool_use', tool: c.name, id: c.id, input_preview: JSON.stringify(c.input || {}).slice(0, 200) };
+            }
+            return { type: c.type };
+        });
+    } else if (event.type === 'tool_result') {
+        const content = typeof event.content === 'string' ? event.content : JSON.stringify(event.content || '');
+        summary.tool_use_id = event.tool_use_id;
+        summary.content_length = content.length;
+        summary.preview = content.slice(0, 300);
+        summary.is_error = event.is_error || false;
+    } else if (event.type === 'result') {
+        summary.subtype = event.subtype;
+        summary.num_turns = event.num_turns;
+        summary.cost_usd = event.total_cost_usd;
+        summary.duration_ms = event.duration_ms;
+        summary.model_usage = event.modelUsage;
+    }
+
+    return summary;
+}
+
+// Extract <!--ACTION:{...}--> blocks from text
+function extractActions(text) {
+    const actions = [];
+    const actionRegex = /<!--ACTION:(.*?)-->/gs;
+    let match;
+    while ((match = actionRegex.exec(text)) !== null) {
+        try { actions.push(JSON.parse(match[1])); } catch (_) {}
+    }
+    const cleanText = text.replace(/<!--ACTION:.*?-->/gs, '').trim();
+    return { cleanText, actions };
+}
+
+// ── App Setup ────────────────────────────────
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
@@ -163,7 +331,7 @@ app.get('/health', async (req, res) => {
 });
 
 // ── Auth Middleware ─────────────────────────
-app.use('/analyze', (req, res, next) => {
+function requireAuth(req, res, next) {
     if (!SUPPORT_API_KEY) {
         return res.status(500).json({ error: 'SUPPORT_API_KEY not configured' });
     }
@@ -172,7 +340,11 @@ app.use('/analyze', (req, res, next) => {
         return res.status(401).json({ error: 'Unauthorized' });
     }
     next();
-});
+}
+
+app.use('/analyze', requireAuth);
+app.use('/chat', requireAuth);
+app.use('/sessions', requireAuth);
 
 // ── Analysis Endpoint ───────────────────────
 app.post('/analyze', async (req, res) => {
@@ -180,7 +352,7 @@ app.post('/analyze', async (req, res) => {
 
     const prompt = buildAnalysisPrompt(problem_description, error_messages, logs, handshake_failures, device_context);
 
-    console.log(`[Proxy] Received analysis request for device: ${device_context?.deviceId || '?'}`);
+    console.log(`[Analyze] Request for device: ${device_context?.deviceId || '?'}`);
 
     // Acquire concurrency slot
     try {
@@ -192,115 +364,276 @@ app.post('/analyze', async (req, res) => {
         return res.status(503).json({ error: 'queue_timeout', message: 'AI queue timeout. Please try again.', retry_after: 10 });
     }
 
+    const session = createSession('analyze', `Device: ${device_context?.deviceId || '?'} — ${(problem_description || '').slice(0, 150)}`);
+
     try {
-        console.log(`[Proxy] Calling claude CLI via stdin (prompt length: ${prompt.length})...`);
+        console.log(`[Analyze] Calling Claude CLI (prompt: ${prompt.length} chars)...`);
         const startTime = Date.now();
 
-        const { stdout, stderr } = await runClaude(prompt, CLAUDE_TIMEOUT_MS);
+        const { events, stderr, timedOut } = await runClaudeStream(
+            prompt,
+            ['--model', 'haiku'],
+            CLAUDE_TIMEOUT_MS
+        );
 
         const latencyMs = Date.now() - startTime;
-        console.log(`[Proxy] Claude CLI responded (${latencyMs}ms), stdout length: ${stdout.length}`);
-        if (stderr) console.warn(`[Proxy] Claude CLI stderr: ${stderr.slice(0, 500)}`);
+        const parsed = parseStreamEvents(events);
 
-        const analysis = parseClaudeResponse(stdout);
+        // Populate session
+        session.events = events.map(summarizeEvent);
+        session.turns = parsed.turns;
+        session.cost_usd = parsed.cost_usd;
+        session.model = parsed.model;
+        session.response = parsed.responseText?.slice(0, 500);
+
+        if (timedOut) {
+            session.status = 'timeout';
+            session.error = 'Claude CLI timed out';
+            finalizeSession(session);
+            console.error(`[Analyze] Timeout (${latencyMs}ms)`);
+            return res.status(500).json({
+                diagnosis: 'AI analysis timed out. Please try standard troubleshooting.',
+                suggested_steps: [
+                    'Check your webhook URL is reachable from the internet.',
+                    'Verify your gateway token with: exec: echo $OPENCLAW_GATEWAY_TOKEN',
+                    'If SETUP_PASSWORD is enabled, include it in /api/bot/register.',
+                    'Retry POST /api/bot/register with openclaw_version included.'
+                ],
+                confidence: 0,
+                session_id: session.id,
+                debug: { reason: 'timeout', latency_ms: latencyMs }
+            });
+        }
+
+        session.status = parsed.status === 'success' ? 'success' : parsed.status;
+        finalizeSession(session);
+
+        console.log(`[Analyze] Done (${latencyMs}ms, status: ${parsed.status}, turns: ${parsed.turns})`);
+        if (stderr) console.warn(`[Analyze] stderr: ${stderr.slice(0, 300)}`);
+
+        // Parse the response text as JSON diagnosis
+        const analysis = parseAnalysisText(parsed.responseText);
+        analysis.session_id = session.id;
+        analysis.latency_ms = latencyMs;
         res.json(analysis);
     } catch (err) {
-        const errCode = err.code || 'unknown';
-        const errSignal = err.signal || 'none';
-        console.error(`[Proxy] Claude CLI error: ${err.message}`);
-        console.error(`[Proxy] Error details — code: ${errCode}, signal: ${errSignal}, killed: ${!!err.killed}`);
-        if (err.stderr) console.error(`[Proxy] stderr: ${err.stderr.slice(0, 500)}`);
+        session.status = 'error';
+        session.error = err.message;
+        finalizeSession(session);
 
+        console.error(`[Analyze] Error: ${err.message}`);
         res.status(500).json({
-            diagnosis: 'AI analysis timed out or failed. Please try standard troubleshooting.',
-            suggested_steps: [
-                'Check your webhook URL is reachable from the internet.',
-                'Verify your gateway token with: exec: echo $OPENCLAW_GATEWAY_TOKEN',
-                'If SETUP_PASSWORD is enabled, include it in /api/bot/register.',
-                'Retry POST /api/bot/register with openclaw_version included.'
-            ],
+            diagnosis: 'AI analysis failed. Please try standard troubleshooting.',
+            suggested_steps: [],
             confidence: 0,
-            debug: {
-                error: err.message.slice(0, 300),
-                code: errCode,
-                killed: !!err.killed,
-                signal: errSignal
-            }
+            session_id: session.id,
+            debug: { error: err.message.slice(0, 300) }
         });
     } finally {
         releaseSlot();
     }
 });
 
-// ── Chat Auth Middleware ───────────────────
-app.use('/chat', (req, res, next) => {
-    if (!SUPPORT_API_KEY) {
-        return res.status(500).json({ error: 'SUPPORT_API_KEY not configured' });
-    }
-    const auth = req.headers.authorization;
-    if (!auth || auth !== `Bearer ${SUPPORT_API_KEY}`) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    next();
-});
-
 // ── Chat Endpoint (Sonnet + repo tools) ────
-function runClaudeChat(prompt, timeoutMs = CHAT_TIMEOUT_MS, { isAdmin = false, hasImages = false } = {}) {
-    return new Promise((resolve, reject) => {
-        const args = ['--print', '--output-format', 'json', '--model', 'sonnet', '--max-turns', '6'];
-        // Build tool list: repo tools need clone, Bash always available for admin
+app.post('/chat', async (req, res) => {
+    const { message, history, images, device_context } = req.body;
+
+    if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: 'message is required' });
+    }
+
+    // Acquire concurrency slot (queue if busy)
+    try {
+        await acquireSlot(CHAT_TIMEOUT_MS);
+    } catch (qErr) {
+        if (qErr.queueFull) {
+            return res.status(503).json({ error: 'busy', message: 'AI is busy handling other requests. Please try again shortly.', retry_after: 15 });
+        }
+        return res.status(503).json({ error: 'queue_timeout', message: 'AI queue timeout. Please try again.', retry_after: 10 });
+    }
+
+    // Save images to temp files so Claude can Read them
+    const imagePaths = [];
+    if (images && Array.isArray(images)) {
+        for (let i = 0; i < Math.min(images.length, 3); i++) {
+            const img = images[i];
+            if (!img.data || !img.mimeType) continue;
+            const ext = img.mimeType === 'image/png' ? 'png' : 'jpg';
+            const tmpPath = `/tmp/eclaw_chat_img_${Date.now()}_${i}.${ext}`;
+            try {
+                fs.writeFileSync(tmpPath, Buffer.from(img.data, 'base64'));
+                imagePaths.push(tmpPath);
+            } catch (err) {
+                console.error(`[Chat] Failed to write temp image: ${err.message}`);
+            }
+        }
+    }
+
+    const prompt = buildChatPrompt(message, history || [], device_context || {}, imagePaths);
+    const role = device_context?.role || 'user';
+    const page = device_context?.page || '?';
+    const isAdmin = role === 'admin';
+    const hasImages = imagePaths.length > 0;
+
+    console.log(`[Chat] Request from ${role} on page "${page}" (prompt: ${prompt.length} chars, images: ${imagePaths.length})`);
+
+    const session = createSession('chat', `${role}@${page}: ${message.slice(0, 150)}`);
+
+    const startTime = Date.now();
+    try {
+        // Build Claude CLI args
+        const cliArgs = ['--model', 'sonnet', '--max-turns', '6'];
         const tools = [];
         if (fs.existsSync(path.join(REPO_DIR, '.git'))) {
             tools.push('Read', 'Glob', 'Grep');
         } else if (hasImages) {
-            // Read tool needed for viewing user-attached images even without repo
             tools.push('Read');
         }
-        // Bash for curl log queries (admin: full access, user: own device only)
         tools.push('Bash');
         if (tools.length > 0) {
-            args.push('--allowedTools', tools.join(','));
+            cliArgs.push('--allowedTools', tools.join(','));
         }
-        const child = spawn(CLAUDE_BIN, args, {
-            cwd: fs.existsSync(REPO_DIR) ? REPO_DIR : __dirname,
-            env: {
-                ...process.env,
-                HOME: process.env.HOME || '/root',
-                CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: '1'
-            },
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
 
-        let stdout = '';
-        let stderr = '';
-        let killed = false;
-        child.stdout.on('data', d => { stdout += d; });
-        child.stderr.on('data', d => { stderr += d; });
-        child.on('error', err => reject(err));
-        child.on('close', (code, signal) => {
-            if (killed || signal === 'SIGTERM' || signal === 'SIGKILL' || code === 143 || code === 137) {
-                const err = new Error(`Claude CLI killed by ${signal || 'timeout'} (timeout after ${timeoutMs}ms)`);
-                err.killed = true;
-                return reject(err);
+        const { events, stderr, timedOut } = await runClaudeStream(
+            prompt,
+            cliArgs,
+            CHAT_TIMEOUT_MS,
+            {
+                cwd: fs.existsSync(REPO_DIR) ? REPO_DIR : __dirname,
+                env: {
+                    ...process.env,
+                    HOME: process.env.HOME || '/root',
+                    CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS: '1'
+                }
             }
-            if (code !== 0) {
-                const err = new Error(`Claude CLI exited with code ${code}: ${stderr.slice(0, 300)}`);
-                err.code = code;
-                return reject(err);
-            }
-            resolve({ stdout, stderr });
+        );
+
+        const latencyMs = Date.now() - startTime;
+        const parsed = parseStreamEvents(events);
+
+        // Populate session
+        session.events = events.map(summarizeEvent);
+        session.turns = parsed.turns;
+        session.cost_usd = parsed.cost_usd;
+        session.model = parsed.model;
+
+        if (timedOut) {
+            session.status = 'timeout';
+            session.error = 'Claude CLI timed out';
+            // Use any partial response we got
+            const partialText = parsed.responseText || 'Sorry, I was unable to process your request in time. Please try again.';
+            session.response = partialText.slice(0, 500);
+            finalizeSession(session);
+
+            console.error(`[Chat] Timeout (${latencyMs}ms), partial response: ${partialText.length} chars`);
+            return res.json({
+                response: partialText,
+                status: 'timeout',
+                session_id: session.id,
+                latency_ms: latencyMs
+            });
+        }
+
+        if (parsed.status === 'error_max_turns') {
+            session.status = 'error_max_turns';
+            const partialText = parsed.responseText || 'Sorry, this question was too complex for me to fully analyze. Could you try asking a more specific question?';
+            session.response = partialText.slice(0, 500);
+            finalizeSession(session);
+
+            console.warn(`[Chat] Max turns reached (${parsed.turns} turns, ${latencyMs}ms), partial response: ${partialText.length} chars`);
+            const { cleanText, actions } = extractActions(partialText);
+            return res.json({
+                response: cleanText,
+                actions: actions.length > 0 ? actions : undefined,
+                status: 'max_turns',
+                session_id: session.id,
+                latency_ms: latencyMs
+            });
+        }
+
+        session.status = parsed.status === 'success' ? 'success' : parsed.status;
+        session.response = parsed.responseText?.slice(0, 500);
+        finalizeSession(session);
+
+        console.log(`[Chat] Done (${latencyMs}ms, status: ${parsed.status}, turns: ${parsed.turns})`);
+        if (stderr) console.warn(`[Chat] stderr: ${stderr.slice(0, 300)}`);
+
+        // Extract actions and clean response
+        const { cleanText, actions } = extractActions(parsed.responseText || '');
+        const responseText = cleanText || 'I received your message but had trouble generating a response.';
+
+        res.json({
+            response: responseText,
+            actions: actions.length > 0 ? actions : undefined,
+            session_id: session.id,
+            latency_ms: latencyMs
         });
+    } catch (err) {
+        const latencyMs = Date.now() - startTime;
+        session.status = 'error';
+        session.error = err.message;
+        finalizeSession(session);
 
-        child.stdin.write(prompt);
-        child.stdin.end();
-        // Single timeout mechanism (removed duplicate spawn timeout option)
-        setTimeout(() => {
-            killed = true;
-            try { child.kill('SIGTERM'); } catch (_) {}
-        }, timeoutMs);
-    });
-}
+        console.error(`[Chat] Error (${latencyMs}ms): ${err.message}`);
+        res.status(500).json({
+            response: 'Sorry, I was unable to process your request. Please try again in a moment.',
+            session_id: session.id,
+            latency_ms: latencyMs
+        });
+    } finally {
+        releaseSlot();
+        // Clean up temp image files
+        for (const p of imagePaths) {
+            try { fs.unlinkSync(p); } catch (_) {}
+        }
+    }
+});
 
+// ── Session Query Endpoints ─────────────────
+app.get('/sessions', (req, res) => {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const status = req.query.status; // optional filter
+    const since = parseInt(req.query.since) || 0;
+
+    let filtered = sessionStore;
+
+    if (status) {
+        filtered = filtered.filter(s => s.status === status);
+    }
+    if (since > 0) {
+        filtered = filtered.filter(s => s.startedAt >= since);
+    }
+
+    // Return list without full events (summary only)
+    const result = filtered.slice(0, limit).map(s => ({
+        id: s.id,
+        startedAt: s.startedAt,
+        completedAt: s.completedAt,
+        type: s.type,
+        status: s.status,
+        prompt: s.prompt,
+        response: s.response,
+        turns: s.turns,
+        cost_usd: s.cost_usd,
+        model: s.model,
+        error: s.error,
+        event_count: s.events.length,
+        duration_ms: s.completedAt ? s.completedAt - s.startedAt : null
+    }));
+
+    res.json({ sessions: result, total: filtered.length });
+});
+
+app.get('/sessions/:id', (req, res) => {
+    const session = sessionStore.find(s => s.id === req.params.id);
+    if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+    }
+    // Return full session including all events
+    res.json(session);
+});
+
+// ── Prompt Builder (Chat) ──────────────────
 function buildChatPrompt(message, history, context, imagePaths = []) {
     const isAdmin = context.role === 'admin';
 
@@ -359,95 +692,6 @@ Use Read tool to view: ${imagePaths.map((p, i) => `${p}`).join(', ')}
 
 Respond naturally as E-Claw AI.`;
 }
-
-function parseChatResponse(output) {
-    try {
-        const wrapper = JSON.parse(output);
-        let text = wrapper.result || wrapper.content || String(output);
-
-        // Extract <!--ACTION:{...}--> blocks
-        const actions = [];
-        const actionRegex = /<!--ACTION:(.*?)-->/gs;
-        let match;
-        while ((match = actionRegex.exec(text)) !== null) {
-            try { actions.push(JSON.parse(match[1])); } catch (_) {}
-        }
-        text = text.replace(/<!--ACTION:.*?-->/gs, '').trim();
-
-        return {
-            response: text || 'I received your message but had trouble generating a response.',
-            actions: actions.length > 0 ? actions : undefined
-        };
-    } catch (_) {
-        return { response: output.slice(0, 5000) };
-    }
-}
-
-app.post('/chat', async (req, res) => {
-    const { message, history, images, device_context } = req.body;
-
-    if (!message || typeof message !== 'string') {
-        return res.status(400).json({ error: 'message is required' });
-    }
-
-    // Acquire concurrency slot (queue if busy)
-    try {
-        await acquireSlot(CHAT_TIMEOUT_MS);
-    } catch (qErr) {
-        if (qErr.queueFull) {
-            return res.status(503).json({ error: 'busy', message: 'AI is busy handling other requests. Please try again shortly.', retry_after: 15 });
-        }
-        return res.status(503).json({ error: 'queue_timeout', message: 'AI queue timeout. Please try again.', retry_after: 10 });
-    }
-
-    // Save images to temp files so Claude can Read them
-    const imagePaths = [];
-    if (images && Array.isArray(images)) {
-        for (let i = 0; i < Math.min(images.length, 3); i++) {
-            const img = images[i];
-            if (!img.data || !img.mimeType) continue;
-            const ext = img.mimeType === 'image/png' ? 'png' : 'jpg';
-            const tmpPath = `/tmp/eclaw_chat_img_${Date.now()}_${i}.${ext}`;
-            try {
-                fs.writeFileSync(tmpPath, Buffer.from(img.data, 'base64'));
-                imagePaths.push(tmpPath);
-            } catch (err) {
-                console.error(`[Chat] Failed to write temp image: ${err.message}`);
-            }
-        }
-    }
-
-    const prompt = buildChatPrompt(message, history || [], device_context || {}, imagePaths);
-    const role = device_context?.role || 'user';
-    const page = device_context?.page || '?';
-
-    console.log(`[Chat] Request from ${role} on page "${page}" (prompt: ${prompt.length} chars, images: ${imagePaths.length})`);
-
-    const startTime = Date.now();
-    try {
-        const { stdout, stderr } = await runClaudeChat(prompt, CHAT_TIMEOUT_MS, { isAdmin: role === 'admin', hasImages: imagePaths.length > 0 });
-        const latencyMs = Date.now() - startTime;
-        console.log(`[Chat] Sonnet responded (${latencyMs}ms), stdout: ${stdout.length} chars`);
-        if (stderr) console.warn(`[Chat] stderr: ${stderr.slice(0, 300)}`);
-
-        const parsed = parseChatResponse(stdout);
-        parsed.latency_ms = latencyMs;
-        res.json(parsed);
-    } catch (err) {
-        const latencyMs = Date.now() - startTime;
-        console.error(`[Chat] Error (${latencyMs}ms): ${err.message}`);
-        res.status(500).json({
-            response: 'Sorry, I was unable to process your request. Please try again in a moment.',
-            latency_ms: latencyMs
-        });
-    } finally {
-        releaseSlot();
-        // Clean up temp image files
-        for (const p of imagePaths) {
-            try { fs.unlinkSync(p); } catch (_) {}
-        }
-    }
-});
 
 // ── Prompt Builder (Binding Analysis) ──────
 function buildAnalysisPrompt(problem, errors, logs, failures, context) {
@@ -521,50 +765,32 @@ Rules:
 - If you cannot determine the issue, say so and suggest general debugging steps`;
 }
 
-// ── Response Parser ─────────────────────────
-function parseClaudeResponse(output) {
+// ── Analysis Text Parser ────────────────────
+// Extracts JSON diagnosis from Claude's text response
+function parseAnalysisText(text) {
+    if (!text) {
+        return { diagnosis: 'No response from AI.', suggested_steps: [], confidence: 0 };
+    }
+
     try {
-        // claude --output-format json wraps result in { result: "..." }
-        const wrapper = JSON.parse(output);
-        const text = wrapper.result || wrapper.content || output;
-
-        // Try to parse the inner text as JSON
-        if (typeof text === 'string') {
-            // Extract JSON from potential markdown code fences
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                return {
-                    diagnosis: parsed.diagnosis || 'Analysis complete.',
-                    suggested_steps: Array.isArray(parsed.suggested_steps) ? parsed.suggested_steps : [],
-                    confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5
-                };
-            }
-        }
-
-        // If text is already an object with the right shape
-        if (typeof text === 'object' && text.diagnosis) {
+        // Try to parse as JSON directly
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
             return {
-                diagnosis: text.diagnosis,
-                suggested_steps: Array.isArray(text.suggested_steps) ? text.suggested_steps : [],
-                confidence: typeof text.confidence === 'number' ? text.confidence : 0.5
+                diagnosis: parsed.diagnosis || 'Analysis complete.',
+                suggested_steps: Array.isArray(parsed.suggested_steps) ? parsed.suggested_steps : [],
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 0.5
             };
         }
+    } catch (_) {}
 
-        // Fallback: use raw text as diagnosis
-        return {
-            diagnosis: String(text).slice(0, 2000),
-            suggested_steps: [],
-            confidence: 0.3
-        };
-    } catch (err) {
-        // If JSON parsing fails entirely, use raw output
-        return {
-            diagnosis: output.slice(0, 2000),
-            suggested_steps: [],
-            confidence: 0.3
-        };
-    }
+    // Fallback: use raw text as diagnosis
+    return {
+        diagnosis: text.slice(0, 2000),
+        suggested_steps: [],
+        confidence: 0.3
+    };
 }
 
 // ── Warmup: Pre-start Claude CLI ────────────
@@ -579,8 +805,14 @@ async function warmup() {
     console.log('[Warmup] Pre-warming Claude CLI...');
     const startTime = Date.now();
     try {
-        await runClaude('Reply with exactly: {"status":"warm"}', 15000);
-        console.log(`[Warmup] Claude CLI warm (${Date.now() - startTime}ms)`);
+        const { events } = await runClaudeStream(
+            'Reply with exactly: {"status":"warm"}',
+            ['--model', 'haiku'],
+            15000
+        );
+        const resultEvent = events.find(e => e.type === 'result');
+        const status = resultEvent?.subtype || 'unknown';
+        console.log(`[Warmup] Claude CLI warm (${Date.now() - startTime}ms, status: ${status})`);
     } catch (err) {
         console.warn(`[Warmup] Failed (${Date.now() - startTime}ms): ${err.message.slice(0, 200)}`);
     }

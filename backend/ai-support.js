@@ -492,6 +492,39 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         return { recentLogs, recentFailures };
     }
 
+    // ── Sanitize raw Claude CLI session JSON ─────
+    // The proxy sometimes returns raw Claude CLI session output (e.g. {"type":"result","subtype":"error_max_turns",...})
+    // instead of clean text. Detect and replace with user-friendly message.
+    function sanitizeProxyResponse(responseText) {
+        if (!responseText || typeof responseText !== 'string') {
+            return responseText || 'Sorry, I could not generate a response. Please try again.';
+        }
+
+        const trimmed = responseText.trim();
+        // Detect raw JSON session results
+        if (trimmed.startsWith('{') && trimmed.includes('"type"')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (parsed.type === 'result' || parsed.subtype || parsed.session_id) {
+                    console.warn(`[AI Chat] Raw session JSON detected (subtype: ${parsed.subtype}), sanitizing`);
+                    if (parsed.result_text) {
+                        return parsed.result_text;
+                    } else if (parsed.subtype === 'error_max_turns') {
+                        return 'Sorry, this question was too complex for me to fully analyze. Could you try asking a more specific question?';
+                    } else if (parsed.subtype === 'error_tool_execution') {
+                        return 'I encountered an error while looking into your issue. Please try again.';
+                    } else {
+                        return 'Sorry, I was unable to process your request. Please try rephrasing your question.';
+                    }
+                }
+            } catch (_) {
+                // Not valid JSON, leave as-is
+            }
+        }
+
+        return responseText;
+    }
+
     // ── Log Query to DB ─────────────────────────
     function logSupportQuery(deviceId, entityId, result) {
         chatPool.query(
@@ -831,35 +864,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                 [req.user.userId, isAdmin, page || null, latencyMs]
             ).catch(() => {});
 
-            let responseText = result.response;
-
-            // Sanitize: proxy may return raw Claude session JSON instead of clean text
-            if (responseText && typeof responseText === 'string') {
-                const trimmed = responseText.trim();
-                // Detect raw JSON session results (e.g. {"type":"result","subtype":"error_max_turns",...})
-                if (trimmed.startsWith('{') && trimmed.includes('"type"')) {
-                    try {
-                        const parsed = JSON.parse(trimmed);
-                        if (parsed.type === 'result' || parsed.subtype || parsed.session_id) {
-                            console.warn(`[AI Chat] Proxy returned raw session JSON (subtype: ${parsed.subtype}), sanitizing`);
-                            // Try to extract useful text from the raw result
-                            if (parsed.result_text) {
-                                responseText = parsed.result_text;
-                            } else if (parsed.subtype === 'error_max_turns') {
-                                responseText = 'Sorry, this question was too complex for me to fully analyze. Could you try asking a more specific question?';
-                            } else if (parsed.subtype === 'error_tool_execution') {
-                                responseText = 'I encountered an error while looking into your issue. Please try again.';
-                            } else {
-                                responseText = 'Sorry, I was unable to process your request. Please try rephrasing your question.';
-                            }
-                        }
-                    } catch (_) {
-                        // Not valid JSON, leave as-is
-                    }
-                }
-            } else if (!responseText) {
-                responseText = 'Sorry, I could not generate a response. Please try again.';
-            }
+            let responseText = sanitizeProxyResponse(result.response);
 
             // Auto-execute create_issue actions for regular users (dual-track: issue + feedback)
             let feedbackCreated = null;
@@ -1048,7 +1053,7 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             if (!response.ok) throw new Error(`Proxy HTTP ${response.status}`);
 
             const result = await response.json();
-            let responseText = result.response;
+            let responseText = sanitizeProxyResponse(result.response);
 
             // Auto-create GitHub issues for regular users (dual-track: issue + feedback)
             let feedbackCreated = null;
