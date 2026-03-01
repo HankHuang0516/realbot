@@ -2799,7 +2799,7 @@ app.post('/api/entity/speak-to', async (req, res) => {
         const apiBase = 'https://eclawbot.com';
         const toRemaining = getBotToBotRemaining(deviceId, toId);
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
-        pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
+        pushMsg += `To update your mood/emoji on wallpaper (do NOT repeat or narrate the message — the user can already see it in chat):\n`;
         pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${toId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
         if (expectsReply) {
             pushMsg += `To reply directly to Entity ${fromId}:\n`;
@@ -3012,7 +3012,7 @@ app.post('/api/entity/cross-speak', async (req, res) => {
         const apiBase = 'https://eclawbot.com';
         const csRemaining = getCrossSpeakRemaining(target.deviceId, target.entityId);
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
-        pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
+        pushMsg += `To update your mood/emoji on wallpaper (do NOT repeat or narrate the message — the user can already see it in chat):\n`;
         pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${target.deviceId}","entityId":${target.entityId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
         pushMsg += `To reply to this cross-device message:\n`;
         pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/cross-speak" -H "Content-Type: application/json" -d '{"deviceId":"${target.deviceId}","fromEntityId":${target.entityId},"botSecret":"${toEntity.botSecret}","targetCode":"${fromEntity.publicCode}","text":"YOUR_REPLY_HERE"}'\n\n`;
@@ -3395,7 +3395,7 @@ app.post('/api/entity/broadcast', async (req, res) => {
             const apiBase = 'https://eclawbot.com';
             const toRemainingBcast = getBotToBotRemaining(deviceId, toId);
             let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
-            pushMsg += `To update your wallpaper status (visible on user's phone):\n`;
+            pushMsg += `To update your mood/emoji on wallpaper (do NOT repeat or narrate the message — the user can already see it in chat):\n`;
             pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${toId},"botSecret":"${toEntity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
             if (expectsReplyBcast) {
                 pushMsg += `To reply directly to Entity ${fromId}:\n`;
