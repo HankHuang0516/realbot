@@ -1,3 +1,10 @@
+## [1.59.1](https://github.com/HankHuang0516/realbot/compare/v1.59.0...v1.59.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* add social login buttons and Google SDK to web portal login/register ([dd98a65](https://github.com/HankHuang0516/realbot/commit/dd98a65da0a786e00dcaff53fe9fa857352680b3))
+
 # [1.59.0](https://github.com/HankHuang0516/realbot/compare/v1.58.0...v1.59.0) (2026-03-01)
 
 
