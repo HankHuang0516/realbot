@@ -1,3 +1,10 @@
+# [1.56.0](https://github.com/HankHuang0516/realbot/compare/v1.55.0...v1.56.0) (2026-03-01)
+
+
+### Features
+
+* **android:** draggable AI FAB with edge snap and position memory ([bca3f81](https://github.com/HankHuang0516/realbot/commit/bca3f81ca5b46e83c8754949d83ba337f7b3e7e6))
+
 # [1.55.0](https://github.com/HankHuang0516/realbot/compare/v1.54.2...v1.55.0) (2026-03-01)
 
 
