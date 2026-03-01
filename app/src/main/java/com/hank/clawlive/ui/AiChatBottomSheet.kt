@@ -305,6 +305,10 @@ class AiChatBottomSheet : BottomSheetDialogFragment() {
                     response.response
                 }
                 messages.add(AiMessage("assistant", displayText))
+                // Show feedback navigation if issue + feedback was created
+                if (displayText.contains("Feedback #") && displayText.contains("recorded")) {
+                    messages.add(AiMessage("action", getString(R.string.ai_chat_view_feedback)))
+                }
             } else {
                 val errorMsg = response.message ?: response.error ?: "AI is temporarily unavailable"
                 messages.add(AiMessage("assistant", errorMsg))
@@ -419,10 +423,26 @@ class AiChatBottomSheet : BottomSheetDialogFragment() {
                 if (msg.role == "typing") {
                     tvMessage.text = msg.content
                     tvMessage.setTypeface(null, Typeface.ITALIC)
+                    tvMessage.setOnClickListener(null)
                     return
                 }
 
                 tvMessage.setTypeface(null, Typeface.NORMAL)
+
+                if (msg.role == "action") {
+                    tvMessage.text = msg.content
+                    tvMessage.setTextColor(0xFFFFD23F.toInt())
+                    tvMessage.setTypeface(null, Typeface.BOLD)
+                    tvMessage.setOnClickListener {
+                        val intent = android.content.Intent(it.context, com.hank.clawlive.FeedbackHistoryActivity::class.java)
+                        it.context.startActivity(intent)
+                    }
+                    imageContainer?.visibility = View.GONE
+                    return
+                }
+
+                tvMessage.setTextColor(0xFFE0E0E0.toInt())
+                tvMessage.setOnClickListener(null)
 
                 if (msg.role == "assistant") {
                     val html = renderMarkdown(msg.content)

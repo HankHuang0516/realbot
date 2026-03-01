@@ -1061,30 +1061,56 @@ module.exports = function(devices, getOrCreateDevice) {
     }
 
     // ============================================
-    // POST /oauth/google — Verify Google ID token
+    // GET /oauth/config — Public OAuth client IDs for frontend SDKs
+    // ============================================
+    router.get('/oauth/config', (req, res) => {
+        res.json({
+            googleClientId: GOOGLE_CLIENT_ID || null,
+            facebookAppId: FACEBOOK_APP_ID || null
+        });
+    });
+
+    // ============================================
+    // POST /oauth/google — Verify Google ID token or access token
     // ============================================
     router.post('/oauth/google', async (req, res) => {
         try {
-            if (!googleClient) {
+            if (!GOOGLE_CLIENT_ID) {
                 return res.status(503).json({ success: false, error: 'Google Sign-In not configured' });
             }
 
-            const { idToken, deviceId, deviceSecret } = req.body;
-            if (!idToken) {
-                return res.status(400).json({ success: false, error: 'idToken required' });
+            const { idToken, accessToken, deviceId, deviceSecret } = req.body;
+            if (!idToken && !accessToken) {
+                return res.status(400).json({ success: false, error: 'idToken or accessToken required' });
             }
 
-            // Verify the token with Google
-            const ticket = await googleClient.verifyIdToken({
-                idToken,
-                audience: GOOGLE_CLIENT_ID
-            });
-            const payload = ticket.getPayload();
+            let googleId, email, displayName, avatarUrl;
 
-            const googleId = payload.sub;
-            const email = payload.email_verified ? payload.email : null;
-            const displayName = payload.name || null;
-            const avatarUrl = payload.picture || null;
+            if (idToken) {
+                // Android / server-side: verify ID token directly
+                const ticket = await googleClient.verifyIdToken({
+                    idToken,
+                    audience: GOOGLE_CLIENT_ID
+                });
+                const payload = ticket.getPayload();
+                googleId = payload.sub;
+                email = payload.email_verified ? payload.email : null;
+                displayName = payload.name || null;
+                avatarUrl = payload.picture || null;
+            } else {
+                // Web: verify access token via Google userinfo API
+                const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                if (!userInfoRes.ok) {
+                    return res.status(401).json({ success: false, error: 'Invalid Google access token' });
+                }
+                const userInfo = await userInfoRes.json();
+                googleId = userInfo.sub;
+                email = userInfo.email_verified ? userInfo.email : null;
+                displayName = userInfo.name || null;
+                avatarUrl = userInfo.picture || null;
+            }
 
             await handleOAuthLogin('google', googleId, email, displayName, avatarUrl, deviceId, deviceSecret, res);
         } catch (error) {

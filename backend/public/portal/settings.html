@@ -576,6 +576,10 @@
                 <span class="info-label">Device ID</span>
                 <span class="info-value mono" id="accountDeviceId">--</span>
             </div>
+            <div class="info-row" id="connectedAccountsRow" style="display:none">
+                <span class="info-label" data-i18n="settings_connected_accounts">Connected Accounts</span>
+                <span class="info-value" id="connectedAccounts">--</span>
+            </div>
         </div>
 
         <!-- Subscription Card -->
@@ -816,6 +820,15 @@
         function populateAccountInfo(user) {
             document.getElementById('accountEmail').textContent = user.email || '--';
             document.getElementById('accountDeviceId').textContent = user.deviceId || '--';
+
+            // Connected accounts
+            const providers = [];
+            if (user.googleLinked) providers.push('Google');
+            if (user.facebookLinked) providers.push('Facebook');
+            if (providers.length > 0) {
+                document.getElementById('connectedAccountsRow').style.display = '';
+                document.getElementById('connectedAccounts').textContent = providers.join(', ');
+            }
         }
 
         // ============================================

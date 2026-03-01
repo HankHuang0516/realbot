@@ -557,6 +557,80 @@
                 showMsg('loginError', e.message);
             }
         }
+
+        // ==================== Social Login ====================
+        let googleClientId = null;
+        let facebookAppId = null;
+
+        // Fetch OAuth config from backend
+        async function loadOAuthConfig() {
+            try {
+                const data = await apiCall('GET', '/api/auth/oauth/config');
+                googleClientId = data.googleClientId || null;
+                facebookAppId = data.facebookAppId || null;
+                if (facebookAppId) initFacebookSdk();
+            } catch (e) {
+                console.warn('[OAuth] Config not available:', e.message);
+            }
+        }
+
+        function initFacebookSdk() {
+            window.fbAsyncInit = function () {
+                FB.init({ appId: facebookAppId, cookie: true, xfbml: false, version: 'v19.0' });
+            };
+            const s = document.createElement('script');
+            s.src = 'https://connect.facebook.net/en_US/sdk.js';
+            s.async = true;
+            s.defer = true;
+            document.body.appendChild(s);
+        }
+
+        async function doGoogleLogin() {
+            if (!googleClientId) return showMsg('loginError', 'Google login not configured');
+            if (typeof google === 'undefined') return showMsg('loginError', 'Google SDK loading...');
+
+            try {
+                const client = google.accounts.oauth2.initTokenClient({
+                    client_id: googleClientId,
+                    scope: 'openid email profile',
+                    callback: async (resp) => {
+                        if (resp.error) return showMsg('loginError', resp.error);
+                        try {
+                            await apiCall('POST', '/api/auth/oauth/google', {
+                                accessToken: resp.access_token
+                            });
+                            window.location.href = 'dashboard.html';
+                        } catch (e) {
+                            showMsg('loginError', e.message || 'Google login failed');
+                        }
+                    }
+                });
+                client.requestAccessToken();
+            } catch (e) {
+                showMsg('loginError', e.message || 'Google login failed');
+            }
+        }
+
+        async function doFacebookLogin() {
+            if (!facebookAppId) return showMsg('loginError', 'Facebook login not configured');
+            if (typeof FB === 'undefined') return showMsg('loginError', 'Facebook SDK loading...');
+
+            FB.login(async function (response) {
+                if (response.authResponse) {
+                    try {
+                        await apiCall('POST', '/api/auth/oauth/facebook', {
+                            accessToken: response.authResponse.accessToken
+                        });
+                        window.location.href = 'dashboard.html';
+                    } catch (e) {
+                        showMsg('loginError', e.message || 'Facebook login failed');
+                    }
+                }
+            }, { scope: 'email,public_profile' });
+        }
+
+        // Load OAuth config on page load
+        loadOAuthConfig();
     </script>
 </body>
 

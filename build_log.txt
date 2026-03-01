@@ -1,0 +1,4050 @@
+============================================================
+REGRESSION TEST RUNNER
+============================================================
+Date: 2026-02-28T09:00:51.367Z
+Tests to run: 14
+
+🧹 Pre-test cleanup...
+⚠️  Cleanup failed (server may not be running): 
+
+============================================================
+Running: test_ux_coverage.js
+============================================================
+============================================================
+UX/UI COVERAGE TEST
+============================================================
+Target: https://eclawbot.com
+Required Coverage: >= 98%
+Endpoints to test: 16
+
+Testing GET    Root                ... ??200 
+Testing GET    Health Check        ... ??200 
+Testing POST   Device Register     ... ??200 
+Testing POST   Device Status       ... ??200 
+Testing POST   Bind Entity         ... ??400 
+Testing GET    Get Entities        ... ??200 
+Testing GET    Get Status          ... ??200 
+Testing POST   Transform Entity    ... ??400 
+Testing DELETE Delete Entity       ... ??400 
+Testing POST   Client Speak        ... ??200 
+Testing POST   Entity Speak To     ... ??403 
+Testing GET    Get Pending         ... ??200 
+Testing GET    Debug Devices       ... ??200 
+Testing POST   Debug Reset         ... ??403 
+Testing POST   Bot Register        ... ??400 
+Testing DELETE Bot Unregister      ... ??403 
+
+--- Log / Telemetry API Verification ---
+  Telemetry: 10 entries captured (5 with duration)
+  POST /api/device/register logged: true
+  GET /api/status logged: true
+  Server logs: 50 entries
+
+============================================================
+UX COVERAGE SUMMARY
+============================================================
+Endpoints Tested: 16
+Passed: 20
+Failed: 0
+Coverage: 125.0%
+
+??UX Coverage Test PASSED
+All endpoints respond correctly, no 404 or timeout errors.
+
+All tests passed
+
+============================================================
+Running: test_ux_improvements.js
+============================================================
+============================================================
+UX IMPROVEMENTS VERIFICATION TESTS
+============================================================
+Test Device ID: test-ux-1772269263297
+API Base: https://eclawbot.com
+
+--- Test 1: /api/entities response structure ---
+Response: {
+  "entities": [
+    {
+      "deviceId": "594756f7-245c-4b0a-b164-3f90d205345d",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wc4ez7"
+    },
+    {
+      "deviceId": "594756f7-245c-4b0a-b164-3f90d205345d",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "mg3d3t"
+    },
+    {
+      "deviceId": "594756f7-245c-4b0a-b164-3f90d205345d",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "x3ycdt"
+    },
+    {
+      "deviceId": "220cf7ac-0a90-470a-a4d2-6cc829f1c160",
+      "entityId": 0,
+      "name": "研發總監",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {
+        "COLOR": -16711936,
+        "GLOSS": 0.8,
+        "METALLIC": 0.8,
+        "CLAW_LEFT": 45,
+        "CLAW_RIGHT": -45
+      },
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "o7su04"
+    },
+    {
+      "deviceId": "21674784-d676-4e9c-9f1d-e527570b893e",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269229975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ts92s4"
+    },
+    {
+      "deviceId": "21674784-d676-4e9c-9f1d-e527570b893e",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "a3zizq"
+    },
+    {
+      "deviceId": "21674784-d676-4e9c-9f1d-e527570b893e",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "2i3mcv"
+    },
+    {
+      "deviceId": "21674784-d676-4e9c-9f1d-e527570b893e",
+      "entityId": 3,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "c6jlz0"
+    },
+    {
+      "deviceId": "eaffa4b1-93bf-4e52-b1ca-8a7371402e7d",
+      "entityId": 0,
+      "name": "Claw Bot",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "luclfr"
+    },
+    {
+      "deviceId": "eaffa4b1-93bf-4e52-b1ca-8a7371402e7d",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "2m8kxk"
+    },
+    {
+      "deviceId": "eaffa4b1-93bf-4e52-b1ca-8a7371402e7d",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {
+        "CLAW_LEFT": 8,
+        "CLAW_RIGHT": -8
+      },
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "99ahpz"
+    },
+    {
+      "deviceId": "18410524-ee0e-46b1-9382-2e6ae32ea4b3",
+      "entityId": 0,
+      "name": "Claw Bot",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "3ldkad"
+    },
+    {
+      "deviceId": "de428c12-69d8-41a5-b4d9-c2208da39381",
+      "entityId": 0,
+      "name": "Claw Bot",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "794jkt"
+    },
+    {
+      "deviceId": "bc31e2d5-4f86-4594-8388-bc23250f47b8",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {
+        "CLAW_LEFT": 60,
+        "CLAW_RIGHT": -60
+      },
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "4yexbz"
+    },
+    {
+      "deviceId": "c51919fd-eb3f-42c3-8a0f-8fad462a1800",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "4sp4iz"
+    },
+    {
+      "deviceId": "c51919fd-eb3f-42c3-8a0f-8fad462a1800",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "b54w23"
+    },
+    {
+      "deviceId": "c51919fd-eb3f-42c3-8a0f-8fad462a1800",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "y644h3"
+    },
+    {
+      "deviceId": "sub-test-1771049916764",
+      "entityId": 0,
+      "name": "SubscriptionTest",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jvyt3a"
+    },
+    {
+      "deviceId": "usage-test-1771049924243",
+      "entityId": 0,
+      "name": "UsageTest",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "h2lwgv"
+    },
+    {
+      "deviceId": "error-test-1771049929839",
+      "entityId": 0,
+      "name": "ErrorTest",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "g8wo79"
+    },
+    {
+      "deviceId": "8562a524-495b-4f26-b042-29024f410062",
+      "entityId": 0,
+      "name": "大哥",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {
+        "COLOR": -16711936,
+        "GLOSS": 0.3,
+        "METALLIC": 0.5,
+        "CLAW_LEFT": 30,
+        "CLAW_RIGHT": 30
+      },
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6b15z5"
+    },
+    {
+      "deviceId": "8562a524-495b-4f26-b042-29024f410062",
+      "entityId": 1,
+      "name": "二哥",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "4f5scg"
+    },
+    {
+      "deviceId": "8562a524-495b-4f26-b042-29024f410062",
+      "entityId": 2,
+      "name": "三弟",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "o0cuai"
+    },
+    {
+      "deviceId": "1c36be18-c5ec-4c24-80b1-179dcaff7cf2",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "cvrtu8"
+    },
+    {
+      "deviceId": "6661a37f-e4cf-4289-943c-3915cd977a53",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "liet5c"
+    },
+    {
+      "deviceId": "a8629fa5-14d7-40d9-b9b1-70708d9a57c1",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "c617xj"
+    },
+    {
+      "deviceId": "f60e0f89-803b-4e66-bf65-7a034d2c0fb1",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ipla9r"
+    },
+    {
+      "deviceId": "f60e0f89-803b-4e66-bf65-7a034d2c0fb1",
+      "entityId": 1,
+      "name": "Lobster IV",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {
+        "COLOR": -8421168,
+        "GLOSS": 0.3,
+        "METALLIC": 0.5,
+        "CLAW_LEFT": 30,
+        "CLAW_RIGHT": 30
+      },
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "klcnzk"
+    },
+    {
+      "deviceId": "f60e0f89-803b-4e66-bf65-7a034d2c0fb1",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jfro85"
+    },
+    {
+      "deviceId": "f60e0f89-803b-4e66-bf65-7a034d2c0fb1",
+      "entityId": 3,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "vtc0jq"
+    },
+    {
+      "deviceId": "4e7ee712-3398-4d3a-8582-ef53e3e7421e",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "oc2zxs"
+    },
+    {
+      "deviceId": "864d884c-7df9-4eca-be44-25c17430516d",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "hcmf7d"
+    },
+    {
+      "deviceId": "2a0ad04d-9107-4250-b8be-ecd565983fb2",
+      "entityId": 0,
+      "name": "Test-0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269007282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "q9npld"
+    },
+    {
+      "deviceId": "2a0ad04d-9107-4250-b8be-ecd565983fb2",
+      "entityId": 1,
+      "name": "Test-1",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "tq4d4i"
+    },
+    {
+      "deviceId": "2a0ad04d-9107-4250-b8be-ecd565983fb2",
+      "entityId": 2,
+      "name": "Test-2",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "hhinvt"
+    },
+    {
+      "deviceId": "2a0ad04d-9107-4250-b8be-ecd565983fb2",
+      "entityId": 3,
+      "name": "Test-3",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "abkdbs"
+    },
+    {
+      "deviceId": "eaa62943-dbce-4e64-b799-b00c67a74735",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "abty3q"
+    },
+    {
+      "deviceId": "0ed9710c-8922-4552-867e-828751dbfc0f",
+      "entityId": 2,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ysj2fp"
+    },
+    {
+      "deviceId": "debug-bind-1771407888911",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "q58agz"
+    },
+    {
+      "deviceId": "6c130232-bb79-46d6-a304-c9b55f612fb9",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "curawk"
+    },
+    {
+      "deviceId": "525a21ab-3dcb-4753-be3a-9c5d9d964140",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "33ce0y"
+    },
+    {
+      "deviceId": "ee823f1a-7850-458a-9cac-f6f0c8f8a88a",
+      "entityId": 3,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "t6uzhh"
+    },
+    {
+      "deviceId": "a72dd621-fec8-4cb5-92a7-84482bd6b3f0",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "32h9k9"
+    },
+    {
+      "deviceId": "a08314d6-7ee6-407b-b97b-5f62b1fa8e2c",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "dblp94"
+    },
+    {
+      "deviceId": "c98aff21-319d-4cba-af1f-193c5130d8ce",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268972282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jnlaj9"
+    },
+    {
+      "deviceId": "6510c3f1-1120-46a5-b104-6cbc53e979f1",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "czny5n"
+    },
+    {
+      "deviceId": "dc80c129-eade-4eb6-840b-27f296a182b1",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "4lf64i"
+    },
+    {
+      "deviceId": "4bc2ccaf-f4af-4192-b665-2c79104eeb0a",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "00rso7"
+    },
+    {
+      "deviceId": "10d269fc-a6f7-4794-a050-4877a3b21b82",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ffbh7g"
+    },
+    {
+      "deviceId": "fa5cb2eb-b234-46e3-a0b6-e190ce65dccd",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269074962,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "fmeej2"
+    },
+    {
+      "deviceId": "534d1bfc-5aef-4caa-a4e9-1fd5f8e1ac5a",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772268972282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "rg1ehr"
+    },
+    {
+      "deviceId": "f78f0215-307d-443c-8c97-6a500e73b0f9",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "u9mll9"
+    },
+    {
+      "deviceId": "echo-regression-1771571927982",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ifnkkx"
+    },
+    {
+      "deviceId": "echo-regression-1771571927982",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "sn7too"
+    },
+    {
+      "deviceId": "4f04302c-2e96-4b34-932e-13bf90de7170",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "bxg7gr"
+    },
+    {
+      "deviceId": "0e0194dd-6fda-4f1a-b1fe-80b55cb4a303",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ll2qad"
+    },
+    {
+      "deviceId": "echo-regression-1771576708537",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ttufvj"
+    },
+    {
+      "deviceId": "echo-regression-1771576708537",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ll0d5p"
+    },
+    {
+      "deviceId": "079eba28-c330-4bc7-835c-e1653b65335e",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "5iadal"
+    },
+    {
+      "deviceId": "echo-regression-1771600624682",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "39sjf7"
+    },
+    {
+      "deviceId": "echo-regression-1771600624682",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "9h8xz8"
+    },
+    {
+      "deviceId": "echo-regression-1771603188248",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269234976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "fta5lo"
+    },
+    {
+      "deviceId": "echo-regression-1771603188248",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269234976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "7f63w8"
+    },
+    {
+      "deviceId": "31902581-8d70-4da8-bbc9-a7ffb812baef",
+      "entityId": 3,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "iagpf8"
+    },
+    {
+      "deviceId": "6251d9b4-7388-40eb-9605-80400b25c57b",
+      "entityId": 3,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "i7cq58"
+    },
+    {
+      "deviceId": "echo-regression-1771639977661",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wv96oz"
+    },
+    {
+      "deviceId": "echo-regression-1771639977661",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6aegmb"
+    },
+    {
+      "deviceId": "fe7404ac-daaf-4d23-9450-9c701ac366b3",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "lrlt6u"
+    },
+    {
+      "deviceId": "echo-regression-1771679363842",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jcyfgh"
+    },
+    {
+      "deviceId": "echo-regression-1771679363842",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "2hrxh8"
+    },
+    {
+      "deviceId": "echo-regression-1771685075231",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "5agis1"
+    },
+    {
+      "deviceId": "echo-regression-1771685075231",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "o95o1u"
+    },
+    {
+      "deviceId": "a6edf1ac-98dd-428a-aeab-601ef16c680d",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "3915se"
+    },
+    {
+      "deviceId": "4c796816-b69e-4e44-8bc6-1b7b0a3738b5",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269234976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "bxsday"
+    },
+    {
+      "deviceId": "db8bc86d-8c50-4c69-b0e6-2816b657073e",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269079962,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "0hrwyg"
+    },
+    {
+      "deviceId": "480def4c-2183-4d8e-afd0-b131ae89adcc",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269224975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 30,
+      "level": 1,
+      "publicCode": "rfaxg0"
+    },
+    {
+      "deviceId": "480def4c-2183-4d8e-afd0-b131ae89adcc",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269224975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "f7tcin"
+    },
+    {
+      "deviceId": "480def4c-2183-4d8e-afd0-b131ae89adcc",
+      "entityId": 2,
+      "name": "Lobster #1",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269224975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 110,
+      "level": 2,
+      "publicCode": "cwulvm"
+    },
+    {
+      "deviceId": "480def4c-2183-4d8e-afd0-b131ae89adcc",
+      "entityId": 3,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269224975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 50,
+      "level": 1,
+      "publicCode": "vojiwh"
+    },
+    {
+      "deviceId": "echo-regression-1771697634621",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269079962,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "595q67"
+    },
+    {
+      "deviceId": "echo-regression-1771697634621",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269079962,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6iwi5b"
+    },
+    {
+      "deviceId": "echo-regression-1771753068438",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "dwql70"
+    },
+    {
+      "deviceId": "echo-regression-1771753068438",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "4ba492"
+    },
+    {
+      "deviceId": "b34bbd0f-c46f-43b5-9ec5-36fa9edbeb8c",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wic2o3"
+    },
+    {
+      "deviceId": "9d81922d-4b01-41ed-af40-906c9b7e9bb4",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "u9mrl6"
+    },
+    {
+      "deviceId": "echo-regression-1771770961061",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "8vmkn4"
+    },
+    {
+      "deviceId": "echo-regression-1771770961061",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269179970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "3xicso"
+    },
+    {
+      "deviceId": "587a2420-72df-4c4d-9902-daa6ef367678",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "7h1re7"
+    },
+    {
+      "deviceId": "echo-regression-1771776056078",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269174970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6mchw7"
+    },
+    {
+      "deviceId": "echo-regression-1771776056078",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269174970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "oxq2rj"
+    },
+    {
+      "deviceId": "bab2973b-f927-4096-bcb7-a7b04cbd3e97",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "y4tyhc"
+    },
+    {
+      "deviceId": "c77e4919-b000-4cd5-802f-b4e9a0a3fac4",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "aq4b97"
+    },
+    {
+      "deviceId": "echo-regression-1771940952500",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "uwdanc"
+    },
+    {
+      "deviceId": "echo-regression-1771940952500",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6ypvsh"
+    },
+    {
+      "deviceId": "b68e5302-b7ce-4265-8f37-2e1ae69fa09d",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "o7lfjp"
+    },
+    {
+      "deviceId": "d83c30f2-85a1-4849-9d09-56807f8a0078",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269234976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "3g7m2u"
+    },
+    {
+      "deviceId": "echo-regression-1771978268755",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ce2p7d"
+    },
+    {
+      "deviceId": "echo-regression-1771978268755",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "s6twjm"
+    },
+    {
+      "deviceId": "8cd77fb2-4e6c-412e-a515-00e255c3b879",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269089964,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "q8qx7m"
+    },
+    {
+      "deviceId": "99f88851-2f58-4f59-9b21-a9a6c51a54d5",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269169969,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "uxwcaa"
+    },
+    {
+      "deviceId": "echo-regression-1772106005463",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "it7yx1"
+    },
+    {
+      "deviceId": "echo-regression-1772106005463",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wupgcr"
+    },
+    {
+      "deviceId": "5bf18ea3-fd1c-4734-b30e-387d87f3babe",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "gkpcjp"
+    },
+    {
+      "deviceId": "00010807-8539-4f60-b455-da00c45a6dcb",
+      "entityId": 0,
+      "name": "免費版",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "zthpvx"
+    },
+    {
+      "deviceId": "echo-regression-1772192252211",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "3c5bvg"
+    },
+    {
+      "deviceId": "echo-regression-1772192252211",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "5v6i1r"
+    },
+    {
+      "deviceId": "test-ux-1772268078855",
+      "entityId": 0,
+      "name": "Test Bot",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268992282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wovb84"
+    },
+    {
+      "deviceId": "device-A-1772268082202",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268997282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "cxrbsr"
+    },
+    {
+      "deviceId": "device-B-1772268083236",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268997282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "b6bsjh"
+    },
+    {
+      "deviceId": "test-device-1772268089723",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269002282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "udikbc"
+    },
+    {
+      "deviceId": "test-device-1772268089723",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269002282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "1hn18f"
+    },
+    {
+      "deviceId": "webhook-test-1772268094151",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269007282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jpvyuf"
+    },
+    {
+      "deviceId": "stress-test-device-1-1772268102286",
+      "entityId": 0,
+      "name": "Bot-D1-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "i130ii"
+    },
+    {
+      "deviceId": "stress-test-device-2-1772268104406",
+      "entityId": 0,
+      "name": "Bot-D2-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269012283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "79lvnt"
+    },
+    {
+      "deviceId": "stress-test-device-3-1772268106357",
+      "entityId": 0,
+      "name": "Bot-D3-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269017283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "mt9op4"
+    },
+    {
+      "deviceId": "stress-test-device-4-1772268108288",
+      "entityId": 0,
+      "name": "Bot-D4-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269017283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "mlm9a0"
+    },
+    {
+      "deviceId": "stress-test-device-5-1772268110219",
+      "entityId": 0,
+      "name": "Bot-D5-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269017283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wcdzh8"
+    },
+    {
+      "deviceId": "stress-test-device-6-1772268112537",
+      "entityId": 0,
+      "name": "Bot-D6-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269022283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ccxsgz"
+    },
+    {
+      "deviceId": "stress-test-device-7-1772268114646",
+      "entityId": 0,
+      "name": "Bot-D7-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269022283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "suttn8"
+    },
+    {
+      "deviceId": "stress-test-device-8-1772268116977",
+      "entityId": 0,
+      "name": "Bot-D8-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269027283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "p4pofb"
+    },
+    {
+      "deviceId": "stress-test-device-9-1772268119089",
+      "entityId": 0,
+      "name": "Bot-D9-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269027283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ogq8ay"
+    },
+    {
+      "deviceId": "test-widget-1772268204978",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269119965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "kxg4d5"
+    },
+    {
+      "deviceId": "test-widget-1772268204978",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269119965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "2bgi1x"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268209414",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "dc5yr7"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268209414",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "zxdv8s"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268209414",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269129965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "cxm9dv"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268209414",
+      "entityId": 3,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269129965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ypax15"
+    },
+    {
+      "deviceId": "test-usage-1772268230536",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269149966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "bti7zl"
+    },
+    {
+      "deviceId": "test-mission-1772268241718",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269154966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "13hl84"
+    },
+    {
+      "deviceId": "test-mission-1772268241718",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269154966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "c9u2oz"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268253807",
+      "entityId": 0,
+      "name": "被改名的",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "lclbm9"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268253807",
+      "entityId": 1,
+      "name": "阿明",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269259979,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "gsknql"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268253807",
+      "entityId": 2,
+      "name": "小白",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269264980,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "tm0vet"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268253807",
+      "entityId": 3,
+      "name": "大黃",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772268967283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "n2gtvs"
+    },
+    {
+      "deviceId": "test-bug-repro-1772268325818",
+      "entityId": 2,
+      "name": "免免",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269239976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "7b5mn3"
+    },
+    {
+      "deviceId": "echo-regression-1772268363707",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268987283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 10,
+      "level": 1,
+      "publicCode": "r5mqel"
+    },
+    {
+      "deviceId": "echo-regression-1772268363707",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268987283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "bkd84u"
+    },
+    {
+      "deviceId": "test-ux-1772268490770",
+      "entityId": 0,
+      "name": "Test Bot",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269104965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "mma8ku"
+    },
+    {
+      "deviceId": "device-A-1772268493754",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269109966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "42lfbx"
+    },
+    {
+      "deviceId": "device-B-1772268494909",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269109966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "qognnu"
+    },
+    {
+      "deviceId": "test-device-1772268500360",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269109966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "7d43ju"
+    },
+    {
+      "deviceId": "test-device-1772268500360",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269109966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "mkjeej"
+    },
+    {
+      "deviceId": "webhook-test-1772268504229",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269114965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "5wtsg7"
+    },
+    {
+      "deviceId": "stress-test-device-1-1772268512383",
+      "entityId": 0,
+      "name": "Bot-D1-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269124965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "i1nxqe"
+    },
+    {
+      "deviceId": "stress-test-device-2-1772268514675",
+      "entityId": 0,
+      "name": "Bot-D2-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269124965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "mu0phy"
+    },
+    {
+      "deviceId": "stress-test-device-3-1772268516660",
+      "entityId": 0,
+      "name": "Bot-D3-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269124965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "tukyil"
+    },
+    {
+      "deviceId": "stress-test-device-4-1772268518823",
+      "entityId": 0,
+      "name": "Bot-D4-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269129965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "46i8do"
+    },
+    {
+      "deviceId": "stress-test-device-5-1772268521014",
+      "entityId": 0,
+      "name": "Bot-D5-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "53onbp"
+    },
+    {
+      "deviceId": "stress-test-device-5-1772268521014",
+      "entityId": 1,
+      "name": "Bot-D5-E1",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "otbzev"
+    },
+    {
+      "deviceId": "stress-test-device-5-1772268521014",
+      "entityId": 2,
+      "name": "Bot-D5-E2",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6co5e9"
+    },
+    {
+      "deviceId": "stress-test-device-5-1772268521014",
+      "entityId": 3,
+      "name": "Bot-D5-E3",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269069961,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "it7uk5"
+    },
+    {
+      "deviceId": "stress-test-device-7-1772268526308",
+      "entityId": 0,
+      "name": "Bot-D7-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269134966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "i65isa"
+    },
+    {
+      "deviceId": "stress-test-device-8-1772268528582",
+      "entityId": 0,
+      "name": "Bot-D8-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jiak70"
+    },
+    {
+      "deviceId": "stress-test-device-9-1772268530873",
+      "entityId": 0,
+      "name": "Bot-D9-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "dbie18"
+    },
+    {
+      "deviceId": "test-widget-1772268571886",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269184970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "2gpxzq"
+    },
+    {
+      "deviceId": "test-widget-1772268571886",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269184970,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "8odvv3"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268576569",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269204973,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "owua5w"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268576569",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269204973,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "k3evd6"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268576569",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269194972,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "8ishkl"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268576569",
+      "entityId": 3,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269194972,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "i7y5c5"
+    },
+    {
+      "deviceId": "test-usage-1772268598981",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269219975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "qe0a4n"
+    },
+    {
+      "deviceId": "test-mission-1772268610045",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269219975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "t5y056"
+    },
+    {
+      "deviceId": "test-mission-1772268610045",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269219975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "2symh3"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268619574",
+      "entityId": 0,
+      "name": "被改名的",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268987283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "khrjpi"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268619574",
+      "entityId": 1,
+      "name": "阿明",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268982282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "5r2ko9"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268619574",
+      "entityId": 2,
+      "name": "小白",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268987283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "93mh7u"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268619574",
+      "entityId": 3,
+      "name": "大黃",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268987283,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "gnj979"
+    },
+    {
+      "deviceId": "test-bug-repro-1772268662276",
+      "entityId": 2,
+      "name": "免免",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772268972282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "wa7z44"
+    },
+    {
+      "deviceId": "echo-regression-1772268684918",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269007282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 10,
+      "level": 1,
+      "publicCode": "quwfh3"
+    },
+    {
+      "deviceId": "echo-regression-1772268684918",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269007282,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "uujvmu"
+    },
+    {
+      "deviceId": "test-ux-1772268809383",
+      "entityId": 0,
+      "name": "Test Bot",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269119965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "0i9gy2"
+    },
+    {
+      "deviceId": "device-A-1772268812564",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269124965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "qeo0ra"
+    },
+    {
+      "deviceId": "device-B-1772268813211",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269124965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "jbzk7w"
+    },
+    {
+      "deviceId": "test-device-1772268817688",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269129965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "q69i8o"
+    },
+    {
+      "deviceId": "test-device-1772268817688",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269129965,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "lul5t2"
+    },
+    {
+      "deviceId": "webhook-test-1772268823445",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269134966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "8ae26o"
+    },
+    {
+      "deviceId": "stress-test-device-1-1772268831926",
+      "entityId": 0,
+      "name": "Bot-D1-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "r14t1m"
+    },
+    {
+      "deviceId": "stress-test-device-2-1772268834170",
+      "entityId": 0,
+      "name": "Bot-D2-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269139967,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "7jf4ch"
+    },
+    {
+      "deviceId": "stress-test-device-3-1772268836093",
+      "entityId": 0,
+      "name": "Bot-D3-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269144966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "740loq"
+    },
+    {
+      "deviceId": "stress-test-device-4-1772268838197",
+      "entityId": 0,
+      "name": "Bot-D4-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269144966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "kf5uct"
+    },
+    {
+      "deviceId": "stress-test-device-5-1772268840459",
+      "entityId": 0,
+      "name": "Bot-D5-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269149966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "pgpvc3"
+    },
+    {
+      "deviceId": "stress-test-device-6-1772268842693",
+      "entityId": 0,
+      "name": "Bot-D6-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269149966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "tjqjka"
+    },
+    {
+      "deviceId": "stress-test-device-7-1772268844595",
+      "entityId": 0,
+      "name": "Bot-D7-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269149966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ct8mpc"
+    },
+    {
+      "deviceId": "stress-test-device-8-1772268846676",
+      "entityId": 0,
+      "name": "Bot-D8-E0",
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269154966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "bgrx0e"
+    },
+    {
+      "deviceId": "stress-test-device-9-1772268848923",
+      "entityId": 0,
+      "name": "Bot-D9-E0",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269154966,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "ubnsxy"
+    },
+    {
+      "deviceId": "test-widget-1772268889702",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269199972,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "hl88k4"
+    },
+    {
+      "deviceId": "test-widget-1772268889702",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269199972,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "9ntip5"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268895433",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269224975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "7ufwvx"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268895433",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269224975,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "hruv09"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268895433",
+      "entityId": 2,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269214973,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "i0e2ti"
+    },
+    {
+      "deviceId": "test-chat-mon-1772268895433",
+      "entityId": 3,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269209974,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6dwmpw"
+    },
+    {
+      "deviceId": "test-usage-1772268920158",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "SLEEPING",
+      "message": "Zzz...",
+      "parts": {},
+      "lastUpdated": 1772269234976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "r2r3p0"
+    },
+    {
+      "deviceId": "test-mission-1772268930621",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269239976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "9a659c"
+    },
+    {
+      "deviceId": "test-mission-1772268930621",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Waiting...",
+      "parts": {},
+      "lastUpdated": 1772269239976,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "s88nor"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268939530",
+      "entityId": 0,
+      "name": "被改名的",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "name changed via transform",
+      "parts": {},
+      "lastUpdated": 1772269004818,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "gyhcbn"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268939530",
+      "entityId": 1,
+      "name": "阿明",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Connected!",
+      "parts": {},
+      "lastUpdated": 1772268999735,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "xssmyk"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268939530",
+      "entityId": 2,
+      "name": "小白",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Connected!",
+      "parts": {},
+      "lastUpdated": 1772269001936,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "drbxw7"
+    },
+    {
+      "deviceId": "test-name-preserve-1772268939530",
+      "entityId": 3,
+      "name": "大黃",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Connected!",
+      "parts": {},
+      "lastUpdated": 1772269003978,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "hdl6fd"
+    },
+    {
+      "deviceId": "test-bug-repro-1772268981921",
+      "entityId": 2,
+      "name": "免免",
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "Connected!",
+      "parts": {},
+      "lastUpdated": 1772268988893,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "6g5z64"
+    },
+    {
+      "deviceId": "echo-regression-1772269002020",
+      "entityId": 0,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "cross-entity-1772269016666",
+      "parts": {},
+      "lastUpdated": 1772269021382,
+      "isBound": true,
+      "avatar": null,
+      "xp": 10,
+      "level": 1,
+      "publicCode": "cs7n17"
+    },
+    {
+      "deviceId": "echo-regression-1772269002020",
+      "entityId": 1,
+      "name": null,
+      "character": "LOBSTER",
+      "state": "IDLE",
+      "message": "cross-entity-1772269016666",
+      "parts": {},
+      "lastUpdated": 1772269021777,
+      "isBound": true,
+      "avatar": null,
+      "xp": 0,
+      "level": 1,
+      "publicCode": "cs5h70"
+    }
+  ],
+  "activeCount": 201,
+  "deviceCount": 262,
+  "maxEntitiesPerDevice": 8,
+  "serverReady": true
+}
+PASS: Response has correct structure
+PASS: Entity has isBound: true
+PASS: Entity has all required fields
+
+--- Test 2: /api/entities with deviceId filter ---
+PASS: Filter by deviceId works
+Entities for test-ux-1772269263297: 0
+
+--- Test 3: /api/device/register (with deviceSecret) ---
+PASS: Device registration successful
+Binding code: 109831
+
+--- Test 4: Unbound entity not in /api/entities ---
+PASS: Unbound entity correctly excluded from /api/entities
+
+--- Test 5: /api/status includes isBound ---
+PASS: /api/status includes isBound field
+isBound: false
+
+--- Test 6: /api/device/status includes isBound ---
+PASS: /api/device/status includes isBound field
+Entity 0 isBound: false
+
+--- Test 7: Full bind flow (register + bind + check) ---
+PASS: Binding successful
+Bot secret received: 6806df65...
+PASS: Bound entity has isBound: true in /api/entities
+
+--- Test 8: Entity name field ---
+PASS: Entity name correctly set
+
+--- Log / Telemetry API Verification ---
+PASS: Telemetry logged POST /api/device/register
+PASS: Telemetry logged GET /api/entities
+PASS: Telemetry logged GET /api/status
+FAIL: No telemetry entries have duration
+PASS: Server log API accessible (50 entries)
+
+============================================================
+RESULTS: 15 passed, 1 failed
+============================================================
+
+⚠️  Some tests failed. Please check the backend.
+
+Critical checks:
+  - /api/entities must include isBound: true for bound entities
+  - Android filters by isBound field, missing = no cards shown
+
+============================================================
+Running: test_device_isolation.js
+============================================================
+============================================================
+Device Isolation Test (v5 Matrix Architecture)
+============================================================
+Target: https://eclawbot.com
+
+--- Setup Device A + Bot A (Entity 0) ---
+
+1. Device A registers Entity 0...
+   Device: device-A-1772269266384
+   Binding code: 739869
+
+2. Bot A binds...
+   Bot A botSecret: a16ab65f...
+
+--- Setup Device B + Bot B (Entity 0) ---
+
+3. Device B registers Entity 0...
+   Device: device-B-1772269267734
+   Binding code: 130988
+
+4. Bot B binds...
+   Bot B botSecret: 332c9310...
+
+--- Test 1: Both bots can control their Entity 0 ---
+
+5. Bot A transforms Device A Entity 0...
+   ✅ Success: "Hello from Bot A!"
+
+6. Bot B transforms Device B Entity 0...
+   ✅ Success: "Hello from Bot B!"
+
+--- Test 2: Verify messages are isolated ---
+
+7. Check Device A Entity 0 message...
+   ✅ Correct: "Hello from Bot A!"
+
+8. Check Device B Entity 0 message...
+   ✅ Correct: "Hello from Bot B!"
+
+--- Test 3: Cross-device access should fail ---
+
+9. Bot A tries to control Device B Entity 0...
+   ✅ Correctly rejected (403): Invalid or missing botSecret
+
+--- Test 4: Client messages are isolated ---
+
+10. Client A sends message to Device A Entity 0...
+11. Client B sends message to Device B Entity 0...
+
+12. Bot A checks pending messages...
+   ✅ Bot A only sees its own message: "Message for Bot A"
+
+13. Bot B checks pending messages...
+   ✅ Bot B only sees its own message: "Message for Bot B"
+
+--- Log / Telemetry API Verification ---
+
+   ✅ Device A: Telemetry logged POST /api/device/register
+   ✅ Device A: Telemetry logged POST /api/transform
+   ✅ Device A: Telemetry logged GET /api/status
+   ✅ Device A: Telemetry logged POST /api/client/speak
+   ✅ Device A: Telemetry logged GET /api/client/pending
+   ✅ Device A: Telemetry entries include duration (3/5)
+   ✅ Device B: Telemetry logged POST /api/device/register
+   ✅ Device B: Telemetry logged POST /api/transform
+   ✅ Server log API accessible (50 entries)
+
+============================================================
+Result: 16/16 tests passed
+============================================================
+
+✅ All isolation tests passed!
+
+Matrix Architecture Working:
+  - Device A (device-A-17722692663...) Entity 0 ← Bot A
+  - Device B (device-B-17722692677...) Entity 0 ← Bot B
+  - Both use Entity 0, but completely isolated!
+
+============================================================
+Running: test_messaging.js
+============================================================
+============================================================
+Broadcast & Entity-to-Entity Messaging Test
+============================================================
+Target: https://eclawbot.com
+
+--- Setup: Create device with 2 entities ---
+
+1. Register Entity 0...
+   Binding code: 431289
+   Entity 0 bound, botSecret: 9e45e9a2...
+
+2. Register Entity 1...
+   Binding code: 335758
+   Entity 1 bound, botSecret: 7f6fd3c7...
+
+--- Test 1: Single Entity Message ---
+
+3. Send message to Entity 0 only...
+   Response: {"success":true,"message":"Sent to 1 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":false}
+   ??Single message sent successfully
+
+--- Test 2: Broadcast to Array ---
+
+4. Broadcast to [0, 1]...
+   Response: {"success":true,"message":"Sent to 2 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null},{"entityId":1,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":true}
+   ??Broadcast to array worked
+
+--- Test 3: Broadcast to "all" ---
+
+5. Broadcast to "all" bound entities...
+   Response: {"success":true,"message":"Sent to 2 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null},{"entityId":1,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":true}
+   ??Broadcast to "all" sent to 2 entities
+
+--- Test 4: Entity-to-Entity Messaging ---
+
+6. Entity 0 sends message to Entity 1...
+   Response: {"success":true,"message":"Message sent from Entity 0 to Entity 1","from":{"entityId":0,"character":"LOBSTER"},"to":{"entityId":1,"character":"LOBSTER"},"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null,"push_status":null}
+   ??Entity 0 ??Entity 1 message sent
+
+--- Test 5: Entity 1 Receives Message ---
+
+7. Entity 1 checks pending messages...
+   Message count: 3
+   Found entity message: "Hey Entity 1, this is Entity 0!" from entity:0:LOBSTER
+   ??Entity-to-entity message received correctly
+
+--- Test 6: Wrong botSecret Rejection ---
+
+8. Try entity-to-entity with wrong botSecret...
+   Status: 403
+   ??Correctly rejected wrong botSecret
+
+--- Test 7: Self-Message Rejection ---
+
+9. Try entity sending to self...
+   Status: 400
+   ??Correctly rejected self-message
+
+--- Log / Telemetry API Verification ---
+
+   ✅ Telemetry logged POST /api/device/register
+   ✅ Telemetry logged POST /api/client/speak
+   ✅ Telemetry logged POST /api/entity/speak-to
+   ✅ Telemetry logged GET /api/client/pending
+   ✅ Telemetry entries include duration (4/9)
+   ✅ Server log API accessible (50 entries)
+
+============================================================
+Result: 13/13 tests passed
+============================================================
+
+??All messaging tests passed!
+
+Features working:
+  - Single entity message
+  - Broadcast to array [0, 1, 2]
+  - Broadcast to "all" bound entities
+  - Entity-to-entity messaging with source label
+  - botSecret authentication
+  - Self-message rejection
+
+============================================================
+Running: test_webhook.js
+============================================================
+============================================================
+Webhook Registration Test
+============================================================
+Target: https://eclawbot.com
+
+1. Setting up entity...
+   Entity 0 ready, botSecret: e7561d17...
+
+2. Checking initial mode (should be polling)...
+   Mode: polling, webhookRegistered: false
+
+3. Registering webhook...
+   Failed: {"success":false,"error_type":"connection_failed","message":"Webhook handshake failed: cannot reach gateway at https://example-bot.com. Error: fetch failed.\n\nFIX: Your webhook_url points to localhost, which is unreachable from the internet.\nTry these methods in order:\n\nMethod A (Recommended for Zeabur):\n  exec: echo $ZEABUR_WEB_URL\n  exec: echo $OPENCLAW_GATEWAY_TOKEN\n  Then use: webhook_url = {ZEABUR_WEB_URL}/tools/invoke, token = {OPENCLAW_GATEWAY_TOKEN}\n\nMethod B: Query gateway config:\n  exec: openclaw config get gateway.publicUrl\n  exec: openclaw config get gateway.token\n  If publicUrl is still localhost, use Method A or C.\n\nMethod C: Ask the user for the WebSocket URL and Gateway Token from the OpenClaw Overview page.\n  CRITICAL: Replace wss:// with https:// in the URL!\n  Example: wss://eclaw0.zeabur.app → https://eclaw0.zeabur.app/tools/invoke\n\nThen retry POST /api/bot/register with the corrected webhook_url and token.","openclaw_version_received":null,"debug":{"probeUrl":"https://example-bot.com","error":"fetch failed"}}
+
+4. Verifying webhook status in debug devices...
+   Unexpected state: {"entityId":0,"isBound":true,"name":null,"character":"LOBSTER","state":"IDLE","message":"Connected!","messageQueueLength":0,"unreadMessages":0,"webhookRegistered":false,"mode":"polling"}
+
+5. Testing client speak with webhook...
+   Target not in push mode: {"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}
+
+6. Testing webhook registration without botSecret...
+   Status: 403 (correctly rejected)
+
+7. Unregistering webhook...
+   Result: Webhook removed. Switching back to polling mode.
+   Mode: polling
+
+8. Verifying back to polling mode...
+   Mode: polling, webhookRegistered: false
+
+--- Log / Telemetry API Verification ---
+
+   ✅ Telemetry logged POST /api/device/register
+   ✅ Telemetry logged POST /api/client/speak
+   ✅ Telemetry logged POST /api/bot/register
+   ✅ Telemetry entries include duration (2/5)
+   ✅ Server log API accessible (50 entries)
+
+============================================================
+Result: 9/12 tests passed
+3 test(s) failed
+
+============================================================
+Running: test_entity_delete.js
+============================================================
+============================================================
+ENTITY DELETION STRESS TEST
+============================================================
+Setting up 10 devices with 4 entities each...
+Total entities to create: 40
+
+Device 0: E0✓ E1✓ E2✓ E3✓ 
+Device 1: E0✓ E1✓ E2✓ E3✓ 
+Device 2: E0✓ E1✓ E2✓ E3✓ 
+Device 3: E0✓ E1✓ E2✓ E3✓ 
+Device 4: E0✓ E1✓ E2✓ E3✓ 
+Device 5: E0✓ E1✓ E2✓ E3✓ 
+Device 6: E0✓ E1✓ E2✓ E3✓ 
+Device 7: E0✓ E1✓ E2✓ E3✓ 
+Device 8: E0✓ E1✓ E2✓ E3✓ 
+Device 9: E0✓ E1✓ E2✓ E3✓ 
+
+Setup complete: 40 entities bound across 10 devices
+
+============================================================
+DELETION TESTS
+============================================================
+
+--- Test 1: Verify initial entity count ---
+✅ Initial count correct: 40
+
+--- Test 2: Random entity deletions ---
+Deleting 15 random entities...
+............... (15 deleted)
+
+--- Test 3: Verify count after deletions ---
+✅ Count correct after deletion: 25
+
+--- Test 4: Delete already deleted entity ---
+✅ Correctly rejected re-deletion: Entity 2 is not bound
+
+--- Test 5: Delete entity 0 (protected) ---
+ℹ️ Entity 0 deletion allowed (not protected)
+
+--- Test 6: Delete with wrong botSecret ---
+✅ Correctly rejected wrong botSecret (403)
+
+--- Test 7: Delete all remaining non-zero entities ---
+Deleting 15 remaining entities...
+✅ All 15 entities deleted successfully
+
+--- Test 8: Final entity count ---
+✅ Final count correct: 9 (only entity 0s remain)
+
+============================================================
+TEST SUMMARY
+============================================================
+Devices created: 10
+Total entities bound: 40
+Total entities deleted: 31
+
+Results: 7 passed, 0 failed
+
+✅ All entity deletion tests passed!
+
+============================================================
+Running: test_widget_ux.js
+============================================================
+============================================================
+WIDGET UI/UX VALIDATION TESTS
+============================================================
+API Base: https://eclawbot.com
+Test Device: test-widget-1772269397295
+
+Setup: Entity 0 bound
+Setup: Entity 1 bound
+
+--- Test 1: Single entity message (entityId as Int) ---
+??Single entity message works with Int entityId
+
+--- Test 2: Single entity message (entityId as String) ---
+??String entityId failed: { success: false, message: 'Device not found' }
+
+--- Test 3: Broadcast to array [0, 1] ---
+??Broadcast failed: { success: false, message: 'Device not found' }
+
+--- Test 4: Broadcast to "all" ---
+??Broadcast to "all" failed: { success: false, message: 'Device not found' }
+
+--- Test 5: Invalid device returns proper error ---
+??Invalid device returns 404 (not 500)
+
+--- Test 6: Missing deviceId returns 400 ---
+??Missing deviceId returns 400
+
+--- Test 7: Bot receives messages via polling ---
+??No messages in queue: { success: false, message: 'Device not found' }
+
+--- Test 8: Response includes versionInfo ---
+??Missing versionInfo: { success: false, message: 'Device not found' }
+
+--- Log / Telemetry API Verification ---
+⚠️ Telemetry API returned no entries
+❌ Server log API not accessible
+
+============================================================
+WIDGET UX TEST SUMMARY
+============================================================
+Results: 3 passed, 6 failed
+============================================================
+
+??Widget UX tests FAILED
+
+============================================================
+Running: test_chat_monitoring.js
+============================================================
+============================================================
+MULTI-ENTITY CHAT MONITORING TEST
+============================================================
+API Base: https://eclawbot.com
+Test Device: test-chat-mon-1772269403456
+
+
+============================================================
+PHASE: 2 entities
+============================================================
+Setup: Entity 0 bound (botSecret: 32ed5c89...)
+Setup: Entity 1 bound (botSecret: f291234c...)
+
+--- speak-to: Entity 0 → Entity 1 ---
+  ✅ speak-to returns 200
+  ✅ speak-to success
+  ✅ from entity matches
+  ✅ to entity matches
+  ✅ receiver got the message
+
+--- broadcast: Entity 1 → all ---
+  ✅ broadcast returns 200
+  ✅ broadcast success
+  ✅ broadcast sent to 1 entities
+  ✅ Entity 0 received broadcast
+
+============================================================
+PHASE: 3 entities
+============================================================
+Setup: Entity 2 bound (botSecret: 96c46379...)
+
+--- speak-to: Entity 0 → Entity 1 ---
+  ✅ speak-to returns 200
+  ✅ speak-to success
+  ✅ from entity matches
+  ✅ to entity matches
+  ✅ receiver got the message
+
+--- broadcast: Entity 2 → all ---
+  ✅ broadcast returns 200
+  ✅ broadcast success
+  ✅ broadcast sent to 2 entities
+  ✅ Entity 0 received broadcast
+  ✅ Entity 1 received broadcast
+
+============================================================
+PHASE: 4 entities
+============================================================
+Setup: Entity 3 bound (botSecret: 67454775...)
+
+--- speak-to: Entity 0 → Entity 1 ---
+  ✅ speak-to returns 200
+  ✅ speak-to success
+  ✅ from entity matches
+  ✅ to entity matches
+  ✅ receiver got the message
+
+--- broadcast: Entity 3 → all ---
+  ✅ broadcast returns 200
+  ✅ broadcast success
+  ✅ broadcast sent to 3 entities
+  ✅ Entity 0 received broadcast
+  ✅ Entity 1 received broadcast
+  ✅ Entity 2 received broadcast
+
+--- duplicate detection: send same text twice ---
+  ✅ duplicate messages stored without error
+  ✅ no server error on duplicate send
+
+--- bot API error handling ---
+  ✅ invalid botSecret returns 403
+  ✅ non-existent device returns 404
+  ✅ send-to-self returns 400
+  ✅ invalid entityId returns 400
+  ✅ missing text returns 400
+  ✅ poll with invalid secret returns 403
+
+--- bot-to-bot rate limit (8 messages) ---
+  ✅ bot-to-bot rate limit triggers at 8+
+  ✅ rate limit resets after human message
+
+--- chat history retrieval ---
+  ✅ chat history returns 200
+  ✅ chat history success
+  ✅ chat history has messages
+
+--- Log / Telemetry API Verification ---
+  ✅ Telemetry captured API calls
+  ✅ Telemetry logged POST /api/device/register
+  ✅ Telemetry logged POST /api/entity/speak-to
+  ✅ Telemetry logged POST /api/entity/broadcast
+  ✅ Telemetry logged POST /api/client/speak
+  ✅ Telemetry logged GET /api/client/pending
+  ✅ Telemetry logged GET /api/chat/history
+  ✅ Telemetry entries include response duration
+  ✅ Server log API accessible
+
+============================================================
+CHAT MONITORING TEST SUMMARY
+============================================================
+Results: 52 passed, 0 failed
+============================================================
+
+✅ All chat monitoring tests passed
+
+============================================================
+Running: test_usage_limit.js
+============================================================
+============================================================
+USAGE LIMIT TEST
+============================================================
+API Base: https://eclawbot.com
+Test Device: test-usage-1772269425699
+Daily Limit: 15
+
+Setup: Entity 0 bound
+
+--- Phase 1: Send 15 messages (free tier) ---
+  ✅ 15 messages sent successfully
+
+--- Phase 2: 16th message should be rejected ---
+  ❌ 16th message returns 429: {"status":200}
+  ❌ error is USAGE_LIMIT_EXCEEDED: {"success":true,"message":"Sent to 1 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":false}
+  ❌ remaining is 0: {"success":true,"message":"Sent to 1 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":false}
+  ❌ limit matches daily limit: {}
+  ❌ subsequent messages still blocked (429): {"status":200}
+
+--- Phase 3: Mark device as premium ---
+  ⏭️  /api/debug/set-premium not available (skipping premium bypass test)
+  Verifying usage limit response format instead...
+  ❌ usage limit response has error field: {"success":true,"message":"Sent to 1 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":false}
+  ❌ usage limit response has limit field: {"success":true,"message":"Sent to 1 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":false}
+  ❌ usage limit response has remaining field: {"success":true,"message":"Sent to 1 entity(s)","targets":[{"entityId":0,"pushed":false,"mode":"polling","reason":"no_webhook","bindingType":null}],"broadcast":false}
+
+--- Subscription status API ---
+  ✅ subscription status endpoint exists (not 404/500)
+
+--- Log / Telemetry API Verification ---
+  ✅ Telemetry captured API calls
+  ✅ Telemetry logged POST /api/device/register
+  ✅ Telemetry logged POST /api/client/speak
+  ✅ Telemetry entries include response duration
+  ✅ Server log API accessible
+
+============================================================
+USAGE LIMIT TEST SUMMARY
+============================================================
+Results: 7 passed, 8 failed
+============================================================
+
+❌ Usage limit tests FAILED
+
+============================================================
+Running: test_mission_publish.js
+============================================================
+============================================================
+MISSION CONTROL INCREMENTAL PUBLISH TEST
+============================================================
+API Base: https://eclawbot.com
+Test Device: test-mission-1772269440002
+
+Setup: Entity 0 bound
+Setup: Entity 1 bound
+
+--- Step 1: Create TODO and notify ---
+  ✅ TODO created successfully
+  ✅ TODO item returned
+  ✅ notify returns 200
+  ✅ notify success
+  ✅ chatMessageId returned
+  ✅ notification sent to 2 entities
+
+--- Step 2: Get dashboard version ---
+  ✅ dashboard returns 200
+  ✅ dashboard success
+  ✅ dashboard has version
+  ✅ dashboard has todoList
+
+--- Step 3: Add RULE and send delta notification ---
+  ✅ RULE created successfully
+  ✅ RULE notify returns 200
+  ✅ RULE notify success
+  ✅ latest notification contains RULE
+  ✅ latest notification does NOT contain previous TODO (delta)
+
+--- Step 4: Verify dashboard version incremented ---
+  ✅ dashboard version incremented
+  ✅ todoList has items
+  ✅ rules list has items
+
+--- Step 5: Cleanup (delete TODO and RULE) ---
+  ✅ TODO deleted
+  ✅ RULE deleted
+
+--- Step 6: Mission API error handling ---
+  ✅ empty notifications returns 400
+  ✅ missing title returns 400
+  ✅ delete non-existent TODO returns 404
+  ✅ invalid device dashboard does not crash (not 500)
+  ✅ bot can access dashboard
+
+--- Log / Telemetry API Verification ---
+  ✅ Telemetry captured API calls
+  ✅ Telemetry logged POST /api/device/register
+  ❌ Telemetry logged POST /api/mission/todo/add
+  ❌ Telemetry logged POST /api/mission/notify
+  ❌ Telemetry logged GET /api/mission/dashboard
+  ❌ Telemetry logged POST /api/mission/rule/add
+  ✅ Telemetry logged GET /api/chat/history
+  ✅ Telemetry entries include response duration
+  ✅ Server log API accessible
+
+============================================================
+MISSION CONTROL PUBLISH TEST SUMMARY
+============================================================
+Results: 30 passed, 4 failed
+============================================================
+
+❌ Mission Control tests FAILED
+
+============================================================
+Running: test_entity_name_preservation.js
+============================================================
+============================================================
+ENTITY NAME PRESERVATION TEST
+============================================================
+Target: https://eclawbot.com
+Date:   2026-02-28T09:04:10.486Z
+
+--- Setup: Create device with 4 named entities ---
+
+  Entity 0: bound ✓, name = "小花"
+  Entity 1: bound ✓, name = "阿明"
+  Entity 2: bound ✓, name = "小白"
+  Entity 3: bound ✓, name = "大黃"
+
+--- Scenario 1: DELETE /api/entity (bot-side unbind) —
+    名稱應在 unbind 後保留 ---
+
+  ✅ Entity 0 has custom name before delete
+  ✅ DELETE /api/entity succeeded
+  ✅ Entity 0 name preserved after bot-side delete
+  ✅ Entity 0 is unbound after delete
+  ℹ️  After rebind (no name param): name = null
+
+--- Scenario 2: DELETE /api/device/entity (device-side unbind) —
+    名稱應在 unbind 後保留 ---
+
+  ✅ Entity 1 has custom name before delete
+  ✅ DELETE /api/device/entity succeeded
+  ✅ Entity 1 name preserved after device-side delete
+  ✅ Entity 1 is unbound after delete
+
+--- Scenario 3: POST /api/transform without name field —
+    名稱不應被意外清除 ---
+
+  ✅ Entity 2 has custom name before transform
+  ✅ Transform without name succeeded
+  ✅ Entity 2 name unchanged after transform (no name field)
+
+--- Scenario 4: POST /api/transform with name field —
+    名稱應被更新為新值 ---
+
+  ✅ Transform with name succeeded
+  ✅ Entity 2 name updated via transform
+
+--- Scenario 5: POST /api/transform with name: "" —
+    空字串 name 應將名稱清除為 null ---
+
+  ✅ Entity 3 has custom name before empty-string transform
+  ✅ Transform with empty name succeeded
+  ✅ Entity 3 name cleared to null by empty string
+
+--- Scenario 6: Multi-entity isolation —
+    刪除一個實體不影響其他實體的名稱 ---
+
+  ✅ Entity 0 has name "小花" before isolation test
+  ✅ Entity 1 has name "阿明" before isolation test
+  ✅ Entity 2 has name "小白" before isolation test
+  ✅ Entity 3 has name "大黃" before isolation test
+  ✅ Entity 2 name preserved after own deletion
+  ✅ Entity 0 name unaffected by entity 2's deletion
+  ✅ Entity 0 still bound after entity 2's deletion
+  ✅ Entity 1 name unaffected by entity 2's deletion
+  ✅ Entity 1 still bound after entity 2's deletion
+  ✅ Entity 3 name unaffected by entity 2's deletion
+  ✅ Entity 3 still bound after entity 2's deletion
+
+--- Scenario 7: Full rename → unbind → rebind cycle —
+    名稱在完整循環後應被保留 ---
+
+  ✅ Step 1: Entity 3 renamed to "特殊名字🦞"
+  ✅ Step 2: Name preserved after unbind
+  ℹ️  After rebind (no name in bind): name = null
+  ✅ Step 4: Name set correctly via bind request
+
+--- Scenario 8: bind-free override preserves name —
+    官方免費版覆蓋綁定時保留自訂名稱 ---
+
+  ⏭️  bind-free override test — Unexpected: TOS_NOT_AGREED
+
+--- Scenario 9: bind-personal override preserves name —
+    官方月租版覆蓋綁定時保留自訂名稱 ---
+
+  ⏭️  bind-personal override test — Unexpected: payment_required
+
+--- Scenario 10: Name boundary tests ---
+
+  ✅ 20-char name accepted
+  ✅ 20-char name stored correctly
+  ✅ 21-char name rejected (400)
+  ✅ Name unchanged after rejected 21-char rename
+  ✅ Rename to null accepted
+  ✅ Name cleared to null
+
+--- Scenario 11: Rapid rename + delete sequence —
+    快速連續操作不應丟失名稱 ---
+
+  ✅ Name preserved after rapid rename+delete
+
+--- Scenario 12: Bug reproduction — original user scenario —
+    模擬：刪除實體 #1 和 #3 後名稱應保留，#2 不受影響 ---
+
+  ✅ [Repro] Entity 1 initial name = "月月"
+  ✅ [Repro] Entity 2 initial name = "免免"
+  ✅ [Repro] Entity 3 initial name = "租租"
+  ✅ [Repro] Entity 2 still bound with name "免免" (unaffected)
+  ✅ [Repro] Entity 1 is unbound
+  ✅ [Repro] Entity 1 name "月月" preserved after unbind
+  ✅ [Repro] Entity 3 is unbound
+  ✅ [Repro] Entity 3 name "租租" preserved after unbind
+
+--- Scenario 13: Transform on one entity does not affect others ---
+
+  ✅ Entity 0 name changed via transform
+  ✅ Entity 1 name unaffected by entity 0's transform
+  ✅ Entity 2 name unaffected by entity 0's transform
+  ✅ Entity 3 name unaffected by entity 0's transform
+
+--- Log / Telemetry API Verification ---
+
+  ✅ Telemetry captured API calls
+  ✅ Telemetry logged POST /api/device/register
+  ✅ Telemetry logged GET /api/status
+  ✅ Telemetry logged POST /api/transform
+  ✅ Telemetry logged PUT /api/device/entity/name
+  ✅ Telemetry entries include response duration
+  ✅ Server log API accessible
+
+============================================================
+TEST SUMMARY
+============================================================
+  Passed:  56
+  Failed:  0
+  Skipped: 2
+  Total:   58
+
+✅ All tests passed!
+============================================================
+
+============================================================
+Running: test_entity_echo_bug.js
+============================================================
+============================================================
+Regression: Entity Message Echo/Duplication
+============================================================
+Target: https://eclawbot.com
+Device: echo-regression-1772269533599
+
+--- Setup: Create device with 2 bound entities ---
+
+  OK Entity 0 registered
+  OK Entity 0 bound
+  Entity 0 botSecret: 91fa2e54...
+  OK Entity 1 registered
+  OK Entity 1 bound
+  Entity 1 botSecret: 2c891949...
+
+--- Test: broadcast + sync-message must NOT echo ---
+
+  OK broadcast succeeds
+  OK sync-message succeeds
+  OK broadcast + sync-message: message appears exactly 1 time (got 1)
+
+--- Test: speak-to + sync-message must NOT echo ---
+
+  OK speak-to succeeds
+  OK sync-message succeeds
+  OK speak-to + sync-message: message appears exactly 1 time (got 1)
+
+--- Test: transform + sync-message must NOT echo ---
+
+  OK transform succeeds
+  OK sync-message succeeds
+  OK transform + sync-message: message appears exactly 1 time (got 1)
+
+--- Test: broadcast + transform + sync-message must NOT echo ---
+
+  OK broadcast succeeds
+  OK transform succeeds
+  OK sync-message succeeds
+  OK triple call: message appears exactly 1 time (got 1)
+
+--- Test: different messages must NOT be suppressed ---
+
+  OK message A saved exactly 1 time (got 1)
+  OK message B saved exactly 1 time (got 1)
+
+--- Test: user messages must NOT be affected by dedup ---
+
+  OK user messages NOT suppressed: both saved (got 2)
+
+--- Test: same text to different entities must NOT be deduped ---
+
+  OK entity 0 has exactly 1 copy (got 1)
+  OK entity 1 has exactly 1 copy (got 1)
+
+--- Log / Telemetry API Verification ---
+
+  OK Telemetry captured API calls
+  OK Telemetry logged POST /api/device/register
+  OK Telemetry logged POST /api/entity/broadcast
+  OK Telemetry logged POST /api/entity/speak-to
+  OK Telemetry logged POST /api/transform
+  OK Telemetry logged POST /api/bot/sync-message
+  OK Telemetry logged POST /api/client/speak
+  OK Telemetry logged GET /api/chat/history
+  OK Telemetry entries include response duration
+  OK Server log API accessible
+
+============================================================
+Results: 32 passed, 0 failed, 0 skipped
+============================================================
+
+All echo regression tests passed
+
+============================================================
+Running: test-broadcast.js
+============================================================
+=================================================================
+  Broadcast API — Comprehensive Regression Test
+=================================================================
+  API:           https://eclawbot.com
+  Device:        2a0ad04d-9107-4250-b8be-ecd565983fb2
+  Extra entities: 2 (will be created then cleaned up)
+=================================================================
+
+--- Phase 1: Discover existing entities ---
+  Found 4 already-bound entities: [0, 1, 2, 3]
+    Entity 0: LOBSTER "Test-0" state=IDLE
+    Entity 1: LOBSTER "Test-1" state=IDLE
+    Entity 2: LOBSTER "Test-2" state=IDLE
+    Entity 3: LOBSTER "Test-3" state=IDLE
+
+--- Phase 2: Register + bind test entities ---
+  Available slots: [], will use: []
+
+  All bound entities now: [0, 1, 2, 3] (4 total)
+  No test entities available to send broadcast from. Need at least 1 test entity.
+  [PASS] At least 2 bound entities for broadcast — count=4
+
+--- Phase 3: Send broadcast ---
+--- Phase 8: Cleanup ---
+
+=================================================================
+  SUMMARY
+=================================================================
+  Total checks:  1
+  Passed:        1
+  Failed:        0
+  Rate:          100.0%
+
+  RESULT: ALL PASS (100.0%)
+=================================================================
+
+============================================================
+Running: test-bot-api-response.js
+============================================================
+=================================================================
+  Bot E-claw API Response Rate — Regression Test
+=================================================================
+  API:      https://eclawbot.com
+  Device:   7c1518c8-d8e7-4558-a6f8-56657e4acfe4
+  Entity:   1
+  Tests:    10
+  Target:   >= 90%
+  Timeout:  120s per test
+=================================================================
+
+  [ 1] (arithmetic) "What is 2+2?" ... PASS* (5.5s) -> "Received: "What is 2+2?"" [unexpected content]
+  [ 2] (factual   ) "What is the capital of Japan?" ... PASS* (5.6s) -> "Received: "What is the capital of Japan?"" [unexpected content]
+  [ 3] (translation) "Say hello in Japanese" ... PASS* (5.5s) -> "Received: "Say hello in Japanese"" [unexpected content]
+  [ 4] (list      ) "Name 3 fruits" ... PASS* (5.9s) -> "Received: "Name 3 fruits"" [unexpected content]
+  [ 5] (open-ended) "Name a country in Africa" ... PASS  (5.9s) -> "Received: "Name a country in Africa""
+  [ 6] (edge      ) "What animal says meow?" ... PASS* (5.8s) -> "Received: "What animal says meow?"" [unexpected content]
+  [ 7] (arithmetic) "What is 100 divided by 4?" ... PASS* (5.6s) -> "Received: "What is 100 divided by 4?"" [unexpected content]
+  [ 8] (factual   ) "What is H2O?" ... PASS* (5.6s) -> "Received: "What is H2O?"" [unexpected content]
+  [ 9] (translation) "Translate hello to French" ... PASS* (5.6s) -> "Received: "Translate hello to French"" [unexpected content]
+  [10] (edge      ) "How many days in a week?" ... PASS* (5.6s) -> "Received: "How many days in a week?"" [unexpected content]
+
+--- Log / Telemetry API Verification ---
+  [SKIP] TEST_DEVICE_SECRET not set in .env — add it to enable telemetry verification
+
+=================================================================
+  SUMMARY
+=================================================================
+  Total:             10
+  API called (PASS): 10
+  Content correct:   1
+  Failed:            0
+  Success rate:      100.0%
+  Avg response time: 5.6s
+
+  Per-category:
+    [+] arithmetic   2/2 (100%)
+    [+] factual      2/2 (100%)
+    [+] translation  2/2 (100%)
+    [+] list         1/1 (100%)
+    [+] open-ended   1/1 (100%)
+    [+] edge         2/2 (100%)
+
+-----------------------------------------------------------------
+  CONTENT MISMATCHES (API called, but answer unexpected)
+-----------------------------------------------------------------
+  [1] "What is 2+2?" -> "Received: "What is 2+2?""
+  [2] "What is the capital of Japan?" -> "Received: "What is the capital of Japan?""
+  [3] "Say hello in Japanese" -> "Received: "Say hello in Japanese""
+  [4] "Name 3 fruits" -> "Received: "Name 3 fruits""
+  [6] "What animal says meow?" -> "Received: "What animal says meow?""
+  [7] "What is 100 divided by 4?" -> "Received: "What is 100 divided by 4?""
+  [8] "What is H2O?" -> "Received: "What is H2O?""
+  [9] "Translate hello to French" -> "Received: "Translate hello to French""
+  [10] "How many days in a week?" -> "Received: "How many days in a week?""
+  Note: These still count as PASS (bot used the API correctly).
+  Content issues are usually model quality, not push format.
+
+  RESULT: PASS — 100.0% >= 90%
+=================================================================
+
+🧹 Post-test cleanup...
+⚠️  Cleanup failed (server may not be running): 
+
+============================================================
+REGRESSION TEST SUMMARY
+============================================================
+✅ PASS: test_ux_coverage.js
+❌ FAIL: test_ux_improvements.js
+✅ PASS: test_device_isolation.js
+✅ PASS: test_messaging.js
+✅ PASS: test_webhook.js
+✅ PASS: test_entity_delete.js
+❌ FAIL: test_widget_ux.js
+✅ PASS: test_chat_monitoring.js
+❌ FAIL: test_usage_limit.js
+❌ FAIL: test_mission_publish.js
+✅ PASS: test_entity_name_preservation.js
+✅ PASS: test_entity_echo_bug.js
+✅ PASS: test-broadcast.js
+✅ PASS: test-bot-api-response.js
+
+------------------------------------------------------------
+Total: 10 passed, 4 failed, 0 skipped
+------------------------------------------------------------
+
+❌ RELEASE BLOCKED: Some tests failed!
+Fix the failing tests before releasing.

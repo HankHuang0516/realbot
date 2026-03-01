@@ -557,6 +557,12 @@
                     if (data.actions && data.actions.length > 0) {
                         showActionBar(data.actions);
                     }
+
+                    // Show feedback navigation if an issue + feedback was created
+                    if (data.response && data.response.includes('Feedback #') && data.response.includes('recorded')) {
+                        showFeedbackLink();
+                    }
+
                     isLoading = false;
                     document.getElementById('aiChatInput')?.focus();
                     return;
@@ -671,6 +677,19 @@
         });
 
         document.getElementById('aiChatActionBar').style.display = 'none';
+    }
+
+    // ── Feedback Navigation ─────────────────────
+    function showFeedbackLink() {
+        const bar = document.getElementById('aiChatActionBar');
+        bar.style.display = 'block';
+        const btn = document.createElement('button');
+        btn.className = 'ai-chat-action-btn';
+        btn.textContent = '\u{1F4CB} ' + (typeof i18n !== 'undefined' && i18n.t ? i18n.t('ai_chat_view_feedback', 'View Feedback History') : 'View Feedback History');
+        btn.addEventListener('click', () => {
+            window.location.href = 'feedback.html';
+        });
+        bar.appendChild(btn);
     }
 
     // ── Init ──────────────────────────────────
