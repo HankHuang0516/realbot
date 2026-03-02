@@ -1,3 +1,10 @@
+# [1.68.0](https://github.com/HankHuang0516/realbot/compare/v1.67.2...v1.68.0) (2026-03-02)
+
+
+### Features
+
+* wire Android chat reaction buttons (like/dislike) to backend API ([#109](https://github.com/HankHuang0516/realbot/issues/109)) ([43fadd5](https://github.com/HankHuang0516/realbot/commit/43fadd5cee82198329552e915c70488ce6d8f07a))
+
 ## [1.67.2](https://github.com/HankHuang0516/realbot/compare/v1.67.1...v1.67.2) (2026-03-02)
 
 
