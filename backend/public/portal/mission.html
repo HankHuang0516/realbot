@@ -1197,22 +1197,42 @@
             {
                 id: 'claude-proxy',
                 label: '🤖 claude-proxy',
-                title: 'Claude Proxy',
-                url: 'http://claude-cli-proxy.railway.internal:4000',
-                steps: `Step 1: Deploy claude-cli-proxy to Railway
-  - Source: claude-cli-proxy/index.js
-  - Set env var: SUPPORT_API_KEY=<your-secret-key>
+                title: 'claude-proxy',
+                url: 'https://github.com/timothy-node/openclaw-claude-proxy',
+                steps: `Repo: https://github.com/timothy-node/openclaw-claude-proxy
+Forwards OpenClaw messages to the local Claude CLI (--print mode) via HTTP.
 
-Step 2: Set env vars in main backend (Railway)
-  - CLAUDE_CLI_PROXY_URL=http://claude-cli-proxy.railway.internal:4000
-  - SUPPORT_API_KEY=<same-secret-key>
+Step 1: Clone the repo
+  git clone https://github.com/timothy-node/openclaw-claude-proxy \\
+    ~/.openclaw/skills/claude-proxy
 
-Step 3: Verify the proxy is running
-  - GET /api/ai-support/proxy-sessions  →  should return { sessions: [] }
+Step 2: Install uv (Python package manager)
+  curl -LsSf https://astral.sh/uv/install.sh | sh
 
-Step 4: Test via Admin Chat
-  - Open admin.html → click the 💬 chat button (bottom-right)
-  - Send any question to confirm Claude responds`
+Step 3: Install Claude CLI
+  npm install -g @anthropic-ai/claude-code
+
+Step 4: Configure credentials
+  cd ~/.openclaw/skills/claude-proxy
+  cp .env.example .env
+  # Edit .env and set:
+  #   CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat...
+  #   CLAUDE_TIMEOUT_DEFAULT=120
+
+Step 5: Start the proxy
+  ./start.sh
+  # Runs at http://localhost:8765
+  # GET /health  →  health check
+  # POST /chat   →  send messages
+
+Step 6: Stop the proxy (when needed)
+  ./stop.sh
+
+Optional: Enable auto-start via systemd
+  sudo cp claude-proxy.service /etc/systemd/system/
+  sudo systemctl enable claude-proxy
+
+⚠️ Use at your own risk. Provided as-is, without warranty.`
             }
         ];
 
