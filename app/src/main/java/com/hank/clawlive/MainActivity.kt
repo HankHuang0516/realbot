@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -34,6 +35,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -147,6 +149,7 @@ class MainActivity : AppCompatActivity() {
         setupClickListeners()
         observeUiState()
         startEntityPolling()
+        checkForAppUpdate()
     }
 
     override fun onResume() {
@@ -170,6 +173,80 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun checkForAppUpdate() {
+        lifecycleScope.launch {
+            try {
+                val currentVersion = deviceManager.appVersion
+                if (currentVersion == "unknown") return@launch
+
+                val versionInfo = withContext(Dispatchers.IO) {
+                    NetworkModule.api.checkAppVersion(currentVersion)
+                }
+
+                val update = versionInfo.update ?: return@launch
+                if (!update.available) {
+                    // Clear any pending force update if they've already updated
+                    getSharedPreferences("update_prefs", MODE_PRIVATE)
+                        .edit().remove("force_update_pending").remove("force_update_version").apply()
+                    return@launch
+                }
+
+                // Also check for force update from FCM push
+                val prefs = getSharedPreferences("update_prefs", MODE_PRIVATE)
+                val isForceUpdate = update.forceUpdate || prefs.getBoolean("force_update_pending", false)
+
+                showUpdateDialog(
+                    latestVersion = update.latestVersion,
+                    releaseNotes = update.releaseNotes,
+                    storeUrl = update.storeUrl,
+                    isForceUpdate = isForceUpdate
+                )
+            } catch (e: Exception) {
+                Timber.d(e, "Version check failed (non-critical)")
+            }
+        }
+    }
+
+    private fun showUpdateDialog(
+        latestVersion: String,
+        releaseNotes: String?,
+        storeUrl: String,
+        isForceUpdate: Boolean
+    ) {
+        val message = buildString {
+            append(getString(R.string.update_message, latestVersion))
+            if (!releaseNotes.isNullOrBlank()) {
+                append("\n\n")
+                append(releaseNotes)
+            }
+        }
+
+        val builder = MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.update_title))
+            .setMessage(message)
+            .setPositiveButton(getString(R.string.update_now)) { _, _ ->
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl)))
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to open Play Store")
+                }
+            }
+
+        if (!isForceUpdate) {
+            builder.setNegativeButton(getString(R.string.update_later), null)
+        }
+
+        val dialog = builder.create()
+        dialog.setCancelable(!isForceUpdate)
+        dialog.setCanceledOnTouchOutside(!isForceUpdate)
+        dialog.show()
+
+        TelemetryHelper.trackAction("update_dialog_shown", mapOf(
+            "latestVersion" to latestVersion,
+            "isForceUpdate" to isForceUpdate.toString()
+        ))
     }
 
     private fun initViews() {

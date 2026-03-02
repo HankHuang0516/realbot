@@ -5,6 +5,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -72,14 +73,32 @@ class ClawFcmService : FirebaseMessagingService() {
             else -> CHANNEL_SYSTEM
         }
 
+        // Persist force update flag for MainActivity to show blocking dialog on next launch
+        if (category == "app_update") {
+            val forceUpdate = data["forceUpdate"] == "true"
+            val version = data["version"]
+            if (forceUpdate && version != null) {
+                getSharedPreferences("update_prefs", Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean("force_update_pending", true)
+                    .putString("force_update_version", version)
+                    .apply()
+            }
+        }
+
         val targetIntent = when (category) {
             "bot_reply", "broadcast", "speak_to", "scheduled" ->
                 Intent(this, ChatActivity::class.java)
             "feedback_reply", "feedback_resolved" ->
                 Intent(this, FeedbackHistoryActivity::class.java)
+            "app_update" -> {
+                val storeUrl = data["link"]
+                    ?: "https://play.google.com/store/apps/details?id=com.hank.clawlive"
+                Intent(Intent.ACTION_VIEW, Uri.parse(storeUrl))
+            }
             else ->
                 Intent(this, MainActivity::class.java)
-        }.apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP }
+        }.apply { flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK }
 
         val pi = PendingIntent.getActivity(
             this, System.currentTimeMillis().toInt(), targetIntent,
