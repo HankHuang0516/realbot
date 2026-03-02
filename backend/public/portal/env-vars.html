@@ -368,8 +368,8 @@
                     <div class="dialog-field-label">Key</div>
                     <input id="dlg_var_key" placeholder="例：CLAUDE_OAUTH_TOKEN"
                         value="${esc(editKey || '')}"
-                        ${isEdit ? 'readonly style="opacity:0.6;font-family:monospace"' : 'style="font-family:monospace"'}
-                        oninput="if(!this.readOnly)this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')" />
+                        style="font-family:monospace"
+                        oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_]/g,'')" />
                     <div class="dialog-field-label" style="margin-top:10px;">Value</div>
                     <div style="position:relative">
                         <input id="dlg_var_value" type="password"
@@ -390,6 +390,7 @@
                 const val = document.getElementById('dlg_var_value').value;
                 if (!key) return;
                 const updated = loadLocalVars();
+                if (isEdit && editKey !== key) delete updated[editKey]; // handle key rename
                 updated[key] = val;
                 saveLocalVars(updated);
                 closeDialog();
