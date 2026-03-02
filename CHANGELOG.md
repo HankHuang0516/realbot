@@ -1,3 +1,10 @@
+# [1.64.0](https://github.com/HankHuang0516/realbot/compare/v1.63.2...v1.64.0) (2026-03-02)
+
+
+### Features
+
+* show real-time AI progress during long requests ([3a3d523](https://github.com/HankHuang0516/realbot/commit/3a3d523dd53b269c4b264e25ab6ff52f4097ed08))
+
 ## [1.63.2](https://github.com/HankHuang0516/realbot/compare/v1.63.1...v1.63.2) (2026-03-02)
 
 
