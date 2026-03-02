@@ -1,3 +1,10 @@
+## [1.65.1](https://github.com/HankHuang0516/realbot/compare/v1.65.0...v1.65.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* update claude-proxy skill template with correct openclaw-claude-proxy steps ([fdb8b43](https://github.com/HankHuang0516/realbot/commit/fdb8b4394c17066c66cef0112f1729d0bb15a69f))
+
 # [1.65.0](https://github.com/HankHuang0516/realbot/compare/v1.64.1...v1.65.0) (2026-03-02)
 
 
