@@ -31,21 +31,7 @@ Your behavior:
 - If you don't know something, say so honestly
 - Respond in the same language the user writes in (Chinese or English)
 - Do NOT fabricate API endpoints or features that don't exist
-
-GitHub Actions:
-You can create and close GitHub issues. When appropriate, append an action block at the END of your response using this exact format:
-\`\`\`
-<!--ACTIONS:[{"type":"create_issue","title":"Issue title","body":"Issue body","labels":["bug"]}]-->
-\`\`\`
-or
-\`\`\`
-<!--ACTIONS:[{"type":"close_issue","issue_number":123,"comment":"Reason for closing"}]-->
-\`\`\`
-Rules for actions:
-- Only create issues for genuine bugs or feature requests reported by users
-- Only close issues when the user explicitly asks to close a specific issue number
-- The action block must be on its own line at the very end of your response
-- You can include multiple actions in the array`;
+- You have tools to create and close GitHub issues — use them when users report bugs or ask to close issues`;
 
 const ANALYZE_SYSTEM_PROMPT = `You are a diagnostic engine for E-Claw (Claw Live Wallpaper) binding and webhook issues.
 
@@ -67,6 +53,40 @@ Common issues:
 - connection_failed: Webhook URL is unreachable from the server
 
 Provide actionable, specific fix instructions with exact API calls or commands.`;
+
+// ── Tool Definitions ────────────────────────
+
+const GITHUB_TOOLS = [
+    {
+        name: 'create_github_issue',
+        description: 'Create a new GitHub issue for bug reports or feature requests. Use when a user reports a problem or suggests a feature.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string', description: 'Issue title (concise, descriptive)' },
+                body: { type: 'string', description: 'Issue body with reproduction steps, expected behavior, etc.' },
+                labels: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Labels for the issue (e.g. "bug", "enhancement", "ux")'
+                }
+            },
+            required: ['title', 'body']
+        }
+    },
+    {
+        name: 'close_github_issue',
+        description: 'Close an existing GitHub issue. Use when a user explicitly asks to close a specific issue by number.',
+        input_schema: {
+            type: 'object',
+            properties: {
+                issue_number: { type: 'integer', description: 'The GitHub issue number to close' },
+                comment: { type: 'string', description: 'Optional comment explaining why the issue is being closed' }
+            },
+            required: ['issue_number']
+        }
+    }
+];
 
 // ── Helpers ─────────────────────────────────
 
@@ -134,11 +154,21 @@ function buildUserContent(message, images) {
 }
 
 /**
- * Call Anthropic Messages API.
+ * Call Anthropic Messages API (with optional tool use).
  */
-async function callAnthropic(systemPrompt, messages) {
+async function callAnthropic(systemPrompt, messages, tools) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
+
+    const body = {
+        model: ANTHROPIC_MODEL,
+        max_tokens: MAX_TOKENS,
+        system: systemPrompt,
+        messages
+    };
+    if (tools && tools.length > 0) {
+        body.tools = tools;
+    }
 
     const response = await fetch(ANTHROPIC_API_URL, {
         method: 'POST',
@@ -147,21 +177,50 @@ async function callAnthropic(systemPrompt, messages) {
             'x-api-key': apiKey,
             'anthropic-version': ANTHROPIC_VERSION
         },
-        body: JSON.stringify({
-            model: ANTHROPIC_MODEL,
-            max_tokens: MAX_TOKENS,
-            system: systemPrompt,
-            messages
-        }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(TIMEOUT_MS)
     });
 
     if (!response.ok) {
-        const body = await response.text().catch(() => '');
-        throw new Error(`Anthropic API ${response.status}: ${body.slice(0, 300)}`);
+        const errBody = await response.text().catch(() => '');
+        throw new Error(`Anthropic API ${response.status}: ${errBody.slice(0, 300)}`);
     }
 
     return response.json();
+}
+
+/**
+ * Extract text response and tool use calls from Anthropic response.
+ */
+function parseResponse(result) {
+    let responseText = '';
+    const actions = [];
+
+    for (const block of (result.content || [])) {
+        if (block.type === 'text') {
+            responseText += block.text;
+        } else if (block.type === 'tool_use') {
+            if (block.name === 'create_github_issue') {
+                actions.push({
+                    type: 'create_issue',
+                    title: block.input.title,
+                    body: block.input.body,
+                    labels: block.input.labels || ['bug']
+                });
+            } else if (block.name === 'close_github_issue') {
+                actions.push({
+                    type: 'close_issue',
+                    issue_number: block.input.issue_number,
+                    comment: block.input.comment
+                });
+            }
+        }
+    }
+
+    return {
+        response: responseText || 'Action executed.',
+        actions: actions.length > 0 ? actions : null
+    };
 }
 
 // ── Exported Functions ──────────────────────
@@ -193,23 +252,8 @@ async function chatWithClaude({ message, history, images, deviceContext }) {
     const userContent = buildUserContent(message, images);
     messages.push({ role: 'user', content: userContent });
 
-    const result = await callAnthropic(system, messages);
-    let responseText = result.content?.[0]?.text || 'Sorry, I could not generate a response.';
-
-    // Extract actions from <!--ACTIONS:[...]-->  block
-    let actions = null;
-    const actionMatch = responseText.match(/<!--ACTIONS:(\[[\s\S]*?\])-->/);
-    if (actionMatch) {
-        try {
-            actions = JSON.parse(actionMatch[1]);
-            // Strip the action block from visible response
-            responseText = responseText.replace(/\s*<!--ACTIONS:\[[\s\S]*?\]-->\s*$/, '').trim();
-        } catch (_) {
-            // Invalid JSON — ignore
-        }
-    }
-
-    return { response: responseText, actions };
+    const result = await callAnthropic(system, messages, GITHUB_TOOLS);
+    return parseResponse(result);
 }
 
 /**
