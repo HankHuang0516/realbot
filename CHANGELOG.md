@@ -1,3 +1,10 @@
+## [1.63.1](https://github.com/HankHuang0516/realbot/compare/v1.63.0...v1.63.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* bump versionCode to 37 (36 already used on Play Console) ([e5fd9b8](https://github.com/HankHuang0516/realbot/commit/e5fd9b887f8c9dfe415ac42b8906f9acd0ab5ec1))
+
 # [1.63.0](https://github.com/HankHuang0516/realbot/compare/v1.62.0...v1.63.0) (2026-03-02)
 
 
