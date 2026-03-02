@@ -1,3 +1,10 @@
+## [1.63.2](https://github.com/HankHuang0516/realbot/compare/v1.63.1...v1.63.2) (2026-03-02)
+
+
+### Bug Fixes
+
+* add URLSearchParams to ESLint globals ([91ee972](https://github.com/HankHuang0516/realbot/commit/91ee972c9ed60827dd2d0ad01705c3fa3cdae03d))
+
 ## [1.63.1](https://github.com/HankHuang0516/realbot/compare/v1.63.0...v1.63.1) (2026-03-02)
 
 
