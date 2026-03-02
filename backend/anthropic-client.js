@@ -30,7 +30,22 @@ Your behavior:
 - For feature questions, explain clearly with examples
 - If you don't know something, say so honestly
 - Respond in the same language the user writes in (Chinese or English)
-- Do NOT fabricate API endpoints or features that don't exist`;
+- Do NOT fabricate API endpoints or features that don't exist
+
+GitHub Actions:
+You can create and close GitHub issues. When appropriate, append an action block at the END of your response using this exact format:
+\`\`\`
+<!--ACTIONS:[{"type":"create_issue","title":"Issue title","body":"Issue body","labels":["bug"]}]-->
+\`\`\`
+or
+\`\`\`
+<!--ACTIONS:[{"type":"close_issue","issue_number":123,"comment":"Reason for closing"}]-->
+\`\`\`
+Rules for actions:
+- Only create issues for genuine bugs or feature requests reported by users
+- Only close issues when the user explicitly asks to close a specific issue number
+- The action block must be on its own line at the very end of your response
+- You can include multiple actions in the array`;
 
 const ANALYZE_SYSTEM_PROMPT = `You are a diagnostic engine for E-Claw (Claw Live Wallpaper) binding and webhook issues.
 
@@ -158,7 +173,7 @@ async function callAnthropic(systemPrompt, messages) {
  * @param {Array}  opts.history - Conversation history [{role, content}]
  * @param {Array}  [opts.images] - Optional images [{data, mimeType}]
  * @param {Object} [opts.deviceContext] - {deviceId, page, role, email}
- * @returns {Promise<{response: string, actions: null}>}
+ * @returns {Promise<{response: string, actions: Array|null}>}
  */
 async function chatWithClaude({ message, history, images, deviceContext }) {
     // Build context-enriched system prompt
@@ -179,9 +194,22 @@ async function chatWithClaude({ message, history, images, deviceContext }) {
     messages.push({ role: 'user', content: userContent });
 
     const result = await callAnthropic(system, messages);
-    const responseText = result.content?.[0]?.text || 'Sorry, I could not generate a response.';
+    let responseText = result.content?.[0]?.text || 'Sorry, I could not generate a response.';
 
-    return { response: responseText, actions: null };
+    // Extract actions from <!--ACTIONS:[...]-->  block
+    let actions = null;
+    const actionMatch = responseText.match(/<!--ACTIONS:(\[[\s\S]*?\])-->/);
+    if (actionMatch) {
+        try {
+            actions = JSON.parse(actionMatch[1]);
+            // Strip the action block from visible response
+            responseText = responseText.replace(/\s*<!--ACTIONS:\[[\s\S]*?\]-->\s*$/, '').trim();
+        } catch (_) {
+            // Invalid JSON — ignore
+        }
+    }
+
+    return { response: responseText, actions };
 }
 
 /**

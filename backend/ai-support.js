@@ -157,6 +157,41 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         }
     }
 
+    // ── Execute GitHub actions from AI response ──
+    async function executeGitHubActions(actions, user) {
+        const results = [];
+        if (!actions || !Array.isArray(actions) || actions.length === 0) return results;
+
+        for (const action of actions) {
+            if (action.type === 'create_issue' && action.title) {
+                const issueResult = await autoCreateIssue(action, user);
+                if (issueResult) {
+                    const feedback = await createFeedbackFromAiIssue(issueResult, action, user);
+                    results.push({
+                        type: 'create_issue',
+                        text: `\n\n---\n📋 GitHub issue [#${issueResult.number}](${issueResult.url}) created` +
+                            (feedback ? `\n📝 Feedback #${feedback.feedbackId} recorded` : ''),
+                        feedbackId: feedback ? feedback.feedbackId : null
+                    });
+                }
+            } else if (action.type === 'close_issue' && action.issue_number) {
+                const closeResult = await closeIssue(action.issue_number, action.comment);
+                if (closeResult.success) {
+                    results.push({
+                        type: 'close_issue',
+                        text: `\n\n---\n✅ GitHub issue [#${action.issue_number}](${closeResult.url}) closed`
+                    });
+                } else {
+                    results.push({
+                        type: 'close_issue',
+                        text: `\n\n---\n❌ Failed to close issue #${action.issue_number}: ${closeResult.error}`
+                    });
+                }
+            }
+        }
+        return results;
+    }
+
     // ── Dual-track: create feedback record alongside GitHub issue ──
     async function createFeedbackFromAiIssue(issueResult, action, user) {
         if (!feedbackModule || !issueResult) return null;
@@ -919,9 +954,19 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                     [req.user.userId, isAdmin, page || null, latencyMs]
                 ).catch(() => {});
 
+                // Auto-execute GitHub actions (create_issue, close_issue)
+                let responseText = result.response;
+                let feedbackId = null;
+                const actionResults = await executeGitHubActions(result.actions, req.user);
+                for (const ar of actionResults) {
+                    responseText += ar.text;
+                    if (ar.feedbackId) feedbackId = ar.feedbackId;
+                }
+
                 return res.json({
                     success: true,
-                    response: result.response,
+                    response: responseText,
+                    feedbackId,
                     remaining: rateCheck.remaining,
                     latency_ms: latencyMs
                 });
@@ -988,28 +1033,19 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
 
             let responseText = sanitizeProxyResponse(result.response);
 
-            // Auto-execute create_issue actions for regular users (dual-track: issue + feedback)
-            let feedbackCreated = null;
-            if (!isAdmin && result.actions && result.actions.length > 0) {
-                for (const action of result.actions) {
-                    if (action.type === 'create_issue' && action.title) {
-                        const issueResult = await autoCreateIssue(action, req.user);
-                        if (issueResult) {
-                            feedbackCreated = await createFeedbackFromAiIssue(issueResult, action, req.user);
-                            responseText += `\n\n---\n📋 GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
-                            if (feedbackCreated) {
-                                responseText += `\n📝 Feedback #${feedbackCreated.feedbackId} recorded`;
-                            }
-                        }
-                    }
-                }
+            // Auto-execute GitHub actions (create_issue, close_issue)
+            let feedbackId = null;
+            const actionResults = await executeGitHubActions(result.actions, req.user);
+            for (const ar of actionResults) {
+                responseText += ar.text;
+                if (ar.feedbackId) feedbackId = ar.feedbackId;
             }
 
             return res.json({
                 success: true,
                 response: responseText,
                 actions: isAdmin ? result.actions : undefined,
-                feedbackId: feedbackCreated ? feedbackCreated.feedbackId : undefined,
+                feedbackId,
                 remaining: rateCheck.remaining,
                 latency_ms: latencyMs
             });
@@ -1109,21 +1145,16 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                 const latencyMs = Date.now() - startTime;
                 let responseText = result.response;
 
-                // Auto-create GitHub issues for regular users
-                if (!row.is_admin && result.actions && result.actions.length > 0) {
-                    for (const action of result.actions) {
-                        if (action.type === 'create_issue' && action.title) {
-                            const issueResult = await autoCreateIssue(action, { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId });
-                            if (issueResult) {
-                                responseText += `\n\n---\n\ud83d\udccb GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
-                            }
-                        }
-                    }
+                // Auto-execute GitHub actions (create_issue, close_issue)
+                const user = { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId };
+                const actionResults = await executeGitHubActions(result.actions, user);
+                for (const ar of actionResults) {
+                    responseText += ar.text;
                 }
 
                 await chatPool.query(
                     `UPDATE ai_chat_requests SET status = 'completed', response = $2, actions = $3, latency_ms = $4, completed_at = NOW(), images = NULL WHERE id = $1`,
-                    [id, responseText, row.is_admin && result.actions ? JSON.stringify(result.actions) : null, latencyMs]
+                    [id, responseText, result.actions ? JSON.stringify(result.actions) : null, latencyMs]
                 );
 
                 chatPool.query('INSERT INTO ai_chat_queries (user_id, is_admin, page, latency_ms) VALUES ($1, $2, $3, $4)',
@@ -1177,27 +1208,18 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             const result = await response.json();
             let responseText = sanitizeProxyResponse(result.response);
 
-            // Auto-create GitHub issues for regular users (dual-track: issue + feedback)
-            let feedbackCreated = null;
-            if (!row.is_admin && result.actions && result.actions.length > 0) {
-                for (const action of result.actions) {
-                    if (action.type === 'create_issue' && action.title) {
-                        const user = { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId };
-                        const issueResult = await autoCreateIssue(action, user);
-                        if (issueResult) {
-                            feedbackCreated = await createFeedbackFromAiIssue(issueResult, action, user);
-                            responseText += `\n\n---\n\ud83d\udccb GitHub issue [#${issueResult.number}](${issueResult.url}) created`;
-                            if (feedbackCreated) {
-                                responseText += `\n📝 Feedback #${feedbackCreated.feedbackId} recorded`;
-                            }
-                        }
-                    }
-                }
+            // Auto-execute GitHub actions (create_issue, close_issue)
+            const user = { userId: row.user_id, email: ctx.email, deviceId: ctx.deviceId };
+            const actionResults = await executeGitHubActions(result.actions, user);
+            let feedbackId = null;
+            for (const ar of actionResults) {
+                responseText += ar.text;
+                if (ar.feedbackId) feedbackId = ar.feedbackId;
             }
 
-            const actionsToStore = feedbackCreated
-                ? JSON.stringify({ feedbackId: feedbackCreated.feedbackId })
-                : (row.is_admin && result.actions ? JSON.stringify(result.actions) : null);
+            const actionsToStore = feedbackId
+                ? JSON.stringify({ feedbackId })
+                : (result.actions ? JSON.stringify(result.actions) : null);
             await chatPool.query(
                 `UPDATE ai_chat_requests SET status = 'completed', response = $2, actions = $3, latency_ms = $4, completed_at = NOW(), images = NULL WHERE id = $1`,
                 [id, responseText, actionsToStore, latencyMs]
