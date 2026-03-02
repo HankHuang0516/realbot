@@ -1,3 +1,10 @@
+## [1.65.2](https://github.com/HankHuang0516/realbot/compare/v1.65.1...v1.65.2) (2026-03-02)
+
+
+### Bug Fixes
+
+* server-side pre-execute close_issue intent to bypass model safety training ([2d133cf](https://github.com/HankHuang0516/realbot/commit/2d133cf6fe2a2177c818d6d63bf2159390387c81)), closes [#123](https://github.com/HankHuang0516/realbot/issues/123)
+
 ## [1.65.1](https://github.com/HankHuang0516/realbot/compare/v1.65.0...v1.65.1) (2026-03-02)
 
 
