@@ -1,3 +1,10 @@
+# [1.65.0](https://github.com/HankHuang0516/realbot/compare/v1.64.1...v1.65.0) (2026-03-02)
+
+
+### Features
+
+* add official skill templates and installation steps to skill dialog ([8bd3e50](https://github.com/HankHuang0516/realbot/commit/8bd3e508c3aab33a2e6452852947faee74e7fcc1))
+
 ## [1.64.1](https://github.com/HankHuang0516/realbot/compare/v1.64.0...v1.64.1) (2026-03-02)
 
 
