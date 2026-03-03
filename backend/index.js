@@ -6581,6 +6581,31 @@ app.put('/api/notification-preferences', async (req, res) => {
     res.json({ success: true, prefs: updated });
 });
 
+// ============================================
+// DEVICE PREFERENCES (broadcast settings, etc.)
+// ============================================
+app.get('/api/device-preferences', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const prefs = await devicePrefs.getPrefs(deviceId);
+    res.json({ success: true, prefs, defaults: devicePrefs.DEFAULTS });
+});
+
+app.put('/api/device-preferences', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { prefs } = req.body;
+    if (!prefs || typeof prefs !== 'object') {
+        return res.status(400).json({ success: false, error: 'prefs object required' });
+    }
+
+    await devicePrefs.updatePrefs(deviceId, prefs);
+    const updated = await devicePrefs.getPrefs(deviceId);
+    res.json({ success: true, prefs: updated });
+});
+
 // Prune old notifications daily
 setInterval(() => notifModule.pruneOldNotifications(), 24 * 60 * 60 * 1000);
 
