@@ -575,6 +575,86 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Broadcast Settings (collapsible) -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#1A1A1A"
+                app:strokeColor="#333333"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="12dp">
+
+                    <!-- Collapsible header — icon + title + expand arrow -->
+                    <LinearLayout
+                        android:id="@+id/broadcastSettingsHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_broadcast"
+                            android:contentDescription="Broadcast"
+                            app:tint="#CCFFFFFF"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:text="@string/broadcast_settings_title"
+                            android:textSize="14sp"
+                            android:textColor="#CCFFFFFF"
+                            android:gravity="center"/>
+
+                        <ImageView
+                            android:id="@+id/broadcastSettingsExpandArrow"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_expand_more"
+                            android:contentDescription="Expand"
+                            app:tint="#99FFFFFF"/>
+                    </LinearLayout>
+
+                    <!-- Collapsible content (default GONE) -->
+                    <LinearLayout
+                        android:id="@+id/broadcastSettingsContentLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/broadcast_settings_desc"
+                            android:textSize="13sp"
+                            android:textColor="#99FFFFFF"
+                            android:layout_marginBottom="8dp"/>
+
+                        <!-- Broadcast preference toggles container (populated programmatically) -->
+                        <LinearLayout
+                            android:id="@+id/broadcastPrefsContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"/>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Language Settings (collapsible) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"

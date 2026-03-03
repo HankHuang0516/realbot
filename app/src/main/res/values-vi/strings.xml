@@ -422,6 +422,11 @@ Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ qua email chín
     <string name="schedule_push_ok">Đã gửi đến bot</string>
     <string name="schedule_edit">Chỉnh sửa lịch trình</string>
     <string name="schedule_updated">Đã cập nhật lịch trình!</string>
+    <!-- Broadcast Settings -->
+    <string name="broadcast_settings_title">Cài đặt phát sóng</string>
+    <string name="broadcast_settings_desc">Cấu hình cách hoạt động của tin nhắn phát sóng</string>
+    <string name="broadcast_pref_recipient_info">Hiển thị danh sách người nhận trong phát sóng</string>
+
     <string name="nav_home">Trang chủ</string>
     <string name="nav_mission">Nhiệm vụ</string>
     <string name="nav_chat">Trò chuyện</string>

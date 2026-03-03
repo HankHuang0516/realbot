@@ -523,6 +523,11 @@ If you have any questions, please contact us via our official email.
     <string name="notif_prefs_loading">Loading preferences…</string>
     <string name="notif_prefs_error">Failed to load notification preferences</string>
 
+    <!-- Broadcast Settings -->
+    <string name="broadcast_settings_title">Broadcast Settings</string>
+    <string name="broadcast_settings_desc">Configure how broadcast messages work</string>
+    <string name="broadcast_pref_recipient_info">Show recipient list in broadcasts</string>
+
     <!-- Navigation Bar -->
     <string name="nav_home">Home</string>
     <string name="nav_mission">Mission</string>

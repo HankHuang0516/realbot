@@ -422,6 +422,11 @@ Jika Anda memiliki pertanyaan, silakan hubungi kami melalui email resmi kami.
     <string name="schedule_push_ok">Terkirim ke bot</string>
     <string name="schedule_edit">Edit Jadwal</string>
     <string name="schedule_updated">Jadwal diperbarui!</string>
+    <!-- Broadcast Settings -->
+    <string name="broadcast_settings_title">Pengaturan Siaran</string>
+    <string name="broadcast_settings_desc">Konfigurasi cara kerja pesan siaran</string>
+    <string name="broadcast_pref_recipient_info">Tampilkan daftar penerima di siaran</string>
+
     <string name="nav_home">Beranda</string>
     <string name="nav_mission">Misi</string>
     <string name="nav_chat">Obrolan</string>
