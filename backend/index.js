@@ -1527,6 +1527,10 @@ const LINK_PREVIEW_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 // ENV VARS ENCRYPTION (AES-256-GCM)
 // ============================================
 const SEAL_KEY_HEX = process.env.SEAL_KEY;
+if (SEAL_KEY_HEX && Buffer.from(SEAL_KEY_HEX, 'hex').length !== 32) {
+    console.error('[FATAL] SEAL_KEY must be exactly 64 hex characters (32 bytes)');
+    process.exit(1);
+}
 
 function encryptVars(varsObj) {
     if (!SEAL_KEY_HEX) throw new Error('SEAL_KEY not configured');
@@ -1561,6 +1565,12 @@ const varsApprovalCache = new Map();
 const varsApprovalPending = new Map();
 const VARS_APPROVAL_TTL = 5 * 60 * 1000; // 5 minutes
 const VARS_APPROVAL_TIMEOUT = 60 * 1000; // 60 seconds
+setInterval(() => {
+    const now = Date.now();
+    for (const [id, entry] of varsApprovalCache) {
+        if (now >= entry.expiresAt) varsApprovalCache.delete(id);
+    }
+}, 10 * 60 * 1000);
 
 /* global AbortController, TextDecoder */
 app.get('/api/link-preview', async (req, res) => {
