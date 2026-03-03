@@ -214,8 +214,10 @@ function showVarsApprovalDialog(data) {
     overlay.id = 'varsApprovalOverlay';
     overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:10000;display:flex;align-items:center;justify-content:center;';
 
+    const esc = (s) => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
     const keysHtml = varKeys.length > 0
-        ? varKeys.map(k => `<code style="background:#f0f0f0;padding:2px 8px;border-radius:4px;font-size:13px;">${k}</code>`).join(' ')
+        ? varKeys.map(k => `<code style="background:#f0f0f0;padding:2px 8px;border-radius:4px;font-size:13px;">${esc(k)}</code>`).join(' ')
         : '<em>(' + t('vars_no_keys', 'no variables') + ')</em>';
 
     overlay.innerHTML = `
@@ -223,7 +225,7 @@ function showVarsApprovalDialog(data) {
             <div style="font-size:40px;margin-bottom:12px;">&#x1f510;</div>
             <h3 style="margin:0 0 8px;font-size:18px;">${t('vars_approval_title', 'Variable Access Request')}</h3>
             <p style="margin:0 0 16px;color:#555;font-size:14px;">
-                <strong>${entityName}</strong> ${t('vars_approval_body', 'wants to read your variables')}
+                <strong>${esc(entityName)}</strong> ${t('vars_approval_body', 'wants to read your variables')}
             </p>
             <div style="margin:0 0 20px;text-align:left;padding:12px;background:#f8f8f8;border-radius:8px;">
                 ${keysHtml}
