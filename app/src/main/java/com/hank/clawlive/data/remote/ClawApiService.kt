@@ -305,6 +305,19 @@ interface ClawApiService {
     @PUT("api/notification-preferences")
     suspend fun updateNotificationPreferences(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
 
+    // ============================================
+    // DEVICE PREFERENCES (Broadcast Settings, etc.)
+    // ============================================
+
+    @GET("api/device-preferences")
+    suspend fun getDevicePreferences(
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
+    ): DevicePreferencesResponse
+
+    @PUT("api/device-preferences")
+    suspend fun updateDevicePreferences(@Body body: Map<String, @JvmSuppressWildcards Any>): ApiResponse
+
     @POST("api/device/fcm-token")
     suspend fun registerFcmToken(@Body body: Map<String, String>): ApiResponse
 
@@ -592,6 +605,12 @@ data class NotificationCountResponse(
 )
 
 data class NotificationPreferencesResponse(
+    val success: Boolean,
+    val prefs: Map<String, Boolean> = emptyMap(),
+    val error: String? = null
+)
+
+data class DevicePreferencesResponse(
     val success: Boolean,
     val prefs: Map<String, Boolean> = emptyMap(),
     val error: String? = null

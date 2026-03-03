@@ -15,6 +15,7 @@ const feedbackModule = require('./device-feedback');
 const chatIntegrity = require('./chat-integrity');
 const scheduler = require('./scheduler');
 const notifModule = require('./notifications');
+const devicePrefs = require('./device-preferences');
 const feedbackEmail = require('./feedback-email');
 const multer = require('multer');
 const WebSocket = require('ws');
@@ -2676,6 +2677,13 @@ app.post('/api/client/speak', async (req, res) => {
         return res.status(400).json({ success: false, message: "No valid target entities" });
     }
 
+    // Check device preference for broadcast recipient info (only for multi-target broadcasts)
+    let showRecipientInfo = false;
+    if (targetIds.length > 1) {
+        const bcastPrefs = await devicePrefs.getPrefs(deviceId);
+        showRecipientInfo = bcastPrefs.broadcast_recipient_info !== false;
+    }
+
     // Parallel processing for broadcast - all entities receive message simultaneously
     const pushPromises = targetIds.map(async (eId) => {
         const entity = device.entities[eId];
@@ -2712,6 +2720,10 @@ app.post('/api/client/speak', async (req, res) => {
             pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${eId},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
             pushMsg += `To BROADCAST to ALL other entities (use ONLY when user asks to broadcast):\n`;
             pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/broadcast" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${eId},"botSecret":"${entity.botSecret}","text":"YOUR_BROADCAST_HERE"}'\n\n`;
+            // Inject broadcast recipient info if this is a multi-target broadcast
+            if (showRecipientInfo) {
+                pushMsg += buildBroadcastRecipientBlock(device, targetIds, eId);
+            }
             pushMsg += `[MESSAGE] Device ${deviceId} Entity ${eId}\n`;
             pushMsg += `From: ${source}\n`;
             pushMsg += `Content: ${text}`;
@@ -3465,6 +3477,26 @@ app.post('/api/client/cross-speak', async (req, res) => {
 });
 
 /**
+ * Build [BROADCAST RECIPIENTS] context block for push messages.
+ * @param {object} device - The device object
+ * @param {number[]} recipientIds - All recipient entity IDs (excluding sender)
+ * @param {number} currentEntityId - The entity receiving this particular push
+ * @returns {string} The formatted block, or empty string
+ */
+function buildBroadcastRecipientBlock(device, recipientIds, currentEntityId) {
+    if (recipientIds.length === 0) return '';
+    let block = `[BROADCAST RECIPIENTS] This message was sent to ${recipientIds.length} entities:\n`;
+    for (const id of recipientIds) {
+        const entity = device.entities[id];
+        if (!entity) continue;
+        const nameStr = entity.name ? ` "${entity.name}"` : '';
+        const youMarker = id === currentEntityId ? ' \u2190 YOU' : '';
+        block += `- entity_${id}${nameStr} (${entity.character || 'LOBSTER'})${youMarker}\n`;
+    }
+    return block + '\n';
+}
+
+/**
  * POST /api/entity/broadcast
  * Broadcast message from one entity to all other bound entities on the same device.
  * Body: { deviceId, fromEntityId, botSecret, text, expects_reply? }
@@ -3590,6 +3622,10 @@ app.post('/api/entity/broadcast', async (req, res) => {
         metadata: { fromEntityId: fromId, targets: targetIds }
     }).catch(() => {});
 
+    // Check device preference for broadcast recipient info
+    const bcastPrefs = await devicePrefs.getPrefs(deviceId);
+    const showRecipientInfo = bcastPrefs.broadcast_recipient_info !== false;
+
     // Queue messages synchronously, then fire-and-forget webhook pushes
     const results = targetIds.map((toId) => {
         const toEntity = device.entities[toId];
@@ -3637,7 +3673,13 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
                 pushMsg += `[NOTIFICATION BROADCAST — NO REPLY EXPECTED] This is an informational broadcast. Do NOT reply via speak-to or re-broadcast. If you want to acknowledge, just update your wallpaper status.`;
             }
-            pushMsg += `\n\n[BROADCAST] From: ${sourceLabel}\n`;
+            // Inject broadcast recipient info if enabled
+            if (showRecipientInfo) {
+                pushMsg += '\n\n' + buildBroadcastRecipientBlock(device, targetIds, toId);
+            } else {
+                pushMsg += '\n\n';
+            }
+            pushMsg += `[BROADCAST] From: ${sourceLabel}\n`;
             pushMsg += `Content: ${broadcastText}`;
             if (mediaType === 'photo') {
                 pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
@@ -5831,6 +5873,9 @@ async function pushToBot(entity, deviceId, eventType, payload) {
     }
 }
 
+// Wire pushToBot into mission module (late binding — pushToBot defined after mission init)
+missionModule.setPushToBot(pushToBot);
+
 // ============================================
 // FEEDBACK ENDPOINTS (Enhanced with Log Snapshot + AI Prompt)
 // ============================================
@@ -6395,6 +6440,7 @@ telemetry.initTelemetryTable(chatPool);
 feedbackModule.initFeedbackTable(chatPool);
 feedbackModule.initFeedbackPhotosTable(chatPool);
 notifModule.initNotificationTables(chatPool);
+devicePrefs.initTable(chatPool);
 chatIntegrity.initIntegrityTable(chatPool);
 
 // Auto-migrate: add delivery tracking + media columns
@@ -6576,6 +6622,31 @@ app.put('/api/notification-preferences', async (req, res) => {
 
     await notifModule.updatePrefs(deviceId, prefs);
     const updated = await notifModule.getPrefs(deviceId);
+    res.json({ success: true, prefs: updated });
+});
+
+// ============================================
+// DEVICE PREFERENCES (broadcast settings, etc.)
+// ============================================
+app.get('/api/device-preferences', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const prefs = await devicePrefs.getPrefs(deviceId);
+    res.json({ success: true, prefs, defaults: devicePrefs.DEFAULTS });
+});
+
+app.put('/api/device-preferences', async (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { prefs } = req.body;
+    if (!prefs || typeof prefs !== 'object') {
+        return res.status(400).json({ success: false, error: 'prefs object required' });
+    }
+
+    await devicePrefs.updatePrefs(deviceId, prefs);
+    const updated = await devicePrefs.getPrefs(deviceId);
     res.json({ success: true, prefs: updated });
 });
 
