@@ -3611,6 +3611,10 @@ app.post('/api/entity/broadcast', async (req, res) => {
         metadata: { fromEntityId: fromId, targets: targetIds }
     }).catch(() => {});
 
+    // Check device preference for broadcast recipient info
+    const bcastPrefs = await devicePrefs.getPrefs(deviceId);
+    const showRecipientInfo = bcastPrefs.broadcast_recipient_info !== false;
+
     // Queue messages synchronously, then fire-and-forget webhook pushes
     const results = targetIds.map((toId) => {
         const toEntity = device.entities[toId];
@@ -3658,7 +3662,13 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 pushMsg += `exec: curl -s -X POST "${apiBase}/api/entity/speak-to" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","fromEntityId":${toId},"toEntityId":${fromId},"botSecret":"${toEntity.botSecret}","text":"YOUR_REPLY_HERE"}'\n\n`;
                 pushMsg += `[NOTIFICATION BROADCAST — NO REPLY EXPECTED] This is an informational broadcast. Do NOT reply via speak-to or re-broadcast. If you want to acknowledge, just update your wallpaper status.`;
             }
-            pushMsg += `\n\n[BROADCAST] From: ${sourceLabel}\n`;
+            // Inject broadcast recipient info if enabled
+            if (showRecipientInfo) {
+                pushMsg += '\n\n' + buildBroadcastRecipientBlock(device, targetIds, toId);
+            } else {
+                pushMsg += '\n\n';
+            }
+            pushMsg += `[BROADCAST] From: ${sourceLabel}\n`;
             pushMsg += `Content: ${broadcastText}`;
             if (mediaType === 'photo') {
                 pushMsg += `\n[Attachment: Photo]\nmedia_type: photo\nmedia_url: ${mediaUrl}`;
