@@ -102,6 +102,11 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var notifContentLayout: LinearLayout
     private lateinit var notifExpandArrow: ImageView
     private var isNotifExpanded = false
+    private lateinit var broadcastSettingsHeader: LinearLayout
+    private lateinit var broadcastSettingsContentLayout: LinearLayout
+    private lateinit var broadcastSettingsExpandArrow: ImageView
+    private lateinit var broadcastPrefsContainer: LinearLayout
+    private var isBroadcastSettingsExpanded = false
     private lateinit var langHeader: LinearLayout
     private lateinit var langContentLayout: LinearLayout
     private lateinit var langExpandArrow: ImageView
@@ -128,6 +133,7 @@ class SettingsActivity : AppCompatActivity() {
         updateEntityCount()
         displayAppVersion()
         setupNotifCollapsible()
+        setupBroadcastSettingsCollapsible()
         setupLangCollapsible()
     }
 
@@ -204,6 +210,10 @@ class SettingsActivity : AppCompatActivity() {
         notifHeader = findViewById(R.id.notifHeader)
         notifContentLayout = findViewById(R.id.notifContentLayout)
         notifExpandArrow = findViewById(R.id.notifExpandArrow)
+        broadcastSettingsHeader = findViewById(R.id.broadcastSettingsHeader)
+        broadcastSettingsContentLayout = findViewById(R.id.broadcastSettingsContentLayout)
+        broadcastSettingsExpandArrow = findViewById(R.id.broadcastSettingsExpandArrow)
+        broadcastPrefsContainer = findViewById(R.id.broadcastPrefsContainer)
         langHeader = findViewById(R.id.langHeader)
         langContentLayout = findViewById(R.id.langContentLayout)
         langExpandArrow = findViewById(R.id.langExpandArrow)
@@ -941,5 +951,120 @@ class SettingsActivity : AppCompatActivity() {
             setTextColor(0x99FFFFFF.toInt())
         }
         notifPrefsContainer.addView(errorText)
+    }
+
+    // ============================================
+    // BROADCAST SETTINGS
+    // ============================================
+
+    private var broadcastPrefsLoaded = false
+
+    private fun setupBroadcastSettingsCollapsible() {
+        broadcastSettingsHeader.setOnClickListener {
+            isBroadcastSettingsExpanded = !isBroadcastSettingsExpanded
+            broadcastSettingsContentLayout.visibility = if (isBroadcastSettingsExpanded) View.VISIBLE else View.GONE
+            broadcastSettingsExpandArrow.animate()
+                .rotation(if (isBroadcastSettingsExpanded) 180f else 0f)
+                .setDuration(200)
+                .start()
+            // Lazy-load preferences on first expand
+            if (isBroadcastSettingsExpanded && !broadcastPrefsLoaded) {
+                broadcastPrefsLoaded = true
+                loadBroadcastPreferences()
+            }
+        }
+    }
+
+    private fun loadBroadcastPreferences() {
+        // Show loading state
+        broadcastPrefsContainer.removeAllViews()
+        val loadingText = TextView(this).apply {
+            text = getString(R.string.notif_prefs_loading)
+            textSize = 13f
+            setTextColor(0x99FFFFFF.toInt())
+        }
+        broadcastPrefsContainer.addView(loadingText)
+
+        lifecycleScope.launch {
+            try {
+                val response = NetworkModule.api.getDevicePreferences(
+                    deviceId = deviceManager.deviceId,
+                    deviceSecret = deviceManager.deviceSecret
+                )
+                if (response.success) {
+                    buildBroadcastPrefToggles(response.prefs)
+                } else {
+                    showBroadcastPrefsError()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load broadcast preferences")
+                showBroadcastPrefsError()
+            }
+        }
+    }
+
+    private fun buildBroadcastPrefToggles(prefs: Map<String, Boolean>) {
+        broadcastPrefsContainer.removeAllViews()
+
+        val enabled = prefs["broadcast_recipient_info"] ?: true
+
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            val lp = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            lp.bottomMargin = dpToPx(4)
+            layoutParams = lp
+            setPadding(0, dpToPx(4), 0, dpToPx(4))
+        }
+
+        val label = TextView(this).apply {
+            text = getString(R.string.broadcast_pref_recipient_info)
+            textSize = 14f
+            setTextColor(0xDDFFFFFF.toInt())
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        }
+
+        val toggle = MaterialSwitch(this).apply {
+            isChecked = enabled
+            setOnCheckedChangeListener { _, isChecked ->
+                updateBroadcastPref("broadcast_recipient_info", isChecked)
+            }
+        }
+
+        row.addView(label)
+        row.addView(toggle)
+        broadcastPrefsContainer.addView(row)
+    }
+
+    private fun updateBroadcastPref(key: String, enabled: Boolean) {
+        lifecycleScope.launch {
+            try {
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
+                    "prefs" to mapOf(key to enabled)
+                )
+                val response = NetworkModule.api.updateDevicePreferences(body)
+                if (!response.success) {
+                    Timber.w("Failed to update broadcast pref: ${response.message}")
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to update broadcast preference")
+                TelemetryHelper.trackError(e, mapOf("action" to "update_broadcast_pref", "key" to key))
+            }
+        }
+    }
+
+    private fun showBroadcastPrefsError() {
+        broadcastPrefsContainer.removeAllViews()
+        val errorText = TextView(this).apply {
+            text = getString(R.string.notif_prefs_error)
+            textSize = 13f
+            setTextColor(0x99FFFFFF.toInt())
+        }
+        broadcastPrefsContainer.addView(errorText)
     }
 }

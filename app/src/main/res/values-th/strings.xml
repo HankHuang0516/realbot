@@ -422,6 +422,11 @@
     <string name="schedule_push_ok">ส่งถึงบอทแล้ว</string>
     <string name="schedule_edit">แก้ไขกำหนดการ</string>
     <string name="schedule_updated">อัปเดตกำหนดการแล้ว!</string>
+    <!-- Broadcast Settings -->
+    <string name="broadcast_settings_title">การตั้งค่าการแพร่ภาพ</string>
+    <string name="broadcast_settings_desc">กำหนดค่าการทำงานของข้อความแพร่ภาพ</string>
+    <string name="broadcast_pref_recipient_info">แสดงรายชื่อผู้รับในการแพร่ภาพ</string>
+
     <string name="nav_home">หน้าหลัก</string>
     <string name="nav_mission">ภารกิจ</string>
     <string name="nav_chat">แชท</string>
