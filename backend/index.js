@@ -69,6 +69,20 @@ io.on('connection', (socket) => {
     socket.join(`device:${deviceId}`);
     console.log(`[Socket.IO] Connected: device ${deviceId} (${io.engine.clientsCount} total)`);
 
+    // Handle vars approval response from Portal/App
+    socket.on('vars:approval-response', (data) => {
+        const { requestId, approved } = data || {};
+        const pending = varsApprovalPending.get(deviceId);
+        if (!pending || pending.requestId !== requestId) return;
+
+        clearTimeout(pending.timer);
+        varsApprovalPending.delete(deviceId);
+
+        for (const { resolve } of pending.resolvers) {
+            resolve(approved === true);
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log(`[Socket.IO] Disconnected: device ${deviceId}`);
     });
@@ -5904,12 +5918,16 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         console.log(`[Push] Including pending rename notification: "${oldName}" -> "${newName}"`);
     }
 
-    // Append local vars hint if any are cached (keys only — fetch values via API)
-    const cachedVars = deviceVarsCache.get(deviceId);
-    if (cachedVars && Object.keys(cachedVars.vars).length > 0) {
-        const varKeys = Object.keys(cachedVars.vars).join(', ');
-        const apiBase = process.env.API_BASE || 'https://eclawbot.com';
-        messageContent += `\n\n[Local Variables available: ${varKeys}]\nexec: curl -s "${apiBase}/api/device-vars?deviceId=${deviceId}&botSecret=${entity.botSecret}"`;
+    // Append local vars hint from DB (keys only, no decryption needed)
+    try {
+        const varsMeta = await db.getDeviceVarsMeta(deviceId);
+        if (varsMeta && !varsMeta.is_locked && varsMeta.var_keys && varsMeta.var_keys.length > 0) {
+            const varKeys = varsMeta.var_keys.join(', ');
+            const apiBase = process.env.API_BASE || 'https://eclawbot.com';
+            messageContent += `\n\n[Local Variables available: ${varKeys}]\nNote: Reading vars requires owner approval (60s timeout).\nexec: curl -s "${apiBase}/api/device-vars?deviceId=${deviceId}&botSecret=${entity.botSecret}"`;
+        }
+    } catch (err) {
+        // Non-critical — just skip the hint
     }
 
     const requestPayload = {
