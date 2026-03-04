@@ -1,3 +1,10 @@
+## [1.77.1](https://github.com/HankHuang0516/realbot/compare/v1.77.0...v1.77.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* **portal:** fix screen-control Loading bug + update info.html with new features ([d240e7d](https://github.com/HankHuang0516/realbot/commit/d240e7de60f476b9d38a39fa395aef69a906ef64))
+
 # [1.77.0](https://github.com/HankHuang0516/realbot/compare/v1.76.3...v1.77.0) (2026-03-04)
 
 
