@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Path
 import android.graphics.Rect
 import android.os.Bundle
+import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.remote.SocketManager
@@ -14,23 +15,43 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
+import java.util.concurrent.TimeUnit
 
 /**
  * AccessibilityService that enables bot-driven phone control.
  *
- * When active:
- * - Listens for 'device:screen-request' → captures UI tree → POSTs to /api/device/screen-result
- * - Listens for 'device:control-command' → executes tap/type/scroll/back/home
+ * Optimizations:
+ * - OkHttp connection pool: eliminates per-request TCP+TLS handshake
+ * - MAX_ELEMENTS / MAX_DEPTH: prevents slow walk on complex screens (Chrome, etc.)
+ * - Screen-change cache: if nothing changed since last capture, returns immediately
  */
 class ScreenControlService : AccessibilityService() {
 
+    companion object {
+        private const val MAX_ELEMENTS = 150
+        private const val MAX_DEPTH = 12
+
+        // Single OkHttp client shared across all captures — connection pool reuses keep-alive connections
+        private val httpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(4, TimeUnit.SECONDS)
+                .readTimeout(4, TimeUnit.SECONDS)
+                .build()
+        }
+    }
+
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    // Screen-change cache
+    private var cachedTree: JSONObject? = null
+    @Volatile private var screenChanged = true  // true on first capture
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -39,8 +60,12 @@ class ScreenControlService : AccessibilityService() {
         observeControlCommands()
     }
 
-    override fun onAccessibilityEvent(event: android.view.accessibility.AccessibilityEvent?) {
-        // On-demand only — no live event streaming needed
+    /**
+     * Invalidate cache whenever the screen changes.
+     * Configured to receive typeWindowStateChanged + typeWindowContentChanged.
+     */
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        screenChanged = true
     }
 
     override fun onInterrupt() {
@@ -69,18 +94,24 @@ class ScreenControlService : AccessibilityService() {
     }
 
     /**
-     * Walks rootInActiveWindow depth-first and builds a flat elements array.
-     * Only includes nodes with text/desc or interactive flags to keep payload small.
-     * Node IDs are positional ("n0", "n1", ...) matching the walk order.
+     * Returns the cached tree if the screen hasn't changed since the last capture,
+     * otherwise walks rootInActiveWindow (depth-first, max MAX_ELEMENTS / MAX_DEPTH).
      */
     private fun captureScreenTree(): JSONObject {
+        // Fast path: return cached tree if screen unchanged
+        val cached = cachedTree
+        if (!screenChanged && cached != null) {
+            Timber.d("[ScreenControl] Returning cached tree (${cached.getJSONArray("elements").length()} elements)")
+            return cached
+        }
+
         val root = rootInActiveWindow
         val packageName = root?.packageName?.toString() ?: "unknown"
         val elements = JSONArray()
         var nodeIndex = 0
 
-        fun walk(node: AccessibilityNodeInfo?) {
-            if (node == null) return
+        fun walk(node: AccessibilityNodeInfo?, depth: Int) {
+            if (node == null || nodeIndex >= MAX_ELEMENTS || depth > MAX_DEPTH) return
             val text = node.text?.toString()
             val desc = node.contentDescription?.toString()
             val bounds = Rect()
@@ -109,44 +140,44 @@ class ScreenControlService : AccessibilityService() {
             }
 
             for (i in 0 until node.childCount) {
-                walk(node.getChild(i))
+                if (nodeIndex >= MAX_ELEMENTS) break
+                walk(node.getChild(i), depth + 1)
             }
             if (node !== root) node.recycle()
         }
 
-        walk(root)
+        walk(root, 0)
         root?.recycle()
 
         val result = JSONObject()
         result.put("screen", packageName)
         result.put("timestamp", System.currentTimeMillis())
         result.put("elements", elements)
+        Timber.d("[ScreenControl] Captured ${nodeIndex} elements from $packageName")
+
+        // Update cache
+        cachedTree = result
+        screenChanged = false
         return result
     }
 
     private fun postScreenResult(tree: JSONObject) {
         val dm = DeviceManager.getInstance(applicationContext)
-        val url = URL("https://eclawbot.com/api/device/screen-result")
-        val conn = url.openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.doOutput = true
-            conn.connectTimeout = 4000
-            conn.readTimeout = 4000
+        val body = JSONObject().apply {
+            put("deviceId", dm.deviceId)
+            put("deviceSecret", dm.deviceSecret)
+            put("screen", tree.getString("screen"))
+            put("timestamp", tree.getLong("timestamp"))
+            put("elements", tree.getJSONArray("elements"))
+        }
 
-            val body = JSONObject()
-            body.put("deviceId", dm.deviceId)
-            body.put("deviceSecret", dm.deviceSecret)
-            body.put("screen", tree.getString("screen"))
-            body.put("timestamp", tree.getLong("timestamp"))
-            body.put("elements", tree.getJSONArray("elements"))
+        val request = Request.Builder()
+            .url("https://eclawbot.com/api/device/screen-result")
+            .post(body.toString().toRequestBody("application/json".toMediaType()))
+            .build()
 
-            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
-            val code = conn.responseCode
-            Timber.d("[ScreenControl] screen-result POST: HTTP $code")
-        } finally {
-            conn.disconnect()
+        httpClient.newCall(request).execute().use { response ->
+            Timber.d("[ScreenControl] screen-result POST: HTTP ${response.code}")
         }
     }
 
@@ -232,8 +263,7 @@ class ScreenControlService : AccessibilityService() {
     }
 
     /**
-     * Re-walks the tree using the same positional logic as captureScreenTree()
-     * to find a node by its "n0", "n1", ... ID.
+     * Re-walks the tree to find a node by positional ID (same logic as captureScreenTree).
      */
     private fun findNodeById(nodeId: String): AccessibilityNodeInfo? {
         val targetIndex = nodeId.removePrefix("n").toIntOrNull() ?: return null
@@ -241,15 +271,15 @@ class ScreenControlService : AccessibilityService() {
         var currentIndex = 0
         var result: AccessibilityNodeInfo? = null
 
-        fun walk(node: AccessibilityNodeInfo?) {
-            if (node == null || result != null) return
+        fun walk(node: AccessibilityNodeInfo?, depth: Int) {
+            if (node == null || result != null || depth > MAX_DEPTH) return
             val text = node.text?.toString()
             val desc = node.contentDescription?.toString()
             val isInteresting = !text.isNullOrEmpty() || !desc.isNullOrEmpty()
                     || node.isClickable || node.isScrollable || node.isEditable
             if (isInteresting) {
                 if (currentIndex == targetIndex) {
-                    result = node // caller owns this reference — do NOT recycle
+                    result = node // caller owns — do NOT recycle
                     return
                 }
                 currentIndex++
@@ -257,12 +287,12 @@ class ScreenControlService : AccessibilityService() {
             for (i in 0 until node.childCount) {
                 if (result != null) break
                 val child = node.getChild(i)
-                walk(child)
+                walk(child, depth + 1)
                 if (result == null) child?.recycle()
             }
         }
 
-        walk(root)
+        walk(root, 0)
         root.recycle()
         return result
     }
