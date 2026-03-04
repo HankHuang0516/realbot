@@ -1,3 +1,10 @@
+## [1.83.1](https://github.com/HankHuang0516/realbot/compare/v1.83.0...v1.83.1) (2026-03-04)
+
+
+### Bug Fixes
+
+* **ui:** guard coerceIn against empty range in AiChatFabHelper ([eea9712](https://github.com/HankHuang0516/realbot/commit/eea9712e5edf17f133f020e573e951d5e40cb7f7))
+
 # [1.83.0](https://github.com/HankHuang0516/realbot/compare/v1.82.0...v1.83.0) (2026-03-04)
 
 
