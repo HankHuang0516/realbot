@@ -1,3 +1,10 @@
+## [1.76.3](https://github.com/HankHuang0516/realbot/compare/v1.76.2...v1.76.3) (2026-03-04)
+
+
+### Bug Fixes
+
+* **screen-control:** remove 20-capture session limit, keep 500ms interval only ([2efb3f2](https://github.com/HankHuang0516/realbot/commit/2efb3f2b17665f7cae0d0d2c5172974ab513539e))
+
 ## [1.76.2](https://github.com/HankHuang0516/realbot/compare/v1.76.1...v1.76.2) (2026-03-04)
 
 
