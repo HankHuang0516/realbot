@@ -1,3 +1,10 @@
+# [1.78.0](https://github.com/HankHuang0516/realbot/compare/v1.77.5...v1.78.0) (2026-03-04)
+
+
+### Features
+
+* **ai-chat:** persist pending requestId to survive Activity recreation ([#129](https://github.com/HankHuang0516/realbot/issues/129)) ([e9ac0e4](https://github.com/HankHuang0516/realbot/commit/e9ac0e44fa8804aef6566d7ce7a30a681fbc613f))
+
 ## [1.77.5](https://github.com/HankHuang0516/realbot/compare/v1.77.4...v1.77.5) (2026-03-04)
 
 
