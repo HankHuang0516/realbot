@@ -622,6 +622,8 @@
                         <button class="guide-sub-btn" data-guide="mission-rules">規則</button>
                         <button class="guide-sub-btn" data-guide="mission-schedule">排程</button>
                     </div>
+                    <button class="guide-sidebar-btn" data-guide="envvars">環境變數</button>
+                    <button class="guide-sidebar-btn" data-guide="remotecontrol">遠端控制</button>
                     <button class="guide-sidebar-btn" data-guide="testing">測試與文件</button>
                 </div>
 
@@ -893,7 +895,9 @@ git push origin main</div>
 │   ├── Skills
 │   ├── 靈魂 (Soul / 人設)
 │   └── 規則 (Rules / Workflow)
-└── 排程 (Schedule)</div>
+├── 排程 (Schedule)
+├── 環境變數 (Env Variables)
+└── 遠端控制 (Remote Control)</div>
 
                         <h2>子項目總覽</h2>
                         <table class="feature-table">
@@ -907,6 +911,8 @@ git push origin main</div>
                                 <tr><td>靈魂</td><td>定義 Bot 人格特質與溝通風格</td><td>User 定義人格</td></tr>
                                 <tr><td>規則</td><td>制定行為準則與自動化工作流程，支援 6 種規則類型</td><td>User 定義行為</td></tr>
                                 <tr><td>排程</td><td>定時執行任務，支援即時狀態追蹤與執行紀錄</td><td>User + Bot 共用</td></tr>
+                                <tr><td>環境變數</td><td>AES-256-GCM 加密儲存 Bot 私密變數，JIT 即時授權機制</td><td>User 授權 / Bot 讀取</td></tr>
+                                <tr><td>遠端控制</td><td>Bot 透過 Accessibility Tree 自主操控手機 UI（預設關閉）</td><td>User 啟用 / Bot 執行</td></tr>
                             </tbody>
                         </table>
 
@@ -1146,6 +1152,99 @@ git push origin main</div>
                                 <tr><td>執行紀錄</td><td><code>GET /api/mission/schedule/history</code></td></tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- ── 環境變數 ── -->
+                    <div class="guide-panel" id="guide-envvars">
+                        <header>
+                            <h1>環境變數 (Env Variables)</h1>
+                            <p class="meta">任務中心 &gt; 環境變數 <span class="mc-label" style="background:rgba(255,152,0,0.15);color:#FF9800;">User 授權 / Bot 讀取</span></p>
+                        </header>
+                        <p>讓 Bot 安全存取敏感資訊（API Key、Token 等）。變數以 <strong>AES-256-GCM</strong> 加密儲存於伺服器，Bot 每次讀取都需要裝置擁有者即時授權（JIT — Just-in-Time Approval）。</p>
+
+                        <h2>功能明細</h2>
+                        <table class="feature-table">
+                            <thead><tr><th>功能</th><th>說明</th></tr></thead>
+                            <tbody>
+                                <tr><td>加密儲存</td><td>變數值以 AES-256-GCM 加密，伺服器僅存密文，Key 名稱可見但值不可見</td></tr>
+                                <tr><td>JIT 即時授權</td><td>Bot 請求讀取時，App 彈出授權對話框，使用者確認後才解密回傳，授權快取 5 分鐘</td></tr>
+                                <tr><td>鎖定保護</td><td>開啟鎖定後，Bot 的所有讀取請求立即拒絕，不顯示授權彈窗</td></tr>
+                                <tr><td>離線保護</td><td>裝置未連線（Socket.IO 斷線）時，Bot 請求直接回傳 403，不會等待</td></tr>
+                                <tr><td>Web 管理</td><td>可在 Portal → Env Variables 頁面新增、編輯、刪除變數</td></tr>
+                                <tr><td>App 管理</td><td>在 App → Mission Control → Env Variables 同樣可管理，並接收授權通知</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h2>授權流程</h2>
+                        <div class="file-tree">Bot 呼叫 GET /api/device-vars
+  ↓ 伺服器確認變數存在
+  ↓ 透過 Socket.IO 推送授權請求到 App
+  ↓ App 顯示 Material Dialog（變數名稱清單）
+使用者點「允許」
+  ↓ 伺服器解密 → 回傳變數值給 Bot
+  ↓ 授權快取 5 分鐘（同 Bot 再次請求免彈窗）</div>
+
+                        <h2>API 端點</h2>
+                        <table class="mc-api-table">
+                            <thead><tr><th>操作</th><th>API</th></tr></thead>
+                            <tbody>
+                                <tr><td>讀取（Bot）</td><td><code>GET /api/device-vars</code></td></tr>
+                                <tr><td>寫入（User）</td><td><code>POST /api/device-vars</code></td></tr>
+                                <tr><td>批准授權</td><td><code>POST /api/device-vars/approve</code></td></tr>
+                                <tr><td>拒絕授權</td><td><code>POST /api/device-vars/deny</code></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- ── 遠端控制 ── -->
+                    <div class="guide-panel" id="guide-remotecontrol">
+                        <header>
+                            <h1>遠端控制 (Remote Control)</h1>
+                            <p class="meta">任務中心 &gt; 遠端控制 <span class="mc-label" style="background:rgba(244,67,54,0.15);color:#F44336;">User 啟用 / Bot 執行</span></p>
+                        </header>
+                        <p>讓 Bot 自主操控你的手機 UI。Bot 透過 <strong>Accessibility Tree（無障礙語意樹）</strong> 讀取畫面結構，再發送點擊、輸入、滑動等指令。整個過程不截圖，Bot 只看到文字元素，不會擷取敏感視覺內容。</p>
+                        <div class="note">此功能預設關閉，需在 App Settings → Remote Control 手動開啟並授予無障礙服務權限。</div>
+
+                        <h2>功能明細</h2>
+                        <table class="feature-table">
+                            <thead><tr><th>功能</th><th>說明</th></tr></thead>
+                            <tbody>
+                                <tr><td>畫面擷取</td><td>Bot 請求目前畫面的語意樹（最多 150 個元素），包含文字、類型、座標、可互動屬性</td></tr>
+                                <tr><td>點擊 (tap)</td><td>按 Node ID 或 XY 座標點擊元素</td></tr>
+                                <tr><td>輸入 (type)</td><td>對指定輸入欄位輸入文字</td></tr>
+                                <tr><td>滑動 (scroll)</td><td>對可滾動元素向上或向下滑動</td></tr>
+                                <tr><td>系統按鍵</td><td>返回鍵（back）、主畫面鍵（home）</td></tr>
+                                <tr><td>多輪自主操作</td><td>Bot 可反覆截圖 → 判斷 → 執行指令，完成複雜的多步驟任務</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h2>安全機制</h2>
+                        <table class="feature-table">
+                            <thead><tr><th>保護</th><th>說明</th></tr></thead>
+                            <tbody>
+                                <tr><td>預設關閉</td><td>功能預設 OFF，需用戶主動開啟</td></tr>
+                                <tr><td>Per-binding 金鑰</td><td>每個 Bot 綁定有獨立 <code>botSecret</code>，共用同一 Bot 的多個用戶互不影響</td></tr>
+                                <tr><td>離線保護</td><td>手機 Socket.IO 斷線時，Bot 請求立即回傳 503</td></tr>
+                                <tr><td>無截圖</td><td>Bot 只取得文字結構（Accessibility Tree），不含圖片、影片等視覺內容</td></tr>
+                                <tr><td>速率限制</td><td>每次畫面擷取最少間隔 500ms，防止過度輪詢</td></tr>
+                            </tbody>
+                        </table>
+
+                        <h2>API 端點</h2>
+                        <table class="mc-api-table">
+                            <thead><tr><th>操作</th><th>API</th></tr></thead>
+                            <tbody>
+                                <tr><td>畫面擷取（長輪詢）</td><td><code>POST /api/device/screen-capture</code></td></tr>
+                                <tr><td>執行控制指令</td><td><code>POST /api/device/control</code></td></tr>
+                            </tbody>
+                        </table>
+
+                        <h2>Bot 使用範例</h2>
+                        <div class="file-tree">1. Bot 呼叫 screen-capture → 取得元素列表
+2. 找到目標元素（如 "設定" 按鈕，id: n5）
+3. 呼叫 control { command: "tap", params: { nodeId: "n5" } }
+4. 再次呼叫 screen-capture 確認畫面已切換
+5. 重複直到任務完成</div>
                     </div>
 
                     <!-- ── 測試與文件 ── -->
