@@ -1,3 +1,10 @@
+# [1.82.0](https://github.com/HankHuang0516/realbot/compare/v1.81.0...v1.82.0) (2026-03-04)
+
+
+### Features
+
+* **ui:** add Channel binding type indicators across Portal and Android ([57b54ac](https://github.com/HankHuang0516/realbot/commit/57b54acd371e1abae1955c13cf59d3272f4169cb))
+
 # [1.81.0](https://github.com/HankHuang0516/realbot/compare/v1.80.0...v1.81.0) (2026-03-04)
 
 
