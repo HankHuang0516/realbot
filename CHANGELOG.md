@@ -1,3 +1,10 @@
+## [1.83.2](https://github.com/HankHuang0516/realbot/compare/v1.83.1...v1.83.2) (2026-03-04)
+
+
+### Bug Fixes
+
+* **ui:** round border corners to match screen + halve border thickness ([43c3c2a](https://github.com/HankHuang0516/realbot/commit/43c3c2a396759ba8e9fdb288225c132c9845ea65))
+
 ## [1.83.1](https://github.com/HankHuang0516/realbot/compare/v1.83.0...v1.83.1) (2026-03-04)
 
 
