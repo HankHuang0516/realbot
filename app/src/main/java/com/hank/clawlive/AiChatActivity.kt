@@ -82,6 +82,7 @@ class AiChatActivity : AppCompatActivity() {
         setupInsets()
         setupListeners()
         loadHistory()
+        resumePendingIfNeeded()
         updateUi()
     }
 
@@ -292,6 +293,7 @@ class AiChatActivity : AppCompatActivity() {
                 messages.add(AiMessage("assistant", "Failed to send message."))
                 return
             }
+            savePendingRequestId(requestId)
 
             // ── PROGRESSIVE TYPING INDICATOR ──
             statusJob = lifecycleScope.launch {
@@ -394,6 +396,7 @@ class AiChatActivity : AppCompatActivity() {
             messages.add(AiMessage("assistant", resolveHttpError(e)))
         } finally {
             isLoading = false
+            savePendingRequestId(null)
             saveHistory()
             updateUi()
             scrollToBottom()
@@ -471,6 +474,76 @@ class AiChatActivity : AppCompatActivity() {
             val count = chatAdapter.itemCount
             if (count > 0) recyclerChat.smoothScrollToPosition(count - 1)
         }, 100)
+    }
+
+    // ── Pending Request Persistence ──────────
+
+    private fun savePendingRequestId(requestId: String?) {
+        getSharedPreferences("ai_chat", MODE_PRIVATE)
+            .edit().putString("pending_request_id", requestId).apply()
+    }
+
+    private fun loadPendingRequestId(): String? =
+        getSharedPreferences("ai_chat", MODE_PRIVATE).getString("pending_request_id", null)
+
+    /**
+     * Called on Activity creation: if a requestId was saved (user closed app mid-request),
+     * re-attach to the existing poll so the typing indicator is restored.
+     */
+    private fun resumePendingIfNeeded() {
+        val requestId = loadPendingRequestId() ?: return
+        if (isLoading) return
+        isLoading = true
+        messages.add(AiMessage("typing", getString(R.string.ai_chat_thinking)))
+        lifecycleScope.launch {
+            var pollResult: com.hank.clawlive.data.remote.AiChatPollResponse? = null
+            try {
+                for (attempt in 1..MAX_POLL_ATTEMPTS) {
+                    delay(POLL_INTERVAL_MS)
+                    if (isFinishing) break
+                    try {
+                        val poll = api.aiChatPoll(requestId, deviceManager.deviceId, deviceManager.deviceSecret)
+                        when (poll.status) {
+                            "completed", "failed", "expired" -> { pollResult = poll; break }
+                        }
+                    } catch (_: Exception) {}
+                }
+                messages.removeAll { it.role == "typing" }
+                when {
+                    pollResult == null -> {
+                        messages.add(AiMessage("assistant", "The request is taking too long. Please try again."))
+                    }
+                    pollResult.status == "completed" && pollResult.response != null -> {
+                        val text = pollResult.response.trim()
+                        val displayText = if (text.startsWith("{") && text.contains("\"type\"")) {
+                            getString(R.string.ai_chat_fallback_error)
+                        } else text
+                        messages.add(AiMessage("assistant", displayText))
+                        if (displayText.contains("Feedback #") && displayText.contains("recorded")) {
+                            messages.add(AiMessage("action", getString(R.string.ai_chat_view_feedback)))
+                        }
+                    }
+                    pollResult.status == "failed" -> {
+                        messages.add(AiMessage("assistant", pollResult.error ?: "AI is temporarily unavailable."))
+                    }
+                    pollResult.status == "expired" -> {
+                        messages.add(AiMessage("assistant", "Request expired. Please try again."))
+                    }
+                    else -> {
+                        messages.add(AiMessage("assistant", "Something went wrong. Please try again."))
+                    }
+                }
+            } catch (e: Exception) {
+                messages.removeAll { it.role == "typing" }
+                messages.add(AiMessage("assistant", resolveHttpError(e)))
+            } finally {
+                isLoading = false
+                savePendingRequestId(null)
+                saveHistory()
+                updateUi()
+                scrollToBottom()
+            }
+        }
     }
 
     // ── Persistence ──────────────────────────
