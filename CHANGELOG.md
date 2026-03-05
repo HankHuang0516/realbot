@@ -1,3 +1,10 @@
+# [1.84.0](https://github.com/HankHuang0516/realbot/compare/v1.83.2...v1.84.0) (2026-03-05)
+
+
+### Features
+
+* **channel:** support multiple OpenClaw plugins binding different entities ([c7ba874](https://github.com/HankHuang0516/realbot/commit/c7ba8746c60acfef6bfaed40307819d519234311))
+
 ## [1.83.2](https://github.com/HankHuang0516/realbot/compare/v1.83.1...v1.83.2) (2026-03-04)
 
 
