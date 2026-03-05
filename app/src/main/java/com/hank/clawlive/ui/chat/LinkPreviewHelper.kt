@@ -20,10 +20,20 @@ object LinkPreviewHelper {
     private val cache = LruCache<String, LinkPreviewData>(100)
 
     private val urlRegex = Regex("https?://\\S+")
+    private val imageExtRegex = Regex("""\.(?:png|jpe?g|gif|webp|bmp|svg)$""", RegexOption.IGNORE_CASE)
 
     /** Extract the first URL from a text string, or null */
     fun extractFirstUrl(text: String): String? {
         return urlRegex.find(text)?.value
+    }
+
+    /** Returns true if the URL points directly to an image file */
+    fun isImageUrl(url: String): Boolean {
+        return try {
+            imageExtRegex.containsMatchIn(URL(url).path)
+        } catch (_: Exception) {
+            false
+        }
     }
 
     /** Fetch link preview data from backend. Returns null if unavailable. */
@@ -47,13 +57,14 @@ object LinkPreviewHelper {
                     return@withContext null
                 }
 
+                val resolvedUrl = obj.optString("url", url).ifEmpty { url }
                 val data = LinkPreviewData(
-                    url = obj.optString("url", url),
+                    url = resolvedUrl,
                     title = title,
                     description = desc,
                     image = obj.optString("image", "")
                 )
-                cache.put(url, data)
+                if (url.isNotEmpty()) cache.put(url, data)
                 data
             } catch (e: Exception) {
                 null

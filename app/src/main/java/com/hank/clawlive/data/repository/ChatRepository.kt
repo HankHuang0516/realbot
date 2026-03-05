@@ -363,8 +363,9 @@ class ChatRepository private constructor(
             if (!msg.is_from_user && msg.entity_id != null) {
                 val sinceTimestamp = timestamp - DEDUP_WINDOW_MS
                 if (chatDao.existsByContentAndEntity(msg.entity_id, msg.text, sinceTimestamp)) {
-                    // Set backendId on existing message so reactions can work
-                    chatDao.setBackendIdByContentMatch(msg.entity_id, msg.text, sinceTimestamp, msg.id)
+                    // Update backendId AND deduplicationKey so ChatIntegrityValidator can find
+                    // this message by its backend key ("backend_${id}") and reactions work.
+                    chatDao.setBackendIdByContentMatch(msg.entity_id, msg.text, sinceTimestamp, msg.id, "backend_${msg.id}")
                     Timber.d("Skipping backend message (already stored from entity polling): Entity ${msg.entity_id}")
                     continue
                 }
