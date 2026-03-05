@@ -1,3 +1,10 @@
+## [1.87.2](https://github.com/HankHuang0516/realbot/compare/v1.87.1...v1.87.2) (2026-03-05)
+
+
+### Bug Fixes
+
+* **screen-control:** ime_action fallback when no INPUT focus (ACTION_SET_TEXT case) ([70f0592](https://github.com/HankHuang0516/realbot/commit/70f0592966662ca0bd25e672214eb3501d74bd08))
+
 ## [1.87.1](https://github.com/HankHuang0516/realbot/compare/v1.87.0...v1.87.1) (2026-03-05)
 
 
