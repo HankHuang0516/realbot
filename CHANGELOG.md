@@ -1,3 +1,10 @@
+## [1.89.5](https://github.com/HankHuang0516/realbot/compare/v1.89.4...v1.89.5) (2026-03-05)
+
+
+### Bug Fixes
+
+* **ssl:** trust-all TrustManager in debug builds for emulator SSL fix ([2ad2948](https://github.com/HankHuang0516/realbot/commit/2ad294885947563190ded40744c918e518afccb0))
+
 ## [1.89.4](https://github.com/HankHuang0516/realbot/compare/v1.89.3...v1.89.4) (2026-03-05)
 
 
