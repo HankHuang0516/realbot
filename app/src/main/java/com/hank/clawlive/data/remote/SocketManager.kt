@@ -40,6 +40,9 @@ object SocketManager {
     private val _controlCommandFlow = MutableSharedFlow<JSONObject>(extraBufferCapacity = 16)
     val controlCommandFlow: SharedFlow<JSONObject> = _controlCommandFlow
 
+    private val _screenshotRequestFlow = MutableSharedFlow<JSONObject>(extraBufferCapacity = 4)
+    val screenshotRequestFlow: SharedFlow<JSONObject> = _screenshotRequestFlow
+
     fun connect(context: Context) {
         if (isInitialized) return
 
@@ -105,6 +108,12 @@ object SocketManager {
                     val json = args.firstOrNull() as? JSONObject ?: return@on
                     Timber.d("[Socket] device:control-command: $json")
                     _controlCommandFlow.tryEmit(json)
+                }
+
+                on("device:screenshot-request") { args ->
+                    val json = args.firstOrNull() as? JSONObject ?: JSONObject()
+                    Timber.d("[Socket] device:screenshot-request received")
+                    _screenshotRequestFlow.tryEmit(json)
                 }
 
                 connect()

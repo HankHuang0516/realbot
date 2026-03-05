@@ -1585,6 +1585,10 @@ const pendingScreenRequests = {};
 const screenCaptureRateLimits = {}; // deviceId -> { lastAt }
 const SCREEN_CAPTURE_MIN_INTERVAL_MS = 500;
 
+const pendingScreenshotRequests = {};
+const screenshotRateLimits = {}; // deviceId -> { lastAt }
+const SCREENSHOT_MIN_INTERVAL_MS = 2000;
+
 setInterval(() => {
     const now = Date.now();
     for (const [id, entry] of varsApprovalCache) {
@@ -7060,6 +7064,109 @@ app.post('/api/device/screen-result', (req, res) => {
 
     serverLog('info', 'remote_control', 'screen-result delivered', { deviceId,
         metadata: { screen, elementCount: Array.isArray(elements) ? elements.length : 0, truncated: !!truncated } });
+    res.json({ success: true });
+});
+
+/**
+ * POST /api/device/screenshot
+ * Bot or device owner requests a pixel-level screenshot (base64 JPEG).
+ * Long-poll ≤10s. Requires Android 11+ (API 30) on device side.
+ * Body: { deviceId, entityId, botSecret } — bot auth
+ *    or { deviceId, entityId, deviceSecret } — device owner auth (portal)
+ */
+app.post('/api/device/screenshot', async (req, res) => {
+    const { deviceId, entityId, botSecret, deviceSecret } = req.body;
+
+    if (!deviceId || (botSecret === undefined && deviceSecret === undefined)) {
+        return res.status(400).json({ success: false, error: 'deviceId and botSecret (or deviceSecret) required' });
+    }
+
+    const eId = parseInt(entityId) || 0;
+    if (eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId' });
+    }
+
+    const device = devices[deviceId];
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    const isOwner = deviceSecret && device.deviceSecret && deviceSecret === device.deviceSecret;
+    const entity = device.entities[eId];
+    if (!isOwner) {
+        if (!entity || !entity.isBound) {
+            return res.status(400).json({ success: false, error: 'Entity not bound' });
+        }
+        if (!botSecret || botSecret !== entity.botSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid botSecret' });
+        }
+    }
+
+    const prefs = await devicePrefs.getPrefs(deviceId);
+    if (!prefs.remote_control_enabled) {
+        return res.status(403).json({ success: false, error: 'remote_control_disabled',
+            message: 'Remote control is not enabled. User must enable it in App Settings.' });
+    }
+
+    const now = Date.now();
+    if (!screenshotRateLimits[deviceId]) screenshotRateLimits[deviceId] = { lastAt: 0 };
+    if (now - screenshotRateLimits[deviceId].lastAt < SCREENSHOT_MIN_INTERVAL_MS) {
+        return res.status(429).json({ success: false, error: 'too_fast',
+            message: `Min ${SCREENSHOT_MIN_INTERVAL_MS}ms between screenshots.` });
+    }
+    screenshotRateLimits[deviceId].lastAt = now;
+
+    const sockets = await io.in(`device:${deviceId}`).fetchSockets();
+    if (sockets.length === 0) {
+        return res.status(503).json({ success: false, error: 'device_offline',
+            message: 'Device is not connected. Open the app.' });
+    }
+
+    if (pendingScreenshotRequests[deviceId]) {
+        return res.status(409).json({ success: false, error: 'capture_in_progress',
+            message: 'Another screenshot is already pending for this device.' });
+    }
+
+    serverLog('info', 'remote_control', 'screenshot requested', { deviceId, entityId: eId });
+
+    try {
+        const result = await new Promise((resolve, reject) => {
+            const timeoutHandle = setTimeout(() => {
+                delete pendingScreenshotRequests[deviceId];
+                reject(new Error('timeout'));
+            }, 10000);
+            pendingScreenshotRequests[deviceId] = { resolve, reject, timeoutHandle };
+            io.to(`device:${deviceId}`).emit('device:screenshot-request', { requestedAt: now });
+        });
+        return res.json({ success: true, ...result });
+    } catch (err) {
+        if (err.message === 'timeout') {
+            return res.status(504).json({ success: false, error: 'timeout',
+                message: 'Device did not respond within 10 seconds. Is the Accessibility Service enabled? (Requires Android 11+)' });
+        }
+        return res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * POST /api/device/screenshot-result
+ * App delivers the captured screenshot, resolving the pending long-poll.
+ * Body: { deviceId, deviceSecret, imageBase64, mimeType, timestamp }
+ */
+app.post('/api/device/screenshot-result', (req, res) => {
+    const deviceId = authDevice(req);
+    if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+    const { imageBase64, mimeType, timestamp } = req.body;
+    const pending = pendingScreenshotRequests[deviceId];
+    if (!pending) {
+        return res.json({ success: true, message: 'No pending request, result discarded' });
+    }
+
+    clearTimeout(pending.timeoutHandle);
+    delete pendingScreenshotRequests[deviceId];
+    pending.resolve({ imageBase64, mimeType: mimeType || 'image/jpeg', timestamp });
+
+    serverLog('info', 'remote_control', 'screenshot-result delivered', { deviceId,
+        metadata: { mimeType, sizeBytes: imageBase64 ? Math.round(imageBase64.length * 0.75) : 0 } });
     res.json({ success: true });
 });
 
