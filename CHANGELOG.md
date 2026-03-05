@@ -1,3 +1,10 @@
+## [1.89.6](https://github.com/HankHuang0516/realbot/compare/v1.89.5...v1.89.6) (2026-03-05)
+
+
+### Bug Fixes
+
+* **screenshot:** add error propagation and logging in takeAndPostScreenshot ([f3b7e27](https://github.com/HankHuang0516/realbot/commit/f3b7e2755bb2f6490e5c6d6f98853207626da23d))
+
 ## [1.89.5](https://github.com/HankHuang0516/realbot/compare/v1.89.4...v1.89.5) (2026-03-05)
 
 
