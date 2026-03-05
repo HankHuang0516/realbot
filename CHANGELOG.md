@@ -1,3 +1,10 @@
+## [1.90.3](https://github.com/HankHuang0516/realbot/compare/v1.90.2...v1.90.3) (2026-03-05)
+
+
+### Bug Fixes
+
+* **android:** exclude current message from history to fix AI image processing ([e6ad954](https://github.com/HankHuang0516/realbot/commit/e6ad9549398317dd586bc9d3b73b60af959dfb5d)), closes [#143](https://github.com/HankHuang0516/realbot/issues/143)
+
 ## [1.90.2](https://github.com/HankHuang0516/realbot/compare/v1.90.1...v1.90.2) (2026-03-05)
 
 
