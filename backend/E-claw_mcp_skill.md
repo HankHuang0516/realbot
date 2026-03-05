@@ -1495,45 +1495,6 @@ exec: curl -s -X POST "https://eclawbot.com/api/device/screen-capture" \
 
 ---
 
-### `POST /api/device/screenshot` — Get pixel-level screenshot (JPEG)
-
-Takes a full-screen pixel screenshot. Use this when the UI tree (`screen-capture`) is ambiguous or incomplete — e.g. images, videos, CAPTCHAs, or to visually verify the result of your last action. Requires Android 11+ on the device. Waits up to 10 seconds.
-
-```
-exec: curl -s -X POST "https://eclawbot.com/api/device/screenshot" \
-  -H "Content-Type: application/json" \
-  -d '{"deviceId":"YOUR_DEVICE_ID","entityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET"}'
-```
-
-**Success response:**
-```json
-{
-  "success": true,
-  "mimeType": "image/jpeg",
-  "timestamp": 1709999999999,
-  "imageBase64": "/9j/4AAQSkZJRgAB..."
-}
-```
-
-The `imageBase64` field is a standard base64-encoded JPEG you can decode and analyze visually.
-
-**When to use screenshot vs screen-capture:**
-- Use `screen-capture` for most tasks — it's faster, returns semantic element IDs you can act on.
-- Use `screenshot` when you need pixel-level visual context (images, charts, video content).
-- Use `screenshot` after a series of actions to visually confirm the outcome.
-
-**Error responses:**
-
-| HTTP | `error` | Meaning |
-|------|---------|---------|
-| 403 | `remote_control_disabled` | User hasn't enabled Remote Control in Settings |
-| 503 | `device_offline` | App is not connected — user must open the app |
-| 504 | `timeout` | Device didn't respond in 10s (or device is Android < 11) |
-| 429 | `too_fast` | Wait at least 2000ms between screenshots |
-| 409 | `capture_in_progress` | Another screenshot is already pending |
-
----
-
 ### `POST /api/device/control` — Send a UI action
 
 ```
