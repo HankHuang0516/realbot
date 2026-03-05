@@ -21,6 +21,26 @@ const db = require('./db');
 module.exports = function (devices, { authMiddleware, serverLog, generateBotSecret, generatePublicCode, publicCodeIndex, saveChatMessage, io, saveData }) {
     const router = express.Router();
 
+    // ── In-memory test sink (for self-testing without ngrok) ──
+    // { slotId: [{ token, receivedAt, payload }, ...] }
+    const testSinkStore = {};
+
+    // ── Auth helper: validate deviceId + deviceSecret ──
+    function deviceAuth(req, res) {
+        const deviceId = req.body?.deviceId || req.query?.deviceId;
+        const deviceSecret = req.body?.deviceSecret || req.query?.deviceSecret;
+        if (!deviceId || !deviceSecret) {
+            res.status(401).json({ success: false, message: 'deviceId and deviceSecret required' });
+            return null;
+        }
+        const device = devices[deviceId];
+        if (!device || device.deviceSecret !== deviceSecret) {
+            res.status(403).json({ success: false, message: 'Invalid device credentials' });
+            return null;
+        }
+        return { deviceId, device };
+    }
+
     // ── Auth helper: validate channel API key + secret ──
     async function channelAuth(req, res) {
         const apiKey = req.body.channel_api_key || req.headers['x-channel-api-key'];
@@ -150,6 +170,88 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             console.error('[Channel] Delete account error:', err.message);
             res.status(500).json({ success: false, message: 'Internal error' });
         }
+    });
+
+    // ============================================
+    // POST /provision-device — Provision channel account using device credentials
+    // (For automation / testing — no JWT required)
+    // ============================================
+    router.post('/provision-device', async (req, res) => {
+        try {
+            const auth = deviceAuth(req, res);
+            if (!auth) return;
+            const { deviceId } = auth;
+
+            const apiKey = 'eck_' + crypto.randomBytes(32).toString('hex');
+            const apiSecret = 'ecs_' + crypto.randomBytes(32).toString('hex');
+
+            const account = await db.createChannelAccount(deviceId, apiKey, apiSecret);
+            if (!account) {
+                return res.status(500).json({ success: false, message: 'Failed to create channel account' });
+            }
+
+            serverLog('info', 'channel', `Channel account provisioned via device auth (id=${account.id})`, { deviceId });
+
+            res.json({
+                success: true,
+                id: account.id,
+                channel_api_key: apiKey,
+                channel_api_secret: apiSecret
+            });
+        } catch (err) {
+            console.error('[Channel] Provision-device error:', err.message);
+            res.status(500).json({ success: false, message: 'Internal error' });
+        }
+    });
+
+    // ============================================
+    // POST /test-sink — Callback receiver for self-testing (no ngrok needed)
+    // The server calls this URL when it would push to a channel plugin.
+    // Query param: ?slot=<slotId>  —  groups payloads by test slot
+    // Auth: Bearer {callback_token} in Authorization header
+    // ============================================
+    router.post('/test-sink', (req, res) => {
+        const slot = req.query.slot || 'default';
+        const expectedToken = req.query.token; // token embedded in callback_url for retrieval
+        const authHeader = req.headers.authorization || '';
+        const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+        if (!testSinkStore[slot]) testSinkStore[slot] = [];
+        testSinkStore[slot].push({
+            receivedAt: Date.now(),
+            bearerToken,
+            payload: req.body
+        });
+
+        // Keep only last 20 per slot
+        if (testSinkStore[slot].length > 20) {
+            testSinkStore[slot] = testSinkStore[slot].slice(-20);
+        }
+
+        res.json({ success: true, slot, count: testSinkStore[slot].length });
+    });
+
+    // GET /test-sink — Retrieve stored payloads (auth: deviceId + deviceSecret)
+    router.get('/test-sink', (req, res) => {
+        const auth = deviceAuth(req, res);
+        if (!auth) return;
+
+        const slot = req.query.slot || 'default';
+        res.json({
+            success: true,
+            slot,
+            payloads: testSinkStore[slot] || []
+        });
+    });
+
+    // DELETE /test-sink — Clear stored payloads (auth: deviceId + deviceSecret)
+    router.delete('/test-sink', (req, res) => {
+        const auth = deviceAuth(req, res);
+        if (!auth) return;
+
+        const slot = req.query.slot || 'default';
+        testSinkStore[slot] = [];
+        res.json({ success: true, slot, cleared: true });
     });
 
     // ============================================
