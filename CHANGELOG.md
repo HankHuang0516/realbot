@@ -1,3 +1,10 @@
+## [1.89.7](https://github.com/HankHuang0516/realbot/compare/v1.89.6...v1.89.7) (2026-03-05)
+
+
+### Bug Fixes
+
+* **screenshot:** increase body limit to 5mb for screenshot-result endpoint ([c68be3f](https://github.com/HankHuang0516/realbot/commit/c68be3f0419d0ac50ffef3f1a4f4dfdd679be9f6))
+
 ## [1.89.6](https://github.com/HankHuang0516/realbot/compare/v1.89.5...v1.89.6) (2026-03-05)
 
 
