@@ -1,6 +1,7 @@
 package com.hank.clawlive.data.remote
 
 import android.content.Context
+import com.hank.clawlive.BuildConfig
 import com.hank.clawlive.data.local.DeviceManager
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -63,6 +64,13 @@ object SocketManager {
             opts.reconnectionDelay = 3000
             opts.reconnectionAttempts = Int.MAX_VALUE
             opts.transports = arrayOf("websocket", "polling")
+
+            // Emulators may have outdated CA stores; bypass SSL validation in debug only
+            if (BuildConfig.DEBUG) {
+                val unsafeClient = buildDebugOkHttpClient()
+                opts.callFactory = unsafeClient
+                opts.webSocketFactory = unsafeClient
+            }
 
             socket = IO.socket(SERVER_URL, opts).apply {
                 on(Socket.EVENT_CONNECT) {
