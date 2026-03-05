@@ -108,6 +108,7 @@ app.use((req, res, next) => {
 const cookieParser = require('cookie-parser');
 app.use(cors({ origin: true, credentials: true }));
 app.use('/api/ai-support/chat', express.json({ limit: '10mb' }));
+app.use('/api/device/screenshot-result', express.json({ limit: '5mb' }));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/mission', express.static(path.join(__dirname, 'public')));
@@ -7152,7 +7153,7 @@ app.post('/api/device/screenshot', async (req, res) => {
  * Body: { deviceId, deviceSecret, imageBase64, mimeType, timestamp }
  * Large body limit (5mb) needed for base64-encoded JPEG screenshots.
  */
-app.post('/api/device/screenshot-result', express.json({ limit: '5mb' }), (req, res) => {
+app.post('/api/device/screenshot-result', (req, res) => {
     const deviceId = authDevice(req);
     if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
