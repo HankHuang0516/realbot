@@ -1,3 +1,10 @@
+# [1.88.0](https://github.com/HankHuang0516/realbot/compare/v1.87.2...v1.88.0) (2026-03-05)
+
+
+### Features
+
+* **screen-control:** increase MAX_ELEMENTS 150→300, add truncated flag ([3d7b5d0](https://github.com/HankHuang0516/realbot/commit/3d7b5d095fc30e2354677bfc0a645077d0333ef3))
+
 ## [1.87.2](https://github.com/HankHuang0516/realbot/compare/v1.87.1...v1.87.2) (2026-03-05)
 
 
