@@ -3,7 +3,6 @@ package com.hank.clawlive.service
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.PixelFormat
@@ -13,7 +12,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.WindowManager
@@ -66,7 +64,6 @@ class ScreenControlService : AccessibilityService() {
         Timber.d("[ScreenControl] AccessibilityService connected")
         observeScreenRequests()
         observeControlCommands()
-        observeScreenshotRequests()
     }
 
     /** Invalidate cache on major screen navigation (typeWindowStateChanged). */
@@ -493,101 +490,6 @@ class ScreenControlService : AccessibilityService() {
         }
 
         return Pair(activeRoot, activePkg.ifEmpty { "unknown" })
-    }
-
-    // ─── Pixel screenshot ─────────────────────────────────────────────────
-
-    private fun observeScreenshotRequests() {
-        serviceScope.launch {
-            SocketManager.screenshotRequestFlow.collect {
-                Timber.d("[ScreenControl] Screenshot requested")
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    takeAndPostScreenshot()
-                } else {
-                    Timber.w("[ScreenControl] Screenshot requires Android 11+ (API 30)")
-                }
-            }
-        }
-    }
-
-    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
-    private fun takeAndPostScreenshot() {
-        Timber.d("[ScreenControl] takeAndPostScreenshot: calling takeScreenshot()")
-        takeScreenshot(android.view.Display.DEFAULT_DISPLAY, mainExecutor,
-            object : TakeScreenshotCallback {
-                override fun onSuccess(result: ScreenshotResult) {
-                    Timber.d("[ScreenControl] takeScreenshot onSuccess")
-                    serviceScope.launch {
-                        try {
-                            val hardwareBuffer = result.hardwareBuffer
-                            val hwBitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, result.colorSpace)
-                            hardwareBuffer.close()
-
-                            if (hwBitmap == null) {
-                                Timber.e("[ScreenControl] Screenshot: null bitmap")
-                                postScreenshotResult(null, "null bitmap from HardwareBuffer")
-                                return@launch
-                            }
-
-                            // Hardware bitmaps can't be compressed directly — copy to software
-                            val softBitmap = hwBitmap.copy(Bitmap.Config.ARGB_8888, false)
-                            hwBitmap.recycle()
-
-                            val stream = java.io.ByteArrayOutputStream()
-                            softBitmap.compress(Bitmap.CompressFormat.JPEG, 70, stream)
-                            softBitmap.recycle()
-
-                            val base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
-                            Timber.d("[ScreenControl] Screenshot: ${stream.size()} bytes → ${base64.length} chars base64")
-                            postScreenshotResult(base64, null)
-                        } catch (e: Exception) {
-                            Timber.e(e, "[ScreenControl] Screenshot processing failed: ${e.message}")
-                            // Report processing failure so backend doesn't hang
-                            try { postScreenshotResult(null, "processing failed: ${e.message}") } catch (_: Exception) {}
-                        }
-                    }
-                }
-
-                override fun onFailure(errorCode: Int) {
-                    Timber.e("[ScreenControl] takeScreenshot onFailure: errorCode=$errorCode")
-                    // Report error immediately so backend doesn't hang for 8s
-                    serviceScope.launch {
-                        try { postScreenshotResult(null, "takeScreenshot failed: errorCode=$errorCode") }
-                        catch (e: Exception) { Timber.e(e, "[ScreenControl] postScreenshotResult threw: ${e.message}") }
-                    }
-                }
-            }
-        )
-    }
-
-    private fun postScreenshotResult(base64: String?, error: String? = null) {
-        val dm = DeviceManager.getInstance(applicationContext)
-        val url = URL("https://eclawbot.com/api/device/screenshot-result")
-        val conn = url.openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.doOutput = true
-            conn.connectTimeout = 8000
-            conn.readTimeout = 8000
-
-            val body = JSONObject()
-            body.put("deviceId", dm.deviceId)
-            body.put("deviceSecret", dm.deviceSecret)
-            body.put("timestamp", System.currentTimeMillis())
-            if (error != null) {
-                body.put("error", error)
-            } else {
-                body.put("imageBase64", base64)
-                body.put("mimeType", "image/jpeg")
-            }
-
-            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
-            val code = conn.responseCode
-            Timber.d("[ScreenControl] screenshot-result POST: HTTP $code (error=$error)")
-        } finally {
-            conn.disconnect()
-        }
     }
 
     /**
