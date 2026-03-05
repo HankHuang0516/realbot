@@ -1,3 +1,10 @@
+## [1.88.2](https://github.com/HankHuang0516/realbot/compare/v1.88.1...v1.88.2) (2026-03-05)
+
+
+### Performance Improvements
+
+* **claude-cli-proxy:** reduce warmup interval from 5min to 30min ([a4d08c6](https://github.com/HankHuang0516/realbot/commit/a4d08c6403cee7fa6eec0ac100c51ca23ffe6bca))
+
 ## [1.88.1](https://github.com/HankHuang0516/realbot/compare/v1.88.0...v1.88.1) (2026-03-05)
 
 
