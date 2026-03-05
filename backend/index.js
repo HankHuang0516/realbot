@@ -7048,7 +7048,7 @@ app.post('/api/device/screen-result', (req, res) => {
     const deviceId = authDevice(req);
     if (!deviceId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-    const { screen, timestamp, elements } = req.body;
+    const { screen, timestamp, elements, truncated } = req.body;
     const pending = pendingScreenRequests[deviceId];
     if (!pending) {
         return res.json({ success: true, message: 'No pending request, result discarded' });
@@ -7056,10 +7056,10 @@ app.post('/api/device/screen-result', (req, res) => {
 
     clearTimeout(pending.timeoutHandle);
     delete pendingScreenRequests[deviceId];
-    pending.resolve({ screen, timestamp, elements });
+    pending.resolve({ screen, timestamp, elements, ...(truncated ? { truncated: true } : {}) });
 
     serverLog('info', 'remote_control', 'screen-result delivered', { deviceId,
-        metadata: { screen, elementCount: Array.isArray(elements) ? elements.length : 0 } });
+        metadata: { screen, elementCount: Array.isArray(elements) ? elements.length : 0, truncated: !!truncated } });
     res.json({ success: true });
 });
 

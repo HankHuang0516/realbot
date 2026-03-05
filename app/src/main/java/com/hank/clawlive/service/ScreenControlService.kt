@@ -42,7 +42,7 @@ import java.net.URL
 class ScreenControlService : AccessibilityService() {
 
     companion object {
-        private const val MAX_ELEMENTS = 150
+        private const val MAX_ELEMENTS = 300
         private const val MAX_DEPTH = 12
     }
 
@@ -150,11 +150,13 @@ class ScreenControlService : AccessibilityService() {
         walk(root, 0)
         root?.recycle()
 
+        val truncated = nodeIndex >= MAX_ELEMENTS
         val result = JSONObject()
         result.put("screen", packageName)
         result.put("timestamp", System.currentTimeMillis())
         result.put("elements", elements)
-        Timber.d("[ScreenControl] Captured $nodeIndex elements from $packageName")
+        result.put("truncated", truncated)
+        Timber.d("[ScreenControl] Captured $nodeIndex elements from $packageName${if (truncated) " (TRUNCATED)" else ""}")
 
         cachedTree = result
         screenChanged = false
@@ -178,6 +180,7 @@ class ScreenControlService : AccessibilityService() {
             body.put("screen", tree.getString("screen"))
             body.put("timestamp", tree.getLong("timestamp"))
             body.put("elements", tree.getJSONArray("elements"))
+            body.put("truncated", tree.optBoolean("truncated", false))
 
             OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
             val code = conn.responseCode
