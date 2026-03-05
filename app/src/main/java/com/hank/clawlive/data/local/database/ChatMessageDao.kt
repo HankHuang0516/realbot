@@ -154,11 +154,13 @@ interface ChatMessageDao {
     suspend fun updateReaction(id: Long, userReaction: String?, likeCount: Int, dislikeCount: Int)
 
     /**
-     * Set backendId on an existing entity-polled message matched by content.
+     * Set backendId AND deduplicationKey on an existing entity-polled message matched by content.
      * Called during backend sync when cross-source dedup finds an existing message.
+     * Updating deduplicationKey to "backend_${backendId}" ensures ChatIntegrityValidator
+     * can find the message by its backend key and avoids false "missing message" reports.
      */
-    @Query("UPDATE chat_messages SET backendId = :backendId WHERE fromEntityId = :entityId AND text = :text AND isFromUser = 0 AND timestamp > :sinceTimestamp AND backendId IS NULL")
-    suspend fun setBackendIdByContentMatch(entityId: Int, text: String, sinceTimestamp: Long, backendId: String)
+    @Query("UPDATE chat_messages SET backendId = :backendId, deduplicationKey = :newDedupKey WHERE fromEntityId = :entityId AND text = :text AND isFromUser = 0 AND timestamp > :sinceTimestamp AND backendId IS NULL")
+    suspend fun setBackendIdByContentMatch(entityId: Int, text: String, sinceTimestamp: Long, backendId: String, newDedupKey: String)
 
     /**
      * Clear all messages
