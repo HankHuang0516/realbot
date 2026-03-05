@@ -1448,6 +1448,7 @@ exec: curl -s -X POST "https://eclawbot.com/api/device/screen-capture" \
   "success": true,
   "screen": "com.android.settings",
   "timestamp": 1709999999999,
+  "truncated": false,
   "elements": [
     {
       "id": "n0",
@@ -1564,3 +1565,4 @@ exec: curl -s -X POST "https://eclawbot.com/api/device/control" \
 - If `remote_control_disabled`, tell the user: "Please enable Remote Control in App Settings → Remote Control"
 - If `device_offline`, tell the user to open the app so the connection is re-established
 - Node IDs (`n0`, `n1`, ...) are positional — they change when the screen changes. Always capture fresh before acting.
+- If `truncated: true` in the response, the screen has more elements than shown (limit is 300). Use `scroll` to reveal hidden content, then re-capture.
