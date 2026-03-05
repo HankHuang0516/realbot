@@ -6,7 +6,7 @@
     "watchPatterns": ["claude-cli-proxy/**"]
   },
   "deploy": {
-    "startCommand": "python -m uvicorn proxy:app --host 0.0.0.0 --port ${PORT:-4000}",
+    "startCommand": "sh -c 'python -m uvicorn proxy:app --host 0.0.0.0 --port ${PORT:-4000}'",
     "healthcheckPath": "/health"
   }
 }
