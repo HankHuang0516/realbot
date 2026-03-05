@@ -3,19 +3,23 @@ package com.hank.clawlive.service
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.TextView
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.remote.SocketManager
@@ -62,6 +66,7 @@ class ScreenControlService : AccessibilityService() {
         Timber.d("[ScreenControl] AccessibilityService connected")
         observeScreenRequests()
         observeControlCommands()
+        observeScreenshotRequests()
     }
 
     /** Invalidate cache on major screen navigation (typeWindowStateChanged). */
@@ -106,8 +111,7 @@ class ScreenControlService : AccessibilityService() {
             return cached
         }
 
-        val root = rootInActiveWindow
-        val packageName = root?.packageName?.toString() ?: "unknown"
+        val (root, packageName) = getAppRootWindow()
         val elements = JSONArray()
         var nodeIndex = 0
 
@@ -456,12 +460,128 @@ class ScreenControlService : AccessibilityService() {
         return result
     }
 
+    // ─── Multi-window fallback ────────────────────────────────────────────
+
+    /**
+     * Returns the root node of the foreground app window.
+     * Falls back to [windows] list when [rootInActiveWindow] returns a system window
+     * (e.g. com.android.systemui gets INPUT focus due to notification shade).
+     */
+    private fun getAppRootWindow(): Pair<AccessibilityNodeInfo?, String> {
+        val activeRoot = rootInActiveWindow
+        val activePkg = activeRoot?.packageName?.toString() ?: ""
+
+        // Happy path: rootInActiveWindow already points to a real app
+        if (activePkg.isNotEmpty() && activePkg != "com.android.systemui" && activePkg != "android") {
+            return Pair(activeRoot, activePkg)
+        }
+
+        // Fallback: iterate all visible windows, pick the highest-layer TYPE_APPLICATION window
+        val allWindows = windows
+        if (allWindows != null) {
+            for (window in allWindows.sortedByDescending { it.layer }) {
+                if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) continue
+                val root = window.root ?: continue
+                val pkg = root.packageName?.toString() ?: ""
+                if (pkg.isNotEmpty() && pkg != "com.android.systemui" && pkg != "android") {
+                    activeRoot?.recycle()
+                    Timber.d("[ScreenControl] Window fallback: $pkg (was ${activePkg.ifEmpty { "null" }})")
+                    return Pair(root, pkg)
+                }
+                root.recycle()
+            }
+        }
+
+        return Pair(activeRoot, activePkg.ifEmpty { "unknown" })
+    }
+
+    // ─── Pixel screenshot ─────────────────────────────────────────────────
+
+    private fun observeScreenshotRequests() {
+        serviceScope.launch {
+            SocketManager.screenshotRequestFlow.collect {
+                Timber.d("[ScreenControl] Screenshot requested")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    takeAndPostScreenshot()
+                } else {
+                    Timber.w("[ScreenControl] Screenshot requires Android 11+ (API 30)")
+                }
+            }
+        }
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.R)
+    private fun takeAndPostScreenshot() {
+        takeScreenshot(android.view.Display.DEFAULT_DISPLAY, mainExecutor,
+            object : TakeScreenshotCallback {
+                override fun onSuccess(result: ScreenshotResult) {
+                    serviceScope.launch {
+                        try {
+                            val hardwareBuffer = result.hardwareBuffer
+                            val hwBitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, result.colorSpace)
+                            hardwareBuffer.close()
+
+                            if (hwBitmap == null) {
+                                Timber.e("[ScreenControl] Screenshot: null bitmap")
+                                return@launch
+                            }
+
+                            // Hardware bitmaps can't be compressed directly — copy to software
+                            val softBitmap = hwBitmap.copy(Bitmap.Config.ARGB_8888, false)
+                            hwBitmap.recycle()
+
+                            val stream = java.io.ByteArrayOutputStream()
+                            softBitmap.compress(Bitmap.CompressFormat.JPEG, 70, stream)
+                            softBitmap.recycle()
+
+                            val base64 = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+                            Timber.d("[ScreenControl] Screenshot: ${stream.size()} bytes → ${base64.length} chars base64")
+                            postScreenshotResult(base64)
+                        } catch (e: Exception) {
+                            Timber.e(e, "[ScreenControl] Screenshot processing failed: ${e.message}")
+                        }
+                    }
+                }
+
+                override fun onFailure(errorCode: Int) {
+                    Timber.e("[ScreenControl] takeScreenshot failed: errorCode=$errorCode")
+                }
+            }
+        )
+    }
+
+    private fun postScreenshotResult(base64: String) {
+        val dm = DeviceManager.getInstance(applicationContext)
+        val url = URL("https://eclawbot.com/api/device/screenshot-result")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json")
+            conn.doOutput = true
+            conn.connectTimeout = 8000
+            conn.readTimeout = 8000
+
+            val body = JSONObject()
+            body.put("deviceId", dm.deviceId)
+            body.put("deviceSecret", dm.deviceSecret)
+            body.put("imageBase64", base64)
+            body.put("mimeType", "image/jpeg")
+            body.put("timestamp", System.currentTimeMillis())
+
+            OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+            val code = conn.responseCode
+            Timber.d("[ScreenControl] screenshot-result POST: HTTP $code")
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     /**
      * Re-walks the tree to find a node by positional ID (same logic as captureScreenTree).
      */
     private fun findNodeById(nodeId: String): AccessibilityNodeInfo? {
         val targetIndex = nodeId.removePrefix("n").toIntOrNull() ?: return null
-        val root = rootInActiveWindow ?: return null
+        val root = getAppRootWindow().first ?: return null
         var currentIndex = 0
         var result: AccessibilityNodeInfo? = null
 
