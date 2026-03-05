@@ -13,4 +13,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 4000
-CMD ["python", "-m", "uvicorn", "proxy:app", "--host", "0.0.0.0", "--port", "4000"]
+CMD ["sh", "-c", "python -m uvicorn proxy:app --host 0.0.0.0 --port ${PORT:-4000}"]
