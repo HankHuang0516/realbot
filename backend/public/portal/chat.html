@@ -446,6 +446,17 @@
 
         .chat-photo:hover { opacity: 0.9; }
 
+        .chat-inline-img {
+            max-width: 280px;
+            max-height: 240px;
+            border-radius: 8px;
+            display: block;
+            margin-top: 6px;
+            cursor: pointer;
+            object-fit: contain;
+        }
+        .chat-inline-img:hover { opacity: 0.9; }
+
         .chat-voice {
             display: flex;
             align-items: center;
@@ -1819,7 +1830,11 @@
                     textHtml = linkified.html;
                     firstUrl = linkified.urls[0] || '';
                 }
-                const previewId = firstUrl ? `lp-${msg.id || Math.random().toString(36).slice(2)}` : '';
+                const firstUrlIsImage = firstUrl && isImageUrl(firstUrl);
+                const inlineImgHtml = firstUrlIsImage
+                    ? `<img class="chat-inline-img" src="${escapeHtml(firstUrl)}" alt="" loading="lazy" onclick="openLightbox('${escapeHtml(firstUrl)}')" onerror="this.style.display='none'">`
+                    : '';
+                const previewId = firstUrl && !firstUrlIsImage ? `lp-${msg.id || Math.random().toString(36).slice(2)}` : '';
 
                 // Read receipt for sent messages
                 let receipt = '';
@@ -1881,7 +1896,7 @@
                 return `
                     <div class="chat-msg ${msgClass}">
                         <div class="chat-source">${sourceLabel}</div>
-                        <div class="chat-bubble">${textHtml}${mediaHtml}</div>
+                        <div class="chat-bubble">${textHtml}${mediaHtml}${inlineImgHtml}</div>
                         ${previewId ? `<div class="link-preview-slot" id="${previewId}" data-url="${escapeHtml(firstUrl)}"></div>` : ''}
                         ${reactionsHtml}
                         <div class="chat-meta">${time}</div>
@@ -2225,6 +2240,13 @@
                 return `<a class="msg-link" href="${match}" target="_blank" rel="noopener">${match}</a>`;
             });
             return { html, urls };
+        }
+
+        function isImageUrl(url) {
+            try {
+                const path = new URL(url).pathname;
+                return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(path);
+            } catch { return false; }
         }
 
         // Link preview cache (client-side)

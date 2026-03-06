@@ -196,6 +196,20 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 layoutLinkPreview.visibility = View.GONE
                 return
             }
+            // Direct image URL: show inline using the existing ivPhoto slot
+            if (LinkPreviewHelper.isImageUrl(url)) {
+                layoutLinkPreview.visibility = View.GONE
+                ivPhoto.visibility = View.VISIBLE
+                Glide.with(itemView.context.applicationContext)
+                    .load(url)
+                    .centerInside()
+                    .into(ivPhoto)
+                ivPhoto.setOnClickListener {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    itemView.context.startActivity(intent)
+                }
+                return
+            }
             layoutLinkPreview.visibility = View.GONE // hide until loaded
             previewScope?.cancel()
             previewScope = MainScope()
@@ -453,6 +467,20 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             val url = LinkPreviewHelper.extractFirstUrl(message.text)
             if (url == null || message.mediaType != null) {
                 layoutLinkPreview.visibility = View.GONE
+                return
+            }
+            // Direct image URL: show inline using the existing ivPhoto slot
+            if (LinkPreviewHelper.isImageUrl(url)) {
+                layoutLinkPreview.visibility = View.GONE
+                ivPhoto.visibility = View.VISIBLE
+                Glide.with(itemView.context.applicationContext)
+                    .load(url)
+                    .centerInside()
+                    .into(ivPhoto)
+                ivPhoto.setOnClickListener {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    itemView.context.startActivity(intent)
+                }
                 return
             }
             layoutLinkPreview.visibility = View.GONE // hide until loaded
