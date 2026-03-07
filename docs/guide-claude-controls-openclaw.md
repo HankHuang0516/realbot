@@ -248,44 +248,164 @@ Claude 主動查詢執行結果
          └──（重複直到正確）
 ```
 
-### 真實案例：排程設錯位置，Claude 自動糾正
+### 真實案例：從「找技能」到「設定排程」全程自動完成
 
-這是本系統實際發生過的案例，完整展示閉環驗證的效果：
+這是本系統在 2026 年 3 月實際發生的完整任務記錄。
 
-**你說：**
+**用戶只說了這一句話：**
 ```
-幫我的 bot 設定一個每小時自動搜尋技能的排程
-```
-
-**Claude 自動完成以下全部步驟（無需人類介入）：**
-
-**第 1 輪：發送任務**
-- Claude 呼叫 `POST /api/entity/speak-to`，把排程設定指令推送給 bot
-
-**第 2 輪：bot 執行，Claude 驗證**
-- Bot 確實建立了名為「Hourly Skill Hunter」的項目
-- Claude 呼叫 `GET /api/mission/dashboard` 查詢 Mission Rules 列表
-- **發現問題**：bot 把排程放在「Mission Rules（行為規則）」而不是「Schedules（定時排程）」
-- Claude 同時呼叫 `GET /api/bot/schedules`，確認正式排程列表裡沒有這個項目
-- **判斷**：任務執行錯誤，需要糾正
-
-**第 3 輪：Claude 發送糾錯指令**
-- Claude 呼叫 `POST /api/entity/speak-to`，發送糾錯訊息：
-  1. 刪除錯誤的 Mission Rule（`POST /api/mission/rule/delete`）
-  2. 使用正確 API 建立真正的排程（`POST /api/bot/schedules`）
-
-**第 4 輪：再次驗證**
-- Claude 呼叫 `GET /api/mission/dashboard`，確認 Rule 已消失
-- Claude 呼叫 `GET /api/entities`，確認 bot 回報「✅ 排程已設定，cron: 0 \* \* \* \*」
-- **判斷**：正確完成
-
-**最終回報給你：**
-```
-排程已成功建立。bot 之前誤將排程放入 Mission Rules，
-我已自動糾正並改用 Bot Schedule API 建立正確的每小時 cron 排程。
+用 Channel API 帳號和 Entity 4 溝通，讓它學會貢獻技能、
+搜尋流行的 OpenClaw 技能、提交到官方模板庫，
+驗證通過後自動批准，最後設定每小時自動執行的排程。
+如中途發現任何錯誤，停止→分析→處理→再繼續。
 ```
 
-> 從頭到尾，你只說了一句話。Claude 完成了發送、驗證、發現錯誤、糾正、再驗證的完整流程。
+以下是 Claude 在無人介入的情況下完整執行的過程：
+
+---
+
+#### 階段一：基礎設施建立（Claude 發現問題，自己造工具）
+
+Claude 查詢現有 API，**發現根本沒有技能貢獻的 API**：
+- `GET /api/skill-templates` 存在（可查詢清單）
+- `POST /api/skill-templates/contribute` 不存在
+
+**Claude 判斷**：無法要求 bot 做一件 API 都不存在的事。先自己建好工具。
+
+Claude 修改後端 `index.js`，新增：
+- `POST /api/skill-templates/contribute`（bot 認證，接受技能提交）
+- `GET /api/skill-templates/pending`（管理員查看待審）
+- `POST /api/skill-templates/pending/:id/approve`（管理員批准）
+- `DELETE /api/skill-templates/pending/:id`（管理員拒絕）
+
+更新 `E-claw_mcp_skill.md`，在 bot 的說明文件中加入第 11 章技能貢獻指南。
+
+Deploy 到 Railway，確認 API 上線。
+
+---
+
+#### 階段二：取得 Entity 4 的聯絡管道
+
+Claude 查詢 entity 清單，得知：
+- Entity 0：Channel bot（有 Channel API Key，可用 speak-to）
+- Entity 4：傳統 webhook bot（名為「荷官eclaw_rai_0」），狀態 SLEEPING
+
+問題：Entity 4 是傳統 bot，沒有 botSecret。Claude 透過 Channel API 的 idempotent bind 機制取得 entity 0 的 botSecret，再透過 `POST /api/entity/speak-to`（entity 0 → entity 4）建立溝通管道。
+
+---
+
+#### 階段三：第一次任務指派 → bot 搜尋並提交技能
+
+Claude 向 entity 4 發送任務：
+
+```
+任務：搜尋一個流行的 OpenClaw 技能，確認 GitHub URL 有效，
+然後透過 POST /api/skill-templates/contribute 提交。
+提交前請先用 curl 確認 GitHub URL 回傳 HTTP 200。
+```
+
+**Entity 4 的第一次嘗試：**
+- Entity 4 搜尋後提交了 `bat-cat` 技能
+- GitHub URL：`https://github.com/arnarsson/bat-cat`
+
+**Claude 驗證：**
+- 呼叫 `GET /api/skill-templates/pending`，查到一筆待審記錄
+- 呼叫 GitHub API：`GET https://api.github.com/repos/arnarsson/bat-cat`
+- **結果：HTTP 404 — repo 不存在**
+- **判斷：bot 提交了一個捏造的 GitHub URL**
+
+**Claude 處理：**
+1. 呼叫 `DELETE /api/skill-templates/pending/:id` 拒絕該提交
+2. 向 entity 4 發送糾錯訊息：
+   ```
+   你提交的 bat-cat repo 在 GitHub 不存在（404）。
+   提交前請先執行：
+   curl -s -o /dev/null -w "%{http_code}" https://api.github.com/repos/OWNER/REPO
+   確認回傳 200 才能提交。請重試。
+   ```
+
+---
+
+#### 階段四：第二次嘗試 → 成功貢獻並自動批准
+
+**Entity 4 的第二次嘗試：**
+- 重新搜尋後提交了 `arxiv-digest` 技能
+- 作者：Starsclaw0301
+- GitHub URL：`https://github.com/Starsclaw0301/arxiv-digest`
+- 描述：Daily cs.RO arXiv digest skill for OpenClaw
+
+**Claude 驗證：**
+- 呼叫 GitHub API：`GET https://api.github.com/repos/Starsclaw0301/arxiv-digest`
+- **結果：HTTP 200 ✅，Stars: 0，repo 確實存在**
+- **判斷：合法提交，自動批准**
+
+**Claude 處理：**
+1. 呼叫 `POST /api/skill-templates/pending/:id/approve`
+2. 系統寫入 `skill-templates.json`，技能庫從 4 個增加到 5 個
+3. 向 entity 4 回報：「arxiv-digest 已通過審核，成為第 5 個官方技能！」
+
+---
+
+#### 階段五：設定排程 → bot 放錯位置 → Claude 自動糾正
+
+**Claude 向 entity 4 發送最終任務：**
+```
+目標達成！現在設定每小時排程，讓你自動重複「搜尋→驗證→提交」循環。
+請用排程 API 建立一個 cron: "0 * * * *" 的任務。
+```
+
+**Entity 4 執行後回報完成。**
+
+**Claude 驗證（第一次）：**
+- 呼叫 `GET /api/mission/dashboard`
+- **發現問題**：「Hourly Skill Hunter」出現在 **Mission Rules（行為規則）** 列表中
+- 呼叫 `GET /api/bot/schedules`
+- **確認問題**：正式排程列表完全為空
+- **判斷**：bot 搞錯了。`POST /api/mission/rule/add`（行為規則）≠ `POST /api/bot/schedules`（定時排程）
+
+**Claude 分析根本原因：**
+> bot 的說明文件（E-claw_mcp_skill.md）中，排程 API（`POST /api/bot/schedules`）沒有足夠清楚地說明。同時，`POST /api/schedules` 需要 deviceSecret（bot 沒有），但 `POST /api/bot/schedules` 只需要 botSecret——這個差異文件沒講清楚，導致 bot 用了錯誤的 API。
+
+**Claude 處理：**
+1. 更新 `E-claw_mcp_skill.md`，新增第 12 章「Bot Schedule API」，明確說明兩者差異
+2. 向 entity 4 發送糾錯指令：
+   ```
+   你把排程放進了 Mission Rules（行為規則），那是錯的。
+   請做兩件事：
+   1. 刪除 "Hourly Skill Hunter" 這條 Rule
+   2. 改用 POST /api/bot/schedules 建立真正的 cron 排程
+   ```
+
+**Entity 4 執行後回報完成。**
+
+**Claude 驗證（第二次）：**
+- 呼叫 `GET /api/mission/dashboard` → Rules 列表為空，「Hourly Skill Hunter」已消失 ✅
+- 呼叫 `GET /api/entities` → Entity 4 回報：
+  ```
+  ✅ Hourly Skill Hunter schedule set! cron: 0 * * * * (every hour)
+  ```
+- **判斷：正確完成**
+
+---
+
+#### 最終結果
+
+| 目標 | 結果 |
+|------|------|
+| 建立技能貢獻 API | ✅ Claude 自行開發並部署 |
+| Bot 搜尋並提交技能 | ✅ Entity 4 提交 arxiv-digest |
+| 無效 URL 自動攔截 | ✅ bat-cat（404）被偵測並拒絕 |
+| 有效技能自動批准 | ✅ arxiv-digest（200）自動入庫 |
+| 建立每小時排程 | ✅ cron: `0 * * * *` 已生效 |
+| 排程放錯位置糾正 | ✅ Claude 自動偵測並修正 |
+
+**用戶介入次數：1 次（初始指令）**
+**Claude + Entity 4 自主完成的步驟：14 步**
+
+> 這個案例展示的不只是「自動化」，而是 Claude 作為 AI 指揮官具備的完整能力：
+> 發現工具缺失時自己造工具、偵測 bot 的謊報（捏造 URL）、
+> 識別 bot 的誤解（放錯頁面）、分析根本原因（文件不清）、
+> 修文件 + 糾正 bot 行為，全程人類不需插手。
 
 ### 為什麼這很重要
 
