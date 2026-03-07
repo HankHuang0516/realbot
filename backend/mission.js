@@ -97,7 +97,7 @@ function toPriorityName(val) {
     return PRIORITY_MAP[parseInt(val)] || 'MEDIUM';
 }
 
-module.exports = function(devices, { awardEntityXP } = {}) {
+module.exports = function(devices, { awardEntityXP, serverLog } = {}) {
     const router = express.Router();
 
     // ============================================
@@ -322,7 +322,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
 
             await client.query('COMMIT');
 
-            console.log(`[Mission] Dashboard updated for ${deviceId}, version: ${result.rows[0].version}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Dashboard updated for ${deviceId}, version: ${result.rows[0].version}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Dashboard updated for ${deviceId}, version: ${result.rows[0].version}`, { deviceId });
             res.json({
                 success: true,
                 version: result.rows[0].version,
@@ -577,7 +578,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Note added: "${newNote.title}" by bot, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Note added: "${newNote.title}" by bot, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Note added: "${newNote.title}" by bot, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Note "${newNote.title}" added`, item: newNote, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -634,7 +636,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Note updated: "${note.title}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Note updated: "${note.title}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Note updated: "${note.title}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Note "${note.title}" updated`, item: note, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -688,7 +691,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Note deleted: "${title}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Note deleted: "${title}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Note deleted: "${title}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Note "${title}" deleted`, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -884,7 +888,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
                     );
                 } catch (e) { /* ignore */ }
             }
-            console.log(`[Mission] Notify delivery complete: ${deliveredIds.length}/${pushResults.length} pushed`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Notify delivery complete: ${deliveredIds.length}/${pushResults.length} pushed`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Notify delivery complete: ${deliveredIds.length}/${pushResults.length} pushed`, { deviceId });
         }).catch(err => {
             console.error('[Mission] Background push error:', err.message);
         });
@@ -957,7 +962,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
 
             await client.query('COMMIT');
 
-            console.log(`[Mission] TODO marked done: "${item.title}" (from ${fromList}) by bot, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] TODO marked done: "${item.title}" (from ${fromList}) by bot, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] TODO marked done: "${item.title}" (from ${fromList}) by bot, device ${deviceId}`, { deviceId });
 
             // Award XP for completing TODO
             let xpResult = null;
@@ -1045,7 +1051,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] TODO added: "${newItem.title}" by bot, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] TODO added: "${newItem.title}" by bot, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] TODO added: "${newItem.title}" by bot, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `TODO "${newItem.title}" added`, item: newItem, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1118,7 +1125,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] TODO updated: "${item.title}" in ${listName}, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] TODO updated: "${item.title}" in ${listName}, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] TODO updated: "${item.title}" in ${listName}, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `TODO "${item.title}" updated`, item, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1177,7 +1185,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] TODO started: "${item.title}" → missionList, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] TODO started: "${item.title}" → missionList, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] TODO started: "${item.title}" → missionList, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `TODO "${item.title}" moved to in-progress`, item, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1242,7 +1251,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] TODO deleted: "${title}" from ${fromList}, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] TODO deleted: "${title}" from ${fromList}, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] TODO deleted: "${title}" from ${fromList}, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `TODO "${title}" deleted`, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1299,7 +1309,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Rule added: "${newRule.name}" by bot, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Rule added: "${newRule.name}" by bot, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Rule added: "${newRule.name}" by bot, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Rule "${newRule.name}" added`, item: newRule, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1358,7 +1369,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Rule updated: "${rule.name}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Rule updated: "${rule.name}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Rule updated: "${rule.name}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Rule "${rule.name}" updated`, item: rule, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1412,7 +1424,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Rule deleted: "${name}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Rule deleted: "${name}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Rule deleted: "${name}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Rule "${name}" deleted`, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1466,7 +1479,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Skill added: "${newSkill.title}" by bot, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Skill added: "${newSkill.title}" by bot, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Skill added: "${newSkill.title}" by bot, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Skill "${newSkill.title}" added`, item: newSkill, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1526,7 +1540,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Skill deleted: "${title}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Skill deleted: "${title}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Skill deleted: "${title}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Skill "${title}" deleted`, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1607,7 +1622,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Soul added: "${newSoul.name}" by bot, device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Soul added: "${newSoul.name}" by bot, device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Soul added: "${newSoul.name}" by bot, device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Soul "${newSoul.name}" added`, item: newSoul, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1666,7 +1682,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Soul updated: "${soul.name}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Soul updated: "${soul.name}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Soul updated: "${soul.name}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Soul "${soul.name}" updated`, item: soul, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');
@@ -1720,7 +1737,8 @@ module.exports = function(devices, { awardEntityXP } = {}) {
             );
             await client.query('COMMIT');
 
-            console.log(`[Mission] Soul deleted: "${name}", device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Mission] Soul deleted: "${name}", device ${deviceId}`);
+            if (serverLog) serverLog('info', 'mission', `[Mission] Soul deleted: "${name}", device ${deviceId}`, { deviceId });
             res.json({ success: true, message: `Soul "${name}" deleted`, version: updateResult.rows[0].version });
         } catch (error) {
             await client.query('ROLLBACK');

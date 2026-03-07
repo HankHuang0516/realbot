@@ -11,6 +11,7 @@ let schedules = {};
 let activeJobs = {};  // cron job handles keyed by schedule ID
 let _pool = null;
 let _executeCallback = null; // callback(schedule) => Promise<result>
+let _serverLog = null; // optional serverLog from index.js
 
 // ── DB Schema ──
 const CREATE_TABLE_SQL = `
@@ -54,9 +55,10 @@ CREATE INDEX IF NOT EXISTS idx_sched_exec_time ON schedule_executions(executed_a
 `;
 
 // ── Initialize ──
-async function init(pool, executeCallback) {
+async function init(pool, executeCallback, serverLog) {
     _pool = pool;
     _executeCallback = executeCallback;
+    if (serverLog) _serverLog = serverLog;
 
     try {
         await pool.query(CREATE_TABLE_SQL);
@@ -165,7 +167,8 @@ async function createSchedule({ deviceId, entityId, message, scheduledAt, repeat
         armCronJob(schedule);
     }
 
-    console.log(`[Scheduler] Created schedule #${schedule.id}: ${repeatType} for device ${deviceId} entity ${parsedEntityId}`);
+    if (process.env.DEBUG === 'true') console.log(`[Scheduler] Created schedule #${schedule.id}: ${repeatType} for device ${deviceId} entity ${parsedEntityId}`);
+    if (_serverLog) _serverLog('info', 'scheduler', `[Scheduler] Created schedule #${schedule.id}: ${repeatType} for device ${deviceId} entity ${parsedEntityId}`, { deviceId });
     return schedule;
 }
 
@@ -230,7 +233,8 @@ async function deleteSchedule(id, deviceId) {
     delete schedules[id];
 
     await _pool.query(`DELETE FROM scheduled_messages WHERE id = $1`, [id]);
-    console.log(`[Scheduler] Deleted schedule #${id}`);
+    if (process.env.DEBUG === 'true') console.log(`[Scheduler] Deleted schedule #${id}`);
+    if (_serverLog) _serverLog('info', 'scheduler', `[Scheduler] Deleted schedule #${id}`, { deviceId: schedule.deviceId });
     return true;
 }
 
@@ -272,7 +276,8 @@ async function checkOneTimeSchedules() {
 
         const scheduledTime = new Date(schedule.scheduledAt).getTime();
         if (scheduledTime <= now) {
-            console.log(`[Scheduler] Executing one-time schedule #${id}`);
+            if (process.env.DEBUG === 'true') console.log(`[Scheduler] Executing one-time schedule #${id}`);
+            if (_serverLog) _serverLog('info', 'scheduler', `[Scheduler] Executing one-time schedule #${id}`, { deviceId: schedule.deviceId });
             await executeSchedule(schedule);
         }
     }
@@ -286,7 +291,8 @@ function armCronJob(schedule) {
         const cronOptions = {};
         if (schedule.timezone) cronOptions.timezone = schedule.timezone;
         const job = cron.schedule(schedule.cronExpr, async () => {
-            console.log(`[Scheduler] Executing recurring schedule #${schedule.id}`);
+            if (process.env.DEBUG === 'true') console.log(`[Scheduler] Executing recurring schedule #${schedule.id}`);
+            if (_serverLog) _serverLog('info', 'scheduler', `[Scheduler] Executing recurring schedule #${schedule.id}`, { deviceId: schedule.deviceId });
             await executeSchedule(schedule, true);
         }, cronOptions);
         activeJobs[schedule.id] = job;
@@ -382,7 +388,8 @@ async function executeSchedule(schedule, isRecurring = false) {
             delete schedules[schedule.id];
         }
 
-        console.log(`[Scheduler] Schedule #${schedule.id} executed: ${resultStatus}`);
+        if (process.env.DEBUG === 'true') console.log(`[Scheduler] Schedule #${schedule.id} executed: ${resultStatus}`);
+        if (_serverLog) _serverLog(resultStatus === 'error' ? 'warn' : 'info', 'scheduler', `[Scheduler] Schedule #${schedule.id} executed: ${resultStatus}`, { deviceId: schedule.deviceId });
     } catch (err) {
         console.error(`[Scheduler] Execution failed for #${schedule.id}:`, err.message);
 
@@ -444,6 +451,7 @@ async function togglePause(id, deviceId) {
     }
 
     if (process.env.DEBUG === 'true') console.log(`[Scheduler] Schedule #${id} ${newPaused ? 'paused' : 'resumed'}`);
+    if (_serverLog) _serverLog('info', 'scheduler', `[Scheduler] Schedule #${id} ${newPaused ? 'paused' : 'resumed'}`, { deviceId: updated.deviceId });
     return updated;
 }
 

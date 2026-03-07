@@ -18,6 +18,9 @@ const PRUNE_BATCH      = 500;          // delete this many oldest rows when prun
 // In-memory size cache: deviceId → { totalBytes, entryCount }
 const sizeCache = {};
 
+// Optional serverLog (set via initTelemetryTable)
+let _serverLog = null;
+
 // ============================================
 // DB SETUP
 // ============================================
@@ -26,8 +29,9 @@ const sizeCache = {};
  * Create the telemetry table (call once at startup).
  * @param {import('pg').Pool} pool
  */
-async function initTelemetryTable(pool) {
+async function initTelemetryTable(pool, serverLog) {
     if (!pool) return;
+    if (serverLog) _serverLog = serverLog;
     try {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS device_telemetry (
@@ -113,7 +117,8 @@ async function pruneIfNeeded(pool, deviceId) {
             totalBytes: parseInt(r.rows[0].total) || 0,
             entryCount: parseInt(r.rows[0].cnt) || 0
         };
-        console.log(`[Telemetry] Pruned ${PRUNE_BATCH} entries for ${deviceId}, now ${sizeCache[deviceId].entryCount} entries / ${(sizeCache[deviceId].totalBytes / 1024).toFixed(1)} KB`);
+        if (process.env.DEBUG === 'true') console.log(`[Telemetry] Pruned ${PRUNE_BATCH} entries for ${deviceId}, now ${sizeCache[deviceId].entryCount} entries / ${(sizeCache[deviceId].totalBytes / 1024).toFixed(1)} KB`);
+        if (_serverLog) _serverLog('info', 'telemetry', `[Telemetry] Pruned ${PRUNE_BATCH} entries for ${deviceId}, now ${sizeCache[deviceId].entryCount} entries / ${(sizeCache[deviceId].totalBytes / 1024).toFixed(1)} KB`, { deviceId });
 
         // Recurse if still over quota
         if (sizeCache[deviceId].totalBytes > MAX_BUFFER_BYTES || sizeCache[deviceId].entryCount > MAX_ENTRIES) {
@@ -328,7 +333,8 @@ async function clearEntries(pool, deviceId) {
     try {
         await pool.query('DELETE FROM device_telemetry WHERE device_id = $1', [deviceId]);
         sizeCache[deviceId] = { totalBytes: 0, entryCount: 0 };
-        console.log(`[Telemetry] Cleared buffer for device ${deviceId}`);
+        if (process.env.DEBUG === 'true') console.log(`[Telemetry] Cleared buffer for device ${deviceId}`);
+        if (_serverLog) _serverLog('info', 'telemetry', `[Telemetry] Cleared buffer for device ${deviceId}`, { deviceId });
     } catch (err) {
         console.error('[Telemetry] Clear error:', err.message);
     }

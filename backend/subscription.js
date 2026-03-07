@@ -36,7 +36,7 @@ const BORROW_AMOUNT = 288; // NT$288/month (official bot rental)
 const SUBSCRIPTION_CURRENCY = 'TWD';
 const SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-module.exports = function (devices, authMiddleware, ensureEntitySlots) {
+module.exports = function (devices, authMiddleware, ensureEntitySlots, serverLog) {
     const router = express.Router();
 
     // ============================================
@@ -147,7 +147,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
             });
 
             const tappayData = await tappayResponse.json();
-            console.log(`[TapPay] Response status: ${tappayData.status}, msg: ${tappayData.msg}`);
+            if (process.env.DEBUG === 'true') console.log(`[TapPay] Response status: ${tappayData.status}, msg: ${tappayData.msg}`);
+            if (serverLog) serverLog('info', 'payment', `[TapPay] Response status: ${tappayData.status}, msg: ${tappayData.msg}`, { deviceId: user.device_id });
 
             // Log transaction (non-blocking, don't let DB errors break payment)
             try {
@@ -212,7 +213,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
                 ensureEntitySlots(devices[user.device_id]);
             }
 
-            console.log(`[Subscription] Premium activated for ${user.email} via TapPay`);
+            if (process.env.DEBUG === 'true') console.log(`[Subscription] Premium activated for ${user.email} via TapPay`);
+            if (serverLog) serverLog('info', 'payment', `[Subscription] Premium activated for ${user.email} via TapPay`, { deviceId: user.device_id });
 
             res.json({
                 success: true,
@@ -240,7 +242,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
                 [req.user.userId]
             );
 
-            console.log(`[Subscription] Subscription cancelled for user ${req.user.userId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Subscription] Subscription cancelled for user ${req.user.userId}`);
+            if (serverLog) serverLog('info', 'payment', `[Subscription] Subscription cancelled for user ${req.user.userId}`, { deviceId: req.user.deviceId });
 
             res.json({
                 success: true,
@@ -292,7 +295,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
                 );
             }
 
-            console.log(`[Subscription] Google Play premium verified for device ${deviceId}`);
+            if (process.env.DEBUG === 'true') console.log(`[Subscription] Google Play premium verified for device ${deviceId}`);
+            if (serverLog) serverLog('info', 'payment', `[Subscription] Google Play premium verified for device ${deviceId}`, { deviceId });
 
             res.json({ success: true, message: 'Premium status synced' });
         } catch (error) {
@@ -403,7 +407,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
                             'UPDATE user_accounts SET subscription_expires_at = $1, updated_at = NOW() WHERE id = $2',
                             [newExpiry, user.id]
                         );
-                        console.log(`[Subscription] Recurring charge success for ${user.email}`);
+                        if (process.env.DEBUG === 'true') console.log(`[Subscription] Recurring charge success for ${user.email}`);
+                        if (serverLog) serverLog('info', 'payment', `[Subscription] Recurring charge success for ${user.email}`, { deviceId: user.device_id });
                     } else {
                         await pool.query(
                             "UPDATE user_accounts SET subscription_status = 'expired', tappay_card_key = NULL, tappay_card_token = NULL WHERE id = $1",
@@ -412,7 +417,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
                         if (devices[user.device_id]) {
                             devices[user.device_id].isPremium = false;
                         }
-                        console.log(`[Subscription] Recurring charge failed for ${user.email}: ${chargeData.msg}`);
+                        if (process.env.DEBUG === 'true') console.log(`[Subscription] Recurring charge failed for ${user.email}: ${chargeData.msg}`);
+                        if (serverLog) serverLog('warn', 'payment', `[Subscription] Recurring charge failed for ${user.email}: ${chargeData.msg}`, { deviceId: user.device_id });
                     }
                 } catch (chargeErr) {
                     console.error(`[Subscription] Recurring charge error for ${user.email}:`, chargeErr.message);
@@ -449,12 +455,13 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
 
             if (user.subscription_status === 'premium' && (!expiresAt || expiresAt > now)) {
                 if (device) device.isPremium = true;
-                console.log(`[Usage] Premium user ${deviceId} - bypassing limit`);
+                if (process.env.DEBUG === 'true') console.log(`[Usage] Premium user ${deviceId} - bypassing limit`);
                 return { allowed: true, remaining: null };
             }
 
             if (user.subscription_status === 'premium' && expiresAt && expiresAt <= now) {
-                console.log(`[Usage] Premium EXPIRED for ${deviceId}: expiresAt=${expiresAt}, now=${now}`);
+                if (process.env.DEBUG === 'true') console.log(`[Usage] Premium EXPIRED for ${deviceId}: expiresAt=${expiresAt}, now=${now}`);
+                if (serverLog) serverLog('warn', 'payment', `[Usage] Premium EXPIRED for ${deviceId}: expiresAt=${expiresAt}, now=${now}`, { deviceId });
             }
         }
 
@@ -469,7 +476,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
         const limit = 15;
 
         if (currentCount >= limit) {
-            console.log(`[Usage] LIMIT HIT for ${deviceId}: ${currentCount}/${limit}`);
+            if (process.env.DEBUG === 'true') console.log(`[Usage] LIMIT HIT for ${deviceId}: ${currentCount}/${limit}`);
+            if (serverLog) serverLog('warn', 'payment', `[Usage] LIMIT HIT for ${deviceId}: ${currentCount}/${limit}`, { deviceId });
             return { allowed: false, remaining: 0, limit: limit, used: currentCount };
         }
 
@@ -501,7 +509,8 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots) {
                     ensureEntitySlots(devices[row.device_id]);
                 }
             }
-            console.log(`[Subscription] Loaded ${result.rows.length} premium users`);
+            if (process.env.DEBUG === 'true') console.log(`[Subscription] Loaded ${result.rows.length} premium users`);
+            if (serverLog) serverLog('info', 'payment', `[Subscription] Loaded ${result.rows.length} premium users`);
         } catch (error) {
             console.error('[Subscription] Failed to load premium status:', error);
         }

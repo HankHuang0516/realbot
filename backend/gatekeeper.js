@@ -288,6 +288,10 @@ function detectAndMaskLeaks(text, deviceId, botSecret) {
 const strikeCache = {}; // deviceId -> { count, blocked, lastViolation }
 const tosAgreedCache = {}; // deviceId -> { version, agreedAt }
 
+// Optional serverLog (set from index.js after init)
+let _serverLog = null;
+function setServerLog(fn) { _serverLog = fn; }
+
 /**
  * Initialize gatekeeper DB table
  */
@@ -404,7 +408,8 @@ async function recordViolation(deviceId, category, messagePreview) {
         console.error('[Gatekeeper] Failed to update block status:', err.message);
     }
 
-    console.log(`[Gatekeeper] Strike ${strikeCache[deviceId].count}/${MAX_STRIKES} for device ${deviceId} (${category})${justBlocked ? ' → BLOCKED' : ''}`);
+    if (process.env.DEBUG === 'true') console.log(`[Gatekeeper] Strike ${strikeCache[deviceId].count}/${MAX_STRIKES} for device ${deviceId} (${category})${justBlocked ? ' → BLOCKED' : ''}`);
+    if (_serverLog) _serverLog('warn', 'gatekeeper', `[Gatekeeper] Strike ${strikeCache[deviceId].count}/${MAX_STRIKES} for device ${deviceId} (${category})${justBlocked ? ' → BLOCKED' : ''}`, { deviceId });
 
     return {
         count: strikeCache[deviceId].count,
@@ -553,7 +558,8 @@ async function recordTOSAgreement(deviceId) {
              DO UPDATE SET tos_version = $2, agreed_at = NOW()`,
             [deviceId, FREE_BOT_TOS_VERSION]
         );
-        console.log(`[Gatekeeper] TOS agreement recorded for device ${deviceId} (v${FREE_BOT_TOS_VERSION})`);
+        if (process.env.DEBUG === 'true') console.log(`[Gatekeeper] TOS agreement recorded for device ${deviceId} (v${FREE_BOT_TOS_VERSION})`);
+        if (_serverLog) _serverLog('info', 'gatekeeper', `[Gatekeeper] TOS agreement recorded for device ${deviceId} (v${FREE_BOT_TOS_VERSION})`, { deviceId });
         return true;
     } catch (err) {
         console.error('[Gatekeeper] Failed to record TOS agreement:', err.message);
@@ -576,6 +582,8 @@ module.exports = {
     getFreeBotTOS,
     hasAgreedToTOS,
     recordTOSAgreement,
+    // serverLog wiring
+    setServerLog,
     // Config
     MAX_STRIKES,
     FREE_BOT_TOS_VERSION

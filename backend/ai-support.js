@@ -436,7 +436,8 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         // Priority: Anthropic direct API > CLI proxy > fallback
         const anthropic = getAnthropicClient();
         if (anthropic) {
-            console.log('[AI Support] Using Anthropic direct API for analysis');
+            if (process.env.DEBUG === 'true') console.log('[AI Support] Using Anthropic direct API for analysis');
+            serverLog('info', 'ai_support', '[AI Support] Using Anthropic direct API for analysis', { deviceId, entityId });
             const startTime = Date.now();
             try {
                 const result = await anthropic.analyzeWithClaude({
@@ -448,7 +449,8 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
                     deviceContext: { deviceId, entityId, timestamp: new Date().toISOString(), role: opts.role || 'bot' }
                 });
                 const latencyMs = Date.now() - startTime;
-                console.log(`[AI Support] Anthropic analysis done (${latencyMs}ms, confidence: ${result.confidence})`);
+                if (process.env.DEBUG === 'true') console.log(`[AI Support] Anthropic analysis done (${latencyMs}ms, confidence: ${result.confidence})`);
+                serverLog('info', 'ai_support', `[AI Support] Anthropic analysis done (${latencyMs}ms, confidence: ${result.confidence})`, { deviceId, entityId });
                 return {
                     success: true,
                     source: 'anthropic_direct',
@@ -488,7 +490,8 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
         }
 
         const targetUrl = proxyUrl + '/analyze';
-        console.log(`[AI Support] Forwarding to proxy: ${targetUrl}`);
+        if (process.env.DEBUG === 'true') console.log(`[AI Support] Forwarding to proxy: ${targetUrl}`);
+        serverLog('info', 'ai_support', `[AI Support] Forwarding to proxy: ${targetUrl}`, { deviceId, entityId });
 
         const startTime = Date.now();
         try {
@@ -510,7 +513,8 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             });
 
             const latencyMs = Date.now() - startTime;
-            console.log(`[AI Support] Proxy responded: HTTP ${response.status} (${latencyMs}ms)`);
+            if (process.env.DEBUG === 'true') console.log(`[AI Support] Proxy responded: HTTP ${response.status} (${latencyMs}ms)`);
+            serverLog('info', 'ai_support', `[AI Support] Proxy responded: HTTP ${response.status} (${latencyMs}ms)`, { deviceId, entityId });
 
             if (!response.ok) {
                 const body = await response.text().catch(() => '(unreadable)');

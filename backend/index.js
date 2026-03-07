@@ -620,7 +620,7 @@ document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(mdC
 // ============================================
 // MISSION CONTROL DASHBOARD (PostgreSQL)
 // ============================================
-const missionModule = require('./mission')(devices, { awardEntityXP });
+const missionModule = require('./mission')(devices, { awardEntityXP, serverLog });
 app.use('/api/mission', missionModule.router);
 missionModule.initMissionDatabase();
 // Wire notification callback (notifyDevice defined later, uses closure)
@@ -637,7 +637,7 @@ authModule.initAuthDatabase();
 // ============================================
 // SUBSCRIPTION & TAPPAY (PostgreSQL)
 // ============================================
-const subscriptionModule = require('./subscription')(devices, authModule.authMiddleware, ensureEntitySlots);
+const subscriptionModule = require('./subscription')(devices, authModule.authMiddleware, ensureEntitySlots, serverLog);
 app.use('/api/subscription', subscriptionModule.router);
 // Load premium status after persistence is ready
 setTimeout(() => subscriptionModule.loadPremiumStatus(), 5000);
@@ -646,6 +646,7 @@ setTimeout(() => subscriptionModule.loadPremiumStatus(), 5000);
 // GATEKEEPER - Free Bot Abuse Prevention
 // ============================================
 gatekeeper.initGatekeeperTable();
+gatekeeper.setServerLog(serverLog);
 setTimeout(() => gatekeeper.loadBlockedDevices(), 3000);
 
 // --- Skill Templates API ---
@@ -6728,7 +6729,7 @@ const chatPool = new Pool({
 
 // Link telemetry middleware to the real pool
 _telemetryPool = chatPool;
-telemetry.initTelemetryTable(chatPool);
+telemetry.initTelemetryTable(chatPool, serverLog);
 feedbackModule.initFeedbackTable(chatPool);
 feedbackModule.initFeedbackPhotosTable(chatPool);
 notifModule.initNotificationTables(chatPool);
@@ -7372,7 +7373,7 @@ async function executeScheduledMessage(schedule) {
 
 // Init scheduler with chatPool (after DB is ready)
 setTimeout(() => {
-    scheduler.init(chatPool, executeScheduledMessage);
+    scheduler.init(chatPool, executeScheduledMessage, serverLog);
 }, 4000);
 
 // ── Schedule API Routes ──
