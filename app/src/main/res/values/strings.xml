@@ -171,6 +171,15 @@
     <string name="no_rules">No rules</string>
     <string name="add_soul">+ Add Soul</string>
     <string name="no_souls">No souls defined</string>
+
+    <!-- Soul/Rule Template Gallery -->
+    <string name="mission_choose_from_template">從模板選擇</string>
+    <string name="mission_soul_gallery_title">靈魂模板</string>
+    <string name="mission_rule_gallery_title">規則模板</string>
+    <string name="mission_template_by">by %s</string>
+    <string name="mission_use_template">套用此模板</string>
+    <string name="mission_template_loading">載入模板中…</string>
+    <string name="mission_template_empty">目前沒有可用的模板</string>
     <string name="soul_template">Soul Template</string>
     <string name="soul_template_custom">-- Custom --</string>
     <string name="soul_name_hint">Soul name</string>
