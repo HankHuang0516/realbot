@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/HankHuang0516/realbot/compare/v1.1.0...v1.2.0) (2026-03-07)
+
+
+### Bug Fixes
+
+* **tests:** add missing mock methods to Jest test files ([4e9a479](https://github.com/HankHuang0516/realbot/commit/4e9a479551361abbcb18f986563d97ba93750dcd))
+
+
+### Features
+
+* **portal:** add soul & rule template gallery to mission page ([2535f30](https://github.com/HankHuang0516/realbot/commit/2535f30c35fa7916e88e3865ca3b81a193d65ad9))
+
 # [1.1.0](https://github.com/HankHuang0516/realbot/compare/v1.0.0...v1.1.0) (2026-03-07)
 
 
