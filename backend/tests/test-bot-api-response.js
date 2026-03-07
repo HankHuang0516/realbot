@@ -266,6 +266,11 @@ async function main() {
   // Fallback: .env -> environment variable
   if (!deviceId) deviceId = envVars.TEST_DEVICE_ID || process.env.TEST_DEVICE_ID || '';
   const deviceSecret = envVars.TEST_DEVICE_SECRET || process.env.TEST_DEVICE_SECRET || '';
+  // Allow overriding entityId via TEST_ENTITY_ID in .env (CLI --entity flag takes priority)
+  if (!args.includes('--entity')) {
+    const envEntityId = envVars.TEST_ENTITY_ID || process.env.TEST_ENTITY_ID;
+    if (envEntityId !== undefined && envEntityId !== '') entityId = parseInt(envEntityId);
+  }
 
   if (!deviceId) {
     console.error('Error: Device ID is required.');
