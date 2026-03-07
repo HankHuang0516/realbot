@@ -75,8 +75,8 @@ async function run() {
     const SLOT     = `rename-ch-${Date.now()}`;
     const TOKEN    = 'rename-token-' + Math.random().toString(36).slice(2);
     const CALLBACK = `${SINK}?slot=${SLOT}`;
-    const OLD_NAME = 'OldBotName';
-    const NEW_NAME = 'NewBotName-' + Date.now();
+    const OLD_NAME = 'OldBot';
+    const NEW_NAME = 'NewBot' + Math.random().toString(36).slice(2, 8); // ≤12 chars
 
     console.log(`\n🧪  Entity Name Change → Channel Bot Notification Test — ${API_BASE}`);
     console.log(`    Device: ${DEVICE_ID.slice(0, 8)}...`);
