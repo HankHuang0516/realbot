@@ -2843,6 +2843,20 @@ app.put('/api/device/entity/name', async (req, res) => {
 
     console.log(`[Rename] Device ${deviceId} Entity ${eId}: "${oldName}" -> "${newName}"`);
 
+    // Bot Push Parity Rule: channel bots receive immediate notification (no pending queue)
+    if (entity.bindingType === 'channel' && entity.channelAccountId) {
+        const { oldName: oN, newName: nN } = entity.pendingRename;
+        channelModule.pushToChannelCallback(deviceId, eId, {
+            event: 'message',
+            from: 'system',
+            text: `[SYSTEM:NAME_CHANGED] 你的名字已從「${oN}」更改為「${nN}」。請記住你現在的名字是「${nN}」。`,
+            eclaw_context: { expectsReply: false, silentToken: '[SILENT]', missionHints: '' }
+        }, entity.channelAccountId)
+            .then(r => console.log(`[Rename] Channel push to entity ${eId}: ${r.pushed ? 'OK' : r.reason}`))
+            .catch(e => console.error(`[Rename] Channel push error: ${e.message}`));
+        entity.pendingRename = null; // clear — already delivered
+    }
+
     await saveData();
 
     res.json({
