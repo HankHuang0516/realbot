@@ -609,15 +609,21 @@ module.exports = function (devices, chatPool, { serverLog, getWebhookFixInstruct
             handshakeFailures: []
         };
 
-        // Entity states from in-memory device object
+        // Entity states from in-memory device object.
+        // device.entities can be an Array or a plain object {0:{...},1:{...}} —
+        // iterate over fixed slots 0-3 to handle both shapes safely.
         if (device?.entities) {
-            ctx.entityStates = (device.entities || []).map((e, i) => ({
-                slot: i,
-                type: i % 2 === 0 ? 'LOBSTER' : 'PIG',
-                bound: e?.isBound || false,
-                name: e?.name || null,
-                hasWebhook: !!(e?.webhookUrl)
-            }));
+            const ents = device.entities;
+            ctx.entityStates = [0, 1, 2, 3].map(i => {
+                const e = Array.isArray(ents) ? ents[i] : ents[i];
+                return {
+                    slot: i,
+                    type: i % 2 === 0 ? 'LOBSTER' : 'PIG',
+                    bound: e?.isBound || false,
+                    name: e?.name || null,
+                    hasWebhook: !!(e?.webhookUrl)
+                };
+            });
         }
 
         // Recent errors — all categories, last 24h
