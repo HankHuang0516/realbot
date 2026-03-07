@@ -259,47 +259,43 @@
             accent-color: var(--primary);
         }
 
-        .skill-template-list {
+        /* Template gallery */
+        .tpl-selected-row {
             display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 2px;
-        }
-
-        .skill-template-chip {
-            display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 5px 12px;
+            gap: 8px;
+            padding: 6px 10px;
             background: var(--input-bg);
             border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.15s;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+        .tpl-selected-label {
+            flex: 1;
+            font-size: 13px;
             white-space: nowrap;
-            user-select: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-
-        .skill-template-chip:hover {
-            border-color: var(--primary);
-            color: var(--primary);
+        .tpl-gallery-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s;
         }
-
-        .skill-template-chip.active {
-            background: var(--primary);
-            color: #fff;
-            border-color: var(--primary);
-        }
-
-        .skill-template-chip.configured {
-            border-color: #4caf50;
-            color: #4caf50;
-        }
-
-        .skill-template-chip.configured:hover {
-            background: #4caf5020;
-        }
+        .tpl-gallery-card:hover { border-color: var(--primary); }
+        .tpl-gallery-icon { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+        .tpl-gallery-info { flex: 1; min-width: 0; }
+        .tpl-gallery-title { font-weight: 600; font-size: 14px; }
+        .tpl-gallery-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .tpl-gallery-status { font-size: 11px; margin-top: 4px; }
+        .tpl-gallery-status.ok { color: #4caf50; }
+        .tpl-gallery-status.warn { color: #FF9800; }
 
         #dlg_skill_steps {
             min-height: 160px;
@@ -1281,24 +1277,96 @@
             } catch (e) { console.warn('Failed to load skill templates:', e); }
         }
 
+        // Context saved when gallery opens so we can restore on back/cancel
+        let _skillDialogCtx = { id: null, skill: null };
+
         function fillSkillTemplate(tpl) {
             document.getElementById('dlg_skill_title').value = tpl.title;
             document.getElementById('dlg_skill_url').value = tpl.url || '';
             document.getElementById('dlg_skill_steps').value = tpl.steps || '';
-            document.querySelectorAll('.skill-template-chip').forEach(c => {
-                c.classList.toggle('active', c.dataset.template === tpl.id);
-            });
+            // Update selected template indicator
+            const selRow = document.getElementById('dlg_tpl_selected');
+            const selLabel = document.getElementById('dlg_tpl_selected_label');
+            const browseBtn = document.getElementById('dlg_browse_tpl_btn');
+            if (selRow && selLabel) {
+                const vars = loadLocalVars();
+                const configured = tpl.requiredVars && tpl.requiredVars.length > 0 && tpl.requiredVars.every(v => vars[v.key]);
+                selLabel.textContent = `${tpl.icon ? tpl.icon + ' ' : ''}${tpl.label}${configured ? ' ✓' : ''}`;
+                selRow.style.display = 'flex';
+            }
+            if (browseBtn) browseBtn.style.display = 'none';
         }
 
         function applySkillTemplate(templateId) {
             const tpl = skillTemplates.find(t => t.id === templateId);
             if (!tpl) return;
-
             if (tpl.requiredVars && tpl.requiredVars.length > 0) {
                 showRequiredVarsDialog(tpl);
                 return;
             }
             fillSkillTemplate(tpl);
+        }
+
+        function showTemplateGallery() {
+            _skillDialogCtx = { id: _skillDialogCtx.id, skill: _skillDialogCtx.skill };
+            const c = document.getElementById('dialogContainer');
+            c.innerHTML = buildGalleryHtml(skillTemplates);
+            document.getElementById('tpl_gallery_search').focus();
+        }
+
+        function buildGalleryHtml(templates) {
+            const vars = loadLocalVars();
+            const cards = templates.map(t => {
+                let statusHtml = '';
+                if (t.requiredVars && t.requiredVars.length > 0) {
+                    const allSet = t.requiredVars.every(v => vars[v.key]);
+                    if (allSet) {
+                        statusHtml = `<div class="tpl-gallery-status ok">✓ All vars configured</div>`;
+                    } else {
+                        const missing = t.requiredVars.filter(v => !vars[v.key]).map(v => v.key).join(', ');
+                        statusHtml = `<div class="tpl-gallery-status warn">⚠ Needs: ${esc(missing)}</div>`;
+                    }
+                } else {
+                    statusHtml = `<div class="tpl-gallery-status" style="color:var(--text-muted);">No API key needed</div>`;
+                }
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" onclick="selectTemplateFromGallery('${esc(t.id)}')">
+                    <div class="tpl-gallery-icon">${t.icon || '📦'}</div>
+                    <div class="tpl-gallery-info">
+                        <div class="tpl-gallery-title">${esc(t.label)}</div>
+                        <div class="tpl-gallery-meta">by ${esc(t.author || '—')} · ${esc(t.updatedAt || '')}</div>
+                        ${statusHtml}
+                    </div>
+                    <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;flex-shrink:0;" onclick="event.stopPropagation();selectTemplateFromGallery('${esc(t.id)}')">Select</button>
+                </div>`;
+            }).join('');
+
+            return `<div class="dialog-overlay" onclick="if(event.target===this)_restoreSkillDialog()">
+                <div class="dialog" style="max-width:480px;">
+                    <div class="dialog-title">瀏覽官方模板</div>
+                    <input id="tpl_gallery_search" type="text" placeholder="搜尋…" oninput="filterGallery(this.value)" style="margin-bottom:12px;" />
+                    <div id="tpl_gallery_list" style="max-height:380px;overflow-y:auto;">${cards}</div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-outline" onclick="_restoreSkillDialog()">取消</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function filterGallery(query) {
+            const q = query.toLowerCase();
+            document.querySelectorAll('#tpl_gallery_list .tpl-gallery-card').forEach(card => {
+                const label = (card.dataset.label || '').toLowerCase();
+                card.style.display = label.includes(q) ? '' : 'none';
+            });
+        }
+
+        function selectTemplateFromGallery(tplId) {
+            _restoreSkillDialog();
+            applySkillTemplate(tplId);
+        }
+
+        function _restoreSkillDialog() {
+            showSkillDialog(_skillDialogCtx.id, _skillDialogCtx.skill);
         }
 
         function showRequiredVarsDialog(tpl) {
@@ -1337,7 +1405,7 @@
                     </p>
                     ${fields}
                     <div class="dialog-actions">
-                        <button class="btn btn-outline" onclick="showSkillDialog(null,null);fillSkillTemplate(skillTemplates.find(t=>t.id==='${esc(tpl.id)}'))">Skip</button>
+                        <button class="btn btn-outline" onclick="_restoreSkillDialog();fillSkillTemplate(skillTemplates.find(t=>t.id==='${esc(tpl.id)}'))">Skip</button>
                         <button class="btn btn-primary" id="dlgReqVarSaveBtn">Save &amp; Continue</button>
                     </div>
                 </div>
@@ -1349,7 +1417,7 @@
                     const val = document.getElementById(`dlg_reqvar_${i}`).value;
                     if (key && val) saveLocalVar(key, val);
                 });
-                showSkillDialog(null, null);
+                _restoreSkillDialog();
                 fillSkillTemplate(tpl);
             };
 
@@ -1392,6 +1460,7 @@
         }
 
         function showSkillDialog(id, skill) {
+            _skillDialogCtx = { id, skill };
             const isEdit = skill !== null;
             const c = document.getElementById('dialogContainer');
 
@@ -1407,13 +1476,15 @@
 
             if (!entityCheckboxes) entityCheckboxes = '<div style="color:var(--text-muted);font-size:12px;">No bound entities</div>';
 
-            const templateChips = skillTemplates.map(t => buildTemplateChip(t)).join('');
-
             let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
                 <div class="dialog">
                     <div class="dialog-title">${isEdit ? '編輯技能' : '新增技能'}</div>
                     <div class="dialog-field-label">官方模板</div>
-                    <div class="skill-template-list">${templateChips}</div>
+                    <div id="dlg_tpl_selected" style="display:none;" class="tpl-selected-row">
+                        <span class="tpl-selected-label" id="dlg_tpl_selected_label"></span>
+                        <button class="btn btn-outline" style="font-size:11px;padding:3px 8px;" onclick="showTemplateGallery()">更換</button>
+                    </div>
+                    <button class="btn btn-outline" id="dlg_browse_tpl_btn" style="width:100%;margin-bottom:8px;" onclick="showTemplateGallery()">瀏覽官方模板…</button>
                     <div class="dialog-field-label" style="margin-top:10px;">技能名稱</div>
                     <input id="dlg_skill_title" placeholder="例：Google 搜尋" value="${esc(skill?.title || '')}" />
                     <div class="dialog-field-label">相關網址 (選填)</div>
@@ -1629,12 +1700,6 @@
             vars[key] = value;
             localStorage.setItem(VARS_STORAGE_KEY(), JSON.stringify(vars));
             syncVarsToServer();
-        }
-
-        function buildTemplateChip(t) {
-            const vars = loadLocalVars();
-            const configured = t.requiredVars && t.requiredVars.length > 0 && t.requiredVars.every(v => vars[v.key]);
-            return `<div class="skill-template-chip${configured ? ' configured' : ''}" data-template="${t.id}" onclick="applySkillTemplate('${t.id}')">${t.icon ? t.icon + ' ' : ''}${esc(t.label)}${configured ? ' ✓' : ''}</div>`;
         }
 
         // Background sync only — UI lives in env-vars.html

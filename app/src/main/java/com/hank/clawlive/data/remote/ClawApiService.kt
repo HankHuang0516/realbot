@@ -427,6 +427,8 @@ data class SkillTemplate(
     val icon: String? = null,
     val title: String,
     val url: String? = null,
+    val author: String? = null,
+    val updatedAt: String? = null,
     val requiredVars: List<SkillRequiredVar> = emptyList()
 )
 
