@@ -37,6 +37,19 @@
             font-size: 11px;
             color: var(--text-muted);
             font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .info-value-mono-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            max-width: 55%;
+            min-width: 0;
         }
 
         /* ── Subscription ── */
@@ -614,22 +627,22 @@
             </div>
             <div class="info-row">
                 <span class="info-label" data-i18n="settings_device_id">Device ID</span>
-                <span style="display:flex;align-items:center;gap:6px;">
+                <span class="info-value-mono-group">
                     <span class="info-value mono" id="accountDeviceId">--</span>
                     <button id="btnRevealDeviceId" onclick="toggleDeviceIdReveal()"
-                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;flex-shrink:0;"
                         title="顯示/隱藏 Device ID">👁</button>
                 </span>
             </div>
             <div class="info-row">
                 <span class="info-label" data-i18n="settings_device_secret">Device Secret</span>
-                <span style="display:flex;align-items:center;gap:6px;">
-                    <span class="info-value mono" id="accountDeviceSecret" style="word-break:break-all;">--</span>
+                <span class="info-value-mono-group">
+                    <span class="info-value mono" id="accountDeviceSecret">--</span>
                     <button id="btnRevealDeviceSecret" onclick="toggleDeviceSecretReveal()"
-                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;flex-shrink:0;"
                         title="顯示/隱藏 Device Secret">👁</button>
                     <button onclick="copyDeviceSecret()"
-                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;flex-shrink:0;"
                         data-i18n-title="common_copy" title="複製">📋</button>
                 </span>
             </div>
