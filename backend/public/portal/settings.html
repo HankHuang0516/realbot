@@ -613,8 +613,25 @@
                 <span class="info-value" id="accountEmail">--</span>
             </div>
             <div class="info-row">
-                <span class="info-label">Device ID</span>
-                <span class="info-value mono" id="accountDeviceId">--</span>
+                <span class="info-label" data-i18n="settings_device_id">Device ID</span>
+                <span style="display:flex;align-items:center;gap:6px;">
+                    <span class="info-value mono" id="accountDeviceId">--</span>
+                    <button id="btnRevealDeviceId" onclick="toggleDeviceIdReveal()"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;"
+                        title="顯示/隱藏 Device ID">👁</button>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label" data-i18n="settings_device_secret">Device Secret</span>
+                <span style="display:flex;align-items:center;gap:6px;">
+                    <span class="info-value mono" id="accountDeviceSecret" style="word-break:break-all;">--</span>
+                    <button id="btnRevealDeviceSecret" onclick="toggleDeviceSecretReveal()"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;"
+                        title="顯示/隱藏 Device Secret">👁</button>
+                    <button onclick="copyDeviceSecret()"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;"
+                        data-i18n-title="common_copy" title="複製">📋</button>
+                </span>
             </div>
             <div class="info-row" id="connectedAccountsRow" style="display:none">
                 <span class="info-label" data-i18n="settings_connected_accounts">Connected Accounts</span>
@@ -906,9 +923,69 @@
         // ============================================
         // Account Info
         // ============================================
+        let _fullDeviceId = '';
+        let _fullDeviceSecret = '';
+
+        function maskDeviceId(id) {
+            if (!id || id === '--') return '--';
+            // UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx → show first & last segments only
+            const parts = id.split('-');
+            if (parts.length === 5) {
+                return `${parts[0]}-····-····-····-${parts[4]}`;
+            }
+            // Fallback: show first 8 and last 4
+            return id.substring(0, 8) + '·····' + id.slice(-4);
+        }
+
+        function maskSecret(s) {
+            if (!s || s.length < 12) return s || '--';
+            return s.substring(0, 8) + '··············' + s.slice(-4);
+        }
+
+        function toggleDeviceIdReveal() {
+            const el = document.getElementById('accountDeviceId');
+            const btn = document.getElementById('btnRevealDeviceId');
+            if (!el || !_fullDeviceId) return;
+            if (el.dataset.revealed === 'true') {
+                el.textContent = maskDeviceId(_fullDeviceId);
+                el.dataset.revealed = 'false';
+                btn.textContent = '👁';
+            } else {
+                el.textContent = _fullDeviceId;
+                el.dataset.revealed = 'true';
+                btn.textContent = '🙈';
+            }
+        }
+
+        function toggleDeviceSecretReveal() {
+            const el = document.getElementById('accountDeviceSecret');
+            const btn = document.getElementById('btnRevealDeviceSecret');
+            if (!el || !_fullDeviceSecret) return;
+            if (el.dataset.revealed === 'true') {
+                el.textContent = maskSecret(_fullDeviceSecret);
+                el.dataset.revealed = 'false';
+                btn.textContent = '👁';
+            } else {
+                el.textContent = _fullDeviceSecret;
+                el.dataset.revealed = 'true';
+                btn.textContent = '🙈';
+            }
+        }
+
+        async function copyDeviceSecret() {
+            if (!_fullDeviceSecret) return;
+            try {
+                await navigator.clipboard.writeText(_fullDeviceSecret);
+                showCopyToast();
+            } catch (e) { console.error('Copy failed:', e); }
+        }
+
         function populateAccountInfo(user) {
             document.getElementById('accountEmail').textContent = user.email || '--';
-            document.getElementById('accountDeviceId').textContent = user.deviceId || '--';
+            _fullDeviceId = user.deviceId || '';
+            document.getElementById('accountDeviceId').textContent = maskDeviceId(_fullDeviceId);
+            _fullDeviceSecret = user.deviceSecret || '';
+            document.getElementById('accountDeviceSecret').textContent = maskSecret(_fullDeviceSecret);
 
             // Connected accounts
             const providers = [];
