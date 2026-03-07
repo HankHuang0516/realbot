@@ -632,6 +632,9 @@
                     <button id="btnRevealDeviceId" onclick="toggleDeviceIdReveal()"
                         style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;flex-shrink:0;"
                         title="顯示/隱藏 Device ID">👁</button>
+                    <button onclick="copyDeviceId()"
+                        style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;flex-shrink:0;"
+                        data-i18n-title="common_copy" title="複製">📋</button>
                 </span>
             </div>
             <div class="info-row">
@@ -645,6 +648,11 @@
                         style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:0.6;line-height:1;flex-shrink:0;"
                         data-i18n-title="common_copy" title="複製">📋</button>
                 </span>
+            </div>
+            <div style="padding: 10px 0; border-top: 1px dashed var(--card-border);">
+                <button onclick="copyBothCredentials()"
+                    style="width:100%;background:none;border:1px solid var(--card-border);border-radius:6px;padding:7px 0;cursor:pointer;font-size:13px;color:var(--text-secondary);opacity:0.8;display:flex;align-items:center;justify-content:center;gap:6px;"
+                    data-i18n="settings_copy_credentials">Copy Credentials</button>
             </div>
             <div class="info-row" id="connectedAccountsRow" style="display:none">
                 <span class="info-label" data-i18n="settings_connected_accounts">Connected Accounts</span>
@@ -989,6 +997,23 @@
             if (!_fullDeviceSecret) return;
             try {
                 await navigator.clipboard.writeText(_fullDeviceSecret);
+                showCopyToast();
+            } catch (e) { console.error('Copy failed:', e); }
+        }
+
+        async function copyDeviceId() {
+            if (!_fullDeviceId) return;
+            try {
+                await navigator.clipboard.writeText(_fullDeviceId);
+                showCopyToast();
+            } catch (e) { console.error('Copy failed:', e); }
+        }
+
+        async function copyBothCredentials() {
+            if (!_fullDeviceId || !_fullDeviceSecret) return;
+            try {
+                const text = `Device ID: ${_fullDeviceId}\nDevice Secret: ${_fullDeviceSecret}`;
+                await navigator.clipboard.writeText(text);
                 showCopyToast();
             } catch (e) { console.error('Copy failed:', e); }
         }
