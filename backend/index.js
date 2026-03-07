@@ -649,11 +649,17 @@ gatekeeper.initGatekeeperTable();
 gatekeeper.setServerLog(serverLog);
 setTimeout(() => gatekeeper.loadBlockedDevices(), 3000);
 
-// --- Skill Templates API ---
+// --- Skill / Soul / Rule Templates API ---
 
 const skillTemplatesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/skill-templates.json'), 'utf8'));
-const soulTemplatesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/soul-templates.json'), 'utf8'));
-const ruleTemplatesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/rule-templates.json'), 'utf8'));
+const soulTemplatesData = (() => {
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/soul-templates.json'), 'utf8')); }
+    catch (_) { console.warn('[TEMPLATES] soul-templates.json not found, using []'); return []; }
+})();
+const ruleTemplatesData = (() => {
+    try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/rule-templates.json'), 'utf8')); }
+    catch (_) { console.warn('[TEMPLATES] rule-templates.json not found, using []'); return []; }
+})();
 const pendingTemplatesPath = path.join(__dirname, 'data/skill-templates-pending.json');
 let pendingTemplatesData = (() => {
     try { return JSON.parse(fs.readFileSync(pendingTemplatesPath, 'utf8')); }
@@ -669,10 +675,12 @@ app.get('/api/skill-templates', (req, res) => {
     res.json({ success: true, templates: skillTemplatesData });
 });
 
+// GET /api/soul-templates - Soul (personality) template registry (public)
 app.get('/api/soul-templates', (req, res) => {
     res.json({ success: true, templates: soulTemplatesData });
 });
 
+// GET /api/rule-templates - Rule template registry (public)
 app.get('/api/rule-templates', (req, res) => {
     res.json({ success: true, templates: ruleTemplatesData });
 });
