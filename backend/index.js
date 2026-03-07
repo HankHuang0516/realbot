@@ -2598,7 +2598,7 @@ app.post('/api/device/reorder-entities', async (req, res) => {
         }
 
         // Track bots that need notification (only if entity moved AND is bound)
-        if (oldSlot !== newSlot && entity.isBound && entity.webhook) {
+        if (oldSlot !== newSlot && entity.isBound && (entity.webhook || entity.bindingType === 'channel')) {
             botsToNotify.push({
                 entity,
                 oldSlot,
@@ -2712,12 +2712,27 @@ UPDATED CREDENTIALS:
 ⚠️ IMPORTANT: Update your entityId in ALL future API calls:
 exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${newSlot},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'`;
 
-        sendToSession(entity.webhook.url, entity.webhook.token, entity.webhook.sessionKey, notifyMsg)
-            .then(r => {
-                if (r.success) console.log(`[Reorder] ✓ Notified bot at entity ${newSlot} (was ${oldSlot})`);
-                else console.warn(`[Reorder] ✗ Failed to notify bot at entity ${newSlot}: ${r.error}`);
-            })
-            .catch(e => console.warn(`[Reorder] ✗ Error notifying bot: ${e.message}`));
+        if (entity.bindingType === 'channel') {
+            // Bot Push Parity Rule: notify channel bot via callback
+            channelModule.pushToChannelCallback(deviceId, newSlot, {
+                event: 'message',
+                from: 'system',
+                text: notifyMsg,
+                eclaw_context: { expectsReply: false, silentToken: '[SILENT]', missionHints: '' }
+            }, entity.channelAccountId)
+                .then(r => {
+                    if (r.pushed) console.log(`[Reorder] ✓ Notified channel bot at entity ${newSlot} (was ${oldSlot})`);
+                    else console.warn(`[Reorder] ✗ Failed to notify channel bot at entity ${newSlot}: ${r.reason}`);
+                })
+                .catch(e => console.warn(`[Reorder] ✗ Error notifying channel bot: ${e.message}`));
+        } else {
+            sendToSession(entity.webhook.url, entity.webhook.token, entity.webhook.sessionKey, notifyMsg)
+                .then(r => {
+                    if (r.success) console.log(`[Reorder] ✓ Notified bot at entity ${newSlot} (was ${oldSlot})`);
+                    else console.warn(`[Reorder] ✗ Failed to notify bot at entity ${newSlot}: ${r.error}`);
+                })
+                .catch(e => console.warn(`[Reorder] ✗ Error notifying bot: ${e.message}`));
+        }
     }
 
     console.log(`[Reorder] ✓ Device ${deviceId} reorder complete`);
@@ -7490,10 +7505,25 @@ async function executeScheduledMessage(schedule) {
 
     console.log(`[Scheduler] Sent to device ${deviceId} entity ${entityId}: "${message}"`);
 
-    // Push to bot if webhook is registered
+    // Push to bot — channel callback or traditional webhook (Bot Push Parity Rule)
     let pushResult = { pushed: false, reason: 'no_webhook' };
-    if (entity.webhook) {
-        const apiBase = 'https://eclawbot.com';
+    const apiBase = 'https://eclawbot.com';
+    if (entity.bindingType === 'channel') {
+        pushResult = await channelModule.pushToChannelCallback(deviceId, entityId, {
+            event: 'message',
+            from: 'scheduled',
+            text: message,
+            eclaw_context: {
+                expectsReply: true,
+                silentToken: '[SILENT]',
+                missionHints: getMissionApiHints(apiBase, deviceId, entityId, entity.botSecret)
+            }
+        }, entity.channelAccountId);
+        if (pushResult.pushed) {
+            messageObj.delivered = true;
+            console.log(`[Scheduler] Channel push OK to device ${deviceId} entity ${entityId}`);
+        }
+    } else if (entity.webhook) {
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API below. Your text reply is DISCARDED and the user will NEVER see it.\n`;
         pushMsg += `Run this command to reply (replace YOUR_REPLY_HERE with your response):\n`;
         pushMsg += `exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${entity.botSecret}","state":"IDLE","message":"YOUR_REPLY_HERE"}'\n\n`;
@@ -7532,7 +7562,7 @@ async function executeScheduledMessage(schedule) {
 
     return {
         pushed: pushResult.pushed,
-        mode: entity.webhook ? 'push' : 'polling',
+        mode: entity.bindingType === 'channel' ? 'channel' : (entity.webhook ? 'push' : 'polling'),
         reason: pushResult.pushed ? 'ok' : (pushResult.reason || 'unknown')
     };
 }
