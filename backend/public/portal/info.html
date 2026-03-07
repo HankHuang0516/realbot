@@ -1433,12 +1433,13 @@ DELETE /api/channel/register
                         <h3 class="step-heading">Device ID</h3>
                         <p>Web Portal → 右上角頭像 → Settings → 複製 <strong>Device ID</strong></p>
 
-                        <h3 class="step-heading">Bot Secret</h3>
-                        <p>Portal → Mission Control → 選擇你的 entity → 複製 <strong>Bot Secret</strong></p>
-                        <div class="note">Bot Secret 只用於 bot 操作，無法存取帳號設定或付款資訊。請勿公開分享。</div>
+                        <h3 class="step-heading">Device Secret</h3>
+                        <p>Device Secret 讓 Claude 可以設定排程、查詢 entity 狀態等 owner 層級操作。</p>
+                        <p>取得方式：瀏覽器開啟 Portal → 按 <strong>F12</strong>（開發者工具）→ Network → 找 <code>/api/auth/me</code> 請求 → Response 中有 <code>deviceSecret</code> 欄位。</p>
+                        <div class="note">⚠️ Device Secret 請勿公開分享。<br>Bot Secret 是 bot 自己在綁定時收到的憑證，由 bot 持有，用戶<strong>不需要</strong>取得或提供給 Claude。</div>
 
                         <h3 class="step-heading">Entity ID</h3>
-                        <p>最多 8 個 slot（0–7）。第一個 bot 通常是 entity <strong>0</strong>。</p>
+                        <p>最多 8 個 slot（0–7）。第一個 bot 通常是 entity <strong>0</strong>，在 Dashboard 可確認各 entity 的名稱與狀態。</p>
 
                         <hr>
 
@@ -1458,8 +1459,8 @@ DELETE /api/channel/register
                         <h2>Step 3：告訴 Claude 你的憑證</h2>
                         <div class="code-block">我的 Eclaw 設定：
 - Device ID: 你的-device-id
-- Entity ID: 0
-- Bot Secret: 你的-bot-secret
+- Device Secret: 你的-device-secret
+- 我要控制的 bot 是 Entity 0
 
 請幫我控制這個 OpenClaw bot。</div>
 
@@ -1565,11 +1566,11 @@ Claude 主動查詢執行結果
                         <p><strong>Q: Claude 說「我沒有辦法執行 HTTP 請求」怎麼辦？</strong><br>
                         A: 你需要使用 <strong>Claude Code CLI</strong>（有 Bash 工具），或在 Claude.ai 啟用 MCP 工具。標準對話介面只會給你指令讓你自己貼到終端機執行。</p>
 
-                        <p><strong>Q: Bot Secret 在哪裡找？</strong><br>
-                        A: Portal → Mission Control → 選擇你的 entity 查看。</p>
+                        <p><strong>Q: Device Secret 在哪裡找？</strong><br>
+                        A: 瀏覽器 F12 → Network → 找 <code>/api/auth/me</code> 回應 → 裡面有 <code>deviceSecret</code> 欄位。Bot Secret 是 bot 自己的憑證，用戶不需要取得。</p>
 
                         <p><strong>Q: Claude 下的指令 bot 沒有反應？</strong><br>
-                        A: 確認 bot 已綁定（isBound: true）、Bot Secret 正確、OpenClaw 在線。</p>
+                        A: 確認 bot 已綁定（isBound: true）、Device Secret 正確、OpenClaw 在線。</p>
                     </div>
 
                 </div><!-- /guide-content -->

@@ -49,31 +49,33 @@ Eclaw → Claude 查詢結果
 
 ## Step 1：取得你的憑證
 
-綁定完成後，你需要兩個資訊：
+綁定完成後，你需要兩樣資訊給 Claude：
 
 ### 1-A. 取得 Device ID
 
-開啟 Eclaw Web Portal → 右上角 → Settings → 複製 **Device ID**
+開啟 Eclaw Web Portal → 右上角頭像 → Settings → 點眼睛圖示顯示 → 複製 **Device ID**
 
 ```
 範例：xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-### 1-B. 取得 Bot Secret
+### 1-B. 取得 Device Secret
 
-你的 OpenClaw bot 在綁定時已拿到 `botSecret`（顯示在 bot 的對話記錄或 binding 頁面）。
+Device Secret 是你的帳號憑證（owner 層級），讓 Claude 可以設定排程、查詢 entity 狀態等。
 
-**或**從 Eclaw Web Portal 查：
-Portal → Mission Control → 選擇你的 entity → 複製 Bot Secret
+取得方式：瀏覽器開啟 Web Portal → 按 F12（開發者工具）→ Network → 找 `/api/auth/me` 請求 → Response 中有 `deviceSecret` 欄位。
 
 ```
-範例：xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+範例：xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
+
+> **注意**：`botSecret` 是 bot 自己在綁定時收到的憑證，由 bot 自己持有，用戶不需要取得也不需要提供給 Claude。
 
 ### 1-C. 確認 Entity ID
 
 你最多有 8 個 entity slot（0–7）。
 通常第一個 bot 是 entity **0**，第二個是 **1**，以此類推。
+在 Dashboard 可以看到各 entity 的名稱與狀態，確認編號後告知 Claude。
 
 ---
 
@@ -110,14 +112,14 @@ Eclaw 有一份 AI 指令說明書，告訴 Claude 有哪些 API 可用。
 ```
 我的 Eclaw 設定：
 - Device ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-- Entity ID: 0
-- Bot Secret: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+- Device Secret: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+- 我要控制的 bot 是 Entity 0
 
 請幫我控制這個 OpenClaw bot。
 ```
 
-> ⚠️ **安全提醒**：Bot Secret 只用於 bot 操作，無法存取你的帳號設定或付款資訊。
-> 但仍建議只在私人對話中使用，不要公開分享。
+> ⚠️ **安全提醒**：Device Secret 是你的帳號憑證，可以操作排程與任務設定。
+> 建議只在私人對話中使用，不要公開分享。Bot Secret 是 bot 本身的憑證，無需提供。
 
 ---
 
