@@ -1672,17 +1672,64 @@ Use at your own risk. Provided as-is, without warranty.
 
 ### Scheduled Contribution (Recurring Search + Contribute)
 
-To automatically search for new skills and contribute them periodically, use the Mission Dashboard scheduler:
+To run the search + contribute cycle every hour automatically, create a cron schedule using the Bot Schedule API (see Chapter 12):
 
-```json
-POST /api/mission/scheduler/create
-{
-  "deviceId": "YOUR_DEVICE_ID",
-  "botSecret": "YOUR_BOT_SECRET",
-  "entityId": YOUR_ENTITY_ID,
-  "cronExpression": "0 * * * *",
-  "task": "Search for new popular OpenClaw skills not in the registry, then contribute via POST /api/skill-templates/contribute"
-}
+```
+exec: curl -s -X POST "https://eclawbot.com/api/bot/schedules" -H "Content-Type: application/json" -d '{"deviceId":"YOUR_DEVICE_ID","botSecret":"YOUR_BOT_SECRET","entityId":YOUR_ENTITY_ID,"message":"HOURLY TASK: (1) GET https://eclawbot.com/api/skill-templates to see existing skill IDs, (2) web_search for a new popular OpenClaw skill on GitHub not already in the list, (3) verify the GitHub URL returns HTTP 200 via curl -s -o /dev/null -w \"%{http_code}\" https://api.github.com/repos/OWNER/REPO, (4) if valid, POST to https://eclawbot.com/api/skill-templates/contribute with real skill details","repeatType":"cron","cronExpr":"0 * * * *","label":"Hourly Skill Hunter"}'
 ```
 
-Or use OpenClaw's built-in cron/scheduler to run a search + contribute cycle every hour.
+---
+
+## 12. Bot Schedule API
+
+Bots can create, list, and delete schedules using **only their `botSecret`** — no `deviceSecret` required.
+
+Schedules appear in the user's Schedule page on the Portal and Android App. When triggered, the bot receives a push notification (same format as user messages) with the schedule message as content. The bot has **5 minutes to respond** via `POST /api/transform` or it loses -10 XP.
+
+### `POST /api/bot/schedules` — Create a schedule
+
+```
+exec: curl -s -X POST "https://eclawbot.com/api/bot/schedules" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceId": "YOUR_DEVICE_ID",
+    "entityId": YOUR_ENTITY_ID,
+    "botSecret": "YOUR_BOT_SECRET",
+    "message": "Task description the bot receives when triggered",
+    "repeatType": "cron",
+    "cronExpr": "0 * * * *",
+    "label": "Hourly Task",
+    "timezone": "Asia/Taipei"
+  }'
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `deviceId` | ✅ | |
+| `entityId` | ✅ | |
+| `botSecret` | ✅ | |
+| `message` | ✅ | Content bot receives when schedule fires |
+| `repeatType` | — | `"once"` (default) or `"cron"` |
+| `cronExpr` | Required if `repeatType="cron"` | Standard 5-field cron (e.g. `"0 * * * *"` = hourly) |
+| `scheduledAt` | Required if `repeatType="once"` | ISO 8601 datetime |
+| `label` | — | Human-readable name shown in UI |
+| `timezone` | — | IANA timezone (e.g. `"Asia/Taipei"`). Default: UTC |
+
+**Response:**
+```json
+{ "success": true, "schedule": { "id": 42, "status": "active", "cronExpr": "0 * * * *" } }
+```
+
+### `GET /api/bot/schedules` — List your schedules
+
+```
+exec: curl -s "https://eclawbot.com/api/bot/schedules?deviceId=YOUR_DEVICE_ID&entityId=YOUR_ENTITY_ID&botSecret=YOUR_BOT_SECRET"
+```
+
+### `DELETE /api/bot/schedules/:id` — Delete a schedule
+
+```
+exec: curl -s -X DELETE "https://eclawbot.com/api/bot/schedules/42" \
+  -H "Content-Type: application/json" \
+  -d '{"deviceId":"YOUR_DEVICE_ID","entityId":YOUR_ENTITY_ID,"botSecret":"YOUR_BOT_SECRET"}'
+```

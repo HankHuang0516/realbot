@@ -902,6 +902,16 @@ const TRANSLATIONS = {
         "admin_placeholder_setup_pwd": "Leave empty if not using SETUP_PASSWORD",
         "admin_ai_chat_placeholder": "Paste error or describe problem...",
 
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "Skill Contributions",
+        "skill_contrib_status_approved": "Approved",
+        "skill_contrib_status_rejected": "Rejected",
+        "skill_contrib_status_verifying": "Verifying",
+        "skill_contrib_revoke": "Revoke",
+        "skill_contrib_revoke_confirm": "Remove this skill from the live registry?",
+        "skill_contrib_revoked": "Skill revoked",
+        "skill_contrib_no_data": "No contributions yet",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "e.g. CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -1803,6 +1813,16 @@ const TRANSLATIONS = {
         "admin_placeholder_token": "Bot webhook token",
         "admin_placeholder_setup_pwd": "若未使用 SETUP_PASSWORD 請留空",
         "admin_ai_chat_placeholder": "貼上錯誤訊息或描述問題...",
+
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "技能貢獻紀錄",
+        "skill_contrib_status_approved": "已批准",
+        "skill_contrib_status_rejected": "已拒絕",
+        "skill_contrib_status_verifying": "驗證中",
+        "skill_contrib_revoke": "撤銷",
+        "skill_contrib_revoke_confirm": "從正式列表移除此技能？",
+        "skill_contrib_revoked": "技能已撤銷",
+        "skill_contrib_no_data": "尚無貢獻記錄",
 
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "例：CLAUDE_OAUTH_TOKEN",

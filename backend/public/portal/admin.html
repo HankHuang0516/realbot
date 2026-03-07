@@ -809,6 +809,7 @@
         let bindingsData = null;
         let usersData = null;
         let botsData = null;
+        let contribData = null;
 
         async function init() {
             renderNav('admin');
@@ -840,16 +841,18 @@
 
         async function loadAll() {
             try {
-                const [stats, bindings, users, bots] = await Promise.all([
+                const [stats, bindings, users, bots, contribs] = await Promise.all([
                     apiCall('GET', '/api/admin/stats'),
                     apiCall('GET', '/api/admin/bindings'),
                     apiCall('GET', '/api/admin/users'),
-                    apiCall('GET', '/api/admin/bots')
+                    apiCall('GET', '/api/admin/bots'),
+                    apiCall('GET', '/api/skill-templates/contributions')
                 ]);
                 statsData = stats;
                 bindingsData = bindings;
                 usersData = users;
                 botsData = bots;
+                contribData = contribs;
                 render();
             } catch (e) {
                 document.getElementById('adminContent').innerHTML =
@@ -1060,7 +1063,55 @@
             }
             html += '</tbody></table></div></div>';
 
+            // Skill Contributions section
+            html += '<div class="section-card">';
+            html += '<h2>' + i18n.t('skill_contrib_tab') + '</h2>';
+            const contribs = (contribData && contribData.contributions) ? contribData.contributions : [];
+            if (contribs.length === 0) {
+                html += '<p style="color:var(--text-secondary)">' + i18n.t('skill_contrib_no_data') + '</p>';
+            } else {
+                html += '<table class="admin-table"><thead><tr>' +
+                    '<th>ID</th><th>Title</th><th>By</th><th>Status</th><th>GitHub</th><th>Date</th><th></th>' +
+                    '</tr></thead><tbody>';
+                contribs.forEach(function(c) {
+                    const statusIcon = c.status === 'approved' ? '✅' : c.status === 'rejected' ? '❌' : '⏳';
+                    const statusLabel = statusIcon + ' ' + i18n.t('skill_contrib_status_' + c.status, c.status);
+                    const ghInfo = c.verificationResult
+                        ? (c.verificationResult.githubStatus === 200
+                            ? ('★' + c.verificationResult.stars + ' ' + escapeHtml(c.verificationResult.description || '')).slice(0, 60)
+                            : 'GitHub ' + c.verificationResult.githubStatus)
+                        : (c.rejectedReason || '—');
+                    const dateStr = c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : '—';
+                    const byStr = escapeHtml((c.submittedBy && c.submittedBy.entityName) || ('entity_' + (c.submittedBy && c.submittedBy.entityId)));
+                    const revokeBtn = c.status === 'approved'
+                        ? '<button class="btn-sm btn-danger" onclick="revokeSkill(\'' + escapeHtml(c.id) + '\')">' + i18n.t('skill_contrib_revoke') + '</button>'
+                        : '';
+                    html += '<tr>' +
+                        '<td><code>' + escapeHtml(c.id) + '</code></td>' +
+                        '<td>' + escapeHtml(c.title) + '</td>' +
+                        '<td>' + byStr + '</td>' +
+                        '<td>' + statusLabel + '</td>' +
+                        '<td style="font-size:0.85em;color:var(--text-secondary)">' + escapeHtml(ghInfo) + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + revokeBtn + '</td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table>';
+            }
+            html += '</div>';
+
             content.innerHTML = html;
+        }
+
+        async function revokeSkill(skillId) {
+            if (!confirm(i18n.t('skill_contrib_revoke_confirm'))) return;
+            try {
+                await apiCall('DELETE', '/api/skill-templates/' + encodeURIComponent(skillId));
+                alert(i18n.t('skill_contrib_revoked'));
+                loadAll();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
         }
 
         function statCard(value, label, colorClass) {

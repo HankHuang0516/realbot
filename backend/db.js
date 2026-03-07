@@ -220,6 +220,28 @@ async function createTables() {
         `);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_channel_api_key ON channel_accounts(channel_api_key)`);
 
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS skill_contributions (
+                id SERIAL PRIMARY KEY,
+                pending_id TEXT NOT NULL UNIQUE,
+                skill_id TEXT NOT NULL,
+                label TEXT,
+                icon TEXT,
+                title TEXT NOT NULL,
+                url TEXT NOT NULL,
+                author TEXT,
+                required_vars JSONB DEFAULT '[]',
+                steps TEXT,
+                submitted_by JSONB NOT NULL,
+                submitted_at TIMESTAMPTZ DEFAULT NOW(),
+                status TEXT NOT NULL DEFAULT 'verifying',
+                verified_at TIMESTAMPTZ,
+                verification_result JSONB,
+                rejected_reason TEXT
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_skill_contrib_status ON skill_contributions(status)`);
+
         console.log('[DB] Database tables ready');
         client.release();
     } catch (err) {
@@ -1006,6 +1028,44 @@ async function clearChannelCallback(apiKey) {
     }
 }
 
+// --- Skill Contributions ---
+async function insertSkillContribution(entry) {
+    await pool.query(
+        `INSERT INTO skill_contributions
+         (pending_id, skill_id, label, icon, title, url, author, required_vars, steps, submitted_by, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'verifying')`,
+        [entry.pendingId, entry.id, entry.label, entry.icon, entry.title,
+         entry.url, entry.author, JSON.stringify(entry.requiredVars || []),
+         entry.steps, JSON.stringify(entry.submittedBy)]
+    );
+}
+
+async function updateSkillContribution(pendingId, updates) {
+    const sets = [];
+    const vals = [];
+    let i = 1;
+    if (updates.status)              { sets.push(`status=$${i++}`);              vals.push(updates.status); }
+    if (updates.verifiedAt)          { sets.push(`verified_at=$${i++}`);         vals.push(updates.verifiedAt); }
+    if (updates.verificationResult)  { sets.push(`verification_result=$${i++}`); vals.push(JSON.stringify(updates.verificationResult)); }
+    if (updates.rejectedReason)      { sets.push(`rejected_reason=$${i++}`);     vals.push(updates.rejectedReason); }
+    vals.push(pendingId);
+    await pool.query(`UPDATE skill_contributions SET ${sets.join(',')} WHERE pending_id=$${i}`, vals);
+}
+
+async function getSkillContributions() {
+    const result = await pool.query(
+        `SELECT * FROM skill_contributions ORDER BY submitted_at DESC`
+    );
+    return result.rows;
+}
+
+async function getApprovedSkillContributions() {
+    const result = await pool.query(
+        `SELECT * FROM skill_contributions WHERE status='approved' ORDER BY verified_at ASC`
+    );
+    return result.rows;
+}
+
 module.exports = {
     initDatabase,
     saveDeviceData,
@@ -1048,5 +1108,10 @@ module.exports = {
     getChannelAccountByDevice,
     deleteChannelAccount,
     updateChannelCallback,
-    clearChannelCallback
+    clearChannelCallback,
+    // Skill contributions
+    insertSkillContribution,
+    updateSkillContribution,
+    getSkillContributions,
+    getApprovedSkillContributions
 };

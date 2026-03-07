@@ -445,6 +445,9 @@ async function initPersistence() {
     buildPublicCodeIndex();
     await backfillPublicCodes();
 
+    // Load DB-approved skill contributions (supplements git-tracked skill-templates.json)
+    if (usePostgreSQL) loadApprovedContributions();
+
     persistenceReady = true;
     console.log(`[Persistence] Ready — ${Object.keys(devices).length} devices loaded`);
 }
@@ -660,14 +663,31 @@ const ruleTemplatesData = (() => {
     try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'data/rule-templates.json'), 'utf8')); }
     catch (_) { console.warn('[TEMPLATES] rule-templates.json not found, using []'); return []; }
 })();
-const pendingTemplatesPath = path.join(__dirname, 'data/skill-templates-pending.json');
-let pendingTemplatesData = (() => {
-    try { return JSON.parse(fs.readFileSync(pendingTemplatesPath, 'utf8')); }
-    catch (_) { return []; }
-})();
-
-function savePendingTemplates() {
-    fs.writeFileSync(pendingTemplatesPath, JSON.stringify(pendingTemplatesData, null, 2));
+// Load approved contributions from DB on startup and merge into in-memory list
+// (DB entries supplement the git-tracked JSON; safe to run async)
+async function loadApprovedContributions() {
+    try {
+        const rows = await db.getApprovedSkillContributions();
+        for (const row of rows) {
+            const alreadyInList = skillTemplatesData.some(t => t.id === row.skill_id);
+            if (!alreadyInList) {
+                skillTemplatesData.push({
+                    id: row.skill_id,
+                    label: row.label,
+                    icon: row.icon,
+                    title: row.title,
+                    url: row.url,
+                    author: row.author,
+                    updatedAt: row.verified_at ? row.verified_at.toISOString().slice(0, 10) : '',
+                    requiredVars: row.required_vars || [],
+                    steps: row.steps
+                });
+            }
+        }
+        if (process.env.DEBUG === 'true') console.log(`[SKILL] Loaded ${rows.length} approved contributions from DB`);
+    } catch (err) {
+        console.error('[SKILL] Failed to load approved contributions from DB:', err.message);
+    }
 }
 
 // GET /api/skill-templates - Community skill template registry (public)
@@ -687,21 +707,18 @@ app.get('/api/rule-templates', (req, res) => {
 
 /**
  * POST /api/skill-templates/contribute
- * Submit a new skill template for review.
- * Auth: deviceId + botSecret (any bound bot can contribute)
+ * Bot submits a new skill. Auto-verifies GitHub URL asynchronously.
+ * Auth: deviceId + botSecret + entityId
  * Body: { deviceId, botSecret, entityId, skill: { id, label, icon, title, url, author, requiredVars, steps } }
  */
-app.post('/api/skill-templates/contribute', (req, res) => {
+app.post('/api/skill-templates/contribute', async (req, res) => {
     const { deviceId, botSecret, entityId, skill } = req.body;
 
     if (!deviceId || !botSecret || !skill) {
         return res.status(400).json({ success: false, error: 'deviceId, botSecret, and skill required' });
     }
-
     const device = devices[deviceId];
-    if (!device) {
-        return res.status(404).json({ success: false, error: 'Device not found' });
-    }
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
 
     const eId = parseInt(entityId) || 0;
     const entity = device.entities[eId];
@@ -709,121 +726,128 @@ app.post('/api/skill-templates/contribute', (req, res) => {
         return res.status(403).json({ success: false, error: 'Invalid botSecret or entity not bound' });
     }
 
-    // Validate skill fields
     const { id, label, icon, title, url, author, requiredVars, steps } = skill;
     if (!id || !title || !url || !steps) {
         return res.status(400).json({ success: false, error: 'skill must include: id, title, url, steps' });
     }
 
-    // Check ID uniqueness (against approved + pending)
-    const existsApproved = skillTemplatesData.some(t => t.id === id);
-    const existsPending = pendingTemplatesData.some(t => t.id === id && t.status !== 'rejected');
-    if (existsApproved) {
-        return res.status(409).json({ success: false, error: `Skill id "${id}" already exists in approved templates` });
-    }
-    if (existsPending) {
-        return res.status(409).json({ success: false, error: `Skill id "${id}" is already pending review` });
+    // Duplicate ID check (against approved list)
+    if (skillTemplatesData.some(t => t.id === id)) {
+        serverLog('warn', 'skill_contribute', `Duplicate skill id rejected: ${id}`, { deviceId, entityId: eId });
+        return res.status(409).json({ success: false, error: `Skill id "${id}" already exists. Choose a different id.` });
     }
 
     const pendingId = crypto.randomUUID();
     const entry = {
-        pendingId,
-        id,
-        label: label || id,
-        icon: icon || '🔧',
-        title,
-        url,
-        author: author || entity.name || `entity_${eId}`,
-        requiredVars: requiredVars || [],
-        steps,
-        submittedBy: { deviceId, entityId: eId, entityName: entity.name || null },
-        submittedAt: new Date().toISOString(),
-        status: 'pending'
+        pendingId, id,
+        label: label || id, icon: icon || '🔧',
+        title, url, author: author || entity.name || `entity_${eId}`,
+        requiredVars: requiredVars || [], steps,
+        submittedBy: { deviceId, entityId: eId, entityName: entity.name || null }
     };
 
-    pendingTemplatesData.push(entry);
-    savePendingTemplates();
+    // Persist to DB immediately (status: verifying)
+    try {
+        await db.insertSkillContribution(entry);
+    } catch (dbErr) {
+        // Duplicate pendingId or DB error
+        console.error('[SKILL] Failed to insert contribution:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Failed to record contribution' });
+    }
+    serverLog('info', 'skill_contribute', `Skill contribution received: ${id} (verifying)`, { deviceId, entityId: eId, metadata: { skillId: id, pendingId } });
 
-    serverLog('info', 'skill_contribute', `New skill contribution pending: ${id}`, { deviceId, entityId: eId, metadata: { skillId: id, pendingId } });
-    if (process.env.DEBUG === 'true') console.log(`[SKILL] Skill "${id}" submitted for review, pendingId=${pendingId}`);
+    // Respond immediately — don't wait for GitHub check
+    res.json({ success: true, pendingId, message: `Skill "${title}" submitted. Auto-verifying GitHub URL...` });
 
-    res.json({ success: true, pendingId, message: `Skill "${title}" submitted for review. Pending approval.` });
+    // Async GitHub URL verification
+    setImmediate(async () => {
+        try {
+            const match = url.match(/github\.com\/([^/]+)\/([^/\s]+)/);
+            if (!match) {
+                await db.updateSkillContribution(pendingId, { status: 'rejected', rejectedReason: 'not_github_url' });
+                serverLog('warn', 'skill_contribute', `Skill ${id} rejected: not a GitHub URL`, { deviceId, entityId: eId });
+                return;
+            }
+            const [, owner, repo] = match;
+            const cleanRepo = repo.replace(/\/$/, '').replace(/\.git$/, '');
+            const ghResp = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}`, {
+                headers: { 'User-Agent': 'EclawBot/1.0' }
+            });
+
+            if (ghResp.status === 200) {
+                const ghData = await ghResp.json();
+                const approved = {
+                    id, label: entry.label, icon: entry.icon, title, url,
+                    author: entry.author,
+                    updatedAt: new Date().toISOString().slice(0, 10),
+                    requiredVars: entry.requiredVars, steps
+                };
+                skillTemplatesData.push(approved);
+                fs.writeFileSync(path.join(__dirname, 'data/skill-templates.json'), JSON.stringify(skillTemplatesData, null, 2));
+                await db.updateSkillContribution(pendingId, {
+                    status: 'approved',
+                    verifiedAt: new Date().toISOString(),
+                    verificationResult: { githubStatus: 200, stars: ghData.stargazers_count, description: ghData.description }
+                });
+                serverLog('info', 'skill_approve', `Skill auto-approved: ${id} (stars: ${ghData.stargazers_count})`, { deviceId, entityId: eId, metadata: { skillId: id } });
+                if (process.env.DEBUG === 'true') console.log(`[SKILL] Auto-approved: ${id}`);
+            } else {
+                await db.updateSkillContribution(pendingId, {
+                    status: 'rejected',
+                    rejectedReason: `github_${ghResp.status}`,
+                    verificationResult: { githubStatus: ghResp.status }
+                });
+                serverLog('warn', 'skill_contribute', `Skill ${id} rejected: GitHub returned ${ghResp.status}`, { deviceId, entityId: eId });
+            }
+        } catch (err) {
+            await db.updateSkillContribution(pendingId, { status: 'rejected', rejectedReason: `error: ${err.message}` });
+            console.error('[SKILL] Auto-verify error:', err.message);
+        }
+    });
 });
 
 /**
- * GET /api/skill-templates/pending
- * List all pending skill contributions (admin only).
+ * GET /api/skill-templates/contributions
+ * Admin: view full contribution history (all statuses).
  */
-app.get('/api/skill-templates/pending', (req, res) => {
-    if (!verifyAdmin(req)) {
-        return res.status(403).json({ success: false, error: 'Admin token required' });
+app.get('/api/skill-templates/contributions', async (req, res) => {
+    if (!verifyAdmin(req)) return res.status(403).json({ success: false, error: 'Admin token required' });
+    try {
+        const rows = await db.getSkillContributions();
+        const contributions = rows.map(r => ({
+            pendingId: r.pending_id,
+            id: r.skill_id,
+            title: r.title,
+            url: r.url,
+            author: r.author,
+            icon: r.icon,
+            submittedBy: r.submitted_by,
+            submittedAt: r.submitted_at,
+            status: r.status,
+            verifiedAt: r.verified_at,
+            verificationResult: r.verification_result,
+            rejectedReason: r.rejected_reason
+        }));
+        res.json({ success: true, count: contributions.length, contributions });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
-    const pending = pendingTemplatesData.filter(t => t.status === 'pending');
-    res.json({ success: true, count: pending.length, pending });
 });
 
 /**
- * POST /api/skill-templates/pending/:pendingId/approve
- * Approve a pending skill and add to the official registry (admin only).
+ * DELETE /api/skill-templates/:skillId
+ * Admin: revoke an approved skill from the live registry.
  */
-app.post('/api/skill-templates/pending/:pendingId/approve', (req, res) => {
-    if (!verifyAdmin(req)) {
-        return res.status(403).json({ success: false, error: 'Admin token required' });
-    }
-    const { pendingId } = req.params;
-    const entry = pendingTemplatesData.find(t => t.pendingId === pendingId);
-    if (!entry) {
-        return res.status(404).json({ success: false, error: 'Pending entry not found' });
-    }
-    if (entry.status !== 'pending') {
-        return res.status(409).json({ success: false, error: `Entry is already ${entry.status}` });
-    }
+app.delete('/api/skill-templates/:skillId', async (req, res) => {
+    if (!verifyAdmin(req)) return res.status(403).json({ success: false, error: 'Admin token required' });
+    const { skillId } = req.params;
+    const idx = skillTemplatesData.findIndex(t => t.id === skillId);
+    if (idx === -1) return res.status(404).json({ success: false, error: `Skill "${skillId}" not found in registry` });
 
-    // Build approved skill object
-    const approved = {
-        id: entry.id,
-        label: entry.label,
-        icon: entry.icon,
-        title: entry.title,
-        url: entry.url,
-        author: entry.author,
-        updatedAt: new Date().toISOString().slice(0, 10),
-        requiredVars: entry.requiredVars,
-        steps: entry.steps
-    };
-
-    skillTemplatesData.push(approved);
+    skillTemplatesData.splice(idx, 1);
     fs.writeFileSync(path.join(__dirname, 'data/skill-templates.json'), JSON.stringify(skillTemplatesData, null, 2));
-
-    entry.status = 'approved';
-    entry.approvedAt = new Date().toISOString();
-    savePendingTemplates();
-
-    serverLog('info', 'skill_approve', `Skill approved: ${entry.id}`, { metadata: { skillId: entry.id, pendingId } });
-    if (process.env.DEBUG === 'true') console.log(`[SKILL] Skill "${entry.id}" approved and added to registry`);
-
-    res.json({ success: true, message: `Skill "${entry.title}" approved and added to official registry`, skill: approved });
-});
-
-/**
- * DELETE /api/skill-templates/pending/:pendingId
- * Reject and remove a pending skill contribution (admin only).
- */
-app.delete('/api/skill-templates/pending/:pendingId', (req, res) => {
-    if (!verifyAdmin(req)) {
-        return res.status(403).json({ success: false, error: 'Admin token required' });
-    }
-    const { pendingId } = req.params;
-    const idx = pendingTemplatesData.findIndex(t => t.pendingId === pendingId);
-    if (idx === -1) {
-        return res.status(404).json({ success: false, error: 'Pending entry not found' });
-    }
-    const entry = pendingTemplatesData[idx];
-    entry.status = 'rejected';
-    savePendingTemplates();
-
-    serverLog('info', 'skill_reject', `Skill rejected: ${entry.id}`, { metadata: { skillId: entry.id, pendingId } });
-    res.json({ success: true, message: `Skill "${entry.title}" rejected` });
+    serverLog('info', 'skill_approve', `Skill revoked by admin: ${skillId}`, {});
+    res.json({ success: true, message: `Skill "${skillId}" removed from registry` });
 });
 
 // --- Free Bot TOS API ---
