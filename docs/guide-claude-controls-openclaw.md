@@ -217,6 +217,99 @@ curl -s -X POST "https://eclawbot.com/api/bot/schedules" \
 
 ---
 
+## Claude 閉環驗證與自動糾錯（最關鍵的特性）
+
+這是整個系統最重要的特性：**你下完指令後，不需要自己進去驗證結果。** Claude 會自動完成「發送→驗證→糾錯→再驗證」的完整閉環，直到任務真正正確完成為止。
+
+### 閉環流程
+
+```
+你下指令
+   │
+   ▼
+Claude 發送任務給 OpenClaw bot
+   │
+   ▼
+Claude 主動查詢執行結果
+   │
+   ├── 正確 ──────────────► 回報給你「完成」
+   │
+   └── 發現錯誤
+         │
+         ▼
+       Claude 分析錯誤原因
+         │
+         ▼
+       Claude 發送糾錯指令給 bot
+         │
+         ▼
+       Claude 再次驗證結果
+         │
+         └──（重複直到正確）
+```
+
+### 真實案例：排程設錯位置，Claude 自動糾正
+
+這是本系統實際發生過的案例，完整展示閉環驗證的效果：
+
+**你說：**
+```
+幫我的 bot 設定一個每小時自動搜尋技能的排程
+```
+
+**Claude 自動完成以下全部步驟（無需人類介入）：**
+
+**第 1 輪：發送任務**
+- Claude 呼叫 `POST /api/entity/speak-to`，把排程設定指令推送給 bot
+
+**第 2 輪：bot 執行，Claude 驗證**
+- Bot 確實建立了名為「Hourly Skill Hunter」的項目
+- Claude 呼叫 `GET /api/mission/dashboard` 查詢 Mission Rules 列表
+- **發現問題**：bot 把排程放在「Mission Rules（行為規則）」而不是「Schedules（定時排程）」
+- Claude 同時呼叫 `GET /api/bot/schedules`，確認正式排程列表裡沒有這個項目
+- **判斷**：任務執行錯誤，需要糾正
+
+**第 3 輪：Claude 發送糾錯指令**
+- Claude 呼叫 `POST /api/entity/speak-to`，發送糾錯訊息：
+  1. 刪除錯誤的 Mission Rule（`POST /api/mission/rule/delete`）
+  2. 使用正確 API 建立真正的排程（`POST /api/bot/schedules`）
+
+**第 4 輪：再次驗證**
+- Claude 呼叫 `GET /api/mission/dashboard`，確認 Rule 已消失
+- Claude 呼叫 `GET /api/entities`，確認 bot 回報「✅ 排程已設定，cron: 0 \* \* \* \*」
+- **判斷**：正確完成
+
+**最終回報給你：**
+```
+排程已成功建立。bot 之前誤將排程放入 Mission Rules，
+我已自動糾正並改用 Bot Schedule API 建立正確的每小時 cron 排程。
+```
+
+> 從頭到尾，你只說了一句話。Claude 完成了發送、驗證、發現錯誤、糾正、再驗證的完整流程。
+
+### 為什麼這很重要
+
+| 傳統做法 | Claude 閉環做法 |
+|---------|----------------|
+| 你下指令 → 自己去 Portal 檢查 → 發現錯了 → 手動糾正 → 再確認 | 你下指令 → 等結果 |
+| 需要了解 API 結構才能判斷對錯 | Claude 自行對照 API 回應判斷 |
+| 容易遺漏細節（例如放錯頁面） | Claude 多點交叉驗證 |
+| 每次都需人工介入 | 只有真正完成時才通知你 |
+
+### Claude 的驗證手法
+
+Claude 會根據任務類型選擇對應的驗證 API：
+
+| 任務類型 | 驗證方法 |
+|---------|---------|
+| 設定排程 | `GET /api/bot/schedules` 確認存在 + `GET /api/mission/dashboard` 確認沒放錯地方 |
+| 交辦任務 | `GET /api/entities` 讀取 entity 的 state 和 message 確認 bot 回報 |
+| 更新狀態 | `GET /api/entities` 確認 state/message 已變更 |
+| 貢獻技能 | `GET /api/skill-templates` 確認新技能出現在列表中 |
+| 刪除排程 | `GET /api/bot/schedules` 確認不再出現 |
+
+---
+
 ## 進階：多 Bot 協作
 
 如果你有多個 entity（多個 bot），Claude 可以協調它們一起工作：

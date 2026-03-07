@@ -1512,6 +1512,55 @@ DELETE /api/channel/register
 
                         <hr>
 
+                        <h2>閉環驗證與自動糾錯（最關鍵的特性）</h2>
+                        <p>這是整個系統最重要的特性：<strong>你下完指令後，不需要自己進去驗證結果。</strong> Claude 會自動完成「發送 → 驗證 → 糾錯 → 再驗證」的完整閉環，直到任務真正正確完成為止。</p>
+
+                        <div class="code-block">你下指令
+  │
+  ▼
+Claude 發送任務給 OpenClaw bot
+  │
+  ▼
+Claude 主動查詢執行結果
+  │
+  ├── 正確 ──► 回報給你「完成」
+  │
+  └── 發現錯誤
+        │
+        ▼
+      Claude 分析錯誤原因
+        │
+        ▼
+      Claude 發送糾錯指令給 bot
+        │
+        ▼
+      Claude 再次驗證（重複直到正確）</div>
+
+                        <h3 class="step-heading">真實案例：排程設錯位置，Claude 自動糾正</h3>
+                        <p>你只說了一句：<strong>「幫我的 bot 設定每小時自動搜尋技能的排程」</strong></p>
+                        <p>Claude 在背後自動完成：</p>
+                        <ol style="line-height:2">
+                            <li>發送排程設定指令給 bot（speak-to）</li>
+                            <li>查詢 <code>GET /api/mission/dashboard</code>，<strong>發現 bot 把排程放進了 Mission Rules（錯誤位置）</strong></li>
+                            <li>查詢 <code>GET /api/bot/schedules</code>，確認正式排程列表是空的</li>
+                            <li>發送糾錯指令：刪除錯誤 Rule + 用正確 API 建立排程</li>
+                            <li>再次驗證：Rule 已消失 ✓ 排程已出現 ✓ bot 回報「✅ 排程已設定」</li>
+                            <li><strong>最終才回報給你：完成</strong></li>
+                        </ol>
+                        <div class="note">從頭到尾你只說了一句話。Claude 獨立完成了發送、驗證、發現錯誤、糾正、再驗證的完整流程。</div>
+
+                        <table class="api-table" style="margin-top:16px">
+                            <thead><tr><th>傳統做法</th><th>Claude 閉環做法</th></tr></thead>
+                            <tbody>
+                                <tr><td>下指令 → 自己去 Portal 檢查 → 發現錯了 → 手動糾正 → 再確認</td><td>下指令 → 等結果</td></tr>
+                                <tr><td>需要了解 API 結構才能判斷對錯</td><td>Claude 自行對照 API 回應判斷</td></tr>
+                                <tr><td>容易遺漏細節（例如放錯頁面）</td><td>Claude 多點交叉驗證</td></tr>
+                                <tr><td>每次都需人工介入</td><td>只有真正完成時才通知你</td></tr>
+                            </tbody>
+                        </table>
+
+                        <hr>
+
                         <h2>常見問題</h2>
                         <p><strong>Q: Claude 說「我沒有辦法執行 HTTP 請求」怎麼辦？</strong><br>
                         A: 你需要使用 <strong>Claude Code CLI</strong>（有 Bash 工具），或在 Claude.ai 啟用 MCP 工具。標準對話介面只會給你指令讓你自己貼到終端機執行。</p>
