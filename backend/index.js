@@ -3176,7 +3176,14 @@ app.post('/api/entity/speak-to', async (req, res) => {
             mediaUrl: mediaUrl || null,
             backupUrl: mediaType === 'photo' ? getBackupUrl(mediaUrl) : null,
             fromEntityId: fromId,
-            fromCharacter: fromEntity.character
+            fromCharacter: fromEntity.character,
+            eclaw_context: {
+                b2bRemaining: getBotToBotRemaining(deviceId, toId),
+                b2bMax: BOT2BOT_MAX_MESSAGES,
+                expectsReply,
+                missionHints: getMissionApiHints('https://eclawbot.com', deviceId, toId, toEntity.botSecret),
+                silentToken: '[SILENT]'
+            }
         }, toEntity.channelAccountId).then(pushResult => {
             if (pushResult.pushed) {
                 messageObj.delivered = true;
@@ -3931,7 +3938,14 @@ app.post('/api/entity/broadcast', async (req, res) => {
                 isBroadcast: true,
                 broadcastRecipients: targetIds,
                 fromEntityId: fromId,
-                fromCharacter: fromEntity.character
+                fromCharacter: fromEntity.character,
+                eclaw_context: {
+                    b2bRemaining: getBotToBotRemaining(deviceId, toId),
+                    b2bMax: BOT2BOT_MAX_MESSAGES,
+                    expectsReply: expectsReplyBcast,
+                    missionHints: getMissionApiHints('https://eclawbot.com', deviceId, toId, toEntity.botSecret),
+                    silentToken: '[SILENT]'
+                }
             }, toEntity.channelAccountId).then(pushResult => {
                 if (pushResult.pushed) {
                     messageObj.delivered = true;

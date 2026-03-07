@@ -603,7 +603,8 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
                     broadcastRecipients: payload.broadcastRecipients || null,
                     fromEntityId: payload.fromEntityId,
                     fromCharacter: payload.fromCharacter,
-                    fromPublicCode: payload.fromPublicCode
+                    fromPublicCode: payload.fromPublicCode,
+                    eclaw_context: payload.eclaw_context || null
                 }),
                 signal: AbortSignal.timeout(10000)
             });
