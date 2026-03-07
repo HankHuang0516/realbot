@@ -439,6 +439,7 @@ Jika Anda memiliki pertanyaan, silakan hubungi kami melalui email resmi kami.
     <string name="ai_chat_no_internet">Tidak ada koneksi internet. Silakan periksa jaringan Anda.</string>
     <string name="ai_chat_connection_error">Kesalahan koneksi. Silakan coba lagi.</string>
     <string name="ai_chat_network_error">Kesalahan jaringan. Silakan coba lagi.</string>
+    <string name="ai_chat_image_unavailable">Fitur unggah gambar sementara tidak tersedia.</string>
 
     <!-- Message Activity -->
     <string name="activity_message_title">Chat with Entities</string>

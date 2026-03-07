@@ -148,7 +148,10 @@ class AiChatActivity : AppCompatActivity() {
         })
 
         btnSend.setOnClickListener { sendMessage() }
-        btnAttachImage.setOnClickListener { imagePickerLauncher.launch("image/*") }
+        btnAttachImage.alpha = 0.4f
+        btnAttachImage.setOnClickListener {
+            android.widget.Toast.makeText(this, R.string.ai_chat_image_unavailable, android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     // ── Image Handling ──────────────────────

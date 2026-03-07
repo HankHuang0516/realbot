@@ -439,6 +439,7 @@
     <string name="ai_chat_no_internet">ไม่มีการเชื่อมต่ออินเทอร์เน็ต กรุณาตรวจสอบเครือข่าย</string>
     <string name="ai_chat_connection_error">ข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่</string>
     <string name="ai_chat_network_error">ข้อผิดพลาดเครือข่าย กรุณาลองใหม่</string>
+    <string name="ai_chat_image_unavailable">การอัปโหลดรูปภาพไม่พร้อมใช้งานชั่วคราว</string>
 
     <!-- Message Activity -->
     <string name="activity_message_title">Chat with Entities</string>

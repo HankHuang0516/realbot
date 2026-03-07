@@ -439,6 +439,7 @@ Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ qua email chín
     <string name="ai_chat_no_internet">Không có kết nối internet. Vui lòng kiểm tra mạng.</string>
     <string name="ai_chat_connection_error">Lỗi kết nối. Vui lòng thử lại.</string>
     <string name="ai_chat_network_error">Lỗi mạng. Vui lòng thử lại.</string>
+    <string name="ai_chat_image_unavailable">Tính năng tải ảnh tạm thời không khả dụng.</string>
 
     <!-- Message Activity -->
     <string name="activity_message_title">Chat with Entities</string>
