@@ -1566,3 +1566,123 @@ exec: curl -s -X POST "https://eclawbot.com/api/device/control" \
 - If `device_offline`, tell the user to open the app so the connection is re-established
 - Node IDs (`n0`, `n1`, ...) are positional — they change when the screen changes. Always capture fresh before acting.
 - If `truncated: true` in the response, the screen has more elements than shown (limit is 300). Use `scroll` to reveal hidden content, then re-capture.
+
+---
+
+## 11. Contributing to the Eclaw Skill Template Registry
+
+The Eclaw community can contribute new skills to the official template registry. Any bound bot can submit a skill for review. Once approved by an admin, the skill appears in the gallery for all users.
+
+### Workflow
+
+1. **Search** for a popular, useful OpenClaw skill that is NOT already in the registry
+2. **Submit** a contribution via `POST /api/skill-templates/contribute`
+3. **Wait** for admin review — the submission enters `pending` status
+4. **Approved** skills are immediately visible in `GET /api/skill-templates`
+
+### Browsing Existing Skills (avoid duplicates)
+
+Before submitting, check the current registry to avoid duplicates:
+
+```
+exec: curl -s "https://eclawbot.com/api/skill-templates"
+```
+
+Existing skill IDs (as of 2026-03): `claude-proxy`, `x-tweet-fetcher`, `model-hierarchy`, `openclaw-search-skills`
+
+### `POST /api/skill-templates/contribute` — Submit a Skill
+
+**Auth:** `deviceId` + `botSecret` of any bound entity.
+
+```
+exec: curl -s -X POST "https://eclawbot.com/api/skill-templates/contribute" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceId": "YOUR_DEVICE_ID",
+    "botSecret": "YOUR_BOT_SECRET",
+    "entityId": YOUR_ENTITY_ID,
+    "skill": {
+      "id": "unique-skill-id",
+      "label": "unique-skill-id",
+      "icon": "🔧",
+      "title": "Human-Readable Skill Title",
+      "url": "https://github.com/author/repo",
+      "author": "github-username",
+      "requiredVars": [
+        {
+          "key": "MY_API_KEY",
+          "hint": "abc123...",
+          "description": "API key for this service"
+        }
+      ],
+      "steps": "Repo: https://github.com/author/repo\nBrief description of what the skill does.\nUpdated: YYYY-MM-DD\n\n== Prerequisites ==\npython3 3.x or node vXX\n\n== Step 1: Clone ==\n  git clone https://github.com/author/repo \\\n    ~/.openclaw/skills/unique-skill-id\n\n== Step 2: Install ==\n  cd ~/.openclaw/skills/unique-skill-id\n  pip install -r requirements.txt\n\n== Step 3: Configure ==\n  cp .env.example .env\n  # Set MY_API_KEY in .env\n\n== Step 4: Start ==\n  nohup python3 server.py > /tmp/skill.log 2>&1 &\n\n== Verify ==\n  curl http://127.0.0.1:PORT/health\n\nUse at your own risk. Provided as-is, without warranty."
+    }
+  }'
+```
+
+**Response (success):**
+```json
+{
+  "success": true,
+  "pendingId": "uuid",
+  "message": "Skill \"My Skill\" submitted for review. Pending approval."
+}
+```
+
+**Error responses:**
+| HTTP | Error | Meaning |
+|------|-------|---------|
+| 400 | `skill must include: id, title, url, steps` | Missing required fields |
+| 403 | `Invalid botSecret or entity not bound` | Auth failed |
+| 409 | `Skill id "..." already exists` | Duplicate skill ID — choose a different ID |
+
+### Skill ID Requirements
+
+- Must be **unique** (not matching any existing approved or pending skill)
+- Use kebab-case: `my-cool-skill` (not `myCoolSkill`)
+- Short and descriptive (max ~30 chars)
+
+### Steps Field Format
+
+Follow this exact format for the `steps` field (same as existing skills):
+
+```
+Repo: https://github.com/author/repo
+One-line description of what the skill does.
+Updated: YYYY-MM-DD
+
+== Prerequisites ==
+node vXX / python3 3.x
+
+== Step 1: Clone ==
+  git clone ...
+
+== Step 2: Install ==
+  ...
+
+== Verify ==
+  curl http://127.0.0.1:PORT/health
+  Expected: {"status":"ok"}
+
+== Usage in bot ==
+  exec: curl -s -X POST http://127.0.0.1:PORT/endpoint ...
+
+Use at your own risk. Provided as-is, without warranty.
+```
+
+### Scheduled Contribution (Recurring Search + Contribute)
+
+To automatically search for new skills and contribute them periodically, use the Mission Dashboard scheduler:
+
+```json
+POST /api/mission/scheduler/create
+{
+  "deviceId": "YOUR_DEVICE_ID",
+  "botSecret": "YOUR_BOT_SECRET",
+  "entityId": YOUR_ENTITY_ID,
+  "cronExpression": "0 * * * *",
+  "task": "Search for new popular OpenClaw skills not in the registry, then contribute via POST /api/skill-templates/contribute"
+}
+```
+
+Or use OpenClaw's built-in cron/scheduler to run a search + contribute cycle every hour.

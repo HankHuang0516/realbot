@@ -652,10 +652,160 @@ setTimeout(() => gatekeeper.loadBlockedDevices(), 3000);
 // --- Skill Templates API ---
 
 const skillTemplatesData = JSON.parse(fs.readFileSync(path.join(__dirname, 'data/skill-templates.json'), 'utf8'));
+const pendingTemplatesPath = path.join(__dirname, 'data/skill-templates-pending.json');
+let pendingTemplatesData = (() => {
+    try { return JSON.parse(fs.readFileSync(pendingTemplatesPath, 'utf8')); }
+    catch (_) { return []; }
+})();
+
+function savePendingTemplates() {
+    fs.writeFileSync(pendingTemplatesPath, JSON.stringify(pendingTemplatesData, null, 2));
+}
 
 // GET /api/skill-templates - Community skill template registry (public)
 app.get('/api/skill-templates', (req, res) => {
     res.json({ success: true, templates: skillTemplatesData });
+});
+
+/**
+ * POST /api/skill-templates/contribute
+ * Submit a new skill template for review.
+ * Auth: deviceId + botSecret (any bound bot can contribute)
+ * Body: { deviceId, botSecret, entityId, skill: { id, label, icon, title, url, author, requiredVars, steps } }
+ */
+app.post('/api/skill-templates/contribute', (req, res) => {
+    const { deviceId, botSecret, entityId, skill } = req.body;
+
+    if (!deviceId || !botSecret || !skill) {
+        return res.status(400).json({ success: false, error: 'deviceId, botSecret, and skill required' });
+    }
+
+    const device = devices[deviceId];
+    if (!device) {
+        return res.status(404).json({ success: false, error: 'Device not found' });
+    }
+
+    const eId = parseInt(entityId) || 0;
+    const entity = device.entities[eId];
+    if (!entity || !entity.isBound || entity.botSecret !== botSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid botSecret or entity not bound' });
+    }
+
+    // Validate skill fields
+    const { id, label, icon, title, url, author, requiredVars, steps } = skill;
+    if (!id || !title || !url || !steps) {
+        return res.status(400).json({ success: false, error: 'skill must include: id, title, url, steps' });
+    }
+
+    // Check ID uniqueness (against approved + pending)
+    const existsApproved = skillTemplatesData.some(t => t.id === id);
+    const existsPending = pendingTemplatesData.some(t => t.id === id && t.status !== 'rejected');
+    if (existsApproved) {
+        return res.status(409).json({ success: false, error: `Skill id "${id}" already exists in approved templates` });
+    }
+    if (existsPending) {
+        return res.status(409).json({ success: false, error: `Skill id "${id}" is already pending review` });
+    }
+
+    const pendingId = crypto.randomUUID();
+    const entry = {
+        pendingId,
+        id,
+        label: label || id,
+        icon: icon || '🔧',
+        title,
+        url,
+        author: author || entity.name || `entity_${eId}`,
+        requiredVars: requiredVars || [],
+        steps,
+        submittedBy: { deviceId, entityId: eId, entityName: entity.name || null },
+        submittedAt: new Date().toISOString(),
+        status: 'pending'
+    };
+
+    pendingTemplatesData.push(entry);
+    savePendingTemplates();
+
+    serverLog('info', 'skill_contribute', `New skill contribution pending: ${id}`, { deviceId, entityId: eId, metadata: { skillId: id, pendingId } });
+    if (process.env.DEBUG === 'true') console.log(`[SKILL] Skill "${id}" submitted for review, pendingId=${pendingId}`);
+
+    res.json({ success: true, pendingId, message: `Skill "${title}" submitted for review. Pending approval.` });
+});
+
+/**
+ * GET /api/skill-templates/pending
+ * List all pending skill contributions (admin only).
+ */
+app.get('/api/skill-templates/pending', (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Admin token required' });
+    }
+    const pending = pendingTemplatesData.filter(t => t.status === 'pending');
+    res.json({ success: true, count: pending.length, pending });
+});
+
+/**
+ * POST /api/skill-templates/pending/:pendingId/approve
+ * Approve a pending skill and add to the official registry (admin only).
+ */
+app.post('/api/skill-templates/pending/:pendingId/approve', (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Admin token required' });
+    }
+    const { pendingId } = req.params;
+    const entry = pendingTemplatesData.find(t => t.pendingId === pendingId);
+    if (!entry) {
+        return res.status(404).json({ success: false, error: 'Pending entry not found' });
+    }
+    if (entry.status !== 'pending') {
+        return res.status(409).json({ success: false, error: `Entry is already ${entry.status}` });
+    }
+
+    // Build approved skill object
+    const approved = {
+        id: entry.id,
+        label: entry.label,
+        icon: entry.icon,
+        title: entry.title,
+        url: entry.url,
+        author: entry.author,
+        updatedAt: new Date().toISOString().slice(0, 10),
+        requiredVars: entry.requiredVars,
+        steps: entry.steps
+    };
+
+    skillTemplatesData.push(approved);
+    fs.writeFileSync(path.join(__dirname, 'data/skill-templates.json'), JSON.stringify(skillTemplatesData, null, 2));
+
+    entry.status = 'approved';
+    entry.approvedAt = new Date().toISOString();
+    savePendingTemplates();
+
+    serverLog('info', 'skill_approve', `Skill approved: ${entry.id}`, { metadata: { skillId: entry.id, pendingId } });
+    if (process.env.DEBUG === 'true') console.log(`[SKILL] Skill "${entry.id}" approved and added to registry`);
+
+    res.json({ success: true, message: `Skill "${entry.title}" approved and added to official registry`, skill: approved });
+});
+
+/**
+ * DELETE /api/skill-templates/pending/:pendingId
+ * Reject and remove a pending skill contribution (admin only).
+ */
+app.delete('/api/skill-templates/pending/:pendingId', (req, res) => {
+    if (!verifyAdmin(req)) {
+        return res.status(403).json({ success: false, error: 'Admin token required' });
+    }
+    const { pendingId } = req.params;
+    const idx = pendingTemplatesData.findIndex(t => t.pendingId === pendingId);
+    if (idx === -1) {
+        return res.status(404).json({ success: false, error: 'Pending entry not found' });
+    }
+    const entry = pendingTemplatesData[idx];
+    entry.status = 'rejected';
+    savePendingTemplates();
+
+    serverLog('info', 'skill_reject', `Skill rejected: ${entry.id}`, { metadata: { skillId: entry.id, pendingId } });
+    res.json({ success: true, message: `Skill "${entry.title}" rejected` });
 });
 
 // --- Free Bot TOS API ---
