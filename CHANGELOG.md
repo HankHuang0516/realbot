@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/HankHuang0516/realbot/compare/v1.0.0...v1.1.0) (2026-03-07)
+
+
+### Features
+
+* **schedule:** add Enable/Disable toggle + fix missing i18n keys ([6c6a96c](https://github.com/HankHuang0516/realbot/commit/6c6a96c2fb8151b2bec5004c84d2f2bd40e36583))
+
 # 1.0.0 (2026-03-06)
 
 
