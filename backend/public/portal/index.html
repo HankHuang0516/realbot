@@ -447,6 +447,15 @@
             return null;
         }
 
+        function applyServerLanguage(data) {
+            if (data && data.user && data.user.language) {
+                const lang = data.user.language;
+                if (lang !== 'en' || localStorage.getItem('eclaw-language')) {
+                    localStorage.setItem('eclaw-language', lang);
+                }
+            }
+        }
+
         async function doLogin() {
             hideMsg('loginError');
             const email = document.getElementById('loginEmail').value.trim();
@@ -462,6 +471,7 @@
 
             try {
                 const data = await apiCall('POST', '/api/auth/login', { email, password });
+                applyServerLanguage(data);
                 window.location.href = 'dashboard.html';
             } catch (e) {
                 showMsg('loginError', e.message);
@@ -565,7 +575,8 @@
             btn.textContent = i18n.t('login_btn_logging_in');
 
             try {
-                await apiCall('POST', '/api/auth/device-login', { deviceId, deviceSecret });
+                const data = await apiCall('POST', '/api/auth/device-login', { deviceId, deviceSecret });
+                applyServerLanguage(data);
                 window.location.href = 'dashboard.html';
             } catch (e) {
                 showMsg('deviceError', e.message);
@@ -622,9 +633,10 @@
                     callback: async (resp) => {
                         if (resp.error) return showMsg('loginError', resp.error);
                         try {
-                            await apiCall('POST', '/api/auth/oauth/google', {
+                            const data = await apiCall('POST', '/api/auth/oauth/google', {
                                 accessToken: resp.access_token
                             });
+                            applyServerLanguage(data);
                             window.location.href = 'dashboard.html';
                         } catch (e) {
                             showMsg('loginError', e.message || 'Google login failed');
@@ -645,7 +657,8 @@
                 if (response.authResponse) {
                     apiCall('POST', '/api/auth/oauth/facebook', {
                         accessToken: response.authResponse.accessToken
-                    }).then(function () {
+                    }).then(function (data) {
+                        applyServerLanguage(data);
                         window.location.href = 'dashboard.html';
                     }).catch(function (e) {
                         showMsg('loginError', e.message || 'Facebook login failed');

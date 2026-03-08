@@ -9,6 +9,16 @@ async function checkAuth() {
         currentUser = data.user;
         window.currentUser = currentUser;
 
+        // Restore language preference from server if not set locally
+        if (currentUser.language && typeof i18n !== 'undefined') {
+            const local = localStorage.getItem('eclaw-language');
+            if (!local && currentUser.language !== 'en') {
+                localStorage.setItem('eclaw-language', currentUser.language);
+                i18n.lang = currentUser.language;
+                i18n.apply();
+            }
+        }
+
         // Update nav email
         const emailEl = document.getElementById('navEmail');
         if (emailEl) emailEl.textContent = currentUser.email;

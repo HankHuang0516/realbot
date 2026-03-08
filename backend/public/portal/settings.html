@@ -1371,6 +1371,8 @@
 
         function setLanguage(lang) {
             localStorage.setItem('eclaw-language', lang);
+            // Sync to server for cross-device persistence
+            apiCall('PATCH', '/api/auth/language', { language: lang }).catch(() => {});
             window.location.reload();
         }
 

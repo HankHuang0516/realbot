@@ -272,6 +272,9 @@ interface ClawApiService {
     @POST("api/auth/app-login")
     suspend fun appLogin(@Body body: Map<String, String>): AppLoginResponse
 
+    @PATCH("api/auth/language")
+    suspend fun updateLanguage(@Body body: Map<String, String>): ApiResponse
+
     // ============================================
     // NOTIFICATIONS
     // ============================================
@@ -592,6 +595,7 @@ data class BindEmailStatusResponse(
     val googleLinked: Boolean = false,
     val facebookLinked: Boolean = false,
     val displayName: String? = null,
+    val language: String? = null,
     val channelApiKey: String? = null,
     val channelApiSecret: String? = null,
     val error: String? = null
@@ -602,6 +606,7 @@ data class AppLoginResponse(
     val deviceId: String? = null,
     val deviceSecret: String? = null,
     val email: String? = null,
+    val language: String? = null,
     val error: String? = null
 )
 
