@@ -386,6 +386,7 @@ module.exports = function(devices, getOrCreateDevice) {
                     id: user.id,
                     email: user.email,
                     deviceId: user.device_id,
+                    language: user.language,
                     subscriptionStatus: user.subscription_status
                 };
             } else {
@@ -395,6 +396,7 @@ module.exports = function(devices, getOrCreateDevice) {
                     id: null,
                     email: null,
                     deviceId: deviceId,
+                    language: 'en',
                     subscriptionStatus: 'free'
                 };
             }
@@ -679,6 +681,54 @@ module.exports = function(devices, getOrCreateDevice) {
     });
 
     // ============================================
+    // PATCH /language (update user language preference)
+    // ============================================
+    router.patch('/language', async (req, res) => {
+        try {
+            const { language, deviceId, deviceSecret } = req.body;
+            const validLangs = ['en', 'zh', 'zh-CN', 'ja', 'ko', 'th', 'vi', 'id'];
+            if (!language || !validLangs.includes(language)) {
+                return res.status(400).json({ success: false, error: 'Invalid language' });
+            }
+
+            // Support both cookie auth and deviceId/deviceSecret auth (for Android)
+            let userId = null;
+            if (deviceId && deviceSecret) {
+                const device = devices[deviceId];
+                if (!device || device.deviceSecret !== deviceSecret) {
+                    return res.status(401).json({ success: false, error: 'Invalid device credentials' });
+                }
+                const result = await pool.query(
+                    'SELECT id FROM user_accounts WHERE device_id = $1',
+                    [deviceId]
+                );
+                if (result.rows.length > 0) userId = result.rows[0].id;
+            } else {
+                // Try cookie auth
+                try {
+                    const token = req.cookies?.eclaw_session;
+                    if (token) {
+                        const decoded = jwt.verify(token, JWT_SECRET);
+                        userId = decoded.userId;
+                    }
+                } catch (_) { /* ignore */ }
+            }
+
+            if (userId) {
+                await pool.query(
+                    'UPDATE user_accounts SET language = $1 WHERE id = $2',
+                    [language, userId]
+                );
+            }
+
+            res.json({ success: true, language });
+        } catch (error) {
+            console.error('[Auth] Update language error:', error);
+            res.status(500).json({ success: false, error: 'Failed to update language' });
+        }
+    });
+
+    // ============================================
     // POST /resend-verification (requires email)
     // ============================================
     router.post('/resend-verification', async (req, res) => {
@@ -854,12 +904,12 @@ module.exports = function(devices, getOrCreateDevice) {
             }
 
             const result = await pool.query(
-                'SELECT email, email_verified, google_id, facebook_id, display_name FROM user_accounts WHERE device_id = $1',
+                'SELECT email, email_verified, google_id, facebook_id, display_name, language FROM user_accounts WHERE device_id = $1',
                 [deviceId]
             );
 
             if (result.rows.length === 0) {
-                return res.json({ success: true, bound: false, email: null, emailVerified: false, googleLinked: false, facebookLinked: false, displayName: null });
+                return res.json({ success: true, bound: false, email: null, emailVerified: false, googleLinked: false, facebookLinked: false, displayName: null, language: null });
             }
 
             const user = result.rows[0];
@@ -886,6 +936,7 @@ module.exports = function(devices, getOrCreateDevice) {
                 googleLinked: !!user.google_id,
                 facebookLinked: !!user.facebook_id,
                 displayName: user.display_name || null,
+                language: user.language || 'en',
                 channelApiKey,
                 channelApiSecret
             });
@@ -959,7 +1010,8 @@ module.exports = function(devices, getOrCreateDevice) {
                 success: true,
                 deviceId: user.device_id,
                 deviceSecret: user.device_secret,
-                email: user.email
+                email: user.email,
+                language: user.language || 'en'
             });
         } catch (error) {
             console.error('[Auth] App-login error:', error);

@@ -355,6 +355,8 @@ class SettingsActivity : AppCompatActivity() {
                 val current = AppCompatDelegate.getApplicationLocales()
                 if (current.toLanguageTags() != localeList.toLanguageTags()) {
                     AppCompatDelegate.setApplicationLocales(localeList)
+                    // Sync language to server for cross-device persistence
+                    syncLanguageToServer(tag)
                 }
             }
         }
@@ -377,6 +379,29 @@ class SettingsActivity : AppCompatActivity() {
             tag.contains("vi") -> chipLangVi.isChecked = true
             tag.contains("in") || tag.contains("id") -> chipLangId.isChecked = true
             else -> chipLangEn.isChecked = true
+        }
+    }
+
+    private fun syncLanguageToServer(localeTag: String) {
+        val deviceId = DeviceManager.getDeviceId(this) ?: return
+        val deviceSecret = DeviceManager.getDeviceSecret(this) ?: return
+        // Map Android locale tags to server language codes
+        val serverLang = when (localeTag) {
+            "zh-TW" -> "zh"
+            "zh-CN" -> "zh-CN"
+            "in" -> "id"
+            else -> localeTag
+        }
+        lifecycleScope.launch {
+            try {
+                NetworkModule.api.updateLanguage(mapOf(
+                    "deviceId" to deviceId,
+                    "deviceSecret" to deviceSecret,
+                    "language" to serverLang
+                ))
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to sync language to server")
+            }
         }
     }
 
@@ -820,6 +845,18 @@ class SettingsActivity : AppCompatActivity() {
                     if (response.success && response.deviceId != null && response.deviceSecret != null) {
                         // Overwrite local credentials with recovered ones
                         deviceManager.setCredentials(response.deviceId, response.deviceSecret)
+                        // Restore language preference from server
+                        response.language?.let { lang ->
+                            val localeTag = when (lang) {
+                                "zh" -> "zh-TW"
+                                "zh-CN" -> "zh-CN"
+                                "id" -> "in"
+                                else -> lang
+                            }
+                            AppCompatDelegate.setApplicationLocales(
+                                LocaleListCompat.forLanguageTags(localeTag)
+                            )
+                        }
                         dialog.dismiss()
                         TelemetryHelper.trackAction("account_login_success")
 
