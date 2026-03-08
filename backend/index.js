@@ -872,6 +872,46 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
 });
 
 /**
+ * GET /api/skill-templates/status/:pendingId
+ * Bot: check the verification result of a previously submitted skill.
+ * Auth: deviceId + botSecret + entityId (query params)
+ * Returns: { status, skillId, rejectedReason, verificationResult }
+ */
+app.get('/api/skill-templates/status/:pendingId', async (req, res) => {
+    const { pendingId } = req.params;
+    const { deviceId, botSecret, entityId } = req.query;
+    if (!deviceId || !botSecret) return res.status(400).json({ success: false, error: 'deviceId and botSecret required' });
+
+    const device = devices[deviceId];
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    const eId = parseInt(entityId) || 0;
+    const entity = device.entities[eId];
+    if (!entity || !entity.isBound || entity.botSecret !== botSecret)
+        return res.status(403).json({ success: false, error: 'Invalid botSecret or entity not bound' });
+
+    try {
+        const row = await db.getSkillContributionByPendingId(pendingId);
+        if (!row) return res.status(404).json({ success: false, error: 'Contribution not found' });
+        if (row.submitted_by && row.submitted_by.deviceId !== deviceId)
+            return res.status(403).json({ success: false, error: 'Not your contribution' });
+
+        res.json({
+            success: true,
+            pendingId: row.pending_id,
+            skillId: row.skill_id,
+            status: row.status,
+            rejectedReason: row.rejected_reason || null,
+            verificationResult: row.verification_result || null,
+            submittedAt: row.submitted_at,
+            verifiedAt: row.verified_at || null
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
  * DELETE /api/skill-templates/:skillId
  * Admin: revoke an approved skill from the live registry.
  */

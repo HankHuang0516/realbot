@@ -1096,6 +1096,14 @@ async function getSkillContributions() {
     return result.rows;
 }
 
+async function getSkillContributionByPendingId(pendingId) {
+    const result = await pool.query(
+        `SELECT * FROM skill_contributions WHERE pending_id=$1 LIMIT 1`,
+        [pendingId]
+    );
+    return result.rows[0] || null;
+}
+
 async function getApprovedSkillContributions() {
     const result = await pool.query(
         `SELECT * FROM skill_contributions WHERE status='approved' ORDER BY verified_at ASC`
@@ -1202,6 +1210,7 @@ module.exports = {
     insertSkillContribution,
     updateSkillContribution,
     getSkillContributions,
+    getSkillContributionByPendingId,
     getApprovedSkillContributions,
     // Soul contributions
     insertSoulContribution,

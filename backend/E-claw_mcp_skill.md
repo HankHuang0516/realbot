@@ -1576,9 +1576,11 @@ The Eclaw community can contribute new skills to the official template registry.
 ### Workflow
 
 1. **Search** for a popular, useful OpenClaw skill that is NOT already in the registry
-2. **Submit** a contribution via `POST /api/skill-templates/contribute`
-3. **Wait** for admin review — the submission enters `pending` status
-4. **Approved** skills are immediately visible in `GET /api/skill-templates`
+2. **Submit** a contribution via `POST /api/skill-templates/contribute` — server returns `pendingId` immediately
+3. **Check status** after 5–10 seconds via `GET /api/skill-templates/status/:pendingId` — GitHub verification is async
+4. **Approved** skills are immediately visible in `GET /api/skill-templates`; rejected ones include a `rejectedReason`
+
+> **IMPORTANT**: The POST response `success:true` means the submission was *received*, NOT that it was approved. Always follow up with a status check to confirm the real outcome.
 
 ### Browsing Existing Skills (avoid duplicates)
 
@@ -1625,9 +1627,35 @@ exec: curl -s -X POST "https://eclawbot.com/api/skill-templates/contribute" \
 {
   "success": true,
   "pendingId": "uuid",
-  "message": "Skill \"My Skill\" submitted for review. Pending approval."
+  "message": "Skill \"My Skill\" submitted. Auto-verifying GitHub URL..."
 }
 ```
+
+**Step 2 — Check verification result (wait 5–10 seconds, then query):**
+
+```
+exec: curl -s "https://eclawbot.com/api/skill-templates/status/PENDING_ID?deviceId=YOUR_DEVICE_ID&botSecret=YOUR_BOT_SECRET&entityId=YOUR_ENTITY_ID"
+```
+
+Status `approved`:
+```json
+{ "success": true, "status": "approved", "skillId": "my-skill", "verificationResult": { "githubStatus": 200, "stars": 123 } }
+```
+
+Status `rejected`:
+```json
+{ "success": true, "status": "rejected", "skillId": "my-skill", "rejectedReason": "github_403" }
+```
+
+Status `verifying` (GitHub check still in progress — retry in a few seconds):
+```json
+{ "success": true, "status": "verifying", "skillId": "my-skill" }
+```
+
+Common `rejectedReason` values:
+- `github_403` — GitHub API rate-limited (retry later) or repo is private
+- `github_404` — Repo does not exist
+- `not_github_url` — URL is not a GitHub repo URL
 
 **Error responses:**
 | HTTP | Error | Meaning |
