@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "E-Claw",
+    "slug": "eclawbot",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "eclawbot",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.eclawbot.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "E-Claw needs camera access to send photos to your entities.",
+        "NSPhotoLibraryUsageDescription": "E-Claw needs photo library access to send images to your entities.",
+        "NSMicrophoneUsageDescription": "E-Claw needs microphone access to record voice messages.",
+        "NSPhotoLibraryAddUsageDescription": "E-Claw saves media files to your photo library."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.eclawbot.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#FF6B6B",
+          "sounds": []
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "E-Claw needs access to your photos to send images.",
+          "cameraPermission": "E-Claw needs camera access to take photos."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "E-Claw needs microphone access to record voice messages."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

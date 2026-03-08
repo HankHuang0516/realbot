@@ -1,0 +1,210 @@
+import React, { useState } from 'react';
+import { View, FlatList, StyleSheet, Alert } from 'react-native';
+import {
+  Text,
+  Card,
+  Avatar,
+  IconButton,
+  Button,
+  Dialog,
+  Portal,
+  TextInput,
+  useTheme,
+  Snackbar,
+  ActivityIndicator,
+} from 'react-native-paper';
+import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { useEntityStore, Entity } from '../store/entityStore';
+import { deviceApi } from '../services/api';
+import { useEntities } from '../hooks/useEntities';
+
+export default function EntityManagerScreen() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const navigation = useNavigation();
+  const { entities, removeEntity, updateEntity } = useEntityStore();
+  const { refetch } = useEntities();
+
+  const [renameVisible, setRenameVisible] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null);
+  const [newName, setNewName] = useState('');
+  const [snack, setSnack] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('settings.manage_entities'), headerShown: true });
+  }, [navigation, t]);
+
+  const handleRename = async () => {
+    if (!selectedEntity || !newName.trim()) return;
+    setIsLoading(true);
+    try {
+      await deviceApi.renameEntity(selectedEntity.entityId, newName.trim());
+      updateEntity(selectedEntity.entityId, { name: newName.trim() });
+      setRenameVisible(false);
+      setSnack(t('common.success'));
+    } catch {
+      setSnack(t('errors.server'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateAvatar = async (entity: Entity) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.5,
+      base64: true,
+      allowsEditing: true,
+      aspect: [1, 1],
+    });
+    if (!result.canceled && result.assets[0].base64) {
+      const base64 = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      try {
+        await deviceApi.updateAvatar(entity.entityId, base64);
+        updateEntity(entity.entityId, { avatarUrl: result.assets[0].uri });
+        setSnack(t('common.success'));
+      } catch {
+        setSnack(t('errors.server'));
+      }
+    }
+  };
+
+  const handleRemove = (entity: Entity) => {
+    Alert.alert(
+      t('entity.remove'),
+      t('entity.remove_confirm', { name: entity.name }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deviceApi.removeEntity(entity.entityId);
+              removeEntity(entity.entityId);
+              setSnack(t('home.unbind_success'));
+            } catch {
+              setSnack(t('errors.server'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const CHARACTER_ICONS = { LOBSTER: '🦞', PIG: '🐷' };
+  const CHARACTER_COLORS = { LOBSTER: '#FF6B6B', PIG: '#FFB3C6' };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['bottom']}>
+      <FlatList
+        data={entities}
+        keyExtractor={(item) => item.entityId}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <Card style={styles.card}>
+            <Card.Content style={styles.cardContent}>
+              {/* Avatar */}
+              <IconButton
+                icon="camera"
+                size={20}
+                style={styles.cameraIcon}
+                onPress={() => handleUpdateAvatar(item)}
+              />
+              {item.avatarUrl ? (
+                <Avatar.Image size={56} source={{ uri: item.avatarUrl }} />
+              ) : (
+                <Avatar.Text
+                  size={56}
+                  label={CHARACTER_ICONS[item.character]}
+                  style={{ backgroundColor: CHARACTER_COLORS[item.character] }}
+                />
+              )}
+
+              {/* Info */}
+              <View style={styles.info}>
+                <Text variant="titleMedium">{item.name}</Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {t(`entity.character_${item.character.toLowerCase()}`)} • Slot {item.entityIndex + 1}
+                </Text>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.actions}>
+                <IconButton
+                  icon="pencil"
+                  size={20}
+                  onPress={() => {
+                    setSelectedEntity(item);
+                    setNewName(item.name);
+                    setRenameVisible(true);
+                  }}
+                />
+                <IconButton
+                  icon="delete"
+                  size={20}
+                  iconColor={theme.colors.error}
+                  onPress={() => handleRemove(item)}
+                />
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              {t('home.no_entities')}
+            </Text>
+          </View>
+        }
+      />
+
+      {/* Rename Dialog */}
+      <Portal>
+        <Dialog visible={renameVisible} onDismiss={() => setRenameVisible(false)}>
+          <Dialog.Title>{t('entity.rename')}</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              mode="outlined"
+              label={t('entity.rename_placeholder')}
+              value={newName}
+              onChangeText={setNewName}
+              maxLength={30}
+              autoFocus
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRenameVisible(false)}>{t('common.cancel')}</Button>
+            <Button
+              mode="contained"
+              onPress={handleRename}
+              loading={isLoading}
+              disabled={!newName.trim() || isLoading}
+            >
+              {t('common.save')}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      <Snackbar visible={!!snack} onDismiss={() => setSnack('')} duration={2000}>
+        {snack}
+      </Snackbar>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  list: { padding: 16, gap: 12, paddingBottom: 40 },
+  card: { borderRadius: 16 },
+  cardContent: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cameraIcon: { position: 'absolute', top: 0, left: 0, zIndex: 1 },
+  info: { flex: 1, gap: 4 },
+  actions: { flexDirection: 'row' },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+});

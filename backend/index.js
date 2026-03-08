@@ -7822,29 +7822,34 @@ async function sendWebPush(deviceId, notif) {
 
 // FCM token registration endpoint
 app.post('/api/device/fcm-token', (req, res) => {
-    const { deviceId, deviceSecret, fcmToken } = req.body;
-    if (!deviceId || !deviceSecret || !fcmToken) {
-        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, fcmToken required' });
+    // Support both old format (fcmToken) and new format (token + platform)
+    const { deviceId, deviceSecret, fcmToken, token, platform } = req.body;
+    const resolvedToken = token || fcmToken;
+    const resolvedPlatform = platform || 'fcm';
+
+    if (!deviceId || !deviceSecret || !resolvedToken) {
+        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, and token (or fcmToken) required' });
     }
     const device = devices[deviceId];
     if (!device || device.deviceSecret !== deviceSecret) {
         return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
-    // Store in memory (persisted to DB via auto-save)
-    device.fcmToken = fcmToken;
+    if (resolvedPlatform === 'apns') {
+        // iOS APNs token
+        device.apnsToken = resolvedToken;
+        chatPool.query('ALTER TABLE devices ADD COLUMN IF NOT EXISTS apns_token TEXT').catch(() => {});
+        chatPool.query('UPDATE devices SET apns_token = $1 WHERE device_id = $2', [resolvedToken, deviceId]).catch(() => {});
+        if (process.env.DEBUG === 'true') console.log(`[PUSH] APNs token registered for device ${deviceId}`);
+    } else {
+        // Android FCM token (default)
+        device.fcmToken = resolvedToken;
+        chatPool.query('ALTER TABLE devices ADD COLUMN IF NOT EXISTS fcm_token TEXT').catch(() => {});
+        chatPool.query('UPDATE devices SET fcm_token = $1 WHERE device_id = $2', [resolvedToken, deviceId]).catch(() => {});
+        if (process.env.DEBUG === 'true') console.log(`[PUSH] FCM token registered for device ${deviceId}`);
+    }
 
-    // Also store in DB immediately
-    chatPool.query(
-        'ALTER TABLE devices ADD COLUMN IF NOT EXISTS fcm_token TEXT'
-    ).catch(() => {});
-    chatPool.query(
-        'UPDATE devices SET fcm_token = $1 WHERE device_id = $2',
-        [fcmToken, deviceId]
-    ).catch(() => {});
-
-    console.log(`[FCM] Token registered for device ${deviceId}`);
-    res.json({ success: true });
+    res.json({ success: true, platform: resolvedPlatform });
 });
 
 // Send FCM push notification (enabled when FIREBASE_SERVICE_ACCOUNT is set)
