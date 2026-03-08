@@ -1120,14 +1120,14 @@
             html += '</div>';
 
             // Skill Contributions section
-            html += '<div class="section-card">';
-            html += '<h2>' + i18n.t('skill_contrib_tab') + '</h2>';
             const contribs = (contribData && contribData.contributions) ? contribData.contributions : [];
+            html += '<div class="section-card">';
+            html += '<div class="section-title">' + i18n.t('skill_contrib_tab') + ' (' + contribs.length + ')</div>';
             if (contribs.length === 0) {
                 html += '<p style="color:var(--text-secondary)">' + i18n.t('skill_contrib_no_data') + '</p>';
             } else {
-                html += '<table class="admin-table"><thead><tr>' +
-                    '<th>ID</th><th>Title</th><th>By</th><th>Status</th><th>GitHub</th><th>Date</th><th></th>' +
+                html += '<div class="table-scroll"><table class="data-table"><thead><tr>' +
+                    '<th>ID</th><th>' + i18n.t('skill_contrib_col_title') + '</th><th>By</th><th>' + i18n.t('skill_contrib_col_status') + '</th><th>GitHub</th><th>Date</th><th></th>' +
                     '</tr></thead><tbody>';
                 contribs.forEach(function(c) {
                     const statusIcon = c.status === 'approved' ? '✅' : c.status === 'rejected' ? '❌' : '⏳';
@@ -1140,7 +1140,7 @@
                     const dateStr = c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : '—';
                     const byStr = escapeHtml((c.submittedBy && c.submittedBy.entityName) || ('entity_' + (c.submittedBy && c.submittedBy.entityId)));
                     const revokeBtn = c.status === 'approved'
-                        ? '<button class="btn-sm btn-danger" onclick="revokeSkill(\'' + escapeHtml(c.id) + '\')">' + i18n.t('skill_contrib_revoke') + '</button>'
+                        ? '<button class="btn btn-danger" onclick="revokeSkill(\'' + escapeHtml(c.id) + '\')">' + i18n.t('skill_contrib_revoke') + '</button>'
                         : '';
                     html += '<tr>' +
                         '<td><code>' + escapeHtml(c.id) + '</code></td>' +
@@ -1152,18 +1152,18 @@
                         '<td>' + revokeBtn + '</td>' +
                         '</tr>';
                 });
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
             }
             html += '</div>';
 
             // Soul Contributions section
-            html += '<div class="section-card">';
-            html += '<h2>' + i18n.t('soul_contrib_tab') + '</h2>';
             const soulContribs = (soulContribData && soulContribData.contributions) ? soulContribData.contributions : [];
+            html += '<div class="section-card">';
+            html += '<div class="section-title">' + i18n.t('soul_contrib_tab') + ' (' + soulContribs.length + ')</div>';
             if (soulContribs.length === 0) {
                 html += '<p style="color:var(--text-secondary)">' + i18n.t('soul_contrib_no_data') + '</p>';
             } else {
-                html += '<table class="admin-table"><thead><tr>' +
+                html += '<div class="table-scroll"><table class="data-table"><thead><tr>' +
                     '<th>ID</th><th>' + i18n.t('soul_contrib_col_name') + '</th>' +
                     '<th>' + i18n.t('soul_contrib_col_description') + '</th>' +
                     '<th>By</th><th>Date</th><th></th>' +
@@ -1172,7 +1172,7 @@
                     const descPreview = escapeHtml((c.description || '').slice(0, 120)) + (c.description && c.description.length > 120 ? '…' : '');
                     const byStr = escapeHtml((c.submittedBy && c.submittedBy.entityName) || ('entity_' + (c.submittedBy && c.submittedBy.entityId)));
                     const dateStr = c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : '—';
-                    const revokeBtn = '<button class="btn-sm btn-danger" onclick="revokeSoul(\'' + escapeHtml(c.id) + '\')">' + i18n.t('soul_contrib_revoke') + '</button>';
+                    const revokeBtn = '<button class="btn btn-danger" onclick="revokeSoul(\'' + escapeHtml(c.id) + '\')">' + i18n.t('soul_contrib_revoke') + '</button>';
                     html += '<tr>' +
                         '<td><code>' + escapeHtml(c.id) + '</code></td>' +
                         '<td>' + escapeHtml((c.icon || '') + ' ' + (c.name || c.label)) + '</td>' +
@@ -1182,18 +1182,18 @@
                         '<td>' + revokeBtn + '</td>' +
                         '</tr>';
                 });
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
             }
             html += '</div>';
 
             // Rule Contributions section
-            html += '<div class="section-card">';
-            html += '<h2>' + i18n.t('rule_contrib_tab') + '</h2>';
             const ruleContribs = (ruleContribData && ruleContribData.contributions) ? ruleContribData.contributions : [];
+            html += '<div class="section-card">';
+            html += '<div class="section-title">' + i18n.t('rule_contrib_tab') + ' (' + ruleContribs.length + ')</div>';
             if (ruleContribs.length === 0) {
                 html += '<p style="color:var(--text-secondary)">' + i18n.t('rule_contrib_no_data') + '</p>';
             } else {
-                html += '<table class="admin-table"><thead><tr>' +
+                html += '<div class="table-scroll"><table class="data-table"><thead><tr>' +
                     '<th>ID</th><th>' + i18n.t('rule_contrib_col_name') + '</th>' +
                     '<th>' + i18n.t('rule_contrib_col_type') + '</th>' +
                     '<th>' + i18n.t('rule_contrib_col_description') + '</th>' +
@@ -1203,7 +1203,7 @@
                     const descPreview = escapeHtml((c.description || '').slice(0, 120)) + (c.description && c.description.length > 120 ? '…' : '');
                     const byStr = escapeHtml((c.submittedBy && c.submittedBy.entityName) || ('entity_' + (c.submittedBy && c.submittedBy.entityId)));
                     const dateStr = c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : '—';
-                    const revokeBtn = '<button class="btn-sm btn-danger" onclick="revokeRule(\'' + escapeHtml(c.id) + '\')">' + i18n.t('rule_contrib_revoke') + '</button>';
+                    const revokeBtn = '<button class="btn btn-danger" onclick="revokeRule(\'' + escapeHtml(c.id) + '\')">' + i18n.t('rule_contrib_revoke') + '</button>';
                     html += '<tr>' +
                         '<td><code>' + escapeHtml(c.id) + '</code></td>' +
                         '<td>' + escapeHtml((c.icon || '') + ' ' + (c.name || c.label)) + '</td>' +
@@ -1214,7 +1214,7 @@
                         '<td>' + revokeBtn + '</td>' +
                         '</tr>';
                 });
-                html += '</tbody></table>';
+                html += '</tbody></table></div>';
             }
             html += '</div>';
 

@@ -918,6 +918,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "Skill Contributions",
+        "skill_contrib_col_title": "Title",
+        "skill_contrib_col_status": "Status",
         "skill_contrib_status_approved": "Approved",
         "skill_contrib_status_rejected": "Rejected",
         "skill_contrib_status_verifying": "Verifying",
@@ -1863,6 +1865,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "技能貢獻紀錄",
+        "skill_contrib_col_title": "標題",
+        "skill_contrib_col_status": "狀態",
         "skill_contrib_status_approved": "已批准",
         "skill_contrib_status_rejected": "已拒絕",
         "skill_contrib_status_verifying": "驗證中",
@@ -2618,6 +2622,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "技能贡献记录",
+        "skill_contrib_col_title": "标题",
+        "skill_contrib_col_status": "状态",
         "skill_contrib_status_approved": "已批准",
         "skill_contrib_status_rejected": "已拒绝",
         "skill_contrib_status_verifying": "验证中",
@@ -3367,6 +3373,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "スキルテンプレート投稿",
+        "skill_contrib_col_title": "タイトル",
+        "skill_contrib_col_status": "ステータス",
         "skill_contrib_status_approved": "承認済み",
         "skill_contrib_status_rejected": "却下",
         "skill_contrib_status_verifying": "確認中",
@@ -4116,6 +4124,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "스킬 기여 기록",
+        "skill_contrib_col_title": "제목",
+        "skill_contrib_col_status": "상태",
         "skill_contrib_status_approved": "승인됨",
         "skill_contrib_status_rejected": "거부됨",
         "skill_contrib_status_verifying": "확인 중",
@@ -4871,6 +4881,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "ประวัติ Skill Template",
+        "skill_contrib_col_title": "ชื่อ",
+        "skill_contrib_col_status": "สถานะ",
         "skill_contrib_status_approved": "อนุมัติแล้ว",
         "skill_contrib_status_rejected": "ปฏิเสธ",
         "skill_contrib_status_verifying": "กำลังตรวจสอบ",
@@ -5626,6 +5638,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "Đóng góp Skill",
+        "skill_contrib_col_title": "Tiêu đề",
+        "skill_contrib_col_status": "Trạng thái",
         "skill_contrib_status_approved": "Đã duyệt",
         "skill_contrib_status_rejected": "Từ chối",
         "skill_contrib_status_verifying": "Đang xác minh",
@@ -6381,6 +6395,8 @@ const TRANSLATIONS = {
 
         // Skill Contributions (admin.html)
         "skill_contrib_tab": "Kontribusi Skill",
+        "skill_contrib_col_title": "Judul",
+        "skill_contrib_col_status": "Status",
         "skill_contrib_status_approved": "Disetujui",
         "skill_contrib_status_rejected": "Ditolak",
         "skill_contrib_status_verifying": "Memverifikasi",
