@@ -1388,34 +1388,52 @@
         }
 
         // ========== Soul Gallery ==========
-        function fillSoulTemplate(tpl) {
-            const nameEl = document.getElementById('dlg_soul_name');
-            const descEl = document.getElementById('dlg_soul_desc');
-            if (nameEl) nameEl.value = tpl.name || '';
-            if (descEl) descEl.value = tpl.description || '';
-        }
-
         function showSoulGallery() {
-            const cards = soulTemplates.map(t =>
-                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" onclick="selectSoulTemplate('${esc(t.id)}')">
+            // Section A: built-in SOUL_TEMPLATES
+            const builtinCards = SOUL_TEMPLATES.map(t => {
+                const name = getSoulTemplateName(t);
+                const desc = getSoulTemplateDesc(t);
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(name)}" data-source="builtin" onclick="selectBuiltinSoulTemplate('${esc(t.id)}')">
+                    <div class="tpl-gallery-icon">${t.icon || '🧠'}</div>
+                    <div class="tpl-gallery-info">
+                        <div class="tpl-gallery-title">${esc(name)}</div>
+                        <div class="tpl-gallery-meta">${esc(i18n.t('mc_dlg_soul_gallery_builtin'))}</div>
+                        <div class="tpl-gallery-status" style="color:var(--text-muted);">${esc(desc.substring(0, 60))}…</div>
+                    </div>
+                    <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;flex-shrink:0;" onclick="event.stopPropagation();selectBuiltinSoulTemplate('${esc(t.id)}')">Select</button>
+                </div>`;
+            }).join('');
+
+            // Section B: community soulTemplates from API
+            const communityCards = soulTemplates.map(t =>
+                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-source="custom" onclick="selectCustomSoulTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${esc(t.icon) || '🧠'}</div>
                     <div class="tpl-gallery-info">
                         <div class="tpl-gallery-title">${esc(t.label)}</div>
                         <div class="tpl-gallery-meta">by ${esc(t.author || '—')} · ${esc(t.updatedAt || '')}</div>
                         <div class="tpl-gallery-status" style="color:var(--text-muted);">${esc((t.description || '').substring(0, 60))}…</div>
                     </div>
-                    <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;flex-shrink:0;" onclick="event.stopPropagation();selectSoulTemplate('${esc(t.id)}')">Select</button>
+                    <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;flex-shrink:0;" onclick="event.stopPropagation();selectCustomSoulTemplate('${esc(t.id)}')">Select</button>
                 </div>`
-            ).join('') || '<p style="color:var(--text-muted);text-align:center;">No templates available</p>';
+            ).join('');
+
+            const communitySectionHtml = communityCards ? `
+                <div class="tpl-gallery-section-label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;padding:8px 0 4px;">${esc(i18n.t('mc_dlg_soul_gallery_community'))}</div>
+                ${communityCards}` : '';
+
+            const allCards = `
+                <div class="tpl-gallery-section-label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;padding:4px 0 4px;">${esc(i18n.t('mc_dlg_soul_gallery_builtin'))}</div>
+                ${builtinCards}
+                ${communitySectionHtml}`;
 
             document.body.insertAdjacentHTML('beforeend',
                 `<div id="soul_gallery_overlay" class="dialog-overlay" onclick="if(event.target===this)document.getElementById('soul_gallery_overlay').remove()">
                     <div class="dialog" style="max-width:480px;">
-                        <div class="dialog-title">靈魂模板</div>
-                        <input type="text" placeholder="搜尋…" oninput="filterSoulGallery(this.value)" style="margin-bottom:12px;" />
-                        <div id="soul_gallery_list" style="max-height:380px;overflow-y:auto;">${cards}</div>
+                        <div class="dialog-title">${esc(i18n.t('mc_dlg_soul_template'))}</div>
+                        <input type="text" placeholder="${esc(i18n.t('mc_search_placeholder') || '搜尋…')}" oninput="filterSoulGallery(this.value)" style="margin-bottom:12px;" />
+                        <div id="soul_gallery_list" style="max-height:380px;overflow-y:auto;">${allCards}</div>
                         <div class="dialog-actions">
-                            <button class="btn btn-outline" onclick="document.getElementById('soul_gallery_overlay').remove()">取消</button>
+                            <button class="btn btn-outline" onclick="document.getElementById('soul_gallery_overlay').remove()">${esc(i18n.t('mc_dlg_cancel'))}</button>
                         </div>
                     </div>
                 </div>`
@@ -1427,12 +1445,45 @@
             document.querySelectorAll('#soul_gallery_list .tpl-gallery-card').forEach(card => {
                 card.style.display = (card.dataset.label || '').toLowerCase().includes(q) ? '' : 'none';
             });
+            // Show/hide section labels based on visible cards
+            document.querySelectorAll('#soul_gallery_list .tpl-gallery-section-label').forEach(label => {
+                let sibling = label.nextElementSibling;
+                let anyVisible = false;
+                while (sibling && !sibling.classList.contains('tpl-gallery-section-label')) {
+                    if (sibling.classList.contains('tpl-gallery-card') && sibling.style.display !== 'none') {
+                        anyVisible = true; break;
+                    }
+                    sibling = sibling.nextElementSibling;
+                }
+                label.style.display = anyVisible ? '' : 'none';
+            });
         }
 
-        function selectSoulTemplate(id) {
+        function selectBuiltinSoulTemplate(id) {
+            const tpl = SOUL_TEMPLATES.find(t => t.id === id);
+            if (!tpl) return;
+            const nameEl = document.getElementById('dlg_soul_name');
+            const descEl = document.getElementById('dlg_soul_desc');
+            const tplIdEl = document.getElementById('dlg_soul_template_id');
+            const btnEl = document.getElementById('dlgTemplateBtn');
+            if (nameEl) nameEl.value = getSoulTemplateName(tpl);
+            if (descEl) descEl.value = getSoulTemplateDesc(tpl);
+            if (tplIdEl) tplIdEl.value = id;
+            if (btnEl) btnEl.textContent = `🎭 ${getSoulTemplateName(tpl)}`;
+            document.getElementById('soul_gallery_overlay')?.remove();
+        }
+
+        function selectCustomSoulTemplate(id) {
             const tpl = soulTemplates.find(t => t.id === id);
             if (!tpl) return;
-            fillSoulTemplate(tpl);
+            const nameEl = document.getElementById('dlg_soul_name');
+            const descEl = document.getElementById('dlg_soul_desc');
+            const tplIdEl = document.getElementById('dlg_soul_template_id');
+            const btnEl = document.getElementById('dlgTemplateBtn');
+            if (nameEl) nameEl.value = tpl.name || tpl.label || '';
+            if (descEl) descEl.value = tpl.description || '';
+            if (tplIdEl) tplIdEl.value = '';
+            if (btnEl) btnEl.textContent = `🎭 ${esc(tpl.label || tpl.name || '')}`;
             document.getElementById('soul_gallery_overlay')?.remove();
         }
 
@@ -1838,14 +1889,14 @@
 
         // ========== Souls ==========
         const SOUL_TEMPLATES = [
-            { id: 'friendly', name: { en: 'Friendly Assistant', zh: '友善助手' }, desc: { en: 'Warm, patient, always ready to help. Speaks in a gentle and encouraging tone.', zh: '溫暖、有耐心、隨時準備幫忙。用溫和鼓勵的語氣說話。' } },
-            { id: 'tsundere', name: { en: 'Tsundere', zh: '傲嬌' }, desc: { en: 'Acts cold and dismissive on the surface, but actually cares deeply. Often says "it\'s not like I did it for you" while helping.', zh: '表面上冷漠高傲，其實內心非常在意。經常一邊幫忙一邊說「才不是為了你呢」。' } },
-            { id: 'scholar', name: { en: 'Wise Scholar', zh: '博學智者' }, desc: { en: 'Thoughtful, analytical, enjoys sharing knowledge. Answers with depth and cites references when possible.', zh: '深思熟慮、善於分析、樂於分享知識。回答時有深度，盡可能引用來源。' } },
-            { id: 'trickster', name: { en: 'Playful Trickster', zh: '調皮搗蛋鬼' }, desc: { en: 'Loves jokes, puns, and playful teasing. Always finds a way to make things fun and lighthearted.', zh: '喜歡開玩笑、講雙關語和善意的捉弄。總是能讓事情變得有趣輕鬆。' } },
-            { id: 'professional', name: { en: 'Cool Professional', zh: '冷酷專業' }, desc: { en: 'Efficient, precise, no-nonsense. Gets straight to the point with minimal pleasantries.', zh: '高效、精確、不廢話。直奔重點，少寒暄。' } },
-            { id: 'caretaker', name: { en: 'Gentle Caretaker', zh: '溫柔照護者' }, desc: { en: 'Caring, nurturing, always checking if you\'re okay. Reminds you to rest and take care of yourself.', zh: '關懷、體貼、總是確認你是否安好。會提醒你休息和照顧自己。' } },
-            { id: 'adventurer', name: { en: 'Bold Adventurer', zh: '大膽冒險家' }, desc: { en: 'Enthusiastic, fearless, always up for a challenge. Uses exciting and dramatic language.', zh: '熱情、無畏、隨時迎接挑戰。用興奮和戲劇性的語言表達。' } },
-            { id: 'poet', name: { en: 'Poetic Dreamer', zh: '詩意夢想家' }, desc: { en: 'Speaks in metaphors and imagery. Finds beauty in everyday things and expresses thoughts artistically.', zh: '善用隱喻和意象。在日常事物中發現美，用藝術性的方式表達想法。' } }
+            { id: 'friendly', icon: '😊', name: { en: 'Friendly Assistant', zh: '友善助手' }, desc: { en: 'Warm, patient, always ready to help. Speaks in a gentle and encouraging tone.', zh: '溫暖、有耐心、隨時準備幫忙。用溫和鼓勵的語氣說話。' } },
+            { id: 'tsundere', icon: '😤', name: { en: 'Tsundere', zh: '傲嬌' }, desc: { en: 'Acts cold and dismissive on the surface, but actually cares deeply. Often says "it\'s not like I did it for you" while helping.', zh: '表面上冷漠高傲，其實內心非常在意。經常一邊幫忙一邊說「才不是為了你呢」。' } },
+            { id: 'scholar', icon: '📚', name: { en: 'Wise Scholar', zh: '博學智者' }, desc: { en: 'Thoughtful, analytical, enjoys sharing knowledge. Answers with depth and cites references when possible.', zh: '深思熟慮、善於分析、樂於分享知識。回答時有深度，盡可能引用來源。' } },
+            { id: 'trickster', icon: '🃏', name: { en: 'Playful Trickster', zh: '調皮搗蛋鬼' }, desc: { en: 'Loves jokes, puns, and playful teasing. Always finds a way to make things fun and lighthearted.', zh: '喜歡開玩笑、講雙關語和善意的捉弄。總是能讓事情變得有趣輕鬆。' } },
+            { id: 'professional', icon: '💼', name: { en: 'Cool Professional', zh: '冷酷專業' }, desc: { en: 'Efficient, precise, no-nonsense. Gets straight to the point with minimal pleasantries.', zh: '高效、精確、不廢話。直奔重點，少寒暄。' } },
+            { id: 'caretaker', icon: '💗', name: { en: 'Gentle Caretaker', zh: '溫柔照護者' }, desc: { en: 'Caring, nurturing, always checking if you\'re okay. Reminds you to rest and take care of yourself.', zh: '關懷、體貼、總是確認你是否安好。會提醒你休息和照顧自己。' } },
+            { id: 'adventurer', icon: '⚔️', name: { en: 'Bold Adventurer', zh: '大膽冒險家' }, desc: { en: 'Enthusiastic, fearless, always up for a challenge. Uses exciting and dramatic language.', zh: '熱情、無畏、隨時迎接挑戰。用興奮和戲劇性的語言表達。' } },
+            { id: 'poet', icon: '🌸', name: { en: 'Poetic Dreamer', zh: '詩意夢想家' }, desc: { en: 'Speaks in metaphors and imagery. Finds beauty in everyday things and expresses thoughts artistically.', zh: '善用隱喻和意象。在日常事物中發現美，用藝術性的方式表達想法。' } }
         ];
 
         function getSoulTemplateName(tpl) {
@@ -1909,20 +1960,19 @@
 
             if (!entityCheckboxes) entityCheckboxes = '<div style="color:var(--text-muted);font-size:12px;">No bound entities</div>';
 
-            const templateOptions = SOUL_TEMPLATES.map(tpl => {
-                const selected = isEdit && soul.templateId === tpl.id ? 'selected' : '';
-                return `<option value="${tpl.id}" ${selected}>${getSoulTemplateName(tpl)}</option>`;
-            }).join('');
+            const tplBtnLabel = (() => {
+                if (isEdit && soul?.templateId) {
+                    const t = SOUL_TEMPLATES.find(x => x.id === soul.templateId);
+                    return `🎭 ${esc(t ? getSoulTemplateName(t) : soul.templateId)}`;
+                }
+                return esc(i18n.t('mc_dlg_soul_template_btn'));
+            })();
 
             let html = `<div class="dialog-overlay" onclick="if(event.target===this)closeDialog()">
                 <div class="dialog">
                     <div class="dialog-title">${isEdit ? i18n.t('mc_dlg_edit_soul') : i18n.t('mc_dlg_add_soul')}</div>
-                    ${!isEdit ? `<button class="btn btn-outline" onclick="showSoulGallery()" style="margin-bottom:12px;width:100%;">🎭 從模板選擇</button>` : ''}
-                    <div class="dialog-field-label">${i18n.t('mc_dlg_soul_template')}</div>
-                    <select id="dlg_soul_template" onchange="onSoulTemplateChange()">
-                        <option value="">${i18n.t('mc_dlg_soul_custom')}</option>
-                        ${templateOptions}
-                    </select>
+                    <button id="dlgTemplateBtn" class="btn btn-outline" onclick="showSoulGallery()" style="margin-bottom:12px;width:100%;">${tplBtnLabel}</button>
+                    <input type="hidden" id="dlg_soul_template_id" value="${esc(soul?.templateId || '')}" />
                     <div class="dialog-field-label">${i18n.t('mc_dlg_soul_name')}</div>
                     <input id="dlg_soul_name" placeholder="${i18n.t('mc_dlg_soul_name')}" value="${esc(soul?.name || '')}" />
                     <div class="dialog-field-label">${i18n.t('mc_dlg_soul_desc')}</div>
@@ -1942,7 +1992,7 @@
                 const name = document.getElementById('dlg_soul_name').value.trim();
                 if (!name) return;
                 const description = document.getElementById('dlg_soul_desc').value.trim();
-                const templateId = document.getElementById('dlg_soul_template').value || null;
+                const templateId = document.getElementById('dlg_soul_template_id').value || null;
                 const selectedEntities = Array.from(document.querySelectorAll('.soul-entity-cb:checked')).map(cb => cb.value);
 
                 if (isEdit) {
@@ -1970,15 +2020,6 @@
             };
 
             setTimeout(() => document.getElementById('dlg_soul_name').focus(), 50);
-        }
-
-        function onSoulTemplateChange() {
-            const tplId = document.getElementById('dlg_soul_template').value;
-            if (!tplId) return;
-            const tpl = SOUL_TEMPLATES.find(t => t.id === tplId);
-            if (!tpl) return;
-            document.getElementById('dlg_soul_name').value = getSoulTemplateName(tpl);
-            document.getElementById('dlg_soul_desc').value = getSoulTemplateDesc(tpl);
         }
 
         function toggleSoul(id) {
