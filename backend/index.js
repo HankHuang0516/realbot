@@ -833,8 +833,10 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
             }
             const [, owner, repo] = match;
             const cleanRepo = repo.replace(/\/$/, '').replace(/\.git$/, '');
+            const ghHeaders = { 'User-Agent': 'EclawBot/1.0' };
+            if (process.env.GITHUB_TOKEN) ghHeaders['Authorization'] = `Bearer ${process.env.GITHUB_TOKEN}`;
             const ghResp = await fetch(`https://api.github.com/repos/${owner}/${cleanRepo}`, {
-                headers: { 'User-Agent': 'EclawBot/1.0' }
+                headers: ghHeaders
             });
 
             if (ghResp.status === 200) {
