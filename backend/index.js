@@ -824,8 +824,7 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
  * GET /api/skill-templates/contributions
  * Admin: view full contribution history (all statuses).
  */
-app.get('/api/skill-templates/contributions', async (req, res) => {
-    if (!verifyAdmin(req)) return res.status(403).json({ success: false, error: 'Admin token required' });
+app.get('/api/skill-templates/contributions', adminAuth, adminCheck, async (req, res) => {
     try {
         const rows = await db.getSkillContributions();
         const contributions = rows.map(r => ({
