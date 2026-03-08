@@ -821,33 +821,6 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
 });
 
 /**
- * GET /api/skill-templates/contributions
- * Admin: view full contribution history (all statuses).
- */
-app.get('/api/skill-templates/contributions', adminAuth, adminCheck, async (req, res) => {
-    try {
-        const rows = await db.getSkillContributions();
-        const contributions = rows.map(r => ({
-            pendingId: r.pending_id,
-            id: r.skill_id,
-            title: r.title,
-            url: r.url,
-            author: r.author,
-            icon: r.icon,
-            submittedBy: r.submitted_by,
-            submittedAt: r.submitted_at,
-            status: r.status,
-            verifiedAt: r.verified_at,
-            verificationResult: r.verification_result,
-            rejectedReason: r.rejected_reason
-        }));
-        res.json({ success: true, count: contributions.length, contributions });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-/**
  * DELETE /api/skill-templates/:skillId
  * Admin: revoke an approved skill from the live registry.
  */
@@ -896,6 +869,33 @@ app.post('/api/free-bot-tos/agree', async (req, res) => {
 // ============================================
 const adminAuth = authModule.authMiddleware;
 const adminCheck = authModule.adminMiddleware;
+
+/**
+ * GET /api/skill-templates/contributions
+ * Admin: view full contribution history (all statuses).
+ */
+app.get('/api/skill-templates/contributions', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const rows = await db.getSkillContributions();
+        const contributions = rows.map(r => ({
+            pendingId: r.pending_id,
+            id: r.skill_id,
+            title: r.title,
+            url: r.url,
+            author: r.author,
+            icon: r.icon,
+            submittedBy: r.submitted_by,
+            submittedAt: r.submitted_at,
+            status: r.status,
+            verifiedAt: r.verified_at,
+            verificationResult: r.verification_result,
+            rejectedReason: r.rejected_reason
+        }));
+        res.json({ success: true, count: contributions.length, contributions });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
 
 // GET /api/admin/stats - Overview stats
 app.get('/api/admin/stats', adminAuth, adminCheck, async (req, res) => {
