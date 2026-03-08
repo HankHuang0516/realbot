@@ -926,6 +926,25 @@ const TRANSLATIONS = {
         "skill_contrib_revoked": "Skill revoked",
         "skill_contrib_no_data": "No contributions yet",
 
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "Soul Contributions",
+        "soul_contrib_no_data": "No soul contributions yet",
+        "soul_contrib_col_name": "Name",
+        "soul_contrib_col_description": "Description Preview",
+        "soul_contrib_revoke": "Revoke",
+        "soul_contrib_revoke_confirm": "Remove this soul from the live registry?",
+        "soul_contrib_revoked": "Soul revoked",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "Rule Contributions",
+        "rule_contrib_no_data": "No rule contributions yet",
+        "rule_contrib_col_name": "Name",
+        "rule_contrib_col_description": "Description Preview",
+        "rule_contrib_col_type": "Type",
+        "rule_contrib_revoke": "Revoke",
+        "rule_contrib_revoke_confirm": "Remove this rule from the live registry?",
+        "rule_contrib_revoked": "Rule revoked",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "e.g. CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -1852,6 +1871,25 @@ const TRANSLATIONS = {
         "skill_contrib_revoked": "技能已撤銷",
         "skill_contrib_no_data": "尚無貢獻記錄",
 
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "靈魂模板貢獻紀錄",
+        "soul_contrib_no_data": "尚無靈魂模板貢獻",
+        "soul_contrib_col_name": "名稱",
+        "soul_contrib_col_description": "描述預覽",
+        "soul_contrib_revoke": "撤銷",
+        "soul_contrib_revoke_confirm": "從正式列表移除此靈魂模板？",
+        "soul_contrib_revoked": "靈魂模板已撤銷",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "規則模板貢獻紀錄",
+        "rule_contrib_no_data": "尚無規則模板貢獻",
+        "rule_contrib_col_name": "名稱",
+        "rule_contrib_col_description": "描述預覽",
+        "rule_contrib_col_type": "類型",
+        "rule_contrib_revoke": "撤銷",
+        "rule_contrib_revoke_confirm": "從正式列表移除此規則模板？",
+        "rule_contrib_revoked": "規則模板已撤銷",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "例：CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -2578,6 +2616,35 @@ const TRANSLATIONS = {
         "admin_placeholder_setup_pwd": "如未使用 SETUP_PASSWORD 请留空",
         "admin_ai_chat_placeholder": "粘贴错误信息或描述问题...",
 
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "技能贡献记录",
+        "skill_contrib_status_approved": "已批准",
+        "skill_contrib_status_rejected": "已拒绝",
+        "skill_contrib_status_verifying": "验证中",
+        "skill_contrib_revoke": "撤销",
+        "skill_contrib_revoke_confirm": "从列表移除此技能？",
+        "skill_contrib_revoked": "已撤销",
+        "skill_contrib_no_data": "暂无贡献记录",
+
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "灵魂模板贡献记录",
+        "soul_contrib_no_data": "暂无灵魂模板贡献",
+        "soul_contrib_col_name": "名称",
+        "soul_contrib_col_description": "描述预览",
+        "soul_contrib_revoke": "撤销",
+        "soul_contrib_revoke_confirm": "从列表移除此灵魂模板？",
+        "soul_contrib_revoked": "已撤销",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "规则模板贡献记录",
+        "rule_contrib_no_data": "暂无规则模板贡献",
+        "rule_contrib_col_name": "名称",
+        "rule_contrib_col_description": "描述预览",
+        "rule_contrib_col_type": "类型",
+        "rule_contrib_revoke": "撤销",
+        "rule_contrib_revoke_confirm": "从列表移除此规则模板？",
+        "rule_contrib_revoked": "已撤销",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "例：CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -3298,6 +3365,35 @@ const TRANSLATIONS = {
         "admin_placeholder_setup_pwd": "SETUP_PASSWORD を使用しない場合は空白",
         "admin_ai_chat_placeholder": "エラーメッセージを貼り付けるか問題を説明...",
 
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "スキルテンプレート投稿",
+        "skill_contrib_status_approved": "承認済み",
+        "skill_contrib_status_rejected": "却下",
+        "skill_contrib_status_verifying": "確認中",
+        "skill_contrib_revoke": "取り消す",
+        "skill_contrib_revoke_confirm": "このスキルをリストから削除しますか？",
+        "skill_contrib_revoked": "スキルを取り消しました",
+        "skill_contrib_no_data": "まだ投稿がありません",
+
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "ソウルテンプレート投稿",
+        "soul_contrib_no_data": "まだソウル投稿がありません",
+        "soul_contrib_col_name": "名前",
+        "soul_contrib_col_description": "説明プレビュー",
+        "soul_contrib_revoke": "取り消す",
+        "soul_contrib_revoke_confirm": "このソウルをリストから削除しますか？",
+        "soul_contrib_revoked": "ソウルを取り消しました",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "ルールテンプレート投稿",
+        "rule_contrib_no_data": "まだルール投稿がありません",
+        "rule_contrib_col_name": "名前",
+        "rule_contrib_col_description": "説明プレビュー",
+        "rule_contrib_col_type": "タイプ",
+        "rule_contrib_revoke": "取り消す",
+        "rule_contrib_revoke_confirm": "このルールをリストから削除しますか？",
+        "rule_contrib_revoked": "ルールを取り消しました",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "例：CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -4017,6 +4113,35 @@ const TRANSLATIONS = {
         "admin_placeholder_token": "Bot webhook token",
         "admin_placeholder_setup_pwd": "SETUP_PASSWORD를 사용하지 않는 경우 비워두기",
         "admin_ai_chat_placeholder": "오류 메시지를 붙여넣거나 문제를 설명...",
+
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "스킬 기여 기록",
+        "skill_contrib_status_approved": "승인됨",
+        "skill_contrib_status_rejected": "거부됨",
+        "skill_contrib_status_verifying": "확인 중",
+        "skill_contrib_revoke": "취소",
+        "skill_contrib_revoke_confirm": "이 스킬을 목록에서 삭제하시겠습니까?",
+        "skill_contrib_revoked": "스킬이 취소되었습니다",
+        "skill_contrib_no_data": "아직 기여 없음",
+
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "소울 기여 기록",
+        "soul_contrib_no_data": "아직 소울 기여 없음",
+        "soul_contrib_col_name": "이름",
+        "soul_contrib_col_description": "설명 미리보기",
+        "soul_contrib_revoke": "취소",
+        "soul_contrib_revoke_confirm": "이 소울을 목록에서 삭제하시겠습니까?",
+        "soul_contrib_revoked": "소울이 취소되었습니다",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "규칙 기여 기록",
+        "rule_contrib_no_data": "아직 규칙 기여 없음",
+        "rule_contrib_col_name": "이름",
+        "rule_contrib_col_description": "설명 미리보기",
+        "rule_contrib_col_type": "유형",
+        "rule_contrib_revoke": "취소",
+        "rule_contrib_revoke_confirm": "이 규칙을 목록에서 삭제하시겠습니까?",
+        "rule_contrib_revoked": "규칙이 취소되었습니다",
 
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "예: CLAUDE_OAUTH_TOKEN",
@@ -4744,6 +4869,35 @@ const TRANSLATIONS = {
         "admin_placeholder_setup_pwd": "เว้นว่างหากไม่ใช้ SETUP_PASSWORD",
         "admin_ai_chat_placeholder": "วางข้อความผิดพลาดหรืออธิบายปัญหา...",
 
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "ประวัติ Skill Template",
+        "skill_contrib_status_approved": "อนุมัติแล้ว",
+        "skill_contrib_status_rejected": "ปฏิเสธ",
+        "skill_contrib_status_verifying": "กำลังตรวจสอบ",
+        "skill_contrib_revoke": "ยกเลิก",
+        "skill_contrib_revoke_confirm": "ลบสกิลนี้ออกจากรายการ?",
+        "skill_contrib_revoked": "ยกเลิกสกิลแล้ว",
+        "skill_contrib_no_data": "ยังไม่มีข้อมูล",
+
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "ประวัติ Soul Template",
+        "soul_contrib_no_data": "ยังไม่มี Soul ที่ส่ง",
+        "soul_contrib_col_name": "ชื่อ",
+        "soul_contrib_col_description": "ตัวอย่างคำอธิบาย",
+        "soul_contrib_revoke": "ยกเลิก",
+        "soul_contrib_revoke_confirm": "ลบ Soul นี้ออกจากรายการ?",
+        "soul_contrib_revoked": "ยกเลิก Soul แล้ว",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "ประวัติ Rule Template",
+        "rule_contrib_no_data": "ยังไม่มี Rule ที่ส่ง",
+        "rule_contrib_col_name": "ชื่อ",
+        "rule_contrib_col_description": "ตัวอย่างคำอธิบาย",
+        "rule_contrib_col_type": "ประเภท",
+        "rule_contrib_revoke": "ยกเลิก",
+        "rule_contrib_revoke_confirm": "ลบ Rule นี้ออกจากรายการ?",
+        "rule_contrib_revoked": "ยกเลิก Rule แล้ว",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "เช่น CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -5470,6 +5624,35 @@ const TRANSLATIONS = {
         "admin_placeholder_setup_pwd": "Để trống nếu không dùng SETUP_PASSWORD",
         "admin_ai_chat_placeholder": "Dán thông báo lỗi hoặc mô tả vấn đề...",
 
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "Đóng góp Skill",
+        "skill_contrib_status_approved": "Đã duyệt",
+        "skill_contrib_status_rejected": "Từ chối",
+        "skill_contrib_status_verifying": "Đang xác minh",
+        "skill_contrib_revoke": "Thu hồi",
+        "skill_contrib_revoke_confirm": "Xóa skill này khỏi danh sách?",
+        "skill_contrib_revoked": "Đã thu hồi skill",
+        "skill_contrib_no_data": "Chưa có đóng góp",
+
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "Đóng góp Soul",
+        "soul_contrib_no_data": "Chưa có đóng góp Soul",
+        "soul_contrib_col_name": "Tên",
+        "soul_contrib_col_description": "Xem trước mô tả",
+        "soul_contrib_revoke": "Thu hồi",
+        "soul_contrib_revoke_confirm": "Xóa soul này khỏi danh sách?",
+        "soul_contrib_revoked": "Đã thu hồi soul",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "Đóng góp Rule",
+        "rule_contrib_no_data": "Chưa có đóng góp Rule",
+        "rule_contrib_col_name": "Tên",
+        "rule_contrib_col_description": "Xem trước mô tả",
+        "rule_contrib_col_type": "Loại",
+        "rule_contrib_revoke": "Thu hồi",
+        "rule_contrib_revoke_confirm": "Xóa rule này khỏi danh sách?",
+        "rule_contrib_revoked": "Đã thu hồi rule",
+
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "VD: CLAUDE_OAUTH_TOKEN",
         "env_placeholder_value": "sk-ant-oat..."
@@ -6195,6 +6378,35 @@ const TRANSLATIONS = {
         "admin_placeholder_token": "Bot webhook token",
         "admin_placeholder_setup_pwd": "Kosongkan jika tidak menggunakan SETUP_PASSWORD",
         "admin_ai_chat_placeholder": "Tempel pesan kesalahan atau jelaskan masalah...",
+
+        // Skill Contributions (admin.html)
+        "skill_contrib_tab": "Kontribusi Skill",
+        "skill_contrib_status_approved": "Disetujui",
+        "skill_contrib_status_rejected": "Ditolak",
+        "skill_contrib_status_verifying": "Memverifikasi",
+        "skill_contrib_revoke": "Cabut",
+        "skill_contrib_revoke_confirm": "Hapus skill ini dari daftar?",
+        "skill_contrib_revoked": "Skill dicabut",
+        "skill_contrib_no_data": "Belum ada kontribusi",
+
+        // Soul Contributions (admin.html)
+        "soul_contrib_tab": "Kontribusi Soul",
+        "soul_contrib_no_data": "Belum ada kontribusi Soul",
+        "soul_contrib_col_name": "Nama",
+        "soul_contrib_col_description": "Pratinjau Deskripsi",
+        "soul_contrib_revoke": "Cabut",
+        "soul_contrib_revoke_confirm": "Hapus soul ini dari daftar?",
+        "soul_contrib_revoked": "Soul dicabut",
+
+        // Rule Contributions (admin.html)
+        "rule_contrib_tab": "Kontribusi Rule",
+        "rule_contrib_no_data": "Belum ada kontribusi Rule",
+        "rule_contrib_col_name": "Nama",
+        "rule_contrib_col_description": "Pratinjau Deskripsi",
+        "rule_contrib_col_type": "Tipe",
+        "rule_contrib_revoke": "Cabut",
+        "rule_contrib_revoke_confirm": "Hapus rule ini dari daftar?",
+        "rule_contrib_revoked": "Rule dicabut",
 
         // Env Vars placeholders (env-vars.html)
         "env_placeholder_key": "cth: CLAUDE_OAUTH_TOKEN",

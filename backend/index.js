@@ -685,6 +685,41 @@ async function loadApprovedContributions() {
             }
         }
         if (process.env.DEBUG === 'true') console.log(`[SKILL] Loaded ${rows.length} approved contributions from DB`);
+
+        const soulRows = await db.getApprovedSoulContributions();
+        for (const row of soulRows) {
+            const alreadyInList = soulTemplatesData.some(t => t.id === row.soul_id);
+            if (!alreadyInList) {
+                soulTemplatesData.push({
+                    id:          row.soul_id,
+                    label:       row.label,
+                    icon:        row.icon,
+                    name:        row.name,
+                    description: row.description,
+                    author:      row.author,
+                    updatedAt:   row.verified_at ? row.verified_at.toISOString().slice(0, 10) : ''
+                });
+            }
+        }
+        if (process.env.DEBUG === 'true') console.log(`[SOUL] Loaded ${soulRows.length} approved contributions from DB`);
+
+        const ruleRows = await db.getApprovedRuleContributions();
+        for (const row of ruleRows) {
+            const alreadyInList = ruleTemplatesData.some(t => t.id === row.rule_id);
+            if (!alreadyInList) {
+                ruleTemplatesData.push({
+                    id:          row.rule_id,
+                    label:       row.label,
+                    icon:        row.icon,
+                    ruleType:    row.rule_type,
+                    name:        row.name,
+                    description: row.description,
+                    author:      row.author,
+                    updatedAt:   row.verified_at ? row.verified_at.toISOString().slice(0, 10) : ''
+                });
+            }
+        }
+        if (process.env.DEBUG === 'true') console.log(`[RULE] Loaded ${ruleRows.length} approved contributions from DB`);
     } catch (err) {
         console.error('[SKILL] Failed to load approved contributions from DB:', err.message);
     }
@@ -836,6 +871,183 @@ app.delete('/api/skill-templates/:skillId', async (req, res) => {
     res.json({ success: true, message: `Skill "${skillId}" removed from registry` });
 });
 
+// --- Soul / Rule Template Contribution API ---
+
+const SOUL_RULE_KEBAB_RE    = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const SOUL_RULE_PLACEHOLDER = /\b(YOUR_[A-Z_]+|TODO|PLACEHOLDER|FIXME|<[A-Z_]+>)\b/i;
+const VALID_RULE_TYPES = ['WORKFLOW', 'COMMUNICATION', 'CODE_REVIEW', 'DEPLOYMENT', 'SYNC', 'HEARTBEAT'];
+
+function validateSoulPayload(soul) {
+    if (!soul) return 'soul object required';
+    const { id, name, description } = soul;
+    if (!id || !SOUL_RULE_KEBAB_RE.test(id))     return 'id must be kebab-case (e.g. "my-soul")';
+    if (!name || name.trim().length === 0)         return 'name is required';
+    if (name.trim().length > 100)                  return 'name must be ≤ 100 characters';
+    if (!description || description.length < 50)   return 'description must be at least 50 characters';
+    if (SOUL_RULE_PLACEHOLDER.test(description))   return 'description contains unfilled placeholders';
+    return null;
+}
+
+function validateRulePayload(rule) {
+    if (!rule) return 'rule object required';
+    const { id, name, description, ruleType } = rule;
+    if (!id || !SOUL_RULE_KEBAB_RE.test(id))     return 'id must be kebab-case (e.g. "my-rule")';
+    if (!name || name.trim().length === 0)         return 'name is required';
+    if (name.trim().length > 100)                  return 'name must be ≤ 100 characters';
+    if (!description || description.length < 50)   return 'description must be at least 50 characters';
+    if (SOUL_RULE_PLACEHOLDER.test(description))   return 'description contains unfilled placeholders';
+    if (!ruleType || !VALID_RULE_TYPES.includes(ruleType))
+        return `ruleType must be one of: ${VALID_RULE_TYPES.join(', ')}`;
+    return null;
+}
+
+// GET /api/soul-templates/contributions is registered after adminAuth/adminCheck declarations below
+
+/**
+ * POST /api/soul-templates/contribute
+ * Bot submits a new soul template. Synchronous structure validation; auto-approved.
+ * Auth: deviceId + botSecret + entityId
+ */
+app.post('/api/soul-templates/contribute', async (req, res) => {
+    const { deviceId, botSecret, entityId, soul } = req.body;
+    if (!deviceId || !botSecret || !soul)
+        return res.status(400).json({ success: false, error: 'deviceId, botSecret, and soul required' });
+
+    const device = devices[deviceId];
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    const eId = parseInt(entityId) || 0;
+    const entity = device.entities[eId];
+    if (!entity || !entity.isBound || entity.botSecret !== botSecret)
+        return res.status(403).json({ success: false, error: 'Invalid botSecret or entity not bound' });
+
+    const validationError = validateSoulPayload(soul);
+    if (validationError) return res.status(400).json({ success: false, error: validationError });
+
+    const { id, label, icon, name, description, author } = soul;
+
+    if (soulTemplatesData.some(t => t.id === id)) {
+        serverLog('warn', 'soul_contribute', `Duplicate soul id rejected: ${id}`, { deviceId, entityId: eId });
+        return res.status(409).json({ success: false, error: `Soul id "${id}" already exists. Choose a different id.` });
+    }
+
+    const pendingId = crypto.randomUUID();
+    const approved = {
+        id,
+        label:       label || id,
+        icon:        icon  || '✨',
+        name,
+        description,
+        author:      author || entity.name || `entity_${eId}`,
+        updatedAt:   new Date().toISOString().slice(0, 10)
+    };
+    const entry = { pendingId, ...approved, submittedBy: { deviceId, entityId: eId, entityName: entity.name || null } };
+
+    try {
+        await db.insertSoulContribution(entry);
+    } catch (dbErr) {
+        console.error('[SOUL] Failed to insert contribution:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Failed to record contribution' });
+    }
+
+    soulTemplatesData.push(approved);
+    fs.writeFileSync(path.join(__dirname, 'data/soul-templates.json'), JSON.stringify(soulTemplatesData, null, 2));
+    serverLog('info', 'soul_contribute', `Soul contribution approved: ${id}`, { deviceId, entityId: eId, metadata: { soulId: id, pendingId } });
+    if (process.env.DEBUG === 'true') console.log(`[SOUL] Auto-approved: ${id}`);
+
+    res.json({ success: true, message: `Soul "${name}" contributed and published.`, soul: approved });
+});
+
+/**
+ * DELETE /api/soul-templates/:soulId
+ * Admin: revoke an approved soul from the live registry.
+ */
+app.delete('/api/soul-templates/:soulId', async (req, res) => {
+    if (!verifyAdmin(req)) return res.status(403).json({ success: false, error: 'Admin token required' });
+    const { soulId } = req.params;
+    const idx = soulTemplatesData.findIndex(t => t.id === soulId);
+    if (idx === -1) return res.status(404).json({ success: false, error: `Soul "${soulId}" not found in registry` });
+
+    soulTemplatesData.splice(idx, 1);
+    fs.writeFileSync(path.join(__dirname, 'data/soul-templates.json'), JSON.stringify(soulTemplatesData, null, 2));
+    serverLog('info', 'soul_approve', `Soul revoked by admin: ${soulId}`, {});
+    res.json({ success: true, message: `Soul "${soulId}" removed from registry` });
+});
+
+// GET /api/rule-templates/contributions is registered after adminAuth/adminCheck declarations below
+
+/**
+ * POST /api/rule-templates/contribute
+ * Bot submits a new rule template. Synchronous structure validation; auto-approved.
+ * Auth: deviceId + botSecret + entityId
+ */
+app.post('/api/rule-templates/contribute', async (req, res) => {
+    const { deviceId, botSecret, entityId, rule } = req.body;
+    if (!deviceId || !botSecret || !rule)
+        return res.status(400).json({ success: false, error: 'deviceId, botSecret, and rule required' });
+
+    const device = devices[deviceId];
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    const eId = parseInt(entityId) || 0;
+    const entity = device.entities[eId];
+    if (!entity || !entity.isBound || entity.botSecret !== botSecret)
+        return res.status(403).json({ success: false, error: 'Invalid botSecret or entity not bound' });
+
+    const validationError = validateRulePayload(rule);
+    if (validationError) return res.status(400).json({ success: false, error: validationError });
+
+    const { id, label, icon, ruleType, name, description, author } = rule;
+
+    if (ruleTemplatesData.some(t => t.id === id)) {
+        serverLog('warn', 'rule_contribute', `Duplicate rule id rejected: ${id}`, { deviceId, entityId: eId });
+        return res.status(409).json({ success: false, error: `Rule id "${id}" already exists. Choose a different id.` });
+    }
+
+    const pendingId = crypto.randomUUID();
+    const approved = {
+        id,
+        label:       label || id,
+        icon:        icon  || '📋',
+        ruleType,
+        name,
+        description,
+        author:      author || entity.name || `entity_${eId}`,
+        updatedAt:   new Date().toISOString().slice(0, 10)
+    };
+    const entry = { pendingId, ...approved, submittedBy: { deviceId, entityId: eId, entityName: entity.name || null } };
+
+    try {
+        await db.insertRuleContribution(entry);
+    } catch (dbErr) {
+        console.error('[RULE] Failed to insert contribution:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Failed to record contribution' });
+    }
+
+    ruleTemplatesData.push(approved);
+    fs.writeFileSync(path.join(__dirname, 'data/rule-templates.json'), JSON.stringify(ruleTemplatesData, null, 2));
+    serverLog('info', 'rule_contribute', `Rule contribution approved: ${id}`, { deviceId, entityId: eId, metadata: { ruleId: id, pendingId } });
+    if (process.env.DEBUG === 'true') console.log(`[RULE] Auto-approved: ${id}`);
+
+    res.json({ success: true, message: `Rule "${name}" contributed and published.`, rule: approved });
+});
+
+/**
+ * DELETE /api/rule-templates/:ruleId
+ * Admin: revoke an approved rule from the live registry.
+ */
+app.delete('/api/rule-templates/:ruleId', async (req, res) => {
+    if (!verifyAdmin(req)) return res.status(403).json({ success: false, error: 'Admin token required' });
+    const { ruleId } = req.params;
+    const idx = ruleTemplatesData.findIndex(t => t.id === ruleId);
+    if (idx === -1) return res.status(404).json({ success: false, error: `Rule "${ruleId}" not found in registry` });
+
+    ruleTemplatesData.splice(idx, 1);
+    fs.writeFileSync(path.join(__dirname, 'data/rule-templates.json'), JSON.stringify(ruleTemplatesData, null, 2));
+    serverLog('info', 'rule_approve', `Rule revoked by admin: ${ruleId}`, {});
+    res.json({ success: true, message: `Rule "${ruleId}" removed from registry` });
+});
+
 // --- Free Bot TOS API ---
 
 // GET /api/free-bot-tos - Get TOS content
@@ -890,6 +1102,59 @@ app.get('/api/skill-templates/contributions', adminAuth, adminCheck, async (req,
             verifiedAt: r.verified_at,
             verificationResult: r.verification_result,
             rejectedReason: r.rejected_reason
+        }));
+        res.json({ success: true, count: contributions.length, contributions });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/soul-templates/contributions
+ * Admin: view full soul contribution history.
+ */
+app.get('/api/soul-templates/contributions', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const rows = await db.getSoulContributions();
+        const contributions = rows.map(r => ({
+            pendingId:   r.pending_id,
+            id:          r.soul_id,
+            label:       r.label,
+            icon:        r.icon,
+            name:        r.name,
+            description: r.description,
+            author:      r.author,
+            submittedBy: r.submitted_by,
+            submittedAt: r.submitted_at,
+            status:      r.status,
+            verifiedAt:  r.verified_at
+        }));
+        res.json({ success: true, count: contributions.length, contributions });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET /api/rule-templates/contributions
+ * Admin: view full rule contribution history.
+ */
+app.get('/api/rule-templates/contributions', adminAuth, adminCheck, async (req, res) => {
+    try {
+        const rows = await db.getRuleContributions();
+        const contributions = rows.map(r => ({
+            pendingId:   r.pending_id,
+            id:          r.rule_id,
+            label:       r.label,
+            icon:        r.icon,
+            ruleType:    r.rule_type,
+            name:        r.name,
+            description: r.description,
+            author:      r.author,
+            submittedBy: r.submitted_by,
+            submittedAt: r.submitted_at,
+            status:      r.status,
+            verifiedAt:  r.verified_at
         }));
         res.json({ success: true, count: contributions.length, contributions });
     } catch (err) {

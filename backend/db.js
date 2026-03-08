@@ -242,6 +242,43 @@ async function createTables() {
         `);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_skill_contrib_status ON skill_contributions(status)`);
 
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS soul_contributions (
+                id              SERIAL PRIMARY KEY,
+                pending_id      TEXT NOT NULL UNIQUE,
+                soul_id         TEXT NOT NULL,
+                label           TEXT,
+                icon            TEXT,
+                name            TEXT NOT NULL,
+                description     TEXT NOT NULL,
+                author          TEXT,
+                submitted_by    JSONB NOT NULL,
+                submitted_at    TIMESTAMPTZ DEFAULT NOW(),
+                status          TEXT NOT NULL DEFAULT 'approved',
+                verified_at     TIMESTAMPTZ
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_soul_contrib_status ON soul_contributions(status)`);
+
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS rule_contributions (
+                id              SERIAL PRIMARY KEY,
+                pending_id      TEXT NOT NULL UNIQUE,
+                rule_id         TEXT NOT NULL,
+                label           TEXT,
+                icon            TEXT,
+                rule_type       TEXT NOT NULL,
+                name            TEXT NOT NULL,
+                description     TEXT NOT NULL,
+                author          TEXT,
+                submitted_by    JSONB NOT NULL,
+                submitted_at    TIMESTAMPTZ DEFAULT NOW(),
+                status          TEXT NOT NULL DEFAULT 'approved',
+                verified_at     TIMESTAMPTZ
+            )
+        `);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_rule_contrib_status ON rule_contributions(status)`);
+
         console.log('[DB] Database tables ready');
         client.release();
     } catch (err) {
@@ -1066,6 +1103,58 @@ async function getApprovedSkillContributions() {
     return result.rows;
 }
 
+// --- Soul Contributions ---
+async function insertSoulContribution(entry) {
+    await pool.query(
+        `INSERT INTO soul_contributions
+         (pending_id, soul_id, label, icon, name, description, author, submitted_by, status, verified_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'approved',NOW())`,
+        [entry.pendingId, entry.id, entry.label, entry.icon,
+         entry.name, entry.description, entry.author,
+         JSON.stringify(entry.submittedBy)]
+    );
+}
+
+async function getSoulContributions() {
+    const result = await pool.query(
+        `SELECT * FROM soul_contributions ORDER BY submitted_at DESC`
+    );
+    return result.rows;
+}
+
+async function getApprovedSoulContributions() {
+    const result = await pool.query(
+        `SELECT * FROM soul_contributions WHERE status='approved' ORDER BY verified_at ASC`
+    );
+    return result.rows;
+}
+
+// --- Rule Contributions ---
+async function insertRuleContribution(entry) {
+    await pool.query(
+        `INSERT INTO rule_contributions
+         (pending_id, rule_id, label, icon, rule_type, name, description, author, submitted_by, status, verified_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'approved',NOW())`,
+        [entry.pendingId, entry.id, entry.label, entry.icon,
+         entry.ruleType, entry.name, entry.description, entry.author,
+         JSON.stringify(entry.submittedBy)]
+    );
+}
+
+async function getRuleContributions() {
+    const result = await pool.query(
+        `SELECT * FROM rule_contributions ORDER BY submitted_at DESC`
+    );
+    return result.rows;
+}
+
+async function getApprovedRuleContributions() {
+    const result = await pool.query(
+        `SELECT * FROM rule_contributions WHERE status='approved' ORDER BY verified_at ASC`
+    );
+    return result.rows;
+}
+
 module.exports = {
     initDatabase,
     saveDeviceData,
@@ -1113,5 +1202,13 @@ module.exports = {
     insertSkillContribution,
     updateSkillContribution,
     getSkillContributions,
-    getApprovedSkillContributions
+    getApprovedSkillContributions,
+    // Soul contributions
+    insertSoulContribution,
+    getSoulContributions,
+    getApprovedSoulContributions,
+    // Rule contributions
+    insertRuleContribution,
+    getRuleContributions,
+    getApprovedRuleContributions
 };

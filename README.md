@@ -166,107 +166,108 @@ Issues and pull requests are welcome!
 
 ### Contributing a Skill Template
 
-Skill templates appear in Mission Control's **Add Skill** dialog. Anyone can contribute a new template by editing [`backend/data/skill-templates.json`](backend/data/skill-templates.json) and opening a PR.
+Skill templates appear in Mission Control's **Add Skill** dialog. Anyone can contribute via the **API** — no PR or fork needed.
 
-#### Template Schema
+**Endpoint**: `POST https://eclawbot.com/api/skill-templates/contribute`
 
+**Auth**: Requires a bound entity (`deviceId` + `botSecret` + `entityId`)
+
+**Request body**:
 ```json
 {
-  "id": "unique-slug",
-  "label": "display name",
-  "icon": "🔧",
-  "title": "Skill title (pre-filled in dialog)",
-  "url": "https://github.com/your/repo",
-  "author": "Your GitHub username",
-  "updatedAt": "YYYY-MM-DD",
-  "requiredVars": [
-    {
-      "key": "MY_API_KEY",
-      "hint": "sk-...",
-      "description": "Get it from https://example.com/settings/api"
-    }
-  ],
-  "steps": "Plain-text installation steps shown to the user.\n\n== Step 1 ==\n..."
+  "deviceId": "YOUR_DEVICE_ID",
+  "botSecret": "YOUR_BOT_SECRET",
+  "entityId": 0,
+  "skill": {
+    "id": "my-skill",
+    "label": "My Skill",
+    "icon": "🔧",
+    "title": "My Skill Title",
+    "url": "https://github.com/yourname/yourrepo",
+    "author": "yourname",
+    "requiredVars": [],
+    "steps": "== Step 1 ==\nexec: curl -s ..."
+  }
 }
 ```
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `id` | Yes | URL-safe unique slug (e.g. `my-skill`) |
-| `label` | Yes | Short display name for the template chip |
-| `icon` | No | Emoji icon shown on the chip |
-| `title` | Yes | Pre-filled skill title in the dialog |
-| `url` | No | Link to the skill's source repo |
-| `author` | Yes | Your name or GitHub handle |
-| `updatedAt` | Yes | Date of last update (`YYYY-MM-DD`) |
-| `requiredVars` | No | List of env vars the skill needs. Users are prompted to enter these when they apply the template. |
-| `steps` | No | Plain-text setup instructions shown in the skill dialog |
+The server auto-verifies the GitHub URL and publishes the template immediately upon HTTP 200.
 
-#### `requiredVars` Format
-
-Each entry in `requiredVars` prompts the user for a value that is saved to their device's **Environment Variables** (encrypted, per-device):
-
-```json
-{
-  "key": "CLAUDE_CODE_OAUTH_TOKEN",
-  "hint": "sk-ant-oat01-...",
-  "description": "Claude CLI OAuth token — get it from claude.ai/settings/api"
-}
-```
-
-#### Example PR Checklist
-
-- [ ] `id` is unique across all existing templates
-- [ ] `steps` are written in English
-- [ ] `requiredVars[].description` includes a URL where users can obtain the value
-- [ ] `updatedAt` is set to today's date
-- [ ] Template has been tested locally
+**Validation rules**:
+- `id`: URL-safe unique slug (e.g. `my-skill`)
+- `title`: required
+- `url`: required, must be a valid GitHub repo URL returning HTTP 200
+- `steps`: minimum 50 characters, must contain step numbers or `exec:` commands, no unfilled placeholders (`YOUR_XXX`, `TODO`, `<TAG>`)
 
 ---
 
 ### Contributing Soul Templates
 
-Community members can contribute soul (personality) templates for others to use.
+Community members can contribute soul (personality) templates for others to use. No PR or fork needed — submit via the API.
 
-1. Fork this repository
-2. Edit `backend/data/soul-templates.json` — add one object to the array
-3. Required fields:
+**Endpoint**: `POST https://eclawbot.com/api/soul-templates/contribute`
 
-   | Field | Type | Description |
-   |-------|------|-------------|
-   | `id` | string | Unique kebab-case identifier |
-   | `label` | string | Display name shown in the gallery |
-   | `icon` | string | Single emoji |
-   | `name` | string | Pre-filled name for the soul |
-   | `description` | string | Personality description (**must be in English**) |
-   | `author` | string | Your GitHub username |
-   | `updatedAt` | string | Format: `YYYY-MM-DD` |
+**Auth**: Requires a bound entity (`deviceId` + `botSecret` + `entityId`)
 
-4. Additional fields are allowed (e.g., `personality`, `examplePhrases`)
-5. Open a Pull Request
+**Request body**:
+```json
+{
+  "deviceId": "YOUR_DEVICE_ID",
+  "botSecret": "YOUR_BOT_SECRET",
+  "entityId": 0,
+  "soul": {
+    "id": "zen-master",
+    "label": "Zen Master",
+    "icon": "🧘",
+    "name": "Zen Master",
+    "description": "Speaks in calm, measured tones. Offers perspective through stillness and brevity. Avoids reactive language and encourages reflection before action.",
+    "author": "yourname"
+  }
+}
+```
+
+Passes validation → **auto-approved and published immediately**.
+
+**Validation rules**:
+- `id`: kebab-case only (e.g. `my-soul`, pattern `/^[a-z0-9]+(-[a-z0-9]+)*$/`)
+- `name`: 1–100 characters, required
+- `description`: minimum 50 characters, **must be in English**, no unfilled placeholders (`YOUR_XXX`, `TODO`, `<TAG>`)
 
 ---
 
 ### Contributing Rule Templates
 
-Community members can contribute rule templates for common workflows and communication patterns.
+Community members can contribute rule templates for common workflows and communication patterns. No PR or fork needed — submit via the API.
 
-1. Fork this repository
-2. Edit `backend/data/rule-templates.json` — add one object to the array
-3. Required fields:
+**Endpoint**: `POST https://eclawbot.com/api/rule-templates/contribute`
 
-   | Field | Type | Description |
-   |-------|------|-------------|
-   | `id` | string | Unique kebab-case identifier |
-   | `label` | string | Display name shown in the gallery |
-   | `icon` | string | Single emoji |
-   | `ruleType` | string | One of: `WORKFLOW`, `COMMUNICATION`, `CODE_REVIEW`, `DEPLOYMENT`, `SYNC`, `HEARTBEAT` |
-   | `name` | string | Pre-filled rule name |
-   | `description` | string | Rule content, supports Markdown (**must be in English**) |
-   | `author` | string | Your GitHub username |
-   | `updatedAt` | string | Format: `YYYY-MM-DD` |
+**Auth**: Requires a bound entity (`deviceId` + `botSecret` + `entityId`)
 
-4. Open a Pull Request
+**Request body**:
+```json
+{
+  "deviceId": "YOUR_DEVICE_ID",
+  "botSecret": "YOUR_BOT_SECRET",
+  "entityId": 0,
+  "rule": {
+    "id": "always-cite-sources",
+    "label": "Always Cite Sources",
+    "icon": "📚",
+    "ruleType": "COMMUNICATION",
+    "name": "Always Cite Sources",
+    "description": "When providing factual claims, always include a citation or mention where the information comes from. If uncertain, explicitly state the uncertainty rather than presenting as fact.",
+    "author": "yourname"
+  }
+}
+```
+
+Passes validation → **auto-approved and published immediately**.
+
+**Validation rules**:
+- `id`: kebab-case only (e.g. `my-rule`, pattern `/^[a-z0-9]+(-[a-z0-9]+)*$/`)
+- `name`: 1–100 characters, required
+- `description`: minimum 50 characters, **must be in English**, no unfilled placeholders
+- `ruleType`: must be one of `WORKFLOW` | `COMMUNICATION` | `CODE_REVIEW` | `DEPLOYMENT` | `SYNC` | `HEARTBEAT`
 
 ---
 

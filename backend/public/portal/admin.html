@@ -810,6 +810,8 @@
         let usersData = null;
         let botsData = null;
         let contribData = null;
+        let soulContribData = null;
+        let ruleContribData = null;
 
         async function init() {
             renderNav('admin');
@@ -841,18 +843,22 @@
 
         async function loadAll() {
             try {
-                const [stats, bindings, users, bots, contribs] = await Promise.all([
+                const [stats, bindings, users, bots, contribs, soulContribs, ruleContribs] = await Promise.all([
                     apiCall('GET', '/api/admin/stats'),
                     apiCall('GET', '/api/admin/bindings'),
                     apiCall('GET', '/api/admin/users'),
                     apiCall('GET', '/api/admin/bots'),
-                    apiCall('GET', '/api/skill-templates/contributions')
+                    apiCall('GET', '/api/skill-templates/contributions'),
+                    apiCall('GET', '/api/soul-templates/contributions'),
+                    apiCall('GET', '/api/rule-templates/contributions')
                 ]);
                 statsData = stats;
                 bindingsData = bindings;
                 usersData = users;
                 botsData = bots;
                 contribData = contribs;
+                soulContribData = soulContribs;
+                ruleContribData = ruleContribs;
                 render();
             } catch (e) {
                 document.getElementById('adminContent').innerHTML =
@@ -1100,6 +1106,68 @@
             }
             html += '</div>';
 
+            // Soul Contributions section
+            html += '<div class="section-card">';
+            html += '<h2>' + i18n.t('soul_contrib_tab') + '</h2>';
+            const soulContribs = (soulContribData && soulContribData.contributions) ? soulContribData.contributions : [];
+            if (soulContribs.length === 0) {
+                html += '<p style="color:var(--text-secondary)">' + i18n.t('soul_contrib_no_data') + '</p>';
+            } else {
+                html += '<table class="admin-table"><thead><tr>' +
+                    '<th>ID</th><th>' + i18n.t('soul_contrib_col_name') + '</th>' +
+                    '<th>' + i18n.t('soul_contrib_col_description') + '</th>' +
+                    '<th>By</th><th>Date</th><th></th>' +
+                    '</tr></thead><tbody>';
+                soulContribs.forEach(function(c) {
+                    const descPreview = escapeHtml((c.description || '').slice(0, 120)) + (c.description && c.description.length > 120 ? '…' : '');
+                    const byStr = escapeHtml((c.submittedBy && c.submittedBy.entityName) || ('entity_' + (c.submittedBy && c.submittedBy.entityId)));
+                    const dateStr = c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : '—';
+                    const revokeBtn = '<button class="btn-sm btn-danger" onclick="revokeSoul(\'' + escapeHtml(c.id) + '\')">' + i18n.t('soul_contrib_revoke') + '</button>';
+                    html += '<tr>' +
+                        '<td><code>' + escapeHtml(c.id) + '</code></td>' +
+                        '<td>' + escapeHtml((c.icon || '') + ' ' + (c.name || c.label)) + '</td>' +
+                        '<td style="font-size:0.85em;color:var(--text-secondary)">' + descPreview + '</td>' +
+                        '<td>' + byStr + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + revokeBtn + '</td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table>';
+            }
+            html += '</div>';
+
+            // Rule Contributions section
+            html += '<div class="section-card">';
+            html += '<h2>' + i18n.t('rule_contrib_tab') + '</h2>';
+            const ruleContribs = (ruleContribData && ruleContribData.contributions) ? ruleContribData.contributions : [];
+            if (ruleContribs.length === 0) {
+                html += '<p style="color:var(--text-secondary)">' + i18n.t('rule_contrib_no_data') + '</p>';
+            } else {
+                html += '<table class="admin-table"><thead><tr>' +
+                    '<th>ID</th><th>' + i18n.t('rule_contrib_col_name') + '</th>' +
+                    '<th>' + i18n.t('rule_contrib_col_type') + '</th>' +
+                    '<th>' + i18n.t('rule_contrib_col_description') + '</th>' +
+                    '<th>By</th><th>Date</th><th></th>' +
+                    '</tr></thead><tbody>';
+                ruleContribs.forEach(function(c) {
+                    const descPreview = escapeHtml((c.description || '').slice(0, 120)) + (c.description && c.description.length > 120 ? '…' : '');
+                    const byStr = escapeHtml((c.submittedBy && c.submittedBy.entityName) || ('entity_' + (c.submittedBy && c.submittedBy.entityId)));
+                    const dateStr = c.submittedAt ? new Date(c.submittedAt).toLocaleDateString() : '—';
+                    const revokeBtn = '<button class="btn-sm btn-danger" onclick="revokeRule(\'' + escapeHtml(c.id) + '\')">' + i18n.t('rule_contrib_revoke') + '</button>';
+                    html += '<tr>' +
+                        '<td><code>' + escapeHtml(c.id) + '</code></td>' +
+                        '<td>' + escapeHtml((c.icon || '') + ' ' + (c.name || c.label)) + '</td>' +
+                        '<td><code>' + escapeHtml(c.ruleType || '') + '</code></td>' +
+                        '<td style="font-size:0.85em;color:var(--text-secondary)">' + descPreview + '</td>' +
+                        '<td>' + byStr + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + revokeBtn + '</td>' +
+                        '</tr>';
+                });
+                html += '</tbody></table>';
+            }
+            html += '</div>';
+
             content.innerHTML = html;
         }
 
@@ -1108,6 +1176,28 @@
             try {
                 await apiCall('DELETE', '/api/skill-templates/' + encodeURIComponent(skillId));
                 alert(i18n.t('skill_contrib_revoked'));
+                loadAll();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function revokeSoul(soulId) {
+            if (!confirm(i18n.t('soul_contrib_revoke_confirm'))) return;
+            try {
+                await apiCall('DELETE', '/api/soul-templates/' + encodeURIComponent(soulId));
+                alert(i18n.t('soul_contrib_revoked'));
+                loadAll();
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function revokeRule(ruleId) {
+            if (!confirm(i18n.t('rule_contrib_revoke_confirm'))) return;
+            try {
+                await apiCall('DELETE', '/api/rule-templates/' + encodeURIComponent(ruleId));
+                alert(i18n.t('rule_contrib_revoked'));
                 loadAll();
             } catch (e) {
                 alert('Error: ' + e.message);
