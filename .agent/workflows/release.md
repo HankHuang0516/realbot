@@ -302,13 +302,36 @@ git diff PREV_COMMIT..HEAD --name-only | grep -E "channel-api|openclaw-channel-e
 
 如果有輸出 → 需要發佈 npm；如果無輸出 → 跳過此步驟。
 
+### ⚠️ 發佈前必做：版本對齊檢查（避免踩坑！）
+
+> [!CAUTION]
+> **曾經因為跳過這步，導致發佈了錯誤的版本號（1.1.0 > 1.0.19），浪費了多次發佈機會。**
+>
+> **發佈前必須確認：**
+> 1. **Pull 插件 repo 最新版本**：`cd openclaw-channel-eclaw && git pull origin main`
+>    - 遠端 repo 可能已有更新，local 與 remote 不一致會導致衝突或覆蓋正確版本
+> 2. **查看 npm 當前最高版本**：`npm view @eclaw/openclaw-channel version`
+>    - 你的新版本號必須 **大於** npm 上的最高版本
+>    - 若 npm 是 1.1.2，你的版本必須是 1.1.3 或更高
+> 3. **永遠使用 `npm version` 指令**，不要手動編輯 `package.json` 的版本號
+>    - `npm version patch` 自動 +0.0.1，且會建立 git commit + tag
+>    - 手動修改容易產生 git tag 缺失、版本號不一致等問題
+> 4. **發佈後同步更新 README 版本引用**（見下方步驟）
+
 ### 發佈步驟
 
 // turbo
-```powershell
+```bash
 cd openclaw-channel-eclaw
 
+# 0. 同步遠端最新（必做！）
+git pull origin main
+
+# 0.5 確認 npm 最高版本（必做！）
+npm view @eclaw/openclaw-channel version
+
 # 1. 更新版本號（patch = bug fix, minor = 新功能, major = breaking change）
+#    確保新版本 > npm 最高版本
 npm version patch
 
 # 2. 發佈（prepublishOnly 會自動 build）
@@ -326,6 +349,22 @@ git push origin main
 **驗證發佈成功：**
 ```
 + @eclaw/openclaw-channel@x.x.x
+```
+
+### 發佈後：更新版本引用
+
+> [!IMPORTANT]
+> **每次發佈後，必須更新所有含有版本號的文件，避免用戶使用過時的升級腳本！**
+
+檢查以下位置是否有舊版本號需要更新：
+1. `openclaw-channel-eclaw/README.md` — 升級腳本中的 `@X.Y.Z`（搜尋 `openclaw plugins install`）
+2. `openclaw-channel-eclaw/KNOW-HOW.md` — 如有版本號引用
+3. `openclaw-channel-eclaw/CHANGELOG.md` — 新增本次修復的說明
+
+// turbo
+```bash
+# 搜尋所有版本引用
+grep -r "openclaw-channel@" openclaw-channel-eclaw/ --include="*.md"
 ```
 
 ---
