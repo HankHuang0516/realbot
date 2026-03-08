@@ -5,7 +5,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  TouchableOpacity,
   Alert,
 } from 'react-native';
 import {
@@ -27,6 +26,7 @@ import { ChatMessage } from '../../store/chatStore';
 
 function ChatBubble({ message, isMe }: { message: ChatMessage; isMe: boolean }) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const time = new Date(message.timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
@@ -44,11 +44,11 @@ function ChatBubble({ message, isMe }: { message: ChatMessage; isMe: boolean }) 
       >
         {message.mediaType === 'image' && message.mediaUrl ? (
           <Text style={{ color: isMe ? 'white' : theme.colors.onSurfaceVariant }}>
-            📷 Photo
+            {t('chat.image_message')}
           </Text>
         ) : message.mediaType === 'audio' ? (
           <Text style={{ color: isMe ? 'white' : theme.colors.onSurfaceVariant }}>
-            🎙 Voice Message
+            {t('chat.audio_message')}
           </Text>
         ) : (
           <Text style={{ color: isMe ? 'white' : theme.colors.onSurface }}>
@@ -128,7 +128,7 @@ export default function ChatScreen() {
   const handleTakePhoto = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert(t('errors.unknown'), 'Camera permission denied');
+      Alert.alert(t('errors.unknown'), t('errors.camera_denied'));
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });

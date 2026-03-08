@@ -83,7 +83,7 @@ export default function FileManagerScreen() {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(localUri);
       } else {
-        setSnack('Sharing not available on this device');
+        setSnack(t('errors.sharing_not_available'));
       }
     } catch {
       setSnack(t('errors.network'));

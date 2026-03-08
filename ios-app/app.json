@@ -24,7 +24,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#1a1a2e"
       },
       "package": "com.eclawbot.app"
@@ -38,7 +39,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/icon.png",
           "color": "#FF6B6B",
           "sounds": []
         }

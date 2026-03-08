@@ -224,7 +224,8 @@
     "slots_available": "剩餘 {{count}} 個槽位",
     "sold_out": "已售完",
     "webhook_testing": "測試連線中...",
-    "webhook_success": "連線成功"
+    "webhook_success": "連線成功",
+    "iap_coming_soon": "Apple IAP 訂閱即將推出"
   },
   "errors": {
     "network": "網路錯誤，請檢查您的連線。",
@@ -232,6 +233,8 @@
     "unauthorized": "認證失敗，請重新登入。",
     "not_found": "找不到。",
     "timeout": "請求逾時。",
-    "unknown": "發生未知錯誤。"
+    "unknown": "發生未知錯誤。",
+    "camera_denied": "相機權限已拒絕，請在設定中開啟。",
+    "sharing_not_available": "此裝置不支援分享功能。"
   }
 }

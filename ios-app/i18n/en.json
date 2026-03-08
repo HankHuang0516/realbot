@@ -224,7 +224,8 @@
     "slots_available": "{{count}} slots available",
     "sold_out": "Sold Out",
     "webhook_testing": "Testing connection...",
-    "webhook_success": "Connection successful"
+    "webhook_success": "Connection successful",
+    "iap_coming_soon": "Apple IAP subscription coming soon"
   },
   "errors": {
     "network": "Network error. Please check your connection.",
@@ -232,6 +233,10 @@
     "unauthorized": "Authentication failed. Please sign in again.",
     "not_found": "Not found.",
     "timeout": "Request timed out.",
-    "unknown": "An unexpected error occurred."
+    "unknown": "An unexpected error occurred.",
+    "camera_denied": "Camera permission denied. Please enable it in Settings.",
+    "sharing_not_available": "Sharing is not available on this device."
   }
 }
+
+

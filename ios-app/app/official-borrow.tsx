@@ -196,8 +196,7 @@ export default function OfficialBorrowScreen() {
                         <Button
                           mode="contained"
                           onPress={() => {
-                            // iOS: Use Apple IAP
-                            setSnack('Apple IAP integration coming soon');
+                            setSnack(t('official_borrow.iap_coming_soon'));
                           }}
                           compact
                         >
