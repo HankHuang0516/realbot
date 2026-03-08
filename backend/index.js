@@ -7855,19 +7855,21 @@ app.delete('/api/schedules/:id', async (req, res) => {
     }
 });
 
-// ── Bot Schedule API (read/write via botSecret) ──
+// ── Bot Schedule API (read/write via botSecret or deviceSecret) ──
 
 // GET /api/bot/schedules - Bot reads schedules
 app.get('/api/bot/schedules', async (req, res) => {
-    const { deviceId, entityId, botSecret } = req.query;
-    if (!deviceId || entityId === undefined || !botSecret) {
-        return res.status(400).json({ success: false, error: 'deviceId, entityId, and botSecret required' });
+    const { deviceId, entityId, botSecret, deviceSecret } = req.query;
+    if (!deviceId || entityId === undefined || (!botSecret && !deviceSecret)) {
+        return res.status(400).json({ success: false, error: 'deviceId, entityId, and botSecret or deviceSecret required' });
     }
     const device = devices[deviceId];
     if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
     const eId = parseInt(entityId);
     const entity = device.entities[eId];
-    if (!entity || !entity.isBound || entity.botSecret !== botSecret) {
+    const authOk = (deviceSecret && device.deviceSecret === deviceSecret) ||
+                   (botSecret && entity && entity.isBound && entity.botSecret === botSecret);
+    if (!entity || !entity.isBound || !authOk) {
         return res.status(403).json({ success: false, error: 'Invalid credentials' });
     }
     try {
@@ -7880,15 +7882,17 @@ app.get('/api/bot/schedules', async (req, res) => {
 
 // POST /api/bot/schedules - Bot creates a schedule
 app.post('/api/bot/schedules', async (req, res) => {
-    const { deviceId, entityId, botSecret, message, scheduledAt, repeatType, cronExpr, label } = req.body;
-    if (!deviceId || entityId === undefined || !botSecret) {
-        return res.status(400).json({ success: false, error: 'deviceId, entityId, and botSecret required' });
+    const { deviceId, entityId, botSecret, deviceSecret, message, scheduledAt, repeatType, cronExpr, label } = req.body;
+    if (!deviceId || entityId === undefined || (!botSecret && !deviceSecret)) {
+        return res.status(400).json({ success: false, error: 'deviceId, entityId, and botSecret or deviceSecret required' });
     }
     const device = devices[deviceId];
     if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
     const eId = parseInt(entityId);
     const entity = device.entities[eId];
-    if (!entity || !entity.isBound || entity.botSecret !== botSecret) {
+    const authOk = (deviceSecret && device.deviceSecret === deviceSecret) ||
+                   (botSecret && entity && entity.isBound && entity.botSecret === botSecret);
+    if (!entity || !entity.isBound || !authOk) {
         return res.status(403).json({ success: false, error: 'Invalid credentials' });
     }
     try {
@@ -7903,15 +7907,17 @@ app.post('/api/bot/schedules', async (req, res) => {
 
 // DELETE /api/bot/schedules/:id - Bot deletes a schedule
 app.delete('/api/bot/schedules/:id', async (req, res) => {
-    const { deviceId, entityId, botSecret } = req.query;
-    if (!deviceId || entityId === undefined || !botSecret) {
-        return res.status(400).json({ success: false, error: 'deviceId, entityId, and botSecret required' });
+    const { deviceId, entityId, botSecret, deviceSecret } = req.query;
+    if (!deviceId || entityId === undefined || (!botSecret && !deviceSecret)) {
+        return res.status(400).json({ success: false, error: 'deviceId, entityId, and botSecret or deviceSecret required' });
     }
     const device = devices[deviceId];
     if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
     const eId = parseInt(entityId);
     const entity = device.entities[eId];
-    if (!entity || !entity.isBound || entity.botSecret !== botSecret) {
+    const authOk = (deviceSecret && device.deviceSecret === deviceSecret) ||
+                   (botSecret && entity && entity.isBound && entity.botSecret === botSecret);
+    if (!entity || !entity.isBound || !authOk) {
         return res.status(403).json({ success: false, error: 'Invalid credentials' });
     }
     try {
