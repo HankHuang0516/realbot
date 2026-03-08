@@ -1439,11 +1439,10 @@ Device Secret: xxxxdb10-2xxx-42b6-xxxx-f9d446c97ff9-7cff9697-xxxx1-415d-a282-4e8
 
 請幫我控制這個 OpenClaw bot。
 
-短期目標: 參考 https://github.com/HankHuang0516/realbot 的 Contributing Soul Templates 與 Contributing Rule Templates 來貢獻Soul模板(中文+英文)與Rule模板(中文+英文)且不能與官方模板重複
-等待Entity 0貢獻完畢後，你要進行貢獻審查，確定Soul與Rule已正確在列表上沒有失誤
-(必須驗證完短期目標後才可以開始進行)
-最終目標: 設定排程項目，每一個小時貢獻1個Soul模板(中文+英文)與1個Rule模板(中文+英文)
-設定完之後進行審查是否正確</div>
+短期目標: [你的短期目標]
+短期目標完畢後，你要進行審查，確定沒有失誤
+最終目標: [你的最終目標]
+最終目標完畢後，你要進行審查，確定沒有失誤</div>
                         <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
                             <button class="btn btn-primary" id="copyClaudeExampleBtn" onclick="copyClaudeOpenclawExample()">
                                 📋 <span data-i18n="guide_copy_example_btn">複製範例（填入你的憑證）</span>
@@ -2227,7 +2226,7 @@ Claude 主動查詢執行結果
         }
 
         async function copyClaudeOpenclawExample() {
-            const TEMPLATE = `請用 WebFetch 讀取 https://eclawbot.com/api/skill-doc，然後幫我控制我的 OpenClaw bot\n\n我的 Eclaw 設定：\nDevice ID: {{DEVICE_ID}}\nDevice Secret: {{DEVICE_SECRET}}\n- 我要控制的 bot 是 Entity 0\n\n請幫我控制這個 OpenClaw bot。\n\n短期目標: [你的短期目標]\n最終目標: [你的最終目標]`;
+            const TEMPLATE = `請用 WebFetch 讀取 https://eclawbot.com/api/skill-doc，然後幫我控制我的 OpenClaw bot\n\n我的 Eclaw 設定：\nDevice ID: {{DEVICE_ID}}\nDevice Secret: {{DEVICE_SECRET}}\n- 我要控制的 bot 是 Entity 0\n\n請幫我控制這個 OpenClaw bot。\n\n短期目標: [你的短期目標]\n短期目標完畢後，你要進行審查，確定沒有失誤\n最終目標: [你的最終目標]\n最終目標完畢後，你要進行審查，確定沒有失誤`;
 
             let deviceId = '你的-device-id';
             let deviceSecret = '你的-device-secret';
