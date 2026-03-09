@@ -7956,14 +7956,18 @@ async function executeScheduledMessage(schedule) {
     let pushResult = { pushed: false, reason: 'no_webhook' };
     const apiBase = 'https://eclawbot.com';
     if (entity.bindingType === 'channel') {
+        // Append missionHints to the message text so the bot receives real credentials
+        // (webhook-handler only injects missionHints for entity_message/broadcast, not for regular 'message' events)
+        const missionHintsText = getMissionApiHints(apiBase, deviceId, entityId, entity.botSecret);
+        const enrichedMessage = message + missionHintsText;
         pushResult = await channelModule.pushToChannelCallback(deviceId, entityId, {
             event: 'message',
             from: 'scheduled',
-            text: message,
+            text: enrichedMessage,
             eclaw_context: {
                 expectsReply: true,
                 silentToken: '[SILENT]',
-                missionHints: getMissionApiHints(apiBase, deviceId, entityId, entity.botSecret)
+                missionHints: missionHintsText
             }
         }, entity.channelAccountId);
         if (pushResult.pushed) {
