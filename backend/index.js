@@ -4789,7 +4789,7 @@ app.post('/api/debug/set-entity-xp', (req, res) => {
     const eId = parseInt(entityId);
     const entity = device.entities[eId];
     if (!entity) {
-        return res.status(404).json({ success: false, error: Entity  not found });
+        return res.status(404).json({ success: false, error: `Entity ${eId} not found` });
     }
     const xpVal = Math.max(0, parseInt(xp) || 0);
     entity.xp = xpVal;
