@@ -7444,7 +7444,8 @@ const channelModule = require('./channel-api')(devices, {
     publicCodeIndex,
     saveChatMessage,
     io,
-    saveData
+    saveData,
+    apiBase: process.env.API_BASE || 'https://eclawbot.com'
 });
 app.use('/api/channel', channelModule.router);
 // Wire channel push into mission module (Bot Push Parity Rule — must be after channelModule init)

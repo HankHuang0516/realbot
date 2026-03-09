@@ -18,7 +18,7 @@ const express = require('express');
 const crypto = require('crypto');
 const db = require('./db');
 
-module.exports = function (devices, { authMiddleware, serverLog, generateBotSecret, generatePublicCode, publicCodeIndex, saveChatMessage, io, saveData }) {
+module.exports = function (devices, { authMiddleware, serverLog, generateBotSecret, generatePublicCode, publicCodeIndex, saveChatMessage, io, saveData, apiBase }) {
     const router = express.Router();
 
     // ── In-memory test sink (for self-testing without ngrok) ──
@@ -468,6 +468,28 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             saveData();
             serverLog('info', 'bind', `Entity ${eId} bound via channel plugin`, { deviceId, entityId: eId });
             if (process.env.DEBUG === 'true') serverLog('info', 'bind', `[BIND] entity ${eId} bound OK, publicCode=${publicCode}`, { deviceId, entityId: eId });
+
+            // Send ECLAW_READY init push so bot gets credentials immediately
+            // (fire-and-forget; don't block response if push fails)
+            const initText = [
+                '[SYSTEM:ECLAW_READY] E-Claw channel binding established.',
+                `deviceId: ${deviceId} | entityId: ${eId} | botSecret: ${botSecret}`,
+                '',
+                '[AVAILABLE TOOLS — Mission Dashboard]',
+                `Read tasks/notes/rules/skills: exec: curl -s "${apiBase}/api/mission/dashboard?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${eId}"`,
+                `Read notes: exec: curl -s "${apiBase}/api/mission/notes?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${eId}"`,
+                `Mark TODO done: exec: curl -s -X POST "${apiBase}/api/mission/todo/done" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${eId},"botSecret":"${botSecret}","title":"TASK_TITLE"}'`,
+                `Add note: exec: curl -s -X POST "${apiBase}/api/mission/note/add" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${eId},"botSecret":"${botSecret}","title":"TITLE","content":"CONTENT"}'`,
+                `Update wallpaper: exec: curl -s -X POST "${apiBase}/api/transform" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${eId},"botSecret":"${botSecret}","state":"IDLE","message":"hello"}'`
+            ].join('\n');
+
+            pushToChannelCallback(deviceId, eId, {
+                event: 'message',
+                from: 'system',
+                text: initText
+            }, account.id).catch(err => {
+                if (process.env.DEBUG === 'true') serverLog('warn', 'bind', `[BIND] ECLAW_READY push failed: ${err.message}`, { deviceId, entityId: eId });
+            });
 
             res.json({
                 success: true,
