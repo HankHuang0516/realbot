@@ -193,6 +193,111 @@ async function runTests() {
 
   console.log('');
 
+  // ── Test 7: Init Push Verification (test-sink) ──
+  console.log('7. Init push verification (ECLAW_READY via test-sink)');
+
+  {
+    const ts = Date.now();
+    const sinkDeviceId = `test-init-push-${ts}`;
+    const sinkDeviceSecret = `secret-sink-${ts}`;
+    const sinkSlot = `init-push-${ts}`;
+
+    // Register a fresh test device
+    const reg = await postJSON(`${API_BASE}/api/device/register`, {
+      deviceId: sinkDeviceId,
+      deviceSecret: sinkDeviceSecret,
+      entityId: 0,
+      isTestDevice: true,
+    });
+    assert(reg.data.success, 'Init push: test device registered');
+
+    // Provision channel account via provision-device (no JWT needed)
+    const prov = await postJSON(`${API_BASE}/api/channel/provision-device`, {
+      deviceId: sinkDeviceId,
+      deviceSecret: sinkDeviceSecret,
+    });
+
+    if (!prov.data.success || !prov.data.channel_api_key) {
+      console.log('  ⏭  Init push test skipped — provision-device failed');
+      console.log(`     (${prov.data.message || prov.data.error || 'unknown'})`);
+    } else {
+      const { channel_api_key, channel_api_secret } = prov.data;
+
+      // Point callback to test-sink
+      const sinkUrl = `${API_BASE}/api/channel/test-sink?slot=${sinkSlot}`;
+      const regCb = await postJSON(`${API_BASE}/api/channel/register`, {
+        channel_api_key,
+        channel_api_secret,
+        callback_url: sinkUrl,
+      });
+      assert(regCb.data.success, 'Init push: callback registered to test-sink');
+
+      // Clear any stale payloads
+      await fetch(`${API_BASE}/api/channel/test-sink?slot=${sinkSlot}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: sinkDeviceId, deviceSecret: sinkDeviceSecret }),
+      });
+
+      // Full bind — should trigger ECLAW_READY push
+      const bindR = await postJSON(`${API_BASE}/api/channel/bind`, {
+        channel_api_key,
+        channel_api_secret,
+        entityId: 0,
+        name: 'TestInitBot',
+      });
+      assert(bindR.data.success, 'Init push: bind succeeded');
+
+      // Wait for async fire-and-forget push to arrive
+      await new Promise(r => setTimeout(r, 1000));
+
+      // Read sink
+      const sinkRes = await fetchJSON(
+        `${API_BASE}/api/channel/test-sink?slot=${sinkSlot}&deviceId=${sinkDeviceId}&deviceSecret=${sinkDeviceSecret}`,
+      );
+      const payloads = sinkRes.data.payloads || [];
+      const initMsg = payloads.find(p => p.payload?.text?.includes('ECLAW_READY'));
+
+      assert(!!initMsg, 'Init push: ECLAW_READY message received in test-sink');
+      if (initMsg) {
+        const txt = initMsg.payload.text;
+        assert(txt.includes(sinkDeviceId), 'Init push: text contains deviceId');
+        assert(txt.includes(bindR.data.botSecret), 'Init push: text contains botSecret');
+        assert(txt.includes('mission/dashboard'), 'Init push: text contains mission dashboard URL');
+        assert(initMsg.payload.event === 'message', 'Init push: event type is "message"');
+        assert(initMsg.payload.entityId === 0, 'Init push: entityId is 0');
+      }
+
+      // Idempotent reconnect must NOT re-send ECLAW_READY
+      await fetch(`${API_BASE}/api/channel/test-sink?slot=${sinkSlot}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: sinkDeviceId, deviceSecret: sinkDeviceSecret }),
+      });
+      await postJSON(`${API_BASE}/api/channel/bind`, {
+        channel_api_key,
+        channel_api_secret,
+        entityId: 0,
+      });
+      await new Promise(r => setTimeout(r, 1000));
+
+      const sinkRes2 = await fetchJSON(
+        `${API_BASE}/api/channel/test-sink?slot=${sinkSlot}&deviceId=${sinkDeviceId}&deviceSecret=${sinkDeviceSecret}`,
+      );
+      const initMsg2 = (sinkRes2.data.payloads || []).find(p => p.payload?.text?.includes('ECLAW_READY'));
+      assert(!initMsg2, 'Init push: idempotent reconnect does NOT re-send ECLAW_READY');
+
+      // Cleanup
+      await fetch(`${API_BASE}/api/device/entity`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId: sinkDeviceId, deviceSecret: sinkDeviceSecret, entityId: 0 }),
+      });
+    }
+  }
+
+  console.log('');
+
   // ── Summary ──
   console.log('═══════════════════════════════════════════');
   console.log(`   Results: ${passed} passed, ${failed} failed`);
