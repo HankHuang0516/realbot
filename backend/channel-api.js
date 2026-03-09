@@ -191,6 +191,12 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             const apiKey = 'eck_' + crypto.randomBytes(32).toString('hex');
             const apiSecret = 'ecs_' + crypto.randomBytes(32).toString('hex');
 
+            // Ensure device exists in PostgreSQL (FK constraint on channel_accounts.device_id)
+            // Device may only exist in memory if /device/register was called without any subsequent bind
+            if (devices[deviceId]) {
+                await db.saveDeviceData(deviceId, devices[deviceId]);
+            }
+
             const account = await db.createChannelAccount(deviceId, apiKey, apiSecret);
             if (!account) {
                 return res.status(500).json({ success: false, message: 'Failed to create channel account' });
