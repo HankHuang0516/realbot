@@ -1366,6 +1366,58 @@ app.get('/api/admin/stats', adminAuth, adminCheck, async (req, res) => {
     }
 });
 
+// GET /api/platform-stats - Public platform stats (device auth, for bots)
+app.get('/api/platform-stats', async (req, res) => {
+    const { deviceId, deviceSecret } = req.query;
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+    try {
+        const pg = authModule.pool;
+
+        // User count
+        const userCount = await pg.query('SELECT COUNT(*) as total FROM user_accounts');
+
+        // Template counts
+        const soulCount = await pg.query('SELECT COUNT(*) as total FROM soul_templates');
+        const ruleCount = await pg.query('SELECT COUNT(*) as total FROM rule_templates');
+        const skillCount = await pg.query('SELECT COUNT(*) as total FROM skill_templates');
+
+        // Bound entities (in-memory, excluding test devices)
+        let boundEntities = 0;
+        let activeDevices = 0;
+        for (const [did, d] of Object.entries(devices)) {
+            if (isTestDeviceCheck(did, d)) continue;
+            let hasBound = false;
+            if (d.entities) {
+                for (const e of Object.values(d.entities)) {
+                    if (e.isBound) { boundEntities++; hasBound = true; }
+                }
+            }
+            if (hasBound) activeDevices++;
+        }
+
+        res.json({
+            success: true,
+            users: parseInt(userCount.rows[0].total),
+            boundEntities,
+            activeDevices,
+            templates: {
+                soul: parseInt(soulCount.rows[0].total),
+                rule: parseInt(ruleCount.rows[0].total),
+                skill: parseInt(skillCount.rows[0].total)
+            }
+        });
+    } catch (err) {
+        console.error('[PlatformStats] error:', err);
+        res.status(500).json({ success: false, error: 'Failed to get platform stats' });
+    }
+});
+
 // GET /api/admin/bindings - Detailed binding list
 app.get('/api/admin/bindings', adminAuth, adminCheck, async (req, res) => {
     try {
