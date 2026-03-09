@@ -4769,6 +4769,34 @@ app.post('/api/debug/reset', (req, res) => {
     console.log("[Debug] All devices reset");
     res.json({ success: true, message: "All devices reset" });
 });
+/**
+ * POST /api/debug/set-entity-xp
+ * Directly set XP/level on an entity (test devices only).
+ * Body: { deviceId, deviceSecret, entityId, xp }
+ */
+app.post('/api/debug/set-entity-xp', (req, res) => {
+    const { deviceId, deviceSecret, entityId, xp } = req.body || {};
+    if (!deviceId || !deviceSecret || entityId === undefined || xp === undefined) {
+        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, entityId, xp required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid credentials' });
+    }
+    if (!device.isTestDevice) {
+        return res.status(403).json({ success: false, error: 'Test devices only' });
+    }
+    const eId = parseInt(entityId);
+    const entity = device.entities[eId];
+    if (!entity) {
+        return res.status(404).json({ success: false, error: Entity  not found });
+    }
+    const xpVal = Math.max(0, parseInt(xp) || 0);
+    entity.xp = xpVal;
+    entity.level = calculateLevel(xpVal);
+    saveData();
+    res.json({ success: true, entityId: eId, xp: entity.xp, level: entity.level });
+});
 
 // ============================================
 // OFFICIAL BOT POOL - Admin API
@@ -6613,7 +6641,9 @@ async function sendToSession(url, token, sessionKey, message, authOpts = {}) {
  * Appended to every push so the bot's LLM always has the tool signatures in context.
  */
 function getMissionApiHints(apiBase, deviceId, entityId, botSecret) {
+    const twTime = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).replace(',', '');
     let hints = `\n\n[AVAILABLE TOOLS — Mission Dashboard]\n`;
+    hints += `Current Taiwan Time: ${twTime} (UTC+8)\n`;
     hints += `Read tasks/notes/rules/skills: exec: curl -s "${apiBase}/api/mission/dashboard?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${entityId}"\n`;
     hints += `Read notes: exec: curl -s "${apiBase}/api/mission/notes?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${entityId}"\n`;
     hints += `Mark TODO done: exec: curl -s -X POST "${apiBase}/api/mission/todo/done" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","title":"TASK_TITLE"}'\n`;

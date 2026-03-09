@@ -179,7 +179,7 @@ async function updateSchedule(id, updates) {
     const schedule = schedules[id];
     if (!schedule) throw new Error('Schedule not found');
 
-    const allowedFields = ['message', 'scheduledAt', 'repeatType', 'cronExpr', 'status', 'entityId', 'label'];
+    const allowedFields = ['message', 'scheduledAt', 'repeatType', 'cronExpr', 'status', 'entityId', 'label', 'timezone'];
     const setClauses = [];
     const values = [];
     let paramIdx = 1;
