@@ -4787,6 +4787,9 @@ app.post('/api/debug/set-entity-xp', (req, res) => {
         return res.status(403).json({ success: false, error: 'Test devices only' });
     }
     const eId = parseInt(entityId);
+    if (isNaN(eId) || eId < 0 || eId >= MAX_ENTITIES_PER_DEVICE) {
+        return res.status(400).json({ success: false, error: 'Invalid entityId (0-7)' });
+    }
     const entity = device.entities[eId];
     if (!entity) {
         return res.status(404).json({ success: false, error: `Entity ${eId} not found` });
