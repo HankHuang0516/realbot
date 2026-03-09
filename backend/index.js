@@ -544,12 +544,14 @@ setInterval(async () => {
                 await db.saveOfficialBot(bot);
             }
 
-            // Reset entity if device still exists (preserve user-set name)
+            // Reset entity if device still exists (preserve user-set name, xp, level)
             const device = devices[binding.device_id];
             if (device && device.entities[binding.entity_id]) {
-                const preservedEntityName = device.entities[binding.entity_id].name;
+                const prev = device.entities[binding.entity_id];
                 device.entities[binding.entity_id] = createDefaultEntity(binding.entity_id);
-                device.entities[binding.entity_id].name = preservedEntityName || null;
+                device.entities[binding.entity_id].name = prev.name || null;
+                device.entities[binding.entity_id].xp = prev.xp || 0;
+                device.entities[binding.entity_id].level = prev.level || 1;
             }
 
             delete officialBindingsCache[getBindingCacheKey(binding.device_id, binding.entity_id)];
@@ -2815,10 +2817,12 @@ app.delete('/api/entity', async (req, res) => {
     // Clean up public code index
     if (entity.publicCode) delete publicCodeIndex[entity.publicCode];
 
-    // Reset entity to unbound state (preserve user-set name)
-    const removedEntityName = device.entities[eId]?.name;
+    // Reset entity to unbound state (preserve user-set name, xp, level)
+    const removedEntity = device.entities[eId];
     device.entities[eId] = createDefaultEntity(eId);
-    device.entities[eId].name = removedEntityName || null;
+    device.entities[eId].name = removedEntity?.name || null;
+    device.entities[eId].xp = removedEntity?.xp || 0;
+    device.entities[eId].level = removedEntity?.level || 1;
 
     console.log(`[Remove] Device ${deviceId} Entity ${eId} unbound`);
     serverLog('info', 'unbind', `Entity ${eId} unbound`, { deviceId, entityId: eId });
@@ -2923,10 +2927,12 @@ app.delete('/api/device/entity', async (req, res) => {
     // Clean up public code index
     if (entity.publicCode) delete publicCodeIndex[entity.publicCode];
 
-    // Reset entity to unbound state (preserve user-set name)
-    const removedEntityName2 = device.entities[eId]?.name;
+    // Reset entity to unbound state (preserve user-set name, xp, level)
+    const removedEntity2 = device.entities[eId];
     device.entities[eId] = createDefaultEntity(eId);
-    device.entities[eId].name = removedEntityName2 || null;
+    device.entities[eId].name = removedEntity2?.name || null;
+    device.entities[eId].xp = removedEntity2?.xp || 0;
+    device.entities[eId].level = removedEntity2?.level || 1;
 
     console.log(`[Device Remove] Device ${deviceId} Entity ${eId} unbound by device owner`);
 
@@ -4946,10 +4952,12 @@ async function autoUnbindEntity(deviceId, eId, device) {
         if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
     }
 
-    // Reset entity to default (preserve user-set name)
-    const preservedName = device.entities[eId]?.name;
+    // Reset entity to default (preserve user-set name, xp, level)
+    const prevEntity = device.entities[eId];
     device.entities[eId] = createDefaultEntity(eId);
-    device.entities[eId].name = preservedName || null;
+    device.entities[eId].name = prevEntity?.name || null;
+    device.entities[eId].xp = prevEntity?.xp || 0;
+    device.entities[eId].level = prevEntity?.level || 1;
 }
 
 /**
@@ -5137,15 +5145,17 @@ app.post('/api/official-borrow/bind-free', async (req, res) => {
     // Use bot's stored botSecret so the bot can authenticate with E-Claw API
     const botSecret = freeBot.bot_secret || (() => { const crypto = require('crypto'); return crypto.randomBytes(16).toString('hex'); })();
 
-    // Set up entity with official bot's webhook (preserve user-set name)
-    const existingNameFree = device.entities[eId]?.name;
+    // Set up entity with official bot's webhook (preserve user-set name, xp, level)
+    const existingEntityFree = device.entities[eId];
     const freePublicCode = generatePublicCode();
     device.entities[eId] = {
         ...createDefaultEntity(eId),
+        xp: existingEntityFree?.xp || 0,
+        level: existingEntityFree?.level || 1,
         botSecret: botSecret,
         publicCode: freePublicCode,
         isBound: true,
-        name: existingNameFree || '免費版',
+        name: existingEntityFree?.name || '免費版',
         state: 'IDLE',
         message: 'Connected!',
         lastUpdated: Date.now(),
@@ -5275,13 +5285,15 @@ app.post('/api/official-borrow/bind-personal', async (req, res) => {
     // Use bot's stored botSecret so the bot can authenticate with E-Claw API
     const botSecret = personalBot.bot_secret || (() => { const crypto = require('crypto'); return crypto.randomBytes(16).toString('hex'); })();
 
-    // Set up entity (preserve user-set name)
-    const existingNamePersonal = device.entities[eId]?.name;
+    // Set up entity (preserve user-set name, xp, level)
+    const existingEntityPersonal = device.entities[eId];
     device.entities[eId] = {
         ...createDefaultEntity(eId),
+        xp: existingEntityPersonal?.xp || 0,
+        level: existingEntityPersonal?.level || 1,
         botSecret: botSecret,
         isBound: true,
-        name: existingNamePersonal || '月租版',
+        name: existingEntityPersonal?.name || '月租版',
         state: 'IDLE',
         message: 'Connected!',
         lastUpdated: Date.now(),
@@ -5439,8 +5451,12 @@ app.post('/api/official-borrow/unbind', async (req, res) => {
     }
     if (usePostgreSQL) await db.removeOfficialBinding(deviceId, eId);
 
-    // Reset entity
+    // Reset entity (preserve user-set name, xp, level)
+    const prevBorrow = device.entities[eId];
     device.entities[eId] = createDefaultEntity(eId);
+    device.entities[eId].name = prevBorrow?.name || null;
+    device.entities[eId].xp = prevBorrow?.xp || 0;
+    device.entities[eId].level = prevBorrow?.level || 1;
     await saveData();
 
     console.log(`[Borrow] Official binding removed: device ${deviceId} entity ${eId}`);
