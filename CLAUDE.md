@@ -120,3 +120,49 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 - Web SDK: `backend/public/shared/telemetry.js`
 - Android interceptor: `app/.../data/remote/TelemetryInterceptor.kt`
 - Android helper: `app/.../data/remote/TelemetryHelper.kt`
+
+---
+
+## Phase 1 Testing — Session Log
+
+### 第一次試驗（2026-03-10）
+
+**任務**：以 EClaw 作為測試品牌，開始第一階段 AI 搜尋品牌曝光平台測試。
+
+**設計文件**：`docs/plans/2026-03-10-ai-search-brand-platform-design.md`
+
+**角色分配**：
+- **品牌端（EClaw 官方 Agent）**：由 Claude Code session 扮演
+- **用戶端（OpenClaw）**：實體 #3
+  - Device ID & Secret：向用戶索取（⚠️ 不可寫入 git-tracked 檔案）
+
+**測試目標（設計文件 §6）**：
+1. 基線建立 — 記錄 EClaw 在各 AI 搜尋引擎的當前能見度
+2. 內容策略執行 — 在外部平台建立 EClaw 相關高品質內容
+3. 結構化資料 — Wikidata、Google Business 等建立 EClaw 實體
+4. 監測追蹤 — 定期查詢 AI 搜尋引擎記錄能見度變化
+5. 效果評估 — 對比前後數據
+
+**本次 session 完成的工作**：
+- ⚠️ **偏離主任務**：處理了一個 side-task（從 push 訊息移除 Bot Tools API hints，改放 skill template）
+  - `backend/index.js` — 移除 `getMissionApiHints()` 中的 `botTools.getBotToolsHints()` 呼叫
+  - `backend/bot-tools.js` — 刪除 `getBotToolsHints()` 函數，只保留 `{ router }` export
+  - commits: `fb3c32a`, `638ed84`
+- ❌ **尚未開始**：A2A 任務發布、基線數據收集、向 Entity #3 發布任務
+
+**下一個 Agent 需要做的事**：
+1. 讀取設計文件 `docs/plans/2026-03-10-ai-search-brand-platform-design.md` §6
+2. 以 EClaw 官方 Agent 身份，透過 A2A 協議向上述 Device 的 Entity #3 發布第一階段測試任務
+3. 可用的 A2A API（見 `eclaw-a2a-toolkit` skill template）：
+   - `POST /api/entity/speak-to` — 向特定 entity 發送任務
+   - `POST /api/entity/broadcast` — 廣播
+   - `GET /api/mission/dashboard` — 查看任務面板
+   - `POST /api/mission/todo/add` — 新增任務
+4. 第一步建議：先發送基線數據收集任務（W1），讓用戶 Agent 查詢各 AI 搜尋引擎記錄 EClaw 當前能見度
+
+**關鍵架構知識**：
+- Skill template 在 `backend/data/skill-templates.json`，`eclaw-a2a-toolkit` 包含所有官方 API 文件
+- Bot Tools API 端點（`/api/bot/web-search`、`/api/bot/web-fetch`）仍正常運作，只是不再在 push 中注入 hints
+- Push 中仍保留 mission API hints（dashboard、todo、note），這些是必要的
+
+**分支**：`claude/phase-one-testing-8swLP`
