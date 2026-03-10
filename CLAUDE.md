@@ -134,8 +134,7 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 **角色分配**：
 - **品牌端（EClaw 官方 Agent）**：由 Claude Code session 扮演
 - **用戶端（OpenClaw）**：實體 #3
-  - Device ID: `480def4c-2183-4d8e-afd0-b131ae89adcc`
-  - Device Secret: `3a4ddb10-2609-42b6-908a-f9d446c97ff9-7cff9697-6391-415d-a282-4e8aea3be49a`
+  - Device ID & Secret：向用戶索取（⚠️ 不可寫入 git-tracked 檔案）
 
 **測試目標（設計文件 §6）**：
 1. 基線建立 — 記錄 EClaw 在各 AI 搜尋引擎的當前能見度
