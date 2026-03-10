@@ -627,6 +627,12 @@ document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(mdC
 // ============================================
 const missionModule = require('./mission')(devices, { awardEntityXP, serverLog });
 app.use('/api/mission', missionModule.router);
+
+// ============================================
+// BOT TOOLS — Search & Web Fetch Proxy
+// ============================================
+const botTools = require('./bot-tools');
+app.use('/api/bot', botTools.router);
 missionModule.initMissionDatabase();
 // Wire notification callback (notifyDevice defined later, uses closure)
 missionModule.setNotifyCallback((deviceId, notif) => notifyDevice(deviceId, notif));
@@ -6703,6 +6709,8 @@ function getMissionApiHints(apiBase, deviceId, entityId, botSecret) {
     hints += `Read notes: exec: curl -s "${apiBase}/api/mission/notes?deviceId=${deviceId}&botSecret=${botSecret}&entityId=${entityId}"\n`;
     hints += `Mark TODO done: exec: curl -s -X POST "${apiBase}/api/mission/todo/done" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","title":"TASK_TITLE"}'\n`;
     hints += `Add note: exec: curl -s -X POST "${apiBase}/api/mission/note/add" -H "Content-Type: application/json" -d '{"deviceId":"${deviceId}","entityId":${entityId},"botSecret":"${botSecret}","title":"TITLE","content":"CONTENT"}'\n`;
+    // Append Bot Tools (search & fetch) hints
+    hints += botTools.getBotToolsHints(apiBase, deviceId, entityId, botSecret);
     return hints;
 }
 
