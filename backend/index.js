@@ -627,6 +627,12 @@ document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(mdC
 // ============================================
 const missionModule = require('./mission')(devices, { awardEntityXP, serverLog });
 app.use('/api/mission', missionModule.router);
+
+// ============================================
+// BOT TOOLS — Search & Web Fetch Proxy
+// ============================================
+const botTools = require('./bot-tools');
+app.use('/api/bot', botTools.router);
 missionModule.initMissionDatabase();
 // Wire notification callback (notifyDevice defined later, uses closure)
 missionModule.setNotifyCallback((deviceId, notif) => notifyDevice(deviceId, notif));
