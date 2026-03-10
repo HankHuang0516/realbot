@@ -1,3 +1,10 @@
+## [1.92.2](https://github.com/HankHuang0516/realbot/compare/v1.92.1...v1.92.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* **ci:** add concurrency control to semantic-release workflow ([b5e4ed3](https://github.com/HankHuang0516/realbot/commit/b5e4ed31e96fe0e505eed67b6fbb17a4e9e797cf))
+
 ## [1.92.1](https://github.com/HankHuang0516/realbot/compare/v1.92.0...v1.92.1) (2026-03-10)
 
 
