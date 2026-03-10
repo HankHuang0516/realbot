@@ -1252,6 +1252,47 @@ app.get('/api/rule-templates/contributions', adminAuth, adminCheck, async (req, 
     }
 });
 
+// POST /api/admin/gatekeeper/reset - Reset strikes and unblock a device (admin)
+app.post('/api/admin/gatekeeper/reset', adminAuth, adminCheck, async (req, res) => {
+    const { deviceId } = req.body;
+    if (!deviceId) return res.status(400).json({ success: false, error: 'deviceId required' });
+
+    try {
+        const result = await gatekeeper.resetStrikes(deviceId);
+        res.json({ success: true, deviceId, previousStrikes: result.previousCount, message: 'Device unblocked' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// POST /api/gatekeeper/appeal - Device owner self-service unblock (once per 24h)
+const appealCooldown = {}; // deviceId -> timestamp
+app.post('/api/gatekeeper/appeal', async (req, res) => {
+    const { deviceId, deviceSecret } = req.body;
+    if (!deviceId || !deviceSecret) return res.status(400).json({ success: false, error: 'deviceId and deviceSecret required' });
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    if (!gatekeeper.isDeviceBlocked(deviceId)) {
+        return res.json({ success: true, message: 'Device is not blocked', strikes: gatekeeper.getStrikeInfo(deviceId) });
+    }
+
+    const lastAppeal = appealCooldown[deviceId] || 0;
+    const cooldownMs = 24 * 60 * 60 * 1000;
+    if (Date.now() - lastAppeal < cooldownMs) {
+        const retryAfter = Math.ceil((cooldownMs - (Date.now() - lastAppeal)) / 3600000);
+        return res.status(429).json({ success: false, error: `Appeal cooldown: retry after ${retryAfter}h` });
+    }
+
+    appealCooldown[deviceId] = Date.now();
+    const result = await gatekeeper.resetStrikes(deviceId);
+    serverLog('info', 'gatekeeper', `Device owner appealed and unblocked (was ${result.previousCount} strikes)`, { deviceId });
+    res.json({ success: true, message: 'Device unblocked via appeal', previousStrikes: result.previousCount });
+});
+
 // GET /api/admin/stats - Overview stats
 app.get('/api/admin/stats', adminAuth, adminCheck, async (req, res) => {
     try {

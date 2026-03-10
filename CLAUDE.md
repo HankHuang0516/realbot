@@ -154,7 +154,8 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 1. 讀取設計文件 `docs/plans/2026-03-10-ai-search-brand-platform-design.md` §6
 2. 以 EClaw 官方 Agent 身份，透過 A2A 協議向上述 Device 的 Entity #3 發布第一階段測試任務
 3. 可用的 A2A API（見 `eclaw-a2a-toolkit` skill template）：
-   - `POST /api/entity/speak-to` — 向特定 entity 發送任務
+   - `POST /api/client/speak` — 以裝置擁有者身份向 entity 發話（用 deviceSecret，不需 botSecret）
+   - `POST /api/entity/speak-to` — 以 entity 身份向另一個 entity 發送任務（用 botSecret）
    - `POST /api/entity/broadcast` — 廣播
    - `GET /api/mission/dashboard` — 查看任務面板
    - `POST /api/mission/todo/add` — 新增任務
@@ -166,3 +167,46 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 - Push 中仍保留 mission API hints（dashboard、todo、note），這些是必要的
 
 **分支**：`claude/phase-one-testing-8swLP`
+
+### 第二次試驗（2026-03-10）
+
+**任務**：繼續第一階段測試，完成 W1 基線數據收集並發布 W2-W3 任務。
+
+**本次 session 完成的工作**：
+
+1. ✅ **W1 基線數據收集完成**
+   - 使用 WebSearch 查詢 5 組關鍵字：
+     - "EClaw claw machine IoT platform" → 零結果（全為 ELAUT E-Claw）
+     - "EClaw OpenClaw AI agent platform" → 零結果（全為 OpenClaw 開源項目）
+     - "eclawbot.com" → 零結果（域名未被索引）
+     - '"EClaw" brand claw machine Taiwan' → 零結果
+     - "EClaw agent-to-agent A2A protocol" → 零結果（全為 Google A2A Protocol）
+   - **基線結論：EClaw 品牌總分 0/50，完全零能見度**
+   - 基線報告：`docs/reports/2026-03-10-eclaw-baseline-report.md`
+
+2. ✅ **基線報告已發布到 Mission Dashboard**
+   - Note: "EClaw AI 搜尋能見度基線報告 (2026-03-10)" — 完整基線數據
+
+3. ✅ **W2-W3 任務已發布到 Mission Dashboard**（指派給 Entity #3）
+   - `[W2] 在 Medium 發布 EClaw 平台介紹文章` — priority LOW
+   - `[W2] 在 DEV.to 發布 EClaw A2A 技術教學` — priority LOW
+   - `[W2] 在 Reddit 相關 subreddit 分享 EClaw 內容` — priority MEDIUM
+   - `[W3] 在 Wikidata 建立 EClaw 品牌實體` — priority LOW
+   - `[W3] 定期 AI 搜尋引擎監測 — EClaw 能見度追蹤` — priority MEDIUM
+
+**關鍵發現**：
+- EClaw 品牌名與 ELAUT 的 E-Claw 夾娃娃機嚴重衝突，需要品牌區隔策略
+- eclawbot.com 完全未被搜尋引擎索引，是最基礎的問題
+- OpenClaw 生態有高知名度但 EClaw 作為基礎設施提供者完全隱形
+- Mission API 支持 `deviceSecret` 認證（dual auth），可直接用來管理任務
+- 設備上綁定的 Entity：#0 (ECalw Official Ac), #3 (免費版eclaw_rai_1), #4 (荷官eclaw_rai_0)
+- **`POST /api/client/speak`**：以裝置擁有者（client）身份向 entity 發話，用 `deviceSecret` 認證，不需要 botSecret。支持單一 entity、array、或 "all" 廣播。會重置 bot-to-bot rate limit。
+
+**下一個 Agent 需要做的事**：
+1. 用 `POST /api/client/speak` 或 `POST /api/entity/speak-to` 向 Entity #3 發送 W2-W3 執行指令
+2. 追蹤 Entity #3 執行任務的進度（查 Mission Dashboard）
+3. 審查 Entity #3 產出的內容品質
+4. W6 中期監測：重新查詢 AI 搜尋引擎，對比基線數據
+5. 根據 Entity #3 的執行回饋調整策略
+
+**分支**：`claude/phase-one-test-two-dQvW7`

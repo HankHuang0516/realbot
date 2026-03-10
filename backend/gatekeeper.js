@@ -63,7 +63,7 @@ const HEARTBEAT_MANIPULATION_PATTERNS = [
 const MALICIOUS_ATTACK_PATTERNS = [
     // Command injection
     /(?:exec|eval|system|spawn|fork|require|import)\s*\(/i,
-    /(?:curl|wget|fetch)\s+(?:https?:\/\/)?(?!eclaw\.up\.railway\.app)/i,
+    /(?:curl|wget|fetch)\s+(?:https?:\/\/)?(?!eclaw\.up\.railway\.app|eclawbot\.com|127\.0\.0\.1|localhost)/i,
     /`[^`]*(?:rm|del|kill|shutdown|reboot|format|drop|delete|truncate)[^`]*`/i,
     // SQL injection
     /(?:;\s*(?:DROP|DELETE|UPDATE|INSERT|ALTER|CREATE|TRUNCATE)\s+)/i,
@@ -441,6 +441,30 @@ function getStrikeInfo(deviceId) {
     };
 }
 
+/**
+ * Admin: Reset strikes and unblock a device
+ * @param {string} deviceId
+ * @returns {{ success: boolean, previousCount: number }}
+ */
+async function resetStrikes(deviceId) {
+    const prev = strikeCache[deviceId] ? strikeCache[deviceId].count : 0;
+    strikeCache[deviceId] = { count: 0, blocked: false, lastViolation: null };
+
+    if (pool) {
+        try {
+            await pool.query(
+                `UPDATE gatekeeper_blocks SET violation_count = 0, is_blocked = FALSE, blocked_at = NULL WHERE device_id = $1`,
+                [deviceId]
+            );
+        } catch (err) {
+            console.error('[Gatekeeper] Failed to reset strikes in DB:', err.message);
+        }
+    }
+
+    console.log(`[Gatekeeper] Admin reset: device ${deviceId} unblocked (was ${prev} strikes)`);
+    return { success: true, previousCount: prev };
+}
+
 // ============================================
 // FREE BOT TOS AGREEMENT
 // ============================================
@@ -578,6 +602,7 @@ module.exports = {
     recordViolation,
     isDeviceBlocked,
     getStrikeInfo,
+    resetStrikes,
     // TOS
     getFreeBotTOS,
     hasAgreedToTOS,
