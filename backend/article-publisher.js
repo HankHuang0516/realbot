@@ -239,7 +239,7 @@ router.post('/hashnode/publish', express.json(), async (req, res) => {
                 title,
                 contentMarkdown,
                 slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-                tags: tags ? tags.map(t => ({ slug: t })) : []
+                tags: tags ? tags.map(t => typeof t === 'string' ? { slug: t, name: t } : t) : []
             }
         });
         const post = data.publishPost.post;
