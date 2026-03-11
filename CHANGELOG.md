@@ -1,3 +1,10 @@
+## [1.94.4](https://github.com/HankHuang0516/EClaw/compare/v1.94.3...v1.94.4) (2026-03-11)
+
+
+### Bug Fixes
+
+* remove duplicate string resources entity_public_code and code_copied ([ba238a4](https://github.com/HankHuang0516/EClaw/commit/ba238a49dbb4d70ff7454d3a291ed3a4e0bc815e)), closes [#167](https://github.com/HankHuang0516/EClaw/issues/167)
+
 ## [1.94.3](https://github.com/HankHuang0516/EClaw/compare/v1.94.2...v1.94.3) (2026-03-11)
 
 
