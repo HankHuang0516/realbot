@@ -64,6 +64,9 @@ When investigating backend bugs (broadcast failure, push not delivered, etc.):
 - **Broadcast flow**: `node backend/tests/test-broadcast.js`
   - Tests broadcast delivery, delivered_to tracking, speak-to, chat history
   - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
+- **Edit mode public code preservation**: `node backend/tests/test-edit-mode-public-code.js`
+  - Verifies publicCode survives entity reorder (swap + swap-back), lookup still works
+  - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
 - **Cross-device settings**: `node backend/tests/test-cross-device-settings.js`
   - Tests CRUD lifecycle, validation, merge behavior, auth, edge cases for entity cross-device settings
   - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
