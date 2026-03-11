@@ -2,12 +2,9 @@
 # ──────────────────────────────────────────────
 # EClaw Cloud Session Setup Script
 # ──────────────────────────────────────────────
-# Configure these as Environment Variables in
-# Claude Code cloud environment settings:
-#
-#   GH_TOKEN                  — GitHub personal access token
-#   BROADCAST_TEST_DEVICE_ID  — Test device ID (for regression tests)
-#   BROADCAST_TEST_DEVICE_SECRET — Test device secret
+# All env vars should be set in Claude Code
+# cloud environment settings (Environment variables).
+# This script reads them and writes backend/.env.
 # ──────────────────────────────────────────────
 
 set -e
@@ -27,22 +24,37 @@ else
     echo "  ⚠️  GH_TOKEN not set — gh CLI won't be authenticated"
 fi
 
-# ── 2. Backend .env (for regression tests) ───
+# ── 2. Backend .env (from cloud env vars) ────
 ENV_FILE="backend/.env"
-if [ ! -f "$ENV_FILE" ]; then
-    echo "  Creating $ENV_FILE..."
-    touch "$ENV_FILE"
-fi
+echo "  Writing $ENV_FILE..."
 
-# Write test credentials if available
-if [ -n "$BROADCAST_TEST_DEVICE_ID" ]; then
-    grep -q "BROADCAST_TEST_DEVICE_ID" "$ENV_FILE" 2>/dev/null || \
-        echo "BROADCAST_TEST_DEVICE_ID=$BROADCAST_TEST_DEVICE_ID" >> "$ENV_FILE"
-fi
-if [ -n "$BROADCAST_TEST_DEVICE_SECRET" ]; then
-    grep -q "BROADCAST_TEST_DEVICE_SECRET" "$ENV_FILE" 2>/dev/null || \
-        echo "BROADCAST_TEST_DEVICE_SECRET=$BROADCAST_TEST_DEVICE_SECRET" >> "$ENV_FILE"
-fi
+# List of all keys to sync from cloud env vars to .env
+ENV_KEYS=(
+    SECRETS_BACKUP_PASSWORD
+    TAPPAY_PARTNER_KEY
+    TAPPAY_MERCHANT_ID
+    SEAL_KEY
+    TEST_DEVICE_ID
+    TEST_DEVICE_SECRET
+    TEST_ENTITY_ID
+    BROADCAST_TEST_DEVICE_ID
+    BROADCAST_TEST_DEVICE_SECRET
+    GOOGLE_CLIENT_ID
+    FACEBOOK_APP_ID
+    FACEBOOK_APP_SECRET
+)
+
+# Write all available env vars
+> "$ENV_FILE"  # truncate
+for key in "${ENV_KEYS[@]}"; do
+    val="${!key}"
+    if [ -n "$val" ]; then
+        echo "$key=$val" >> "$ENV_FILE"
+    fi
+done
+
+COUNT=$(wc -l < "$ENV_FILE")
+echo "  ✅ $ENV_FILE written ($COUNT keys)"
 
 # ── 3. Node.js check ────────────────────────
 if command -v node &>/dev/null; then
