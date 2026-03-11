@@ -31,10 +31,23 @@
 - **Direct merge to main**: When work is complete, commit and merge directly to `main` branch. Do NOT create PRs or wait for approval — the user reviews all changes in real-time during the session.
 - **Workflow**: develop on feature branch → commit → merge to main → push
 
-## GitHub PR Creation
+## GitHub CLI
 
-在雲端環境（Claude Code remote）中無法訪問外網，不要嘗試用 `gh` CLI 或 GitHub REST API 建立 PR。
-當需要提供 PR 連結時，直接給出 compare URL：
+`GH_TOKEN` 已存入 `backend/.env`（gitignored）。Session startup 會自動注入。
+本地環境 PATH 中沒有 `gh` 二進位，改用 GitHub REST API + curl：
+
+```bash
+# 列出 open issues
+curl -sL -H "Authorization: Bearer $GH_TOKEN" \
+  "https://api.github.com/repositories/1150444936/issues?state=open&per_page=50"
+
+# Close issue
+curl -sL -X PATCH -H "Authorization: Bearer $GH_TOKEN" \
+  -d '{"state":"closed"}' \
+  "https://api.github.com/repositories/1150444936/issues/<number>"
+```
+
+PR 連結格式（無法用 gh CLI 建立時）：
 ```
 https://github.com/HankHuang0516/realbot/compare/main...<branch-name>
 ```
