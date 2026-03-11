@@ -1,3 +1,10 @@
+## [1.94.3](https://github.com/HankHuang0516/EClaw/compare/v1.94.2...v1.94.3) (2026-03-11)
+
+
+### Bug Fixes
+
+* avoid gh auth login conflict when GH_TOKEN env var is set ([d94a669](https://github.com/HankHuang0516/EClaw/commit/d94a6695f9293f083376caea97d8356bdbbccd20))
+
 ## [1.94.2](https://github.com/HankHuang0516/EClaw/compare/v1.94.1...v1.94.2) (2026-03-11)
 
 
