@@ -1,3 +1,12 @@
+# [1.95.0](https://github.com/HankHuang0516/EClaw/compare/v1.94.6...v1.95.0) (2026-03-12)
+
+
+### Features
+
+* implement 5 enterprise security features ([#174](https://github.com/HankHuang0516/EClaw/issues/174)-[#178](https://github.com/HankHuang0516/EClaw/issues/178)) ([320f204](https://github.com/HankHuang0516/EClaw/commit/320f204772ef24bf89e2f8527879ad488aa6859d)), closes [#176](https://github.com/HankHuang0516/EClaw/issues/176) [#177](https://github.com/HankHuang0516/EClaw/issues/177) [#175](https://github.com/HankHuang0516/EClaw/issues/175) [#175](https://github.com/HankHuang0516/EClaw/issues/175) [#176](https://github.com/HankHuang0516/EClaw/issues/176) [#177](https://github.com/HankHuang0516/EClaw/issues/177)
+* **portal:** show template count on browse button and gallery title ([13ba042](https://github.com/HankHuang0516/EClaw/commit/13ba0422c56dc2fb894c9c4e110dbf6f245a5b4b))
+* skill template gallery — search, count badge, retry-on-empty ([05e5239](https://github.com/HankHuang0516/EClaw/commit/05e5239c4b95746a73123f6b4b2c24ae5427003c))
+
 ## [1.94.6](https://github.com/HankHuang0516/EClaw/compare/v1.94.5...v1.94.6) (2026-03-12)
 
 
