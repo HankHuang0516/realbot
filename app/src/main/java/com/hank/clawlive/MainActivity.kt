@@ -926,7 +926,7 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity, getString(R.string.xd_save_failed), Toast.LENGTH_SHORT).show()
                 }
             }
-            TelemetryHelper.trackAction(this, "xd_settings_save", mapOf("entityId" to entity.entityId.toString()))
+            TelemetryHelper.trackAction("xd_settings_save", mapOf("entityId" to entity.entityId.toString()))
         }
 
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
@@ -948,7 +948,7 @@ class MainActivity : AppCompatActivity() {
                     Timber.e(e, "Failed to reset cross-device settings")
                 }
             }
-            TelemetryHelper.trackAction(this, "xd_settings_reset", mapOf("entityId" to entity.entityId.toString()))
+            TelemetryHelper.trackAction("xd_settings_reset", mapOf("entityId" to entity.entityId.toString()))
         }
     }
 
