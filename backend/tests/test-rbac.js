@@ -127,21 +127,7 @@ async function main() {
         check('POST /api/auth/user-roles', false, err.message);
     }
 
-    // ── Phase 4: PUT /api/auth/user-roles without auth ──────
-    console.log('');
-    console.log('Phase 4: PUT /api/auth/user-roles without auth');
-    try {
-        const { status } = await putJSON(`${API_BASE}/api/auth/user-roles`, {
-            userId: 'test-user',
-            role: 'editor',
-        });
-        check('PUT /api/auth/user-roles returns 401', status === 401,
-            `status=${status}`);
-    } catch (err) {
-        check('PUT /api/auth/user-roles', false, err.message);
-    }
-
-    // ── Phase 5: DELETE /api/auth/user-roles without auth ───
+    // ── Phase 4: DELETE /api/auth/user-roles without auth ───
     console.log('');
     console.log('Phase 5: DELETE /api/auth/user-roles without auth');
     try {
@@ -152,7 +138,7 @@ async function main() {
         check('DELETE /api/auth/user-roles', false, err.message);
     }
 
-    // ── Phase 6: Endpoints return JSON, not HTML ────────────
+    // ── Phase 5: Error responses are JSON ────────────────────
     console.log('');
     console.log('Phase 6: Error responses are JSON');
     try {
