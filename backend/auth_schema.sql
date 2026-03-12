@@ -134,13 +134,16 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- User-role assignments (device-scoped)
 CREATE TABLE IF NOT EXISTS user_roles (
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES user_accounts(id) ON DELETE CASCADE,
     role_id VARCHAR(32) NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     device_id VARCHAR(64),
     granted_by UUID REFERENCES user_accounts(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    PRIMARY KEY (user_id, role_id, COALESCE(device_id, '__global__'))
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+-- Unique constraint: one role per user per device (NULL device = global)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_unique
+    ON user_roles(user_id, role_id, COALESCE(device_id, '__global__'));
 
 CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_roles_device ON user_roles(device_id) WHERE device_id IS NOT NULL;
