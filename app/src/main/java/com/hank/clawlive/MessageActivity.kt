@@ -191,6 +191,7 @@ class MessageActivity : AppCompatActivity() {
 
                 val request = mapOf<String, Any>(
                     "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
                     "entityId" to entityIdValue,
                     "text" to text,
                     "source" to "android_widget"

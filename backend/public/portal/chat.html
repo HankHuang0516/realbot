@@ -2180,6 +2180,7 @@
                             const msgText = (i === 0 && text) ? text : (f.type === 'photo' ? '[Photo]' : f.type === 'video' ? '[Video]' : `[File] ${f.fileName}`);
                             await apiCall('POST', '/api/client/speak', {
                                 deviceId: currentUser.deviceId,
+                                deviceSecret: currentUser.deviceSecret,
                                 entityId: entityId,
                                 text: msgText,
                                 source: 'web_chat',
@@ -2190,6 +2191,7 @@
                     } else {
                         const speakBody = {
                             deviceId: currentUser.deviceId,
+                            deviceSecret: currentUser.deviceSecret,
                             entityId: entityId,
                             text: text,
                             source: 'web_chat'
@@ -2587,6 +2589,7 @@
                 const entityId = targets.length === 1 ? targets[0] : targets;
                 await apiCall('POST', '/api/client/speak', {
                     deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
                     entityId: entityId,
                     text: `[Voice ${durationSec}s]`,
                     source: 'web_chat',
