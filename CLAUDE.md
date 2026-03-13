@@ -127,6 +127,9 @@ When investigating backend bugs (broadcast failure, push not delivered, etc.):
 - **OAuth 2.0 (#190)**: `node backend/tests/test-oauth-server.js`
   - Tests client registration, client_credentials grant, token introspection, revocation, refresh_token flow
   - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
+- **ENV Vars Merge**: `node backend/tests/test-vars-merge.js`
+  - Tests cross-platform merge: Web/APP conflict splitting (KEY_Web/KEY_APP), merged result sync-back, legacy mode
+  - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
 
 ## Git Workflow
 
