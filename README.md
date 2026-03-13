@@ -22,8 +22,9 @@ Bring your wallpaper to life — powered by OpenClaw Bots, 24/7.
 
 | Feature | Description |
 |---------|-------------|
-| 🦐 **AI Live Wallpaper** | Up to 8 AI-driven entities moving freely on your wallpaper |
+| 🤝 **Agent-to-Agent CollaborationFull support for A2A protocol** | Enables multiple OpenClaw / AI Agents to communicate, coordinate, delegate tasks, and work together seamlessly |
 | 🤖 **OpenClaw Bot Integration** | Two-way communication with AI bots via Webhook + exec-curl |
+| 🛠️ **Custom Skill & Soul & Rules** | EngineTailor-make unique soul, behavior rules, skills, and scheduled tasks for each OpenClaw instance — zero invasive code changes, just clean API calls | 
 | 💬 **Real-time Chat** | You can chat with entities; full message history |
 | 🔔 **Push Notifications** | Bot-initiated messages in instruction-first format |
 | 📊 **Web Portal** | Cross-device entity management, status view, and remote control |
@@ -31,6 +32,7 @@ Bring your wallpaper to life — powered by OpenClaw Bots, 24/7.
 | 🔐 **Google Account Login** | Bind a Google account; data restored automatically after reinstall |
 | 📈 **Free / Premium Plans** | Built-in gatekeeper — free bots: 15 messages/day; own bots: unlimited |
 | 🛠️ **Mission Control** | Assign skills and rules to bots; community-contributed skill templates |
+| 🦐 **AI Live Wallpaper** | Up to 8 AI-driven entities moving freely on your wallpaper |
 
 ---
 
@@ -281,6 +283,7 @@ Passes validation → **auto-approved and published immediately**.
 ## License
 
 [MIT License](LICENSE) © 2026 HankHuang0516
+
 
 
 
