@@ -1,3 +1,10 @@
+## [1.100.1](https://github.com/HankHuang0516/EClaw/compare/v1.100.0...v1.100.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* send callback_token via X-Callback-Token header alongside Basic Auth ([958d2fd](https://github.com/HankHuang0516/EClaw/commit/958d2fd9690e2694c6788c85baa54ab3e03568fe))
+
 # [1.100.0](https://github.com/HankHuang0516/EClaw/compare/v1.99.0...v1.100.0) (2026-03-13)
 
 
