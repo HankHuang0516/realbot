@@ -610,8 +610,11 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
         try {
             const headers = { 'Content-Type': 'application/json' };
             if (account.callback_username && account.callback_password) {
-                // Railway WEB_PASSWORD: use HTTP Basic Auth to pass through gateway auth
+                // Railway WEB_PASSWORD: Basic Auth for gateway + custom header for webhook token routing
                 headers['Authorization'] = 'Basic ' + Buffer.from(`${account.callback_username}:${account.callback_password}`).toString('base64');
+                if (account.callback_token) {
+                    headers['X-Callback-Token'] = account.callback_token;
+                }
             } else if (account.callback_token) {
                 headers['Authorization'] = `Bearer ${account.callback_token}`;
             }
