@@ -1,3 +1,10 @@
+# [1.98.0](https://github.com/HankHuang0516/EClaw/compare/v1.97.2...v1.98.0) (2026-03-13)
+
+
+### Features
+
+* cross-platform env vars merge mode — avoid key loss on sync ([354ba3a](https://github.com/HankHuang0516/EClaw/commit/354ba3a927c0b2e44fa2a3815af2e30ac810898c))
+
 ## [1.97.2](https://github.com/HankHuang0516/EClaw/compare/v1.97.1...v1.97.2) (2026-03-13)
 
 
