@@ -118,6 +118,15 @@ When investigating backend bugs (broadcast failure, push not delivered, etc.):
   - Verifies POST /api/client/speak with entityId array processes all entities (no silent skip)
   - Checks server_logs contain client_push entries for every target entity
   - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
+- **A2A Compatibility (#187)**: `node backend/tests/test-a2a-compat.js`
+  - Tests /.well-known/agent.json, /api/a2a/tasks/send (create, retrieve, cancel), auth, validation
+  - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
+- **API Docs (#189)**: `node backend/tests/test-api-docs.js`
+  - Tests GET /api/docs (Swagger UI), /api/docs/openapi.yaml, /api/docs/openapi.json with path/schema validation
+  - No credentials needed
+- **OAuth 2.0 (#190)**: `node backend/tests/test-oauth-server.js`
+  - Tests client registration, client_credentials grant, token introspection, revocation, refresh_token flow
+  - Requires `BROADCAST_TEST_DEVICE_ID` + `BROADCAST_TEST_DEVICE_SECRET` in `backend/.env`
 
 ## Git Workflow
 
@@ -133,7 +142,7 @@ When investigating backend bugs (broadcast failure, push not delivered, etc.):
 
 - Backend: `backend/index.js` — Express server on Railway
 - API Base: `https://eclawbot.com`
-- 4 entity slots per device (0-3), each independently bindable
+- Up to 8 entity slots per device (0-7), each independently bindable
 - Bots use OpenClaw platform (Zeabur), communicate via webhook push + exec+curl
 - Push notifications use instruction-first format with pre-filled curl templates
 
