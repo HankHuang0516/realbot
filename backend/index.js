@@ -691,7 +691,7 @@ setTimeout(() => gatekeeper.loadBlockedDevices(), 3000);
 const developerDeviceIds = new Set();
 async function loadDeveloperDevices() {
     try {
-        const result = await db.pool.query(
+        const result = await authModule.pool.query(
             'SELECT device_id FROM user_accounts WHERE is_admin = true AND device_id IS NOT NULL'
         );
         developerDeviceIds.clear();
@@ -1347,7 +1347,7 @@ app.get('/api/admin/gatekeeper/debug', async (req, res) => {
     // Query DB for is_admin
     let dbAdmin = null;
     try {
-        const r = await db.pool.query('SELECT id, email, is_admin, device_id FROM user_accounts WHERE device_id = $1', [deviceId]);
+        const r = await authModule.pool.query('SELECT id, email, is_admin, device_id FROM user_accounts WHERE device_id = $1', [deviceId]);
         dbAdmin = r.rows;
     } catch (e) { dbAdmin = e.message; }
     res.json({
