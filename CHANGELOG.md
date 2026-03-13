@@ -1,3 +1,10 @@
+# [1.97.0](https://github.com/HankHuang0516/EClaw/compare/v1.96.2...v1.97.0) (2026-03-13)
+
+
+### Features
+
+* add A2A compat layer, OAuth 2.0 server, and interactive API docs ([#187](https://github.com/HankHuang0516/EClaw/issues/187), [#189](https://github.com/HankHuang0516/EClaw/issues/189), [#190](https://github.com/HankHuang0516/EClaw/issues/190)) ([9351a9d](https://github.com/HankHuang0516/EClaw/commit/9351a9db5cf0df4aec21615a671cf5f198669f7e))
+
 ## [1.96.2](https://github.com/HankHuang0516/EClaw/compare/v1.96.1...v1.96.2) (2026-03-13)
 
 
