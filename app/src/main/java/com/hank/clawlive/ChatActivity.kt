@@ -909,6 +909,7 @@ class ChatActivity : AppCompatActivity() {
                 val entityIdValue: Any = if (targetIds.size == 1) targetIds.first() else targetIds
                 val request = mapOf<String, Any>(
                     "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret,
                     "entityId" to entityIdValue,
                     "text" to text,
                     "source" to "android_chat",
@@ -1212,6 +1213,7 @@ class ChatActivity : AppCompatActivity() {
 
                     val request = mutableMapOf<String, Any>(
                         "deviceId" to deviceManager.deviceId,
+                        "deviceSecret" to deviceManager.deviceSecret,
                         "entityId" to entityIdValue,
                         "text" to text,
                         "source" to "android_chat"
