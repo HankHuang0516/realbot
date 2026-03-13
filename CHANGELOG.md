@@ -1,3 +1,10 @@
+## [1.96.1](https://github.com/HankHuang0516/EClaw/compare/v1.96.0...v1.96.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* prevent publicCode loss during entity reorder ([bd8f1f4](https://github.com/HankHuang0516/EClaw/commit/bd8f1f407aa5764fdf7a068bb4f1aeda6d9045ea))
+
 # [1.96.0](https://github.com/HankHuang0516/EClaw/compare/v1.95.0...v1.96.0) (2026-03-13)
 
 
