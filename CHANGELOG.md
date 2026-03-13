@@ -1,3 +1,10 @@
+## [1.97.2](https://github.com/HankHuang0516/EClaw/compare/v1.97.1...v1.97.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* OAuth test uses fresh token pair for refresh_token test ([392dd05](https://github.com/HankHuang0516/EClaw/commit/392dd0529b671542a7c01b095c67ebd6778c5ddc))
+
 ## [1.97.1](https://github.com/HankHuang0516/EClaw/compare/v1.97.0...v1.97.1) (2026-03-13)
 
 
