@@ -1,3 +1,10 @@
+## [1.97.1](https://github.com/HankHuang0516/EClaw/compare/v1.97.0...v1.97.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* widen OAuth access_token column from VARCHAR(256) to VARCHAR(512) ([a93da54](https://github.com/HankHuang0516/EClaw/commit/a93da54d50991908dd2b7e568b07410ac9397e2a))
+
 # [1.97.0](https://github.com/HankHuang0516/EClaw/compare/v1.96.2...v1.97.0) (2026-03-13)
 
 
