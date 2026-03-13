@@ -3422,7 +3422,7 @@ app.put('/api/device/entity/avatar', async (req, res) => {
  * If bot has registered webhook, push notification is sent.
  */
 app.post('/api/client/speak', async (req, res) => {
-    const { deviceId, entityId, text, source = "client", mediaType, mediaUrl } = req.body;
+    const { deviceId, deviceSecret, entityId, text, source = "client", mediaType, mediaUrl } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -3432,6 +3432,9 @@ app.post('/api/client/speak', async (req, res) => {
     if (!device) {
         return res.status(404).json({ success: false, message: "Device not found" });
     }
+
+    // Device owner authentication: if valid deviceSecret provided, exempt from Gatekeeper
+    const isDeviceOwner = deviceSecret && device.deviceSecret === deviceSecret;
 
     // Usage enforcement — apply to all non-premium devices
     // Premium check is inside enforceUsageLimit; personal bot exemption handled separately
@@ -3469,8 +3472,8 @@ app.post('/api/client/speak', async (req, res) => {
         }
     }
 
-    // Gatekeeper First Lock: check if device is blocked from free bots
-    if (gatekeeper.isDeviceBlocked(deviceId)) {
+    // Gatekeeper First Lock: device owner with valid deviceSecret is exempt
+    if (!isDeviceOwner && gatekeeper.isDeviceBlocked(deviceId)) {
         // Check if ANY target entity is a free bot
         const hasFreeBot = (() => {
             const eIds = entityId === "all"
@@ -3494,8 +3497,8 @@ app.post('/api/client/speak', async (req, res) => {
         }
     }
 
-    // Gatekeeper First Lock: detect malicious messages targeting free bots
-    if (text) {
+    // Gatekeeper First Lock: detect malicious messages targeting free bots (skip for device owner)
+    if (text && !isDeviceOwner) {
         const hasFreeBotTarget = (() => {
             const eIds = entityId === "all"
                 ? Object.keys(device.entities).map(Number).filter(i => device.entities[i] && device.entities[i].isBound)
