@@ -3473,6 +3473,9 @@ app.post('/api/client/speak', async (req, res) => {
 
     // Developer exemption: admin-owned devices with valid deviceSecret skip Gatekeeper First Lock
     const isDeveloper = deviceSecret && device.deviceSecret === deviceSecret && developerDeviceIds.has(deviceId);
+    if (deviceSecret) {
+        console.log(`[Gatekeeper Debug] deviceId=${deviceId}, secretMatch=${device.deviceSecret === deviceSecret}, inDevSet=${developerDeviceIds.has(deviceId)}, devSetSize=${developerDeviceIds.size}, isDeveloper=${isDeveloper}`);
+    }
 
     // Usage enforcement — apply to all non-premium devices
     // Premium check is inside enforceUsageLimit; personal bot exemption handled separately
