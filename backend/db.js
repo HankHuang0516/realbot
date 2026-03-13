@@ -229,6 +229,10 @@ async function createTables() {
         `);
         await client.query(`CREATE INDEX IF NOT EXISTS idx_channel_api_key ON channel_accounts(channel_api_key)`);
 
+        // v2: Add Basic Auth columns for Railway WEB_PASSWORD support
+        await client.query(`ALTER TABLE channel_accounts ADD COLUMN IF NOT EXISTS callback_username TEXT`);
+        await client.query(`ALTER TABLE channel_accounts ADD COLUMN IF NOT EXISTS callback_password TEXT`);
+
         await client.query(`
             CREATE TABLE IF NOT EXISTS skill_contributions (
                 id SERIAL PRIMARY KEY,
@@ -1043,13 +1047,13 @@ async function getChannelAccountByDevice(deviceId) {
     }
 }
 
-async function updateChannelCallback(apiKey, callbackUrl, callbackToken) {
+async function updateChannelCallback(apiKey, callbackUrl, callbackToken, callbackUsername, callbackPassword) {
     if (!pool) return false;
     try {
         await pool.query(
-            `UPDATE channel_accounts SET callback_url = $1, callback_token = $2, updated_at = $3
-             WHERE channel_api_key = $4`,
-            [callbackUrl, callbackToken, Date.now(), apiKey]
+            `UPDATE channel_accounts SET callback_url = $1, callback_token = $2, callback_username = $3, callback_password = $4, updated_at = $5
+             WHERE channel_api_key = $6`,
+            [callbackUrl, callbackToken, callbackUsername || null, callbackPassword || null, Date.now(), apiKey]
         );
         return true;
     } catch (err) {
@@ -1073,7 +1077,7 @@ async function clearChannelCallback(apiKey) {
     if (!pool) return false;
     try {
         await pool.query(
-            `UPDATE channel_accounts SET callback_url = NULL, callback_token = NULL, updated_at = $1
+            `UPDATE channel_accounts SET callback_url = NULL, callback_token = NULL, callback_username = NULL, callback_password = NULL, updated_at = $1
              WHERE channel_api_key = $2`,
             [Date.now(), apiKey]
         );

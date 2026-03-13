@@ -275,14 +275,14 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             const account = await channelAuth(req, res);
             if (!account) return;
 
-            const { callback_url, callback_token } = req.body;
+            const { callback_url, callback_token, callback_username, callback_password } = req.body;
             if (!callback_url) {
                 return res.status(400).json({ success: false, message: 'callback_url required' });
             }
 
             if (process.env.DEBUG === 'true') serverLog('info', 'bind', `[BIND] /register callback_url=${callback_url}`, { deviceId: account.device_id });
 
-            await db.updateChannelCallback(account.channel_api_key, callback_url, callback_token || null);
+            await db.updateChannelCallback(account.channel_api_key, callback_url, callback_token || null, callback_username || null, callback_password || null);
 
             const device = devices[account.device_id];
             const entities = [];
@@ -609,7 +609,10 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
 
         try {
             const headers = { 'Content-Type': 'application/json' };
-            if (account.callback_token) {
+            if (account.callback_username && account.callback_password) {
+                // Railway WEB_PASSWORD: use HTTP Basic Auth to pass through gateway auth
+                headers['Authorization'] = 'Basic ' + Buffer.from(`${account.callback_username}:${account.callback_password}`).toString('base64');
+            } else if (account.callback_token) {
                 headers['Authorization'] = `Bearer ${account.callback_token}`;
             }
 
