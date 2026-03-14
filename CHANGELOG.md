@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/HankHuang0516/EClaw/compare/v1.4.0...v1.5.0) (2026-03-14)
+
+
+### Features
+
+* add Agent Card button to Home page entity cards ([71d5937](https://github.com/HankHuang0516/EClaw/commit/71d59374322cca2802da2a77f349f5251735c0af))
+
 # [1.4.0](https://github.com/HankHuang0516/EClaw/compare/v1.3.0...v1.4.0) (2026-03-14)
 
 
