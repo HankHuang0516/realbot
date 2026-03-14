@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/HankHuang0516/EClaw/compare/v1.2.0...v1.2.1) (2026-03-14)
+
+
+### Bug Fixes
+
+* allow 127.0.0.1 through HTTPS redirect for Jest/supertest tests ([a38f804](https://github.com/HankHuang0516/EClaw/commit/a38f804923d28f11566f90563224783b626021fa))
+
 # [1.2.0](https://github.com/HankHuang0516/EClaw/compare/v1.1.0...v1.2.0) (2026-03-14)
 
 
