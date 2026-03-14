@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/HankHuang0516/EClaw/compare/v1.3.0...v1.4.0) (2026-03-14)
+
+
+### Bug Fixes
+
+* add flex-wrap to dashboard entity action buttons to prevent truncation ([6f0fa21](https://github.com/HankHuang0516/EClaw/commit/6f0fa210fae2e43878ed7c560ad2467644a189d4))
+
+
+### Features
+
+* allow bots to manage their own Agent Card via botSecret ([7f95b2c](https://github.com/HankHuang0516/EClaw/commit/7f95b2cbe3195fc222526b434d3f11820aec0026))
+
 # [1.3.0](https://github.com/HankHuang0516/EClaw/compare/v1.2.2...v1.3.0) (2026-03-14)
 
 
