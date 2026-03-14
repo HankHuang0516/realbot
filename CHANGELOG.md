@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/HankHuang0516/EClaw/compare/v1.2.1...v1.2.2) (2026-03-14)
+
+
+### Bug Fixes
+
+* normalize requiredVars to prevent Gson deserialization crash on Android ([30f9924](https://github.com/HankHuang0516/EClaw/commit/30f99248c95c3c664350e574670aa5f671e42369))
+
 ## [1.2.1](https://github.com/HankHuang0516/EClaw/compare/v1.2.0...v1.2.1) (2026-03-14)
 
 
