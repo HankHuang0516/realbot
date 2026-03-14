@@ -4476,16 +4476,31 @@ function validateAgentCard(card) {
 
 /**
  * PUT /api/entity/agent-card — Create or update agent card
+ * Auth: deviceSecret (owner) OR botSecret (bot self-update)
  */
 app.put('/api/entity/agent-card', (req, res) => {
-    const { deviceId, deviceSecret, entityId, agentCard } = req.body;
-    if (!deviceId || !deviceSecret || entityId === undefined || entityId === null) {
-        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, entityId required' });
+    const { deviceId, deviceSecret, botSecret, entityId, agentCard } = req.body;
+    if (!deviceId || entityId === undefined || entityId === null) {
+        return res.status(400).json({ success: false, error: 'deviceId, entityId required' });
+    }
+    if (!deviceSecret && !botSecret) {
+        return res.status(400).json({ success: false, error: 'deviceSecret or botSecret required' });
     }
     const device = devices[deviceId];
-    if (!device || device.deviceSecret !== deviceSecret) {
-        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    // Dual auth: deviceSecret (owner) or botSecret (bot self-update)
+    if (deviceSecret) {
+        if (device.deviceSecret !== deviceSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+        }
+    } else {
+        const entity = device.entities[entityId];
+        if (!entity || !entity.isBound || entity.botSecret !== botSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid botSecret' });
+        }
     }
+
     const entity = device.entities[entityId];
     if (!entity || !entity.isBound) {
         return res.status(404).json({ success: false, error: 'Entity not found or not bound' });
@@ -4499,17 +4514,32 @@ app.put('/api/entity/agent-card', (req, res) => {
 
 /**
  * GET /api/entity/agent-card — Read agent card
+ * Auth: deviceSecret (owner) OR botSecret (bot self-read)
  */
 app.get('/api/entity/agent-card', (req, res) => {
-    const { deviceId, deviceSecret, entityId } = req.query;
-    if (!deviceId || !deviceSecret || entityId === undefined) {
-        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, entityId required' });
+    const { deviceId, deviceSecret, botSecret, entityId } = req.query;
+    if (!deviceId || entityId === undefined) {
+        return res.status(400).json({ success: false, error: 'deviceId, entityId required' });
+    }
+    if (!deviceSecret && !botSecret) {
+        return res.status(400).json({ success: false, error: 'deviceSecret or botSecret required' });
     }
     const device = devices[deviceId];
-    if (!device || device.deviceSecret !== deviceSecret) {
-        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    const eid = parseInt(entityId);
+    if (deviceSecret) {
+        if (device.deviceSecret !== deviceSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+        }
+    } else {
+        const e = device.entities[eid];
+        if (!e || !e.isBound || e.botSecret !== botSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid botSecret' });
+        }
     }
-    const entity = device.entities[parseInt(entityId)];
+
+    const entity = device.entities[eid];
     if (!entity) {
         return res.status(404).json({ success: false, error: 'Entity not found' });
     }
@@ -4518,16 +4548,30 @@ app.get('/api/entity/agent-card', (req, res) => {
 
 /**
  * DELETE /api/entity/agent-card — Remove agent card
+ * Auth: deviceSecret (owner) OR botSecret (bot self-delete)
  */
 app.delete('/api/entity/agent-card', (req, res) => {
-    const { deviceId, deviceSecret, entityId } = req.body;
-    if (!deviceId || !deviceSecret || entityId === undefined) {
-        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, entityId required' });
+    const { deviceId, deviceSecret, botSecret, entityId } = req.body;
+    if (!deviceId || entityId === undefined) {
+        return res.status(400).json({ success: false, error: 'deviceId, entityId required' });
+    }
+    if (!deviceSecret && !botSecret) {
+        return res.status(400).json({ success: false, error: 'deviceSecret or botSecret required' });
     }
     const device = devices[deviceId];
-    if (!device || device.deviceSecret !== deviceSecret) {
-        return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+    if (!device) return res.status(404).json({ success: false, error: 'Device not found' });
+
+    if (deviceSecret) {
+        if (device.deviceSecret !== deviceSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid deviceSecret' });
+        }
+    } else {
+        const e = device.entities[entityId];
+        if (!e || !e.isBound || e.botSecret !== botSecret) {
+            return res.status(403).json({ success: false, error: 'Invalid botSecret' });
+        }
     }
+
     const entity = device.entities[entityId];
     if (!entity) {
         return res.status(404).json({ success: false, error: 'Entity not found' });
