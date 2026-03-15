@@ -1,5 +1,5 @@
-// Article Publisher — Blogger OAuth + Hashnode API + X (Twitter) integration
-// Provides: OAuth flow for Blogger, publish/delete for all platforms
+// Article Publisher — Multi-platform article publishing
+// Supported: Blogger, Hashnode, X/Twitter, DEV.to, WordPress.com, Telegraph, Qiita, WeChat Official Account
 const express = require('express');
 const crypto = require('crypto');
 const OAuth = require('oauth-1.0a');
@@ -14,6 +14,28 @@ const BLOGGER_REDIRECT_URI = process.env.BLOGGER_REDIRECT_URI || 'https://eclawb
 const BLOGGER_SCOPE = 'https://www.googleapis.com/auth/blogger';
 const HASHNODE_API_TOKEN = process.env.HASHNODE_API_TOKEN;
 const HASHNODE_GQL_ENDPOINT = 'https://gql.hashnode.com';
+
+// DEV.to (Forem API)
+const DEVTO_API_KEY = process.env.DEVTO_API_KEY;
+const DEVTO_API_BASE = 'https://dev.to/api';
+
+// WordPress.com
+const WORDPRESS_ACCESS_TOKEN = process.env.WORDPRESS_ACCESS_TOKEN;
+const WORDPRESS_API_BASE = 'https://public-api.wordpress.com';
+
+// Telegraph (Telegra.ph)
+const TELEGRAPH_API_BASE = 'https://api.telegra.ph';
+let telegraphAccessToken = process.env.TELEGRAPH_ACCESS_TOKEN || null;
+
+// Qiita
+const QIITA_ACCESS_TOKEN = process.env.QIITA_ACCESS_TOKEN;
+const QIITA_API_BASE = 'https://qiita.com/api/v2';
+
+// WeChat Official Account
+const WECHAT_APP_ID = process.env.WECHAT_APP_ID;
+const WECHAT_APP_SECRET = process.env.WECHAT_APP_SECRET;
+const WECHAT_API_BASE = 'https://api.weixin.qq.com/cgi-bin';
+let wechatTokenCache = { access_token: null, expires_at: 0 };
 
 // Token store: DB-backed with in-memory cache
 let _pool = null;
@@ -189,7 +211,7 @@ router.get('/blogger/status', (req, res) => {
 // ============================================
 
 router.post('/blogger/publish', express.json(), async (req, res) => {
-    const { deviceId, deviceSecret, title, content, labels, blogId, isDraft } = req.body;
+    const { deviceId, title, content, labels, blogId, isDraft } = req.body;
     if (!deviceId || !title || !content) {
         return res.status(400).json({ error: 'deviceId, title, content required' });
     }
@@ -433,6 +455,628 @@ router.get('/x/me', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+// ============================================
+// DEV.to (Forem API v1) — Global developer community
+// Auth: api-key header | Content: Markdown
+// ============================================
+
+function requireDevto(res) {
+    if (!DEVTO_API_KEY) { res.status(501).json({ error: 'DEV.to not configured (DEVTO_API_KEY missing)' }); return false; }
+    return true;
+}
+
+async function devtoRequest(method, path, body = null) {
+    const options = {
+        method,
+        headers: {
+            'api-key': DEVTO_API_KEY,
+            'Accept': 'application/vnd.forem.api-v1+json',
+            'Content-Type': 'application/json'
+        }
+    };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${DEVTO_API_BASE}${path}`, options);
+    const data = await res.json();
+    if (!res.ok) {
+        const err = new Error(data.error || data.message || `HTTP ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return data;
+}
+
+// GET /api/publisher/devto/me
+router.get('/devto/me', async (req, res) => {
+    if (!requireDevto(res)) return;
+    try {
+        const data = await devtoRequest('GET', '/users/me');
+        res.json({ success: true, user: { id: data.id, username: data.username, name: data.name } });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// POST /api/publisher/devto/publish
+router.post('/devto/publish', express.json(), async (req, res) => {
+    if (!requireDevto(res)) return;
+    const { title, body_markdown, published, tags, series, canonical_url } = req.body;
+    if (!title || !body_markdown) return res.status(400).json({ error: 'title, body_markdown required' });
+
+    try {
+        const article = { title, body_markdown, published: published !== false };
+        if (tags) article.tags = tags;
+        if (series) article.series = series;
+        if (canonical_url) article.canonical_url = canonical_url;
+
+        const data = await devtoRequest('POST', '/articles', { article });
+        console.log(`[Publisher] DEV.to article created: ${data.id} "${title}"`);
+        res.json({ success: true, platform: 'devto', postId: String(data.id), url: data.url, title: data.title, slug: data.slug });
+    } catch (err) {
+        console.error('[Publisher] DEV.to publish error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// PUT /api/publisher/devto/post/:postId
+router.put('/devto/post/:postId', express.json(), async (req, res) => {
+    if (!requireDevto(res)) return;
+    const { postId } = req.params;
+    const { title, body_markdown, published, tags, series, canonical_url } = req.body;
+
+    try {
+        const article = {};
+        if (title !== undefined) article.title = title;
+        if (body_markdown !== undefined) article.body_markdown = body_markdown;
+        if (published !== undefined) article.published = published;
+        if (tags !== undefined) article.tags = tags;
+        if (series !== undefined) article.series = series;
+        if (canonical_url !== undefined) article.canonical_url = canonical_url;
+
+        const data = await devtoRequest('PUT', `/articles/${postId}`, { article });
+        console.log(`[Publisher] DEV.to article updated: ${postId}`);
+        res.json({ success: true, platform: 'devto', postId: String(data.id), url: data.url, title: data.title });
+    } catch (err) {
+        console.error('[Publisher] DEV.to update error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/publisher/devto/post/:postId — unpublish (DEV.to doesn't support true delete via API)
+router.delete('/devto/post/:postId', async (req, res) => {
+    if (!requireDevto(res)) return;
+    const { postId } = req.params;
+    try {
+        await devtoRequest('PUT', `/articles/${postId}`, { article: { published: false } });
+        console.log(`[Publisher] DEV.to article unpublished: ${postId}`);
+        res.json({ success: true, platform: 'devto', unpublished: String(postId) });
+    } catch (err) {
+        console.error('[Publisher] DEV.to unpublish error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// WORDPRESS.COM (REST API) — Global blogging platform
+// Auth: Bearer token | Content: HTML
+// ============================================
+
+function requireWordpress(res) {
+    if (!WORDPRESS_ACCESS_TOKEN) { res.status(501).json({ error: 'WordPress not configured (WORDPRESS_ACCESS_TOKEN missing)' }); return false; }
+    return true;
+}
+
+async function wordpressRequest(method, path, body = null) {
+    const options = {
+        method,
+        headers: {
+            Authorization: `Bearer ${WORDPRESS_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+        }
+    };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${WORDPRESS_API_BASE}${path}`, options);
+    const data = await res.json();
+    if (!res.ok) {
+        const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return data;
+}
+
+// GET /api/publisher/wordpress/me — Get user + sites
+router.get('/wordpress/me', async (req, res) => {
+    if (!requireWordpress(res)) return;
+    try {
+        const data = await wordpressRequest('GET', '/rest/v1.1/me');
+        const sites = await wordpressRequest('GET', '/rest/v1.1/me/sites');
+        res.json({
+            success: true,
+            user: { id: data.ID, username: data.username, display_name: data.display_name },
+            sites: (sites.sites || []).map(s => ({ id: s.ID, name: s.name, url: s.URL }))
+        });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// POST /api/publisher/wordpress/publish
+router.post('/wordpress/publish', express.json(), async (req, res) => {
+    if (!requireWordpress(res)) return;
+    const { siteId, title, content, status, categories, tags } = req.body;
+    if (!siteId || !title || !content) return res.status(400).json({ error: 'siteId, title, content required' });
+
+    try {
+        const postBody = { title, content, status: status || 'publish' };
+        if (categories) postBody.categories = categories;
+        if (tags) postBody.tags = tags;
+
+        const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/new`, postBody);
+        console.log(`[Publisher] WordPress post created: ${data.ID} "${title}"`);
+        res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, status: data.status });
+    } catch (err) {
+        console.error('[Publisher] WordPress publish error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// PUT /api/publisher/wordpress/post/:postId
+router.put('/wordpress/post/:postId', express.json(), async (req, res) => {
+    if (!requireWordpress(res)) return;
+    const { postId } = req.params;
+    const { siteId, title, content, status, categories, tags } = req.body;
+    if (!siteId) return res.status(400).json({ error: 'siteId required' });
+
+    try {
+        const postBody = {};
+        if (title !== undefined) postBody.title = title;
+        if (content !== undefined) postBody.content = content;
+        if (status !== undefined) postBody.status = status;
+        if (categories !== undefined) postBody.categories = categories;
+        if (tags !== undefined) postBody.tags = tags;
+
+        const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}`, postBody);
+        console.log(`[Publisher] WordPress post updated: ${postId}`);
+        res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title });
+    } catch (err) {
+        console.error('[Publisher] WordPress update error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/publisher/wordpress/post/:postId
+router.delete('/wordpress/post/:postId', async (req, res) => {
+    if (!requireWordpress(res)) return;
+    const { postId } = req.params;
+    const { siteId } = req.query;
+    if (!siteId) return res.status(400).json({ error: 'siteId query param required' });
+
+    try {
+        await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}/delete`);
+        console.log(`[Publisher] WordPress post deleted: ${postId}`);
+        res.json({ success: true, platform: 'wordpress', deleted: postId });
+    } catch (err) {
+        console.error('[Publisher] WordPress delete error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// TELEGRAPH (Telegra.ph API) — Instant publishing
+// Auth: access_token (auto-created) | Content: HTML → Node format
+// ============================================
+
+function htmlToTelegraphNodes(html) {
+    // Convert simple HTML to Telegraph Node format
+    // Telegraph accepts: [{tag, attrs, children}] or plain strings
+    const nodes = [];
+    // Split by paragraphs, wrap in <p> if plain text
+    const lines = html.split(/\n+/).filter(l => l.trim());
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('<')) {
+            // Already HTML — pass as raw string (Telegraph API accepts HTML string in content)
+            nodes.push(trimmed);
+        } else {
+            nodes.push({ tag: 'p', children: [trimmed] });
+        }
+    }
+    return nodes.length > 0 ? nodes : [{ tag: 'p', children: [html] }];
+}
+
+async function telegraphRequest(method, body = {}) {
+    const res = await fetch(`${TELEGRAPH_API_BASE}/${method}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!data.ok) {
+        throw new Error(data.error || 'Telegraph API error');
+    }
+    return data.result;
+}
+
+async function ensureTelegraphAccount() {
+    if (telegraphAccessToken) return telegraphAccessToken;
+    // Auto-create account
+    const result = await telegraphRequest('createAccount', {
+        short_name: 'EClaw',
+        author_name: 'EClaw Platform',
+        author_url: 'https://eclawbot.com'
+    });
+    telegraphAccessToken = result.access_token;
+    console.log('[Publisher] Telegraph account created automatically');
+    return telegraphAccessToken;
+}
+
+// POST /api/publisher/telegraph/account — Create or get account
+router.post('/telegraph/account', express.json(), async (req, res) => {
+    try {
+        const { short_name, author_name, author_url } = req.body;
+        if (telegraphAccessToken) {
+            // Return existing account info
+            const info = await telegraphRequest('getAccountInfo', {
+                access_token: telegraphAccessToken,
+                fields: ['short_name', 'author_name', 'author_url', 'page_count']
+            });
+            return res.json({ success: true, platform: 'telegraph', account: info, existing: true });
+        }
+        const result = await telegraphRequest('createAccount', {
+            short_name: short_name || 'EClaw',
+            author_name: author_name || 'EClaw Platform',
+            author_url: author_url || 'https://eclawbot.com'
+        });
+        telegraphAccessToken = result.access_token;
+        console.log('[Publisher] Telegraph account created');
+        res.json({ success: true, platform: 'telegraph', account: result });
+    } catch (err) {
+        console.error('[Publisher] Telegraph account error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/publisher/telegraph/publish
+router.post('/telegraph/publish', express.json(), async (req, res) => {
+    const { title, content, author_name, author_url } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'title, content required' });
+
+    try {
+        const token = await ensureTelegraphAccount();
+        const page = await telegraphRequest('createPage', {
+            access_token: token,
+            title,
+            content: htmlToTelegraphNodes(content),
+            author_name: author_name || 'EClaw Platform',
+            author_url: author_url || 'https://eclawbot.com',
+            return_content: false
+        });
+        console.log(`[Publisher] Telegraph page created: "${title}" → ${page.url}`);
+        res.json({ success: true, platform: 'telegraph', path: page.path, url: page.url, title: page.title });
+    } catch (err) {
+        console.error('[Publisher] Telegraph publish error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/publisher/telegraph/page/:path — Edit page
+router.put('/telegraph/page/:path', express.json(), async (req, res) => {
+    const { path } = req.params;
+    const { title, content, author_name, author_url } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'title, content required' });
+
+    try {
+        const token = await ensureTelegraphAccount();
+        const page = await telegraphRequest('editPage', {
+            access_token: token,
+            path,
+            title,
+            content: htmlToTelegraphNodes(content),
+            author_name: author_name || 'EClaw Platform',
+            author_url: author_url || 'https://eclawbot.com',
+            return_content: false
+        });
+        console.log(`[Publisher] Telegraph page updated: ${path}`);
+        res.json({ success: true, platform: 'telegraph', path: page.path, url: page.url, title: page.title });
+    } catch (err) {
+        console.error('[Publisher] Telegraph edit error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// GET /api/publisher/telegraph/page/:path/views — Get page views
+router.get('/telegraph/page/:path/views', async (req, res) => {
+    const { path } = req.params;
+    try {
+        const views = await telegraphRequest('getViews', { path });
+        res.json({ success: true, platform: 'telegraph', path, views: views.views });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// QIITA (API v2) — Japan's largest developer knowledge platform
+// Auth: Bearer token | Content: Markdown
+// Rate limit: 1000 req/hr (authenticated)
+// ============================================
+
+function requireQiita(res) {
+    if (!QIITA_ACCESS_TOKEN) { res.status(501).json({ error: 'Qiita not configured (QIITA_ACCESS_TOKEN missing)' }); return false; }
+    return true;
+}
+
+async function qiitaRequest(method, path, body = null) {
+    const options = {
+        method,
+        headers: {
+            Authorization: `Bearer ${QIITA_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+        }
+    };
+    if (body) options.body = JSON.stringify(body);
+    const res = await fetch(`${QIITA_API_BASE}${path}`, options);
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) {
+        const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+        err.status = res.status;
+        throw err;
+    }
+    return data;
+}
+
+// GET /api/publisher/qiita/me
+router.get('/qiita/me', async (req, res) => {
+    if (!requireQiita(res)) return;
+    try {
+        const data = await qiitaRequest('GET', '/authenticated_user');
+        res.json({ success: true, user: { id: data.id, name: data.name, items_count: data.items_count, followers_count: data.followers_count } });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// POST /api/publisher/qiita/publish
+router.post('/qiita/publish', express.json(), async (req, res) => {
+    if (!requireQiita(res)) return;
+    const { title, body, tags, private: isPrivate, tweet } = req.body;
+    if (!title || !body) return res.status(400).json({ error: 'title, body required' });
+
+    try {
+        const item = {
+            title,
+            body,
+            private: isPrivate || false,
+            tweet: tweet || false,
+            tags: (tags || []).map(t => typeof t === 'string' ? { name: t, versions: [] } : t)
+        };
+        if (item.tags.length === 0) item.tags = [{ name: 'EClaw', versions: [] }];
+
+        const data = await qiitaRequest('POST', '/items', item);
+        console.log(`[Publisher] Qiita article created: ${data.id} "${title}"`);
+        res.json({ success: true, platform: 'qiita', postId: data.id, url: data.url, title: data.title });
+    } catch (err) {
+        console.error('[Publisher] Qiita publish error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// PUT /api/publisher/qiita/post/:postId
+router.put('/qiita/post/:postId', express.json(), async (req, res) => {
+    if (!requireQiita(res)) return;
+    const { postId } = req.params;
+    const { title, body, tags, private: isPrivate } = req.body;
+
+    try {
+        const item = {};
+        if (title !== undefined) item.title = title;
+        if (body !== undefined) item.body = body;
+        if (isPrivate !== undefined) item.private = isPrivate;
+        if (tags !== undefined) item.tags = tags.map(t => typeof t === 'string' ? { name: t, versions: [] } : t);
+
+        const data = await qiitaRequest('PATCH', `/items/${postId}`, item);
+        console.log(`[Publisher] Qiita article updated: ${postId}`);
+        res.json({ success: true, platform: 'qiita', postId: data.id, url: data.url, title: data.title });
+    } catch (err) {
+        console.error('[Publisher] Qiita update error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/publisher/qiita/post/:postId
+router.delete('/qiita/post/:postId', async (req, res) => {
+    if (!requireQiita(res)) return;
+    const { postId } = req.params;
+    try {
+        await qiitaRequest('DELETE', `/items/${postId}`);
+        console.log(`[Publisher] Qiita article deleted: ${postId}`);
+        res.json({ success: true, platform: 'qiita', deleted: postId });
+    } catch (err) {
+        console.error('[Publisher] Qiita delete error:', err);
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// WECHAT OFFICIAL ACCOUNT (微信公眾號) — China's dominant content platform
+// Auth: AppID + AppSecret → access_token | Content: HTML
+// Note: Creates drafts only — manual publish required from WeChat admin
+// ============================================
+
+function requireWechat(res) {
+    if (!WECHAT_APP_ID || !WECHAT_APP_SECRET) { res.status(501).json({ error: 'WeChat not configured (WECHAT_APP_ID, WECHAT_APP_SECRET missing)' }); return false; }
+    return true;
+}
+
+async function getWechatToken() {
+    // Return cached token if still valid (with 5min buffer)
+    if (wechatTokenCache.access_token && wechatTokenCache.expires_at > Date.now() + 300000) {
+        return wechatTokenCache.access_token;
+    }
+    const res = await fetch(
+        `${WECHAT_API_BASE}/token?grant_type=client_credential&appid=${WECHAT_APP_ID}&secret=${WECHAT_APP_SECRET}`
+    );
+    const data = await res.json();
+    if (data.errcode) throw new Error(`WeChat token error: ${data.errcode} ${data.errmsg}`);
+    wechatTokenCache = {
+        access_token: data.access_token,
+        expires_at: Date.now() + (data.expires_in * 1000)
+    };
+    console.log('[Publisher] WeChat access_token refreshed');
+    return data.access_token;
+}
+
+// GET /api/publisher/wechat/token — Get/refresh access_token status
+router.get('/wechat/token', async (req, res) => {
+    if (!requireWechat(res)) return;
+    try {
+        const token = await getWechatToken();
+        res.json({ success: true, platform: 'wechat', token_expires_at: wechatTokenCache.expires_at, has_token: !!token });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/publisher/wechat/upload-image — Upload cover image (permanent material)
+router.post('/wechat/upload-image', async (req, res) => {
+    if (!requireWechat(res)) return;
+
+    try {
+        const token = await getWechatToken();
+        // Expect multipart/form-data with 'media' field
+        // Forward the raw request body to WeChat
+        const contentType = req.headers['content-type'];
+        if (!contentType || !contentType.includes('multipart/form-data')) {
+            return res.status(400).json({ error: 'Content-Type must be multipart/form-data with media field' });
+        }
+
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const rawBody = Buffer.concat(chunks);
+
+        const wxRes = await fetch(
+            `${WECHAT_API_BASE}/material/add_material?access_token=${token}&type=image`,
+            { method: 'POST', headers: { 'Content-Type': contentType }, body: rawBody }
+        );
+        const data = await wxRes.json();
+        if (data.errcode) return res.status(400).json({ error: `WeChat: ${data.errcode} ${data.errmsg}` });
+
+        console.log(`[Publisher] WeChat image uploaded: ${data.media_id}`);
+        res.json({ success: true, platform: 'wechat', media_id: data.media_id, url: data.url });
+    } catch (err) {
+        console.error('[Publisher] WeChat upload error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST /api/publisher/wechat/draft — Create a draft article
+router.post('/wechat/draft', express.json(), async (req, res) => {
+    if (!requireWechat(res)) return;
+    const { title, content, thumb_media_id, author, digest } = req.body;
+    if (!title || !content || !thumb_media_id) {
+        return res.status(400).json({ error: 'title, content, thumb_media_id required' });
+    }
+
+    try {
+        const token = await getWechatToken();
+        const article = {
+            title,
+            content,
+            thumb_media_id,
+            author: author || 'EClaw',
+            digest: digest || title,
+            show_cover_pic: 1,
+            need_open_comment: 0,
+            only_fans_can_comment: 0
+        };
+
+        const wxRes = await fetch(`${WECHAT_API_BASE}/draft/add?access_token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ articles: [article] })
+        });
+        const data = await wxRes.json();
+        if (data.errcode) return res.status(400).json({ error: `WeChat: ${data.errcode} ${data.errmsg}` });
+
+        console.log(`[Publisher] WeChat draft created: ${data.media_id} "${title}"`);
+        res.json({ success: true, platform: 'wechat', media_id: data.media_id, title });
+    } catch (err) {
+        console.error('[Publisher] WeChat draft error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/publisher/wechat/drafts — List drafts
+router.get('/wechat/drafts', async (req, res) => {
+    if (!requireWechat(res)) return;
+    try {
+        const token = await getWechatToken();
+        const offset = parseInt(req.query.offset) || 0;
+        const count = Math.min(parseInt(req.query.count) || 20, 20);
+
+        const wxRes = await fetch(`${WECHAT_API_BASE}/draft/batchget?access_token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ offset, count, no_content: 1 })
+        });
+        const data = await wxRes.json();
+        if (data.errcode) return res.status(400).json({ error: `WeChat: ${data.errcode} ${data.errmsg}` });
+
+        res.json({ success: true, platform: 'wechat', total_count: data.total_count, items: data.item || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE /api/publisher/wechat/draft/:mediaId
+router.delete('/wechat/draft/:mediaId', async (req, res) => {
+    if (!requireWechat(res)) return;
+    const { mediaId } = req.params;
+    try {
+        const token = await getWechatToken();
+        const wxRes = await fetch(`${WECHAT_API_BASE}/draft/delete?access_token=${token}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ media_id: mediaId })
+        });
+        const data = await wxRes.json();
+        if (data.errcode) return res.status(400).json({ error: `WeChat: ${data.errcode} ${data.errmsg}` });
+
+        console.log(`[Publisher] WeChat draft deleted: ${mediaId}`);
+        res.json({ success: true, platform: 'wechat', deleted: mediaId });
+    } catch (err) {
+        console.error('[Publisher] WeChat delete error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// UNIFIED PLATFORMS LISTING
+// ============================================
+
+router.get('/platforms', (req, res) => {
+    const platforms = [
+        { id: 'blogger', name: 'Blogger', region: 'global', authType: 'oauth', contentFormat: 'html',
+          configured: !!(BLOGGER_CLIENT_ID && BLOGGER_CLIENT_SECRET) },
+        { id: 'hashnode', name: 'Hashnode', region: 'global', authType: 'api_key', contentFormat: 'markdown',
+          configured: !!HASHNODE_API_TOKEN },
+        { id: 'x', name: 'X (Twitter)', region: 'global', authType: 'oauth1a', contentFormat: 'text',
+          configured: !!(process.env.X_CONSUMER_KEY && process.env.X_ACCESS_TOKEN) },
+        { id: 'devto', name: 'DEV.to', region: 'global', authType: 'api_key', contentFormat: 'markdown',
+          configured: !!DEVTO_API_KEY },
+        { id: 'wordpress', name: 'WordPress.com', region: 'global', authType: 'bearer', contentFormat: 'html',
+          configured: !!WORDPRESS_ACCESS_TOKEN },
+        { id: 'telegraph', name: 'Telegraph', region: 'global', authType: 'auto', contentFormat: 'html',
+          configured: true },  // Telegraph always works — auto-creates account
+        { id: 'qiita', name: 'Qiita', region: 'ja', authType: 'bearer', contentFormat: 'markdown',
+          configured: !!QIITA_ACCESS_TOKEN },
+        { id: 'wechat', name: 'WeChat Official Account', region: 'zh-CN', authType: 'app_credentials', contentFormat: 'html',
+          configured: !!(WECHAT_APP_ID && WECHAT_APP_SECRET), draftsOnly: true }
+    ];
+    res.json({ success: true, platforms });
 });
 
 module.exports = { router, initPublisherTable };
