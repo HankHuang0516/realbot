@@ -1,3 +1,10 @@
+## [1.95.2](https://github.com/HankHuang0516/EClaw/compare/v1.95.1...v1.95.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* update regression tests for dynamic entity system + add agent card validation ([eea3dc6](https://github.com/HankHuang0516/EClaw/commit/eea3dc694e0e5f075c163e682803f7f61e811f47))
+
 ## [1.95.1](https://github.com/HankHuang0516/EClaw/compare/v1.95.0...v1.95.1) (2026-03-15)
 
 
