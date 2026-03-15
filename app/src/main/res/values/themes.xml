@@ -1,14 +1,18 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme - Material 3 -->
-    <style name="Theme.ClawLiveCompanion" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
+    <style name="Theme.ClawLiveCompanion" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Force dark theme — all app UI uses hardcoded dark colors -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
+        <!-- Ensure window background matches the dark app design -->
+        <item name="android:windowBackground">@color/surface_dim</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <!-- Transparent floating dialog theme for message widget -->
-    <style name="Theme.ClawLiveCompanion.TransparentDialog" parent="Theme.Material3.DayNight.Dialog">
+    <style name="Theme.ClawLiveCompanion.TransparentDialog" parent="Theme.Material3.Dark.Dialog">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
@@ -27,7 +31,7 @@
     </style>
 
     <!-- Floating chat dialog theme - larger than TransparentDialog -->
-    <style name="Theme.ClawLiveCompanion.FloatingChat" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.ClawLiveCompanion.FloatingChat" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
