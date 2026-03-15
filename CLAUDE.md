@@ -73,8 +73,8 @@ EClaw/
 │   │   │   └── i18n.js            # Internationalization
 │   │   └── docs/
 │   │       └── webhook-troubleshooting.md
-│   ├── tests/                # Regression + integration tests (57 files)
-│   ├── tests/jest/           # Jest unit tests (6 files, CI-run via `npm test`)
+│   ├── tests/                # Regression + integration tests (58 files)
+│   ├── tests/jest/           # Jest unit tests (10 files, CI-run via `npm test`)
 │   └── scripts/              # Setup scripts
 ├── app/                      # Android app (Kotlin)
 │   └── src/main/java/com/hank/clawlive/
