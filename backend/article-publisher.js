@@ -20,9 +20,16 @@ const HASHNODE_GQL_ENDPOINT = 'https://gql.hashnode.com';
 const DEVTO_API_KEY = process.env.DEVTO_API_KEY;
 const DEVTO_API_BASE = 'https://dev.to/api';
 
-// WordPress.com
-const WORDPRESS_ACCESS_TOKEN = process.env.WORDPRESS_ACCESS_TOKEN;
+// WordPress (supports OAuth2 with DB-backed tokens OR Application Password)
+const WORDPRESS_CLIENT_ID = process.env.WORDPRESS_CLIENT_ID;
+const WORDPRESS_CLIENT_SECRET = process.env.WORDPRESS_CLIENT_SECRET;
+const WORDPRESS_REDIRECT_URI = process.env.WORDPRESS_REDIRECT_URI || 'https://eclawbot.com/api/publisher/wordpress/oauth/callback';
+const WORDPRESS_ACCESS_TOKEN = process.env.WORDPRESS_ACCESS_TOKEN; // fallback: static env token
 const WORDPRESS_API_BASE = 'https://public-api.wordpress.com';
+const WORDPRESS_SITE_URL = (process.env.WORDPRESS_SITE_URL || '').replace(/\/+$/, '');
+const WORDPRESS_USERNAME = process.env.WORDPRESS_USERNAME;
+const WORDPRESS_APP_PASSWORD = process.env.WORDPRESS_APP_PASSWORD;
+const WP_USE_APP_PASSWORD = !!(WORDPRESS_SITE_URL && WORDPRESS_USERNAME && WORDPRESS_APP_PASSWORD);
 
 // Telegraph (Telegra.ph)
 const TELEGRAPH_API_BASE = 'https://api.telegra.ph';
@@ -63,6 +70,7 @@ const MASTODON_INSTANCE_URL = process.env.MASTODON_INSTANCE_URL || 'https://mast
 // Token store: DB-backed with in-memory cache
 let _pool = null;
 const bloggerTokens = new Map(); // in-memory cache: deviceId -> { access_token, refresh_token, expires_at, blog_id, blogs }
+const wordpressTokens = new Map(); // in-memory cache: key -> { access_token, expires_at, sites }
 
 function initPublisherTable(pool) {
     _pool = pool;
@@ -94,6 +102,31 @@ function initPublisherTable(pool) {
             console.log(`[Publisher] Loaded ${result.rows.length} Blogger token(s) from DB`);
         }
     }).catch(err => console.warn('[Publisher] blogger_tokens init:', err.message));
+
+    // WordPress tokens table
+    pool.query(`
+        CREATE TABLE IF NOT EXISTS wordpress_tokens (
+            token_key TEXT PRIMARY KEY,
+            access_token TEXT NOT NULL,
+            expires_at BIGINT NOT NULL,
+            sites JSONB DEFAULT '[]',
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    `).then(() => {
+        console.log('[Publisher] wordpress_tokens table ready');
+        return pool.query('SELECT * FROM wordpress_tokens');
+    }).then(result => {
+        for (const row of result.rows) {
+            wordpressTokens.set(row.token_key, {
+                access_token: row.access_token,
+                expires_at: Number(row.expires_at),
+                sites: row.sites || []
+            });
+        }
+        if (result.rows.length > 0) {
+            console.log(`[Publisher] Loaded ${result.rows.length} WordPress token(s) from DB`);
+        }
+    }).catch(err => console.warn('[Publisher] wordpress_tokens init:', err.message));
 }
 
 async function saveBloggerToken(deviceId) {
@@ -110,6 +143,49 @@ async function saveBloggerToken(deviceId) {
             blogs = EXCLUDED.blogs,
             updated_at = NOW()
     `, [deviceId, entry.access_token, entry.refresh_token, entry.expires_at, entry.blog_id, JSON.stringify(entry.blogs || [])]);
+}
+
+async function saveWordpressToken(key) {
+    const entry = wordpressTokens.get(key);
+    if (!_pool || !entry) return;
+    await _pool.query(`
+        INSERT INTO wordpress_tokens (token_key, access_token, expires_at, sites, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (token_key) DO UPDATE SET
+            access_token = EXCLUDED.access_token,
+            expires_at = EXCLUDED.expires_at,
+            sites = EXCLUDED.sites,
+            updated_at = NOW()
+    `, [key, entry.access_token, entry.expires_at, JSON.stringify(entry.sites || [])]);
+}
+
+// Get a valid WordPress access token (DB-backed > env var fallback)
+function getWordpressToken() {
+    const entry = wordpressTokens.get('default');
+    if (entry) {
+        if (entry.expires_at > Date.now()) return { token: entry.access_token, sites: entry.sites };
+        // Token expired
+        return { token: null, expired: true, sites: entry.sites };
+    }
+    // Fallback to env var (static token, no expiry tracking)
+    if (WORDPRESS_ACCESS_TOKEN) return { token: WORDPRESS_ACCESS_TOKEN, sites: [] };
+    return { token: null, expired: false };
+}
+
+// Attach expiry warning to WordPress API responses when token expires in < 3 days
+function wpExpiryWarning() {
+    const entry = wordpressTokens.get('default');
+    if (!entry) return undefined;
+    const msLeft = entry.expires_at - Date.now();
+    const daysLeft = msLeft / 86400000;
+    if (daysLeft >= 3) return undefined;
+    const renewUrl = WORDPRESS_CLIENT_ID ? 'https://eclawbot.com/api/publisher/wordpress/oauth/start' : null;
+    if (daysLeft <= 0) return { warning: 'WordPress token has expired — please re-authorize now', daysLeft: 0, renewUrl };
+    return {
+        warning: `WordPress token expires in ${daysLeft < 1 ? 'less than 1 day' : Math.ceil(daysLeft) + ' day(s)'} — please renew soon`,
+        daysLeft: Math.ceil(daysLeft),
+        renewUrl
+    };
 }
 
 // ============================================
@@ -581,25 +657,145 @@ router.delete('/devto/post/:postId', async (req, res) => {
 });
 
 // ============================================
+// WORDPRESS.COM OAUTH FLOW
+// ============================================
+
+// Step 1: Start OAuth — redirect user to WordPress.com consent
+router.get('/wordpress/oauth/start', (req, res) => {
+    if (!WORDPRESS_CLIENT_ID || !WORDPRESS_CLIENT_SECRET) {
+        return res.status(501).json({ error: 'WordPress OAuth not configured (need WORDPRESS_CLIENT_ID + WORDPRESS_CLIENT_SECRET)' });
+    }
+    const state = crypto.randomBytes(16).toString('hex');
+    const params = new URLSearchParams({
+        client_id: WORDPRESS_CLIENT_ID,
+        redirect_uri: WORDPRESS_REDIRECT_URI,
+        response_type: 'code',
+        scope: 'global',
+        state
+    });
+    res.redirect(`https://public-api.wordpress.com/oauth2/authorize?${params}`);
+});
+
+// Step 2: OAuth callback — exchange code for token, store in DB
+router.get('/wordpress/oauth/callback', async (req, res) => {
+    const { code, error: oauthError } = req.query;
+    if (oauthError) return res.status(400).send(`OAuth error: ${oauthError}`);
+    if (!code) return res.status(400).send('Missing authorization code');
+
+    try {
+        const tokenRes = await fetch('https://public-api.wordpress.com/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: WORDPRESS_CLIENT_ID,
+                client_secret: WORDPRESS_CLIENT_SECRET,
+                redirect_uri: WORDPRESS_REDIRECT_URI,
+                code,
+                grant_type: 'authorization_code'
+            })
+        });
+        const tokens = await tokenRes.json();
+        if (tokens.error) return res.status(400).json({ error: tokens.error, description: tokens.error_description });
+
+        // WordPress.com tokens expire in ~14 days (1209600s)
+        const expiresIn = tokens.expires_in || 1209600;
+        const expiresAt = Date.now() + (expiresIn * 1000) - 60000; // 1min buffer
+
+        // Fetch sites for this user
+        const sitesRes = await fetch(`${WORDPRESS_API_BASE}/rest/v1.1/me/sites`, {
+            headers: { Authorization: `Bearer ${tokens.access_token}` }
+        });
+        const sitesData = await sitesRes.json();
+        const sites = (sitesData.sites || []).map(s => ({ id: s.ID, name: s.name, url: s.URL }));
+
+        // Store in memory + DB
+        wordpressTokens.set('default', {
+            access_token: tokens.access_token,
+            expires_at: expiresAt,
+            sites
+        });
+        await saveWordpressToken('default');
+
+        const expiryDate = new Date(expiresAt).toISOString().slice(0, 10);
+        console.log(`[Publisher] WordPress OAuth success — ${sites.length} site(s), expires ${expiryDate}`);
+        res.send(`<h2>WordPress OAuth Success!</h2>
+            <p>Sites found: ${sites.length}</p>
+            <ul>${sites.map(s => `<li>${s.name} — ${s.url} (ID: ${s.id})</li>`).join('')}</ul>
+            <p>Token expires: ${expiryDate}</p>
+            <p>You can close this window.</p>`);
+    } catch (err) {
+        console.error('[Publisher] WordPress OAuth error:', err);
+        res.status(500).send('OAuth exchange failed: ' + err.message);
+    }
+});
+
+// GET /api/publisher/wordpress/oauth/status — Check token status
+router.get('/wordpress/oauth/status', (req, res) => {
+    const wp = getWordpressToken();
+    if (WP_USE_APP_PASSWORD) {
+        return res.json({ configured: true, authMode: 'app_password', expires: null });
+    }
+    if (!wp.token && !wp.expired) {
+        const authUrl = WORDPRESS_CLIENT_ID ? `/api/publisher/wordpress/oauth/start` : null;
+        return res.json({ configured: false, authMode: null, authUrl });
+    }
+    const entry = wordpressTokens.get('default');
+    const daysLeft = entry ? Math.max(0, Math.round((entry.expires_at - Date.now()) / 86400000)) : null;
+    res.json({
+        configured: !!wp.token,
+        authMode: entry ? 'oauth2_db' : 'oauth2_env',
+        expired: wp.expired || false,
+        daysLeft,
+        expiresAt: entry?.expires_at ? new Date(entry.expires_at).toISOString() : null,
+        sites: wp.sites || [],
+        renewUrl: WORDPRESS_CLIENT_ID ? `/api/publisher/wordpress/oauth/start` : null
+    });
+});
+
+// ============================================
 // WORDPRESS.COM (REST API) — Global blogging platform
-// Auth: Bearer token | Content: HTML
+// Auth: OAuth2 DB-backed | Bearer token fallback | Application Password
 // ============================================
 
 function requireWordpress(res) {
-    if (!WORDPRESS_ACCESS_TOKEN) { res.status(501).json({ error: 'WordPress not configured (WORDPRESS_ACCESS_TOKEN missing)' }); return false; }
-    return true;
+    if (WP_USE_APP_PASSWORD) return true;
+    const wp = getWordpressToken();
+    if (wp.token) return true;
+    if (wp.expired) {
+        const renewUrl = WORDPRESS_CLIENT_ID ? `https://eclawbot.com/api/publisher/wordpress/oauth/start` : null;
+        res.status(401).json({
+            error: 'WordPress token expired — please re-authorize',
+            renewUrl,
+            hint: renewUrl ? 'Visit renewUrl in your browser to re-authorize' : 'Set WORDPRESS_ACCESS_TOKEN env var'
+        });
+        return false;
+    }
+    res.status(501).json({ error: 'WordPress not configured (need OAuth setup or WORDPRESS_ACCESS_TOKEN or APP_PASSWORD)' });
+    return false;
 }
 
 async function wordpressRequest(method, path, body = null) {
-    const options = {
-        method,
-        headers: {
-            Authorization: `Bearer ${WORDPRESS_ACCESS_TOKEN}`,
-            'Content-Type': 'application/json'
+    const headers = { 'Content-Type': 'application/json' };
+    let url;
+
+    if (WP_USE_APP_PASSWORD) {
+        const credentials = Buffer.from(`${WORDPRESS_USERNAME}:${WORDPRESS_APP_PASSWORD}`).toString('base64');
+        headers.Authorization = `Basic ${credentials}`;
+        url = `${WORDPRESS_SITE_URL}/wp-json${path}`;
+    } else {
+        const wp = getWordpressToken();
+        if (!wp.token) {
+            const err = new Error(wp.expired ? 'WordPress token expired — re-authorize at /api/publisher/wordpress/oauth/start' : 'WordPress not configured');
+            err.status = 401;
+            throw err;
         }
-    };
+        headers.Authorization = `Bearer ${wp.token}`;
+        url = `${WORDPRESS_API_BASE}${path}`;
+    }
+
+    const options = { method, headers };
     if (body) options.body = JSON.stringify(body);
-    const res = await fetch(`${WORDPRESS_API_BASE}${path}`, options);
+    const res = await fetch(url, options);
     const data = await res.json();
     if (!res.ok) {
         const err = new Error(data.message || data.error || `HTTP ${res.status}`);
@@ -613,13 +809,23 @@ async function wordpressRequest(method, path, body = null) {
 router.get('/wordpress/me', async (req, res) => {
     if (!requireWordpress(res)) return;
     try {
-        const data = await wordpressRequest('GET', '/rest/v1.1/me');
-        const sites = await wordpressRequest('GET', '/rest/v1.1/me/sites');
-        res.json({
-            success: true,
-            user: { id: data.ID, username: data.username, display_name: data.display_name },
-            sites: (sites.sites || []).map(s => ({ id: s.ID, name: s.name, url: s.URL }))
-        });
+        if (WP_USE_APP_PASSWORD) {
+            const user = await wordpressRequest('GET', '/wp/v2/users/me');
+            res.json({
+                success: true, authMode: 'app_password',
+                user: { id: user.id, username: user.slug, display_name: user.name },
+                sites: [{ id: 'default', name: user.name, url: WORDPRESS_SITE_URL }]
+            });
+        } else {
+            const data = await wordpressRequest('GET', '/rest/v1.1/me');
+            const sites = await wordpressRequest('GET', '/rest/v1.1/me/sites');
+            res.json({
+                success: true, authMode: 'oauth2',
+                user: { id: data.ID, username: data.username, display_name: data.display_name },
+                sites: (sites.sites || []).map(s => ({ id: s.ID, name: s.name, url: s.URL })),
+                ...wpExpiryWarning()
+            });
+        }
     } catch (err) {
         res.status(err.status || 500).json({ error: err.message });
     }
@@ -629,16 +835,23 @@ router.get('/wordpress/me', async (req, res) => {
 router.post('/wordpress/publish', express.json(), async (req, res) => {
     if (!requireWordpress(res)) return;
     const { siteId, title, content, status, categories, tags } = req.body;
-    if (!siteId || !title || !content) return res.status(400).json({ error: 'siteId, title, content required' });
+    if (!title || !content) return res.status(400).json({ error: 'title, content required' });
+    if (!WP_USE_APP_PASSWORD && !siteId) return res.status(400).json({ error: 'siteId required for OAuth2 mode' });
 
     try {
         const postBody = { title, content, status: status || 'publish' };
         if (categories) postBody.categories = categories;
         if (tags) postBody.tags = tags;
 
-        const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/new`, postBody);
-        console.log(`[Publisher] WordPress post created: ${data.ID} "${title}"`);
-        res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, status: data.status });
+        if (WP_USE_APP_PASSWORD) {
+            const data = await wordpressRequest('POST', '/wp/v2/posts', postBody);
+            console.log(`[Publisher] WordPress post created (app_password): ${data.id} "${title}"`);
+            res.json({ success: true, platform: 'wordpress', postId: String(data.id), url: data.link, title: data.title?.rendered || title, status: data.status });
+        } else {
+            const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/new`, postBody);
+            console.log(`[Publisher] WordPress post created: ${data.ID} "${title}"`);
+            res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, status: data.status, ...wpExpiryWarning() });
+        }
     } catch (err) {
         console.error('[Publisher] WordPress publish error:', err);
         res.status(err.status || 500).json({ error: err.message });
@@ -650,7 +863,7 @@ router.put('/wordpress/post/:postId', express.json(), async (req, res) => {
     if (!requireWordpress(res)) return;
     const { postId } = req.params;
     const { siteId, title, content, status, categories, tags } = req.body;
-    if (!siteId) return res.status(400).json({ error: 'siteId required' });
+    if (!WP_USE_APP_PASSWORD && !siteId) return res.status(400).json({ error: 'siteId required for OAuth2 mode' });
 
     try {
         const postBody = {};
@@ -660,9 +873,15 @@ router.put('/wordpress/post/:postId', express.json(), async (req, res) => {
         if (categories !== undefined) postBody.categories = categories;
         if (tags !== undefined) postBody.tags = tags;
 
-        const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}`, postBody);
-        console.log(`[Publisher] WordPress post updated: ${postId}`);
-        res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title });
+        if (WP_USE_APP_PASSWORD) {
+            const data = await wordpressRequest('POST', `/wp/v2/posts/${postId}`, postBody);
+            console.log(`[Publisher] WordPress post updated (app_password): ${postId}`);
+            res.json({ success: true, platform: 'wordpress', postId: String(data.id), url: data.link, title: data.title?.rendered });
+        } else {
+            const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}`, postBody);
+            console.log(`[Publisher] WordPress post updated: ${postId}`);
+            res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, ...wpExpiryWarning() });
+        }
     } catch (err) {
         console.error('[Publisher] WordPress update error:', err);
         res.status(err.status || 500).json({ error: err.message });
@@ -674,12 +893,16 @@ router.delete('/wordpress/post/:postId', async (req, res) => {
     if (!requireWordpress(res)) return;
     const { postId } = req.params;
     const { siteId } = req.query;
-    if (!siteId) return res.status(400).json({ error: 'siteId query param required' });
+    if (!WP_USE_APP_PASSWORD && !siteId) return res.status(400).json({ error: 'siteId query param required for OAuth2 mode' });
 
     try {
-        await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}/delete`);
+        if (WP_USE_APP_PASSWORD) {
+            await wordpressRequest('DELETE', `/wp/v2/posts/${postId}?force=true`);
+        } else {
+            await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}/delete`);
+        }
         console.log(`[Publisher] WordPress post deleted: ${postId}`);
-        res.json({ success: true, platform: 'wordpress', deleted: postId });
+        res.json({ success: true, platform: 'wordpress', deleted: postId, ...wpExpiryWarning() });
     } catch (err) {
         console.error('[Publisher] WordPress delete error:', err);
         res.status(err.status || 500).json({ error: err.message });
@@ -1504,8 +1727,12 @@ router.get('/platforms', (req, res) => {
           configured: !!(process.env.X_CONSUMER_KEY && process.env.X_ACCESS_TOKEN) },
         { id: 'devto', name: 'DEV.to', region: 'global', authType: 'api_key', contentFormat: 'markdown',
           configured: !!DEVTO_API_KEY },
-        { id: 'wordpress', name: 'WordPress.com', region: 'global', authType: 'bearer', contentFormat: 'html',
-          configured: !!WORDPRESS_ACCESS_TOKEN },
+        { id: 'wordpress', name: 'WordPress', region: 'global',
+          authType: WP_USE_APP_PASSWORD ? 'basic' : 'bearer',
+          authMode: WP_USE_APP_PASSWORD ? 'app_password' : (wordpressTokens.has('default') ? 'oauth2_db' : 'oauth2'),
+          contentFormat: 'html',
+          configured: WP_USE_APP_PASSWORD || !!getWordpressToken().token,
+          ...wpExpiryWarning() },
         { id: 'telegraph', name: 'Telegraph', region: 'global', authType: 'auto', contentFormat: 'html',
           configured: true },
         { id: 'qiita', name: 'Qiita', region: 'ja', authType: 'bearer', contentFormat: 'markdown',
