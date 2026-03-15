@@ -172,6 +172,22 @@ function getWordpressToken() {
     return { token: null, expired: false };
 }
 
+// Attach expiry warning to WordPress API responses when token expires in < 3 days
+function wpExpiryWarning() {
+    const entry = wordpressTokens.get('default');
+    if (!entry) return undefined;
+    const msLeft = entry.expires_at - Date.now();
+    const daysLeft = msLeft / 86400000;
+    if (daysLeft >= 3) return undefined;
+    const renewUrl = WORDPRESS_CLIENT_ID ? 'https://eclawbot.com/api/publisher/wordpress/oauth/start' : null;
+    if (daysLeft <= 0) return { warning: 'WordPress token has expired — please re-authorize now', daysLeft: 0, renewUrl };
+    return {
+        warning: `WordPress token expires in ${daysLeft < 1 ? 'less than 1 day' : Math.ceil(daysLeft) + ' day(s)'} — please renew soon`,
+        daysLeft: Math.ceil(daysLeft),
+        renewUrl
+    };
+}
+
 // ============================================
 // BLOGGER OAUTH FLOW
 // ============================================
@@ -806,7 +822,8 @@ router.get('/wordpress/me', async (req, res) => {
             res.json({
                 success: true, authMode: 'oauth2',
                 user: { id: data.ID, username: data.username, display_name: data.display_name },
-                sites: (sites.sites || []).map(s => ({ id: s.ID, name: s.name, url: s.URL }))
+                sites: (sites.sites || []).map(s => ({ id: s.ID, name: s.name, url: s.URL })),
+                ...wpExpiryWarning()
             });
         }
     } catch (err) {
@@ -833,7 +850,7 @@ router.post('/wordpress/publish', express.json(), async (req, res) => {
         } else {
             const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/new`, postBody);
             console.log(`[Publisher] WordPress post created: ${data.ID} "${title}"`);
-            res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, status: data.status });
+            res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, status: data.status, ...wpExpiryWarning() });
         }
     } catch (err) {
         console.error('[Publisher] WordPress publish error:', err);
@@ -863,7 +880,7 @@ router.put('/wordpress/post/:postId', express.json(), async (req, res) => {
         } else {
             const data = await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}`, postBody);
             console.log(`[Publisher] WordPress post updated: ${postId}`);
-            res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title });
+            res.json({ success: true, platform: 'wordpress', postId: String(data.ID), url: data.URL, title: data.title, ...wpExpiryWarning() });
         }
     } catch (err) {
         console.error('[Publisher] WordPress update error:', err);
@@ -885,7 +902,7 @@ router.delete('/wordpress/post/:postId', async (req, res) => {
             await wordpressRequest('POST', `/rest/v1.1/sites/${siteId}/posts/${postId}/delete`);
         }
         console.log(`[Publisher] WordPress post deleted: ${postId}`);
-        res.json({ success: true, platform: 'wordpress', deleted: postId });
+        res.json({ success: true, platform: 'wordpress', deleted: postId, ...wpExpiryWarning() });
     } catch (err) {
         console.error('[Publisher] WordPress delete error:', err);
         res.status(err.status || 500).json({ error: err.message });
@@ -1712,9 +1729,10 @@ router.get('/platforms', (req, res) => {
           configured: !!DEVTO_API_KEY },
         { id: 'wordpress', name: 'WordPress', region: 'global',
           authType: WP_USE_APP_PASSWORD ? 'basic' : 'bearer',
-          authMode: WP_USE_APP_PASSWORD ? 'app_password' : 'oauth2',
+          authMode: WP_USE_APP_PASSWORD ? 'app_password' : (wordpressTokens.has('default') ? 'oauth2_db' : 'oauth2'),
           contentFormat: 'html',
-          configured: WP_USE_APP_PASSWORD || !!WORDPRESS_ACCESS_TOKEN },
+          configured: WP_USE_APP_PASSWORD || !!getWordpressToken().token,
+          ...wpExpiryWarning() },
         { id: 'telegraph', name: 'Telegraph', region: 'global', authType: 'auto', contentFormat: 'html',
           configured: true },
         { id: 'qiita', name: 'Qiita', region: 'ja', authType: 'bearer', contentFormat: 'markdown',
