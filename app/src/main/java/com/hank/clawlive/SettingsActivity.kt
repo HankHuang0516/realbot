@@ -460,18 +460,18 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateEntityCount() {
-        val maxEntities = EntityChipHelper.getEntityLimit(this)
+        val totalSlots = layoutPrefs.serverEntityLimit
         // Show local count first, then update from API
         val localCount = layoutPrefs.getRegisteredEntityIds().size
-        tvEntityCount.text = "$localCount/$maxEntities"
+        tvEntityCount.text = "$localCount/$totalSlots"
 
         lifecycleScope.launch {
             try {
                 val response = NetworkModule.api.getAllEntities(deviceId = deviceManager.deviceId)
                 val boundCount = response.entities.size
                 // #69: Save server entity limit so it refreshes immediately after payment
-                layoutPrefs.serverEntityLimit = response.maxEntities
-                tvEntityCount.text = "$boundCount/${response.maxEntities}"
+                layoutPrefs.serverEntityLimit = response.totalSlots
+                tvEntityCount.text = "$boundCount/${response.totalSlots}"
             } catch (e: Exception) {
                 Timber.e(e, "Failed to fetch entity count from API")
             }

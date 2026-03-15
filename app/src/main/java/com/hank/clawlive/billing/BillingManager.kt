@@ -303,8 +303,8 @@ class BillingManager(private val context: Context) : PurchasesUpdatedListener {
         scope.launch(Dispatchers.IO) {
             try {
                 val response = api.getAllEntities(deviceId = deviceManager.deviceId)
-                LayoutPreferences.getInstance(context).serverEntityLimit = response.maxEntities
-                Timber.tag(TAG).d("Entity limit refreshed: ${response.maxEntities}")
+                LayoutPreferences.getInstance(context).serverEntityLimit = response.totalSlots
+                Timber.tag(TAG).d("Entity limit refreshed: ${response.totalSlots}")
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Failed to refresh entity limit")
             }

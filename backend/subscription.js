@@ -36,7 +36,7 @@ const BORROW_AMOUNT = 288; // NT$288/month (official bot rental)
 const SUBSCRIPTION_CURRENCY = 'TWD';
 const SUBSCRIPTION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
-module.exports = function (devices, authMiddleware, ensureEntitySlots, serverLog) {
+module.exports = function (devices, authMiddleware, _unused, serverLog) {
     const router = express.Router();
 
     // ============================================
@@ -210,7 +210,7 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots, serverLog
             // Update in-memory device premium status
             if (devices[user.device_id]) {
                 devices[user.device_id].isPremium = true;
-                ensureEntitySlots(devices[user.device_id]);
+                // Dynamic entity system: no slot expansion needed (auto-expands on bind)
             }
 
             if (process.env.DEBUG === 'true') console.log(`[Subscription] Premium activated for ${user.email} via TapPay`);
@@ -274,7 +274,7 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots, serverLog
 
             // Mark device as premium in memory
             device.isPremium = true;
-            ensureEntitySlots(device);
+            // Dynamic entity system: no slot expansion needed (auto-expands on bind)
 
             // Check if there's a user account linked to this device
             const userResult = await pool.query(
@@ -506,7 +506,7 @@ module.exports = function (devices, authMiddleware, ensureEntitySlots, serverLog
             for (const row of result.rows) {
                 if (devices[row.device_id]) {
                     devices[row.device_id].isPremium = true;
-                    ensureEntitySlots(devices[row.device_id]);
+                    // Dynamic entity system: no slot expansion needed (auto-expands on bind)
                 }
             }
             if (process.env.DEBUG === 'true') console.log(`[Subscription] Loaded ${result.rows.length} premium users`);

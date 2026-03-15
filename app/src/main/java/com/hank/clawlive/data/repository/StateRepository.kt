@@ -116,11 +116,11 @@ class StateRepository(
                 val filteredResponse = MultiEntityResponse(
                     entities = filteredEntities,
                     activeCount = filteredEntities.size,
-                    maxEntities = response.maxEntities
+                    totalSlots = response.totalSlots
                 )
 
                 // Persist server-provided entity limit for EntityChipHelper
-                layoutPrefs.serverEntityLimit = response.maxEntities
+                layoutPrefs.serverEntityLimit = response.totalSlots
 
                 emit(filteredResponse)
                 Timber.d("Multi-entity status: ${filteredEntities.size} entities for device ${deviceManager.deviceId}")

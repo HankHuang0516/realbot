@@ -395,9 +395,9 @@ class MainActivity : AppCompatActivity() {
 
                 // #72 fix: Sync serverEntityLimit from API response
                 val prevLimit = layoutPrefs.serverEntityLimit
-                if (response.maxEntities != prevLimit) {
-                    layoutPrefs.serverEntityLimit = response.maxEntities
-                    Timber.d("[#72] serverEntityLimit updated: $prevLimit -> ${response.maxEntities}")
+                if (response.totalSlots != prevLimit) {
+                    layoutPrefs.serverEntityLimit = response.totalSlots
+                    Timber.d("[#72] serverEntityLimit updated: $prevLimit -> ${response.totalSlots}")
                     // Refresh entity chips to show newly available slots
                     chipGroupEntity.removeAllViews()
                     entityChips = EntityChipHelper.populate(this@MainActivity, chipGroupEntity)
@@ -479,8 +479,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateEntityCount() {
-        val maxEntities = EntityChipHelper.getEntityLimit(this)
-        tvEntityCount.text = getString(R.string.entity_count_format, boundEntities.size, maxEntities)
+        val totalSlots = LayoutPreferences.getInstance(this).serverEntityLimit
+        tvEntityCount.text = getString(R.string.entity_count_format, boundEntities.size, totalSlots)
         tvEntityCount.visibility = View.VISIBLE
     }
 
