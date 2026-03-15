@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/HankHuang0516/EClaw/compare/v1.6.0...v1.6.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* remove ensureEntitySlots and maxEntities references for dynamic entity system ([4aaa3bf](https://github.com/HankHuang0516/EClaw/commit/4aaa3bf89349e991692e4c831d41648506036604))
+
 # [1.6.0](https://github.com/HankHuang0516/EClaw/compare/v1.5.1...v1.6.0) (2026-03-15)
 
 
