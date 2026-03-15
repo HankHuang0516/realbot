@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/HankHuang0516/EClaw/compare/v1.7.0...v1.7.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **android:** improve Public Code badge contrast and add functional label ([f725bc6](https://github.com/HankHuang0516/EClaw/commit/f725bc6c7e19521bdf4f9559805d197ba2cf6968)), closes [#4FC3F7](https://github.com/HankHuang0516/EClaw/issues/4FC3F7) [#4CAF50](https://github.com/HankHuang0516/EClaw/issues/4CAF50)
+
 # [1.7.0](https://github.com/HankHuang0516/EClaw/compare/v1.6.2...v1.7.0) (2026-03-15)
 
 
