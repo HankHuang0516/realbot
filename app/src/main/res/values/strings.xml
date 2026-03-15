@@ -691,6 +691,7 @@ If you have any questions, please contact us via our official email.
     <string name="soul_desc_poet">Speaks in metaphors and imagery. Finds beauty in everyday things and expresses thoughts artistically.</string>
 
     <!-- Public Code (cross-device messaging) -->
+    <string name="public_code_label">Public Code · Tap to copy</string>
     <string name="entity_public_code">📋 %s</string>
     <string name="code_copied">Code copied to clipboard</string>
 

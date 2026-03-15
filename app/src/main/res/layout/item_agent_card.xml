@@ -146,19 +146,37 @@
         </LinearLayout>
 
         <!-- Public Code (cross-device messaging) -->
-        <TextView
-            android:id="@+id/tvPublicCode"
+        <LinearLayout
+            android:id="@+id/publicCodeRow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="2dp"
-            android:background="@drawable/badge_background"
-            android:textColor="#4FC3F7"
-            android:textSize="12sp"
-            android:fontFamily="monospace"
-            android:letterSpacing="0.08"
-            android:visibility="gone" />
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvPublicCodeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/public_code_label"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:id="@+id/tvPublicCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:background="@drawable/badge_public_code_background"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:fontFamily="monospace"
+                android:letterSpacing="0.08"
+                android:drawablePadding="6dp" />
+
+        </LinearLayout>
 
         <!-- Last Message Bubble -->
         <LinearLayout

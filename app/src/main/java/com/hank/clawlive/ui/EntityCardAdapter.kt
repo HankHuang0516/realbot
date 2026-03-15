@@ -58,10 +58,12 @@ class EntityCardAdapter(
     fun hasOrderChanged(): Boolean = getCurrentOrder() != originalOrder
 
     fun submitList(entities: List<EntityStatus>) {
+        android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter] submitList: ${entities.size} entities, IDs=${entities.map { it.entityId }}")
         items.clear()
         items.addAll(entities)
         originalOrder = entities.map { it.entityId }
         notifyDataSetChanged()
+        android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter] submitList: notifyDataSetChanged() called")
     }
 
     /** Called after reorder is persisted to update original order baseline */
@@ -78,22 +80,34 @@ class EntityCardAdapter(
     override fun getItemCount() = items.size
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter] onCreateViewHolder — inflating item_agent_card")
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_agent_card, parent, false)
+        android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter] onCreateViewHolder — inflate done")
         return ViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val entity = items[position]
+        android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter] onBindViewHolder pos=$position entityId=${entity.entityId} name=${entity.name} state=${entity.state} isBound=${entity.isBound}")
         holder.bind(entity)
+        android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter] onBindViewHolder pos=$position — bind done")
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val tvEntityIcon: TextView = itemView.findViewById(R.id.tvEntityIcon)
-        private val tvEntityName: TextView = itemView.findViewById(R.id.tvEntityName)
+        init {
+            android.util.Log.d("DEBUG_BLACKSCREEN", "[EntityCardAdapter.ViewHolder] init — finding views in item_agent_card")
+        }
+        private val tvEntityIcon: TextView = itemView.findViewById<TextView>(R.id.tvEntityIcon).also {
+            android.util.Log.d("DEBUG_BLACKSCREEN", "[ViewHolder] tvEntityIcon=${it != null}")
+        }
+        private val tvEntityName: TextView = itemView.findViewById<TextView>(R.id.tvEntityName).also {
+            android.util.Log.d("DEBUG_BLACKSCREEN", "[ViewHolder] tvEntityName=${it != null}")
+        }
         private val tvEntityId: TextView = itemView.findViewById(R.id.tvEntityId)
         private val tvStateBadge: TextView = itemView.findViewById(R.id.tvStateBadge)
         private val tvChannelBadge: TextView = itemView.findViewById(R.id.tvChannelBadge)
+        private val publicCodeRow: LinearLayout = itemView.findViewById(R.id.publicCodeRow)
         private val tvPublicCode: TextView = itemView.findViewById(R.id.tvPublicCode)
         private val tvLastMessage: TextView = itemView.findViewById(R.id.tvLastMessage)
         private val tvMessageTime: TextView = itemView.findViewById(R.id.tvMessageTime)
@@ -152,7 +166,7 @@ class EntityCardAdapter(
 
             // Public code
             if (!entity.publicCode.isNullOrBlank()) {
-                tvPublicCode.visibility = View.VISIBLE
+                publicCodeRow.visibility = View.VISIBLE
                 tvPublicCode.text = itemView.context.getString(R.string.entity_public_code, entity.publicCode)
                 tvPublicCode.setOnClickListener {
                     val clipboard = itemView.context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
@@ -160,7 +174,7 @@ class EntityCardAdapter(
                     android.widget.Toast.makeText(itemView.context, R.string.code_copied, android.widget.Toast.LENGTH_SHORT).show()
                 }
             } else {
-                tvPublicCode.visibility = View.GONE
+                publicCodeRow.visibility = View.GONE
             }
 
             // Edit mode: drag handle + action buttons
