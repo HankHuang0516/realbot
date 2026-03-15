@@ -412,7 +412,132 @@ Google will review your app. Check status in Google Play Console.
 
 ---
 
-## 10. Clean Up Old Release Folders
+## 10. Publish Release Notes to External Platforms
+
+> [!IMPORTANT]
+> **Every release MUST publish release notes to all 9 platforms for brand visibility.**
+> Uses the EClaw Publisher API. `X-Publisher-Key` is stored in `backend/.env`.
+
+### Platforms & API calls
+
+All requests use the base URL `https://eclawbot.com/api/publisher/` and require the header:
+```
+-H "X-Publisher-Key: $PUBLISHER_KEY"
+```
+
+Read the key from `backend/.env` (`X-Publisher-Key=...`).
+
+#### Content preparation
+
+Generate platform-appropriate content from the release changelog:
+
+| Platform | Format | Limit | Language |
+|----------|--------|-------|----------|
+| DEV.to | Markdown | — | English |
+| Hashnode | Markdown | — | English |
+| Blogger | HTML | — | English |
+| Telegraph | HTML | — | English |
+| Tumblr | HTML/Markdown | — | English |
+| Mastodon | Plain text | 500 chars | English |
+| Qiita | Markdown | — | Japanese |
+| X / Twitter | Plain text | 280 chars | English |
+| WordPress | HTML | — | English |
+
+#### 1. DEV.to
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/devto/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"title":"EClaw v{VERSION} Release Notes","body_markdown":"...","published":true,"tags":["eclaw","iot","release"]}'
+```
+
+#### 2. Hashnode
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/hashnode/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"publicationId":"PUBLICATION_ID","title":"EClaw v{VERSION} Release Notes","contentMarkdown":"...","tags":["eclaw","iot","release"]}'
+```
+
+#### 3. Blogger
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/blogger/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"deviceId":"DEVICE_ID","title":"EClaw v{VERSION} Release Notes","content":"<p>HTML content</p>","labels":["eclaw","release"],"isDraft":false}'
+```
+
+#### 4. Telegraph
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/telegraph/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"title":"EClaw v{VERSION} Release Notes","content":"<p>HTML content</p>","author_name":"EClaw","author_url":"https://eclawbot.com"}'
+```
+
+#### 5. Tumblr
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/tumblr/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"blogName":"BLOG_NAME","title":"EClaw v{VERSION} Release Notes","content":"...","tags":["eclaw","release"],"state":"published"}'
+```
+
+#### 6. Mastodon (500 char limit)
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/mastodon/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"status":"🦞 EClaw v{VERSION} released!\n\nKey changes:\n- ...\n\nhttps://eclawbot.com\n\n#EClaw #IoT #release","visibility":"public","language":"en"}'
+```
+
+#### 7. Qiita (Japanese)
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/qiita/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"title":"EClaw v{VERSION} リリースノート","body":"Markdown content in Japanese","tags":[{"name":"EClaw","versions":[]},{"name":"IoT","versions":[]},{"name":"release","versions":[]}],"private":false}'
+```
+
+#### 8. X / Twitter (280 char limit)
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/x/tweet" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"text":"🦞 EClaw v{VERSION} is out!\n\nHighlights:\n- ...\n\nhttps://eclawbot.com #EClaw #IoT"}'
+```
+
+#### 9. WordPress
+// turbo
+```bash
+curl -X POST "https://eclawbot.com/api/publisher/wordpress/publish" \
+  -H "Content-Type: application/json" \
+  -H "X-Publisher-Key: $PUBLISHER_KEY" \
+  -d '{"siteId":"253401752","title":"EClaw v{VERSION} Release Notes","content":"<p>HTML content</p>","status":"publish"}'
+```
+
+#### Verification
+// turbo
+```bash
+# Check all platform statuses
+curl "https://eclawbot.com/api/publisher/platforms"
+```
+
+> [!NOTE]
+> If a platform fails (e.g., missing credentials), log the error and continue with the remaining platforms.
+> Platforms can be retried individually later.
+
+---
+
+## 11. Clean Up Old Release Folders
 
 > [!IMPORTANT]
 > **Delete all `release_v*` folders except the current version to free up disk space.**
@@ -427,9 +552,9 @@ ls release_v*/
 ls -d release_v* | grep -v "release_vX.X.XX" | xargs rm -rf
 ```
 
-**Example for v1.0.46:**
+**Example for v1.0.47:**
 ```bash
-ls -d release_v* | grep -v "release_v1.0.46" | xargs rm -rf
+ls -d release_v* | grep -v "release_v1.0.47" | xargs rm -rf
 ```
 
 **Expected result:** Only `release_v{CURRENT}/` remains in the project root.

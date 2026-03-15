@@ -16,7 +16,7 @@
 ```
 EClaw/
 ├── backend/                  # Node.js Express server (deployed to Railway)
-│   ├── index.js              # Main server (~10,500 lines) — all API routes
+│   ├── index.js              # Main server (~10,800 lines) — all API routes
 │   ├── db.js                 # PostgreSQL connection pool + schema creation
 │   ├── auth.js               # Auth module (JWT, OAuth, OIDC, RBAC)
 │   ├── mission.js            # Mission Control dashboard system
@@ -137,7 +137,7 @@ EClaw/
 
 ### Backend (Node.js/Express)
 
-- **Single-file server**: `backend/index.js` (~10,500 lines) contains all API routes
+- **Single-file server**: `backend/index.js` (~10,800 lines) contains all API routes
 - **Database**: PostgreSQL (Railway-managed), connection in `backend/db.js`
 - **Real-time**: Socket.IO for live updates to Web Portal and Android app
 - **Auth**: JWT tokens (cookie-based for web, header-based for API), social OAuth (Google, Facebook), OIDC
@@ -369,6 +369,11 @@ See `backend/.env.example` for full list. Key variables:
 | `LINKEDIN_ACCESS_TOKEN` + `LINKEDIN_PERSON_URN` | LinkedIn publishing |
 | `MASTODON_ACCESS_TOKEN` + `MASTODON_INSTANCE_URL` | Mastodon/Fediverse publishing |
 | `FIREBASE_*` | FCM push notifications |
+| `CLAUDE_CLI_PROXY_URL` | Claude CLI proxy service URL |
+| `SUPPORT_API_KEY` | AI support shared secret |
+| `X_ACCESS_TOKEN/SECRET` | X/Twitter OAuth access tokens |
+| `FLICKR_OAUTH_TOKEN/SECRET` | Flickr OAuth tokens for photo uploads |
+| `GITHUB_REPO` | GitHub repo identifier (HankHuang0516/realbot) |
 
 Test-specific variables (in `backend/.env`, gitignored):
 - `TEST_DEVICE_ID` — for bot API response tests
@@ -509,8 +514,23 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Agent Card UI | `node backend/tests/test-agent-card-ui.js` | Device ID + Secret | Agent Card CRUD lifecycle, field validation, three-platform API parity |
 | Dynamic Entities | `node backend/tests/test-dynamic-entities.js` | Device ID + Secret | Dynamic entity add/delete, 20-entity extreme, sparse IDs, reorder, skip-ID permutations |
 | Publisher Platforms | `node backend/tests/test-publisher-platforms.js` | None | Platforms listing (12 platforms), input validation for all new platforms |
+| 4th Entity Visibility | `node backend/tests/test-4th-entity-visibility.js` | Device ID + Secret | Regression #48: 4th entity shows on home screen after binding |
+| A2A Task Dispatch | `node backend/tests/test-a2a-task-dispatch.js` | Device ID + Secret | Phase One A2A: official agent sends structured task to entity |
+| AI Diagnostics | `node backend/tests/test-ai-diagnostics.js` | Device ID + Secret | AI diagnostics context formatting and injection into Claude chat |
+| Broadcast Recipient Block | `node backend/tests/test-broadcast-recipient-block.js` | None | Unit: buildBroadcastRecipientBlock() output format |
+| Channel E2E | `node backend/tests/test-channel-e2e.js` | Device ID + Secret | End-to-end channel binding, plugin isolation, callback routing, revocation |
+| EClaw Context Injection | `node backend/tests/test-eclaw-context-injection.js` | Device ID + Secret | eclaw_context fields injected into channel push payloads (flaky) |
+| Entity Cards Stability | `node backend/tests/test-entity-cards-stability.js` | Device ID + Secret | Regression #16/#29: entity cards don't disappear during polling |
+| Entity Management | `node backend/tests/test-entity-management.js` | Device ID + Secret | Refresh cooldown, reorder validation, telemetry logging |
+| Issue Fixes | `node backend/tests/test-issue-fixes.js` | None | Regression #145-150: CancellationException, skill dialog, CLI proxy |
+| Mission Notify All Types | `node backend/tests/test-mission-notify-all-types.js` | Device ID + Secret | Mission notify pushes all types (TODO/SKILL/RULE/SOUL) to channel bots |
+| Mission Notify Channel | `node backend/tests/test-mission-notify-channel.js` | Device ID + Secret | Mission notify to channel-bound entities push payload format |
+| Rename Channel | `node backend/tests/test-rename-channel.js` | Device ID + Secret | Entity rename pushes NAME_CHANGED to channel-bound bots |
+| Reorder Channel | `node backend/tests/test-reorder-channel.js` | Device ID + Secret | Entity reorder ENTITY_MOVED payload to channel-bound bots |
+| Schedule Channel | `node backend/tests/test-schedule-channel.js` | Device ID + Secret | Scheduler parity: channel-bound entities receive schedule push |
+| Schedule Cron Update | `node backend/tests/test-schedule-cron-update.js` | Device ID + Secret | Regression: cron schedule update NOT NULL violation on scheduled_at |
 
-### Jest Unit Tests (CI-run, `npm test`)
+### Jest Unit Tests (CI-run, `npm test`, 10 files)
 
 | Test | File | Description |
 |------|------|-------------|
@@ -521,11 +541,14 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Mutation Validation | `tests/jest/mutations.test.js` | POST client/speak, speak-to, broadcast, device/register, feedback, chat/history, GET entities/status/logs |
 | Admin Authorization | `tests/jest/admin-auth.test.js` | Admin endpoints reject unauthenticated + non-admin users, audit-logs auth |
 | Publisher Platforms | `tests/jest/publisher.test.js` | Platforms listing (12), input validation for all new platforms |
+| Feedback CRUD | `tests/jest/feedback-crud.test.js` | Feedback endpoint validation (submit, list, delete) |
+| Notifications | `tests/jest/notifications.test.js` | Notification endpoint validation (subscribe, send, manage) |
+| Scheduler | `tests/jest/scheduler.test.js` | Scheduler endpoint validation (CRUD, cron expressions) |
 
 ### Running All Tests
 ```bash
 node backend/run_all_tests.js          # Run all tests sequentially
-cd backend && npm test                  # Jest unit tests (6 files)
+cd backend && npm test                  # Jest unit tests (10 files)
 cd backend && npm run lint              # ESLint
 ```
 
@@ -544,7 +567,7 @@ Set in `backend/.env` (gitignored):
 - `server_logs` schema extension is backward-compatible — all existing 67+ `serverLog()` calls work without modification (new fields default to null)
 - Entity unbind calls `createDefaultEntity()` which resets all fields including new ones — no separate cleanup needed
 - `const` redeclaration in same scope is a JS error — check existing variable names before adding new ones (e.g., `adminAuth` already declared at line 1198)
-- `index.js` is a single 10,500-line file — use line numbers when referencing specific code sections
+- `index.js` is a single 10,800-line file — use line numbers when referencing specific code sections
 - Module initialization order matters: `db.js` → `devices` in-memory map → module `require()` calls with dependency injection
 
 ### Gatekeeper System
