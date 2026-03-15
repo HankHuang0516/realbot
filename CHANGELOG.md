@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/HankHuang0516/EClaw/compare/v1.7.2...v1.8.0) (2026-03-15)
+
+
+### Features
+
+* **publisher:** add Telegraph, Qiita, Tumblr, Mastodon + other new platforms ([33b9c4e](https://github.com/HankHuang0516/EClaw/commit/33b9c4e54fe5ee1897b3a10541211a9f3d6e05e2))
+
 ## [1.7.2](https://github.com/HankHuang0516/EClaw/compare/v1.7.1...v1.7.2) (2026-03-15)
 
 
