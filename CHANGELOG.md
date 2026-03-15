@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/HankHuang0516/EClaw/compare/v1.7.1...v1.7.2) (2026-03-15)
+
+
+### Bug Fixes
+
+* **android:** force Dark theme to fix black screen on light-mode devices ([47ed30b](https://github.com/HankHuang0516/EClaw/commit/47ed30b5c19f62ea0a7bea5c2fb035ac9011f7c2)), closes [#0D0D1A](https://github.com/HankHuang0516/EClaw/issues/0D0D1A)
+
 ## [1.7.1](https://github.com/HankHuang0516/EClaw/compare/v1.7.0...v1.7.1) (2026-03-15)
 
 
