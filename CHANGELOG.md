@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/HankHuang0516/EClaw/compare/v1.5.0...v1.5.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* **android:** entity card buttons overflow — apply M3 card action pattern ([f6b4b68](https://github.com/HankHuang0516/EClaw/commit/f6b4b681d77c9dc814e7a19e01a305b90e3b3fcf))
+
 # [1.5.0](https://github.com/HankHuang0516/EClaw/compare/v1.4.0...v1.5.0) (2026-03-14)
 
 
