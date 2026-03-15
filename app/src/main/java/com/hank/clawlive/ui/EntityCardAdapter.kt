@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +24,8 @@ import java.util.Locale
 /**
  * RecyclerView adapter for entity cards with drag-to-reorder support.
  * Edit mode toggles visibility of action buttons and drag handles.
+ *
+ * Layout follows M3 card action guideline: max 2 visible actions + overflow menu.
  */
 class EntityCardAdapter(
     private val getAvatar: (Int) -> String,
@@ -98,8 +101,7 @@ class EntityCardAdapter(
         private val editActionsRow: LinearLayout = itemView.findViewById(R.id.editActionsRow)
         private val btnRefreshEntity: MaterialButton = itemView.findViewById(R.id.btnRefreshEntity)
         private val btnRemoveEntity: MaterialButton = itemView.findViewById(R.id.btnRemoveEntity)
-        private val btnXdSettings: MaterialButton = itemView.findViewById(R.id.btnXdSettings)
-        private val btnAgentCard: MaterialButton = itemView.findViewById(R.id.btnAgentCard)
+        private val btnOverflow: MaterialButton = itemView.findViewById(R.id.btnOverflow)
         private val xpBarRow: LinearLayout = itemView.findViewById(R.id.xpBarRow)
         private val tvLevel: TextView = itemView.findViewById(R.id.tvLevel)
         private val xpProgressBar: LinearProgressIndicator = itemView.findViewById(R.id.xpProgressBar)
@@ -173,11 +175,34 @@ class EntityCardAdapter(
                 false
             }
 
-            // Action buttons
+            // Primary action buttons
             btnRefreshEntity.setOnClickListener { onRefreshClick(entity, btnRefreshEntity) }
-            btnXdSettings.setOnClickListener { onXdSettingsClick?.invoke(entity) }
-            btnAgentCard.setOnClickListener { onAgentCardClick?.invoke(entity) }
             btnRemoveEntity.setOnClickListener { onRemoveClick(entity) }
+
+            // Overflow menu (Cross-Device Msg + Agent Card)
+            btnOverflow.setOnClickListener { anchor ->
+                val popup = PopupMenu(itemView.context, anchor)
+                popup.menuInflater.inflate(R.menu.menu_entity_overflow, popup.menu)
+                // Force show icons in popup menu
+                try {
+                    val method = popup.javaClass.getDeclaredMethod("setForceShowIcon", Boolean::class.java)
+                    method.invoke(popup, true)
+                } catch (_: Exception) { }
+                popup.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        R.id.action_xd_settings -> {
+                            onXdSettingsClick?.invoke(entity)
+                            true
+                        }
+                        R.id.action_agent_card -> {
+                            onAgentCardClick?.invoke(entity)
+                            true
+                        }
+                        else -> false
+                    }
+                }
+                popup.show()
+            }
         }
 
         private fun getStateBadgeColor(state: CharacterState): Int {

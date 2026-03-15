@@ -240,6 +240,8 @@
     <string name="edit_entities">Edit</string>
     <string name="drag_to_reorder">Drag to reorder</string>
     <string name="xd_settings_btn">Cross-Device Msg</string>
+    <string name="entity_agent_card">Agent Card</string>
+    <string name="more_options">More options</string>
     <string name="xd_settings_title">Cross-Device Message Settings</string>
     <string name="xd_pre_inject">Pre-inject Instruction</string>
     <string name="xd_pre_inject_desc">Added before cross-device messages in push notification</string>

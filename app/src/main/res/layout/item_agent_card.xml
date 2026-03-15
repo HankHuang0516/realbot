@@ -193,69 +193,68 @@
         </LinearLayout>
 
         <!-- Action Buttons Row (visible only in edit mode) -->
+        <!-- M3 guideline: max 2 visible actions + overflow menu -->
         <LinearLayout
             android:id="@+id/editActionsRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:visibility="gone">
 
             <!-- Refresh Connection Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRefreshEntity"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="8dp"
                 android:text="@string/refresh_connection"
+                android:textSize="13sp"
                 android:textColor="?attr/colorPrimary"
-                app:icon="@android:drawable/ic_popup_sync"
+                app:icon="@drawable/ic_refresh"
+                app:iconSize="18dp"
                 app:iconTint="?attr/colorPrimary"
                 app:strokeColor="?attr/colorPrimary"
-                app:cornerRadius="8dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            <!-- Cross-Device Settings Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnXdSettings"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
-                android:text="@string/xd_settings_btn"
-                android:textColor="?attr/colorPrimary"
-                app:strokeColor="?attr/colorPrimary"
-                app:cornerRadius="8dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            <!-- Agent Card Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAgentCard"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="Agent Card"
-                android:textColor="#4FC3F7"
-                app:strokeColor="#4FC3F7"
-                app:cornerRadius="8dp"
+                app:cornerRadius="20dp"
                 style="@style/Widget.Material3.Button.OutlinedButton" />
 
             <!-- Remove Entity Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRemoveEntity"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:layout_marginEnd="8dp"
                 android:text="@string/remove_entity"
+                android:textSize="13sp"
                 android:textColor="?attr/colorError"
+                app:icon="@drawable/ic_delete"
+                app:iconSize="18dp"
                 app:iconTint="?attr/colorError"
                 app:strokeColor="?attr/colorError"
                 app:rippleColor="?attr/colorErrorContainer"
-                app:cornerRadius="8dp"
+                app:cornerRadius="20dp"
                 style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <!-- Overflow Menu (Cross-Device Msg, Agent Card) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOverflow"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="@string/more_options"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="40dp"
+                android:minHeight="40dp"
+                app:icon="@drawable/ic_more_vert"
+                app:iconSize="20dp"
+                app:iconTint="?attr/colorOnSurfaceVariant"
+                app:iconPadding="0dp"
+                app:iconGravity="textStart"
+                app:cornerRadius="20dp"
+                style="@style/Widget.Material3.Button.TextButton" />
 
         </LinearLayout>
 
