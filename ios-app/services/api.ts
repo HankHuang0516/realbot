@@ -143,6 +143,58 @@ export const missionApi = {
     apiClient.post('/api/device/sync-local-vars', { entityId, vars }),
 };
 
+// ── Template APIs ─────────────────────────────────────────────
+
+export interface TemplateRequiredVar {
+  key: string;
+  hint?: string;
+  description?: string;
+}
+
+export interface SkillTemplate {
+  id: string;
+  label: string;
+  icon?: string;
+  title?: string;
+  url?: string;
+  author?: string;
+  updatedAt?: string;
+  requiredVars: TemplateRequiredVar[];
+  steps?: string;
+}
+
+export interface SoulTemplate {
+  id: string;
+  label: string;
+  icon?: string;
+  name?: string;
+  description?: string;
+  author?: string;
+  updatedAt?: string;
+}
+
+export interface RuleTemplate {
+  id: string;
+  label: string;
+  icon?: string;
+  name?: string;
+  description?: string;
+  ruleType?: string;
+  author?: string;
+  updatedAt?: string;
+}
+
+export const templateApi = {
+  getSkillTemplates: () =>
+    apiClient.get<{ success: boolean; templates: SkillTemplate[] }>('/api/skill-templates'),
+
+  getSoulTemplates: () =>
+    apiClient.get<{ success: boolean; templates: SoulTemplate[] }>('/api/soul-templates'),
+
+  getRuleTemplates: () =>
+    apiClient.get<{ success: boolean; templates: RuleTemplate[] }>('/api/rule-templates'),
+};
+
 // ── Schedule APIs ────────────────────────────────────────────
 
 export const scheduleApi = {

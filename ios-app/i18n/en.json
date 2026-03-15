@@ -97,7 +97,16 @@
     "vars_approval_desc": "{{entityName}} is requesting access to: {{varKeys}}",
     "vars_approve": "Approve",
     "vars_deny": "Deny",
-    "vars_timeout": "Request timed out"
+    "vars_timeout": "Request timed out",
+    "no_skills": "No skill templates",
+    "no_souls": "No soul templates",
+    "no_rules": "No rule templates",
+    "search_placeholder": "Search…",
+    "builtin": "Built-in",
+    "browse_templates": "Browse Templates",
+    "no_api_key_needed": "No API key needed",
+    "all_vars_configured": "All vars configured",
+    "needs_vars": "Needs: {{vars}}"
   },
   "settings": {
     "title": "Settings",

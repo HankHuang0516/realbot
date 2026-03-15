@@ -1396,7 +1396,7 @@
                 } else {
                     statusHtml = `<div class="tpl-gallery-status" style="color:var(--text-muted);">No API key needed</div>`;
                 }
-                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" onclick="selectTemplateFromGallery('${esc(t.id)}')">
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-title="${esc(t.title || '')}" data-author="${esc(t.author || '')}" onclick="selectTemplateFromGallery('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${t.icon || '📦'}</div>
                     <div class="tpl-gallery-info">
                         <div class="tpl-gallery-title">${esc(t.label)}</div>
@@ -1423,7 +1423,9 @@
             const q = query.toLowerCase();
             document.querySelectorAll('#tpl_gallery_list .tpl-gallery-card').forEach(card => {
                 const label = (card.dataset.label || '').toLowerCase();
-                card.style.display = label.includes(q) ? '' : 'none';
+                const title = (card.dataset.title || '').toLowerCase();
+                const author = (card.dataset.author || '').toLowerCase();
+                card.style.display = (label.includes(q) || title.includes(q) || author.includes(q)) ? '' : 'none';
             });
         }
 
@@ -1455,7 +1457,7 @@
 
             // Section B: community soulTemplates from API
             const communityCards = soulTemplates.map(t =>
-                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-source="custom" onclick="selectCustomSoulTemplate('${esc(t.id)}')">
+                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" data-source="custom" onclick="selectCustomSoulTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${esc(t.icon) || '🧠'}</div>
                     <div class="tpl-gallery-info">
                         <div class="tpl-gallery-title">${esc(t.label)}</div>
@@ -1492,7 +1494,9 @@
         function filterSoulGallery(query) {
             const q = query.toLowerCase();
             document.querySelectorAll('#soul_gallery_list .tpl-gallery-card').forEach(card => {
-                card.style.display = (card.dataset.label || '').toLowerCase().includes(q) ? '' : 'none';
+                const label = (card.dataset.label || '').toLowerCase();
+                const author = (card.dataset.author || '').toLowerCase();
+                card.style.display = (label.includes(q) || author.includes(q)) ? '' : 'none';
             });
             // Show/hide section labels based on visible cards
             document.querySelectorAll('#soul_gallery_list .tpl-gallery-section-label').forEach(label => {
@@ -1548,7 +1552,7 @@
 
         function showRuleGallery() {
             const cards = ruleTemplates.map(t =>
-                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" onclick="selectRuleTemplate('${esc(t.id)}')">
+                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" onclick="selectRuleTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${esc(t.icon) || '📋'}</div>
                     <div class="tpl-gallery-info">
                         <div class="tpl-gallery-title">${esc(t.label)}</div>
@@ -1562,7 +1566,7 @@
             document.body.insertAdjacentHTML('beforeend',
                 `<div id="rule_gallery_overlay" class="dialog-overlay" onclick="if(event.target===this)document.getElementById('rule_gallery_overlay').remove()">
                     <div class="dialog" style="max-width:480px;">
-                        <div class="dialog-title">規則模板</div>
+                        <div class="dialog-title">規則模板 (${ruleTemplates.length})</div>
                         <input type="text" placeholder="搜尋…" oninput="filterRuleGallery(this.value)" style="margin-bottom:12px;" />
                         <div id="rule_gallery_list" style="max-height:380px;overflow-y:auto;">${cards}</div>
                         <div class="dialog-actions">
@@ -1576,7 +1580,9 @@
         function filterRuleGallery(query) {
             const q = query.toLowerCase();
             document.querySelectorAll('#rule_gallery_list .tpl-gallery-card').forEach(card => {
-                card.style.display = (card.dataset.label || '').toLowerCase().includes(q) ? '' : 'none';
+                const label = (card.dataset.label || '').toLowerCase();
+                const author = (card.dataset.author || '').toLowerCase();
+                card.style.display = (label.includes(q) || author.includes(q)) ? '' : 'none';
             });
         }
 

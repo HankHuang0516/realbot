@@ -184,6 +184,7 @@
     <string name="mission_use_template">Apply Template</string>
     <string name="mission_template_loading">Loading templates…</string>
     <string name="mission_template_empty">No templates available</string>
+    <string name="mission_soul_builtin">Built-in</string>
     <string name="mission_template_no_match">No matching templates</string>
     <string name="mission_browse_templates">Browse Templates…</string>
     <string name="search_hint">Search…</string>

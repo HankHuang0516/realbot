@@ -97,7 +97,16 @@
     "vars_approval_desc": "{{entityName}} 請求存取：{{varKeys}}",
     "vars_approve": "允許",
     "vars_deny": "拒絕",
-    "vars_timeout": "請求已逾時"
+    "vars_timeout": "請求已逾時",
+    "no_skills": "沒有技能模板",
+    "no_souls": "沒有靈魂模板",
+    "no_rules": "沒有規則模板",
+    "search_placeholder": "搜尋…",
+    "builtin": "內建",
+    "browse_templates": "瀏覽模板",
+    "no_api_key_needed": "不需要 API 金鑰",
+    "all_vars_configured": "所有變數已設定",
+    "needs_vars": "需要：{{vars}}"
   },
   "settings": {
     "title": "設定",
