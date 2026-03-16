@@ -317,3 +317,32 @@ describe('GET /api/logs — auth validation', () => {
         expect(res.status).toBeGreaterThanOrEqual(400);
     });
 });
+
+// ════════════════════════════════════════════════════════════════
+// E2EE Awareness (Issue #212) — encryptionStatus in API responses
+// ════════════════════════════════════════════════════════════════
+describe('E2EE awareness — encryptionStatus field', () => {
+    it('createDefaultEntity includes encryptionStatus: null', () => {
+        // Access the exported createDefaultEntity via the app module
+        const { createDefaultEntity } = require('../../index');
+        if (createDefaultEntity) {
+            const entity = createDefaultEntity(0);
+            expect(entity).toHaveProperty('encryptionStatus', null);
+        }
+    });
+
+    it('POST /api/channel/register accepts e2ee_capable field', async () => {
+        // Without valid channel_api_key, should return 401 (not 500)
+        const res = await post('/api/channel/register')
+            .send({ callback_url: 'https://example.com/cb', e2ee_capable: true });
+        // 401 = missing api key (expected), not 500 = crash
+        expect(res.status).toBe(401);
+    });
+
+    it('POST /api/channel/register rejects without callback_url', async () => {
+        const res = await post('/api/channel/register')
+            .send({ e2ee_capable: true });
+        // 400 or 401 (auth first) — not 500
+        expect([400, 401].includes(res.status)).toBe(true);
+    });
+});

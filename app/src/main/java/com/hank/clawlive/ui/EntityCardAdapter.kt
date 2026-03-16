@@ -94,6 +94,7 @@ class EntityCardAdapter(
         private val tvEntityId: TextView = itemView.findViewById(R.id.tvEntityId)
         private val tvStateBadge: TextView = itemView.findViewById(R.id.tvStateBadge)
         private val tvChannelBadge: TextView = itemView.findViewById(R.id.tvChannelBadge)
+        private val tvE2eeBadge: TextView = itemView.findViewById(R.id.tvE2eeBadge)
         private val publicCodeRow: LinearLayout = itemView.findViewById(R.id.publicCodeRow)
         private val tvPublicCode: TextView = itemView.findViewById(R.id.tvPublicCode)
         private val tvLastMessage: TextView = itemView.findViewById(R.id.tvLastMessage)
@@ -128,6 +129,9 @@ class EntityCardAdapter(
 
             // Channel Badge
             tvChannelBadge.visibility = if (entity.bindingType == "channel") View.VISIBLE else View.GONE
+
+            // E2EE Badge
+            tvE2eeBadge.visibility = if (entity.encryptionStatus == "e2ee") View.VISIBLE else View.GONE
 
             // Message
             tvLastMessage.text = entity.message

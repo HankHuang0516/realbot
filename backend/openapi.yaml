@@ -114,6 +114,11 @@ components:
           type: string
           nullable: true
           enum: [free, personal, null]
+        encryptionStatus:
+          type: string
+          nullable: true
+          enum: [e2ee, transport, null]
+          description: Channel encryption capability (e2ee = end-to-end encrypted, transport = TLS only)
 
     AgentCard:
       type: object
@@ -248,6 +253,10 @@ components:
         bindingType:
           type: string
           nullable: true
+        encryptionStatus:
+          type: string
+          nullable: true
+          enum: [e2ee, transport, null]
 
     CrossDeviceSettings:
       type: object

@@ -83,6 +83,7 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
                     id: a.id,
                     channel_api_key: a.channel_api_key,
                     has_callback: !!a.callback_url,
+                    e2ee_capable: !!a.e2ee_capable,
                     status: a.status,
                     created_at: a.created_at
                 }))
@@ -275,7 +276,7 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             const account = await channelAuth(req, res);
             if (!account) return;
 
-            const { callback_url, callback_token, callback_username, callback_password } = req.body;
+            const { callback_url, callback_token, callback_username, callback_password, e2ee_capable } = req.body;
             if (!callback_url) {
                 return res.status(400).json({ success: false, message: 'callback_url required' });
             }
@@ -283,6 +284,23 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             if (process.env.DEBUG === 'true') serverLog('info', 'bind', `[BIND] /register callback_url=${callback_url}`, { deviceId: account.device_id });
 
             await db.updateChannelCallback(account.channel_api_key, callback_url, callback_token || null, callback_username || null, callback_password || null);
+
+            // E2EE awareness (Issue #212): persist channel encryption capability
+            if (e2ee_capable !== undefined) {
+                await db.updateChannelE2eeCapable(account.id, !!e2ee_capable);
+                // Propagate to all entities bound to this channel account
+                const device = devices[account.device_id];
+                if (device) {
+                    const newStatus = e2ee_capable ? 'e2ee' : 'transport';
+                    for (const eid of Object.keys(device.entities).map(Number)) {
+                        const e = device.entities[eid];
+                        if (e && e.channelAccountId === account.id) {
+                            e.encryptionStatus = newStatus;
+                        }
+                    }
+                    saveData();
+                }
+            }
 
             const device = devices[account.device_id];
             const entities = [];
@@ -458,6 +476,7 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             entity.publicCode = publicCode;
             entity.bindingType = 'channel';
             entity.channelAccountId = account.id;
+            entity.encryptionStatus = account.e2ee_capable ? 'e2ee' : 'transport';
             publicCodeIndex[publicCode] = { deviceId, entityId: eId };
             entity.name = name || null;
             entity.state = 'IDLE';
@@ -647,7 +666,8 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
                     fromEntityId: payload.fromEntityId,
                     fromCharacter: payload.fromCharacter,
                     fromPublicCode: payload.fromPublicCode,
-                    eclaw_context: payload.eclaw_context || null
+                    eclaw_context: payload.eclaw_context || null,
+                    e2ee: !!account.e2ee_capable
                 }),
                 signal: AbortSignal.timeout(10000)
             });

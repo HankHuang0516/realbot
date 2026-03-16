@@ -150,14 +150,14 @@ EClaw/
 | Table | Purpose |
 |-------|---------|
 | `devices` | Registered devices (device_id, device_secret) |
-| `entities` | Entity slots per device (character, state, message, webhook, xp, avatar, public_code, agent_card) |
+| `entities` | Entity slots per device (character, state, message, webhook, xp, avatar, public_code, agent_card, encryption_status) |
 | `user_accounts` | Web portal user accounts (email, password, virtual device mapping) |
 | `official_bots` | Registry of official bots available for borrowing |
 | `official_bot_bindings` | Current official bot binding assignments |
 | `feedback` | User feedback/bug reports |
 | `cross_device_contacts` | Cross-device entity contacts |
 | `device_vars` | Per-device environment variables with cross-platform merge |
-| `channel_accounts` | OpenClaw channel integration accounts |
+| `channel_accounts` | OpenClaw channel integration accounts (e2ee_capable flag for E2EE awareness) |
 | `skill_contributions` | Community-contributed skill templates |
 | `soul_contributions` | Community-contributed soul templates |
 | `rule_contributions` | Community-contributed rule templates |
@@ -456,6 +456,7 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 - **A2A Protocol (#187)**: `/.well-known/agent.json` endpoint, `POST /api/a2a/tasks/send` for inter-agent task dispatch
 - **OAuth 2.0 Server (#189)**: `client_credentials` grant, token introspection, client registration at `/api/oauth/*`
 - **gRPC Transport (#191)**: `backend/grpc-server.js` + `backend/proto/eclaw.proto`, HealthService for load balancer probes
+- **E2EE Awareness (#212)**: `e2ee_capable` flag on `channel_accounts`, `encryption_status` on `entities`; channel register propagates to bound entities; UI badges on all 3 platforms; callback payload includes `e2ee` flag
 
 ---
 
@@ -519,6 +520,7 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | AI Diagnostics | `node backend/tests/test-ai-diagnostics.js` | Device ID + Secret | AI diagnostics context formatting and injection into Claude chat |
 | Broadcast Recipient Block | `node backend/tests/test-broadcast-recipient-block.js` | None | Unit: buildBroadcastRecipientBlock() output format |
 | Channel E2E | `node backend/tests/test-channel-e2e.js` | Device ID + Secret | End-to-end channel binding, plugin isolation, callback routing, revocation |
+| Channel E2EE Awareness | `node backend/tests/test-channel-e2ee.js` | Device ID + Secret | E2EE capability flag, encryptionStatus propagation, callback e2ee field (Issue #212) |
 | EClaw Context Injection | `node backend/tests/test-eclaw-context-injection.js` | Device ID + Secret | eclaw_context fields injected into channel push payloads (flaky) |
 | Entity Cards Stability | `node backend/tests/test-entity-cards-stability.js` | Device ID + Secret | Regression #16/#29: entity cards don't disappear during polling |
 | Entity Management | `node backend/tests/test-entity-management.js` | Device ID + Secret | Refresh cooldown, reorder validation, telemetry logging |

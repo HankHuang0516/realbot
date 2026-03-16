@@ -2027,7 +2027,8 @@ function createDefaultEntity(entityId) {
         pushStatus: null, // { ok: bool, reason?: string, at: number }
         bindingType: null,
         channelAccountId: null,
-        agentCard: null // A2A capability discovery (Issue #174)
+        agentCard: null, // A2A capability discovery (Issue #174)
+        encryptionStatus: null // "e2ee" | "transport" | null (Issue #212)
     };
 }
 
@@ -2743,7 +2744,8 @@ app.get('/api/entities', (req, res) => {
                     xp: entity.xp || 0,
                     level: entity.level || 1,
                     publicCode: entity.publicCode || null,
-                    bindingType: entity.bindingType || null
+                    bindingType: entity.bindingType || null,
+                    encryptionStatus: entity.encryptionStatus || null
                 });
             }
         }
@@ -2983,7 +2985,8 @@ app.post('/api/transform', (req, res) => {
             parts: entity.parts,
             xp: entity.xp || 0,
             level: entity.level || 1,
-            publicCode: entity.publicCode || null
+            publicCode: entity.publicCode || null,
+            encryptionStatus: entity.encryptionStatus || null
         },
         versionInfo: getVersionInfo(entity.appVersion),
         push_status: entity.pushStatus || null
@@ -4684,7 +4687,8 @@ app.get('/api/entity/lookup', (req, res) => {
             state: entity.state,
             avatar: entity.avatar,
             level: entity.level,
-            agentCard: entity.agentCard || null
+            agentCard: entity.agentCard || null,
+            encryptionStatus: entity.encryptionStatus || null
         }
     });
 });

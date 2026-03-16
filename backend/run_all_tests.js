@@ -53,6 +53,7 @@ const TEST_FILES = [
     'test-issue-fixes.js',          // Static code checks (#145/#146-149/#150) + GET /api/skill-templates
 
     // ── Credential-based tests (require .env with test device credentials) ──
+    'test-channel-e2ee.js',         // Channel E2EE awareness: e2ee_capable flag, encryptionStatus propagation
     'test-broadcast.js',            // Broadcast delivery + delivered_to append (needs BROADCAST_TEST_DEVICE_ID)
     'test-reorder-channel.js',      // Reorder → ENTITY_MOVED channel push (needs BROADCAST_TEST_DEVICE_ID)
     'test-rename-channel.js',       // Rename → NAME_CHANGED channel push (needs BROADCAST_TEST_DEVICE_ID)

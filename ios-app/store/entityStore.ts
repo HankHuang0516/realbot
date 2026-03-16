@@ -11,6 +11,7 @@ export interface Entity {
   publicCode?: string;
   avatarUrl?: string;
   lastActive?: number;
+  encryptionStatus?: 'e2ee' | 'transport' | null;
 }
 
 interface EntityState {

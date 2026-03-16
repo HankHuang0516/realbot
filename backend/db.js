@@ -123,6 +123,9 @@ async function createTables() {
         // Agent Card for A2A capability discovery (Issue #174)
         await client.query(`ALTER TABLE entities ADD COLUMN IF NOT EXISTS agent_card JSONB`);
 
+        // E2EE awareness (Issue #212): per-entity encryption status derived from channel
+        await client.query(`ALTER TABLE entities ADD COLUMN IF NOT EXISTS encryption_status TEXT`);
+
         // Allow multiple channel accounts per device (each plugin gets its own account)
         // Drop the UNIQUE(device_id) constraint if it still exists from the original schema
         await client.query(`
@@ -249,6 +252,9 @@ async function createTables() {
         await client.query(`ALTER TABLE channel_accounts ADD COLUMN IF NOT EXISTS callback_username TEXT`);
         await client.query(`ALTER TABLE channel_accounts ADD COLUMN IF NOT EXISTS callback_password TEXT`);
 
+        // E2EE awareness (Issue #212): channel declares encryption capability
+        await client.query(`ALTER TABLE channel_accounts ADD COLUMN IF NOT EXISTS e2ee_capable BOOLEAN DEFAULT FALSE`);
+
         await client.query(`
             CREATE TABLE IF NOT EXISTS skill_contributions (
                 id SERIAL PRIMARY KEY,
@@ -370,14 +376,16 @@ async function saveDeviceData(deviceId, deviceData) {
                     entity.publicCode || null,
                     entity.bindingType || null,
                     entity.channelAccountId || null,
-                    entity.agentCard ? JSON.stringify(entity.agentCard) : null
+                    entity.agentCard ? JSON.stringify(entity.agentCard) : null,
+                    entity.encryptionStatus || null
                 ];
                 const entitySql = `INSERT INTO entities (
                         device_id, entity_id, bot_secret, is_bound, name,
                         character, state, message, parts,
                         last_updated, message_queue, webhook, app_version,
-                        xp, level, avatar, public_code, binding_type, channel_account_id, agent_card
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+                        xp, level, avatar, public_code, binding_type, channel_account_id, agent_card,
+                        encryption_status
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
                     ON CONFLICT (device_id, entity_id)
                     DO UPDATE SET
                         bot_secret = $3,
@@ -397,7 +405,8 @@ async function saveDeviceData(deviceId, deviceData) {
                         public_code = $17,
                         binding_type = $18,
                         channel_account_id = $19,
-                        agent_card = $20`;
+                        agent_card = $20,
+                        encryption_status = $21`;
 
                 await client.query(`SAVEPOINT entity_${i}`);
                 try {
@@ -525,7 +534,8 @@ async function loadAllDevices() {
                 publicCode: row.public_code || null,
                 bindingType: row.binding_type || null,
                 channelAccountId: row.channel_account_id ? parseInt(row.channel_account_id) : null,
-                agentCard: row.agent_card ? (typeof row.agent_card === 'string' ? JSON.parse(row.agent_card) : row.agent_card) : null
+                agentCard: row.agent_card ? (typeof row.agent_card === 'string' ? JSON.parse(row.agent_card) : row.agent_card) : null,
+                encryptionStatus: row.encryption_status || null
             };
         }
 
@@ -1096,6 +1106,21 @@ async function updateChannelCallback(apiKey, callbackUrl, callbackToken, callbac
     }
 }
 
+// E2EE awareness (Issue #212): update channel encryption capability flag
+async function updateChannelE2eeCapable(accountId, e2eeCapable) {
+    if (!pool) return false;
+    try {
+        await pool.query(
+            `UPDATE channel_accounts SET e2ee_capable = $1, updated_at = $2 WHERE id = $3`,
+            [e2eeCapable, Date.now(), accountId]
+        );
+        return true;
+    } catch (err) {
+        console.error('[DB] Failed to update channel e2ee_capable:', err.message);
+        return false;
+    }
+}
+
 async function deleteChannelAccount(id) {
     if (!pool) return false;
     try {
@@ -1263,6 +1288,7 @@ module.exports = {
     getChannelAccountByDevice,
     deleteChannelAccount,
     updateChannelCallback,
+    updateChannelE2eeCapable,
     clearChannelCallback,
     // Skill contributions
     insertSkillContribution,

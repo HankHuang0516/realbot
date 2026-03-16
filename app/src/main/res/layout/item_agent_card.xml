@@ -101,6 +101,20 @@
                 android:background="@drawable/badge_channel_background"
                 android:visibility="gone" />
 
+            <!-- E2EE Badge (visible only for E2EE-capable channel entities) -->
+            <TextView
+                android:id="@+id/tvE2eeBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:text="🔒 E2EE"
+                android:textColor="#60A5FA"
+                android:textSize="11sp"
+                android:background="@drawable/badge_e2ee_background"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <!-- XP/Level Bar -->

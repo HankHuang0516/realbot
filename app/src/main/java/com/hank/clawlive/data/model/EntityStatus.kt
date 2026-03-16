@@ -20,7 +20,8 @@ data class EntityStatus(
     val xp: Int = 0,
     val level: Int = 1,
     val publicCode: String? = null,  // Cross-device messaging code
-    val bindingType: String? = null  // "channel" = OpenClaw channel plugin, null = direct binding
+    val bindingType: String? = null,  // "channel" = OpenClaw channel plugin, null = direct binding
+    val encryptionStatus: String? = null  // "e2ee" | "transport" | null (Issue #212)
 ) {
     // All characters are now LOBSTER type (PIG removed)
     val baseShape: CharacterType

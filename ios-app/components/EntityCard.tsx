@@ -80,6 +80,17 @@ export default function EntityCard({ entity, onLongPress }: EntityCardProps) {
             <Chip compact style={styles.charChip}>
               {t(`entity.character_${entity.character.toLowerCase()}`)}
             </Chip>
+            {entity.encryptionStatus === 'e2ee' && (
+              <Chip
+                compact
+                icon={() => (
+                  <MaterialCommunityIcons name="lock" size={10} color="#60A5FA" />
+                )}
+                style={styles.e2eeChip}
+              >
+                E2EE
+              </Chip>
+            )}
           </View>
         </View>
 
@@ -133,5 +144,9 @@ const styles = StyleSheet.create({
   },
   charChip: {
     height: 24,
+  },
+  e2eeChip: {
+    height: 24,
+    backgroundColor: '#1a2a3a',
   },
 });

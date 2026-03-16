@@ -219,9 +219,9 @@
         /* ── Entity Label Coloring ── */
         .entity-label { font-weight: 600; }
         .entity-label[data-entity="0"],
-        .entity-label[data-entity="2"] { color: #FF6B6B; }
+        .entity-label[data-entity="2"] { color: var(--entity-lobster); }
         .entity-label[data-entity="1"],
-        .entity-label[data-entity="3"] { color: #FFB6C1; }
+        .entity-label[data-entity="3"] { color: var(--entity-pig); }
 
         /* ── Read Receipts ── */
         .chat-receipt {
@@ -1406,8 +1406,9 @@
                 const isChecked = savedTargets ? savedTargets.has(e.entityId) : true;
                 const label = document.createElement('label');
                 label.className = 'target-check target-entity-check';
+                const e2eeBadge = e.encryptionStatus === 'e2ee' ? ' 🔒' : '';
                 label.innerHTML = `<input type="checkbox" data-entity="${e.entityId}" ${isChecked ? 'checked' : ''} onchange="updateTargetAll()">
-                    <span>${avatar} ${escapeHtml(name)} (#${e.entityId})</span>`;
+                    <span>${avatar} ${escapeHtml(name)} (#${e.entityId})${e2eeBadge}</span>`;
                 bar.appendChild(label);
             });
 
