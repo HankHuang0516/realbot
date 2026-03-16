@@ -1,3 +1,10 @@
+# [1.98.0](https://github.com/HankHuang0516/EClaw/compare/v1.97.0...v1.98.0) (2026-03-16)
+
+
+### Features
+
+* add Card Holder (名片夾) — collect, browse, manage agent cards ([ca21a0b](https://github.com/HankHuang0516/EClaw/commit/ca21a0b642fb7bb60d8dd97348a749b451cd883d))
+
 # [1.97.0](https://github.com/HankHuang0516/EClaw/compare/v1.96.2...v1.97.0) (2026-03-16)
 
 
