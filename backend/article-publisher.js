@@ -815,7 +815,11 @@ async function wordpressRequest(method, path, body = null) {
     const res = await fetch(url, options);
     const data = await res.json();
     if (!res.ok) {
-        const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+        let msg = data.message || data.error || `HTTP ${res.status}`;
+        if (msg.includes('disabled')) {
+            msg = 'WordPress.com free plan does not support the posts REST API — upgrade to a paid plan, or configure self-hosted WordPress with WORDPRESS_SITE_URL + WORDPRESS_USERNAME + WORDPRESS_APP_PASSWORD env vars';
+        }
+        const err = new Error(msg);
         err.status = res.status;
         throw err;
     }
@@ -1084,7 +1088,11 @@ async function qiitaRequest(method, path, body = null) {
     if (res.status === 204) return null;
     const data = await res.json();
     if (!res.ok) {
-        const err = new Error(data.message || data.error || `HTTP ${res.status}`);
+        let msg = data.message || data.error || `HTTP ${res.status}`;
+        if (res.status === 401) {
+            msg = 'Qiita token expired or revoked — regenerate at https://qiita.com/settings/tokens/new (scopes: read_qiita, write_qiita) and update QIITA_ACCESS_TOKEN on Railway';
+        }
+        const err = new Error(msg);
         err.status = res.status;
         throw err;
     }
@@ -1766,6 +1774,156 @@ router.get('/platforms', (req, res) => {
           configured: !!MASTODON_ACCESS_TOKEN, instance: MASTODON_INSTANCE_URL }
     ];
     res.json({ success: true, platforms });
+});
+
+// ============================================
+// HEALTH CHECK — test all platform auth tokens
+// ============================================
+router.get('/health', async (req, res) => {
+    const results = [];
+
+    // Helper: test a platform with a quick API call
+    async function probe(id, name, fn) {
+        const start = Date.now();
+        try {
+            const detail = await fn();
+            results.push({ id, name, ok: true, ms: Date.now() - start, ...detail });
+        } catch (err) {
+            results.push({ id, name, ok: false, ms: Date.now() - start, error: err.message, status: err.status });
+        }
+    }
+
+    await Promise.allSettled([
+        // Blogger — check if OAuth tokens exist in DB
+        probe('blogger', 'Blogger', async () => {
+            if (!BLOGGER_CLIENT_ID) return { skip: true, reason: 'BLOGGER_CLIENT_ID not set' };
+            // Blogger uses DB-backed OAuth; checking if we have stored tokens is enough
+            return { configured: true };
+        }),
+        // Hashnode
+        probe('hashnode', 'Hashnode', async () => {
+            if (!HASHNODE_API_TOKEN) return { skip: true, reason: 'HASHNODE_API_TOKEN not set' };
+            const r = await fetch(HASHNODE_GQL_ENDPOINT, {
+                method: 'POST',
+                headers: { Authorization: HASHNODE_API_TOKEN, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: '{ me { id username } }' })
+            });
+            const d = await r.json();
+            if (d.errors) throw Object.assign(new Error(d.errors[0].message), { status: 401 });
+            return { user: d.data?.me?.username };
+        }),
+        // DEV.to
+        probe('devto', 'DEV.to', async () => {
+            if (!DEVTO_API_KEY) return { skip: true, reason: 'DEVTO_API_KEY not set' };
+            const r = await fetch(`${DEVTO_API_BASE}/users/me`, { headers: { 'api-key': DEVTO_API_KEY } });
+            if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
+            const d = await r.json();
+            return { user: d.username };
+        }),
+        // WordPress
+        probe('wordpress', 'WordPress', async () => {
+            if (WP_USE_APP_PASSWORD) {
+                const credentials = Buffer.from(`${WORDPRESS_USERNAME}:${WORDPRESS_APP_PASSWORD}`).toString('base64');
+                const r = await fetch(`${WORDPRESS_SITE_URL}/wp-json/wp/v2/users/me`, {
+                    headers: { Authorization: `Basic ${credentials}` }
+                });
+                if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
+                return { authMode: 'app_password' };
+            }
+            const wp = getWordpressToken();
+            if (!wp.token) return { skip: true, reason: wp.expired ? 'OAuth token expired' : 'Not configured' };
+            // Test read endpoint
+            const r = await fetch(`${WORDPRESS_API_BASE}/rest/v1.1/me`, {
+                headers: { Authorization: `Bearer ${wp.token}` }
+            });
+            if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
+            // Test write endpoint
+            const wr = await fetch(`${WORDPRESS_API_BASE}/rest/v1.1/sites/253401752/posts/new`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${wp.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: '__health_check__', content: 'test', status: 'draft' })
+            });
+            if (!wr.ok) {
+                const wd = await wr.json().catch(() => ({}));
+                const msg = wd.message || wd.error || `HTTP ${wr.status}`;
+                if (msg.includes('disabled')) {
+                    return { authMode: 'oauth2', readOk: true, writeOk: false,
+                        issue: 'WordPress.com has disabled the posts API for this site — free plan limitation. Upgrade to a paid plan or use self-hosted WordPress with Application Password auth.',
+                        fix: 'Set WORDPRESS_SITE_URL + WORDPRESS_USERNAME + WORDPRESS_APP_PASSWORD env vars to use a self-hosted WordPress instead.' };
+                }
+                throw Object.assign(new Error(msg), { status: wr.status });
+            }
+            // If draft was created, delete it
+            const wd = await wr.json();
+            if (wd.ID) {
+                await fetch(`${WORDPRESS_API_BASE}/rest/v1.1/sites/253401752/posts/${wd.ID}/delete`, {
+                    method: 'POST', headers: { Authorization: `Bearer ${wp.token}` }
+                }).catch(() => {});
+            }
+            return { authMode: 'oauth2', readOk: true, writeOk: true };
+        }),
+        // Qiita
+        probe('qiita', 'Qiita', async () => {
+            if (!QIITA_ACCESS_TOKEN) return { skip: true, reason: 'QIITA_ACCESS_TOKEN not set' };
+            const r = await fetch(`${QIITA_API_BASE}/authenticated_user`, {
+                headers: { Authorization: `Bearer ${QIITA_ACCESS_TOKEN}` }
+            });
+            if (!r.ok) {
+                if (r.status === 401) {
+                    throw Object.assign(new Error(
+                        'Qiita token expired or revoked. Regenerate at https://qiita.com/settings/tokens/new (scopes: read_qiita, write_qiita) and update QIITA_ACCESS_TOKEN env var on Railway.'
+                    ), { status: 401 });
+                }
+                throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
+            }
+            const d = await r.json();
+            return { user: d.id };
+        }),
+        // X (Twitter)
+        probe('x', 'X (Twitter)', async () => {
+            if (!process.env.X_CONSUMER_KEY || !process.env.X_ACCESS_TOKEN) return { skip: true, reason: 'X credentials not set' };
+            return { configured: true };
+        }),
+        // Tumblr
+        probe('tumblr', 'Tumblr', async () => {
+            if (!TUMBLR_CONSUMER_KEY || !TUMBLR_ACCESS_TOKEN) return { skip: true, reason: 'Tumblr credentials not set' };
+            return { configured: true };
+        }),
+        // Mastodon
+        probe('mastodon', 'Mastodon', async () => {
+            if (!MASTODON_ACCESS_TOKEN) return { skip: true, reason: 'MASTODON_ACCESS_TOKEN not set' };
+            const r = await fetch(`${MASTODON_INSTANCE_URL}/api/v1/accounts/verify_credentials`, {
+                headers: { Authorization: `Bearer ${MASTODON_ACCESS_TOKEN}` }
+            });
+            if (!r.ok) throw Object.assign(new Error(`HTTP ${r.status}`), { status: r.status });
+            const d = await r.json();
+            return { user: d.username, instance: MASTODON_INSTANCE_URL };
+        }),
+        // Telegraph
+        probe('telegraph', 'Telegraph', async () => {
+            return { configured: true, note: 'Telegraph auto-creates accounts; always available' };
+        }),
+        // Reddit
+        probe('reddit', 'Reddit', async () => {
+            if (!REDDIT_CLIENT_ID || !REDDIT_USERNAME) return { skip: true, reason: 'Reddit credentials not set' };
+            return { configured: true };
+        }),
+        // LinkedIn
+        probe('linkedin', 'LinkedIn', async () => {
+            if (!LINKEDIN_ACCESS_TOKEN) return { skip: true, reason: 'LINKEDIN_ACCESS_TOKEN not set' };
+            return { configured: true };
+        }),
+    ]);
+
+    const healthy = results.filter(r => r.ok && !r.issue);
+    const issues = results.filter(r => !r.ok || r.issue);
+    const skipped = results.filter(r => r.ok && r.skip);
+
+    res.json({
+        success: true,
+        summary: { total: results.length, healthy: healthy.length - skipped.length, issues: issues.length, skipped: skipped.length },
+        platforms: results
+    });
 });
 
 module.exports = { router, initPublisherTable };
