@@ -1,3 +1,10 @@
+# [1.103.0](https://github.com/HankHuang0516/EClaw/compare/v1.102.1...v1.103.0) (2026-03-16)
+
+
+### Features
+
+* bot audit closed-loop (github-issue + audit-log endpoints) ([#234](https://github.com/HankHuang0516/EClaw/issues/234)) ([eed81b7](https://github.com/HankHuang0516/EClaw/commit/eed81b779038a80372210378f4212a8361d3d242))
+
 ## [1.102.1](https://github.com/HankHuang0516/EClaw/compare/v1.102.0...v1.102.1) (2026-03-16)
 
 
