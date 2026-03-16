@@ -1,3 +1,10 @@
+## [1.98.1](https://github.com/HankHuang0516/EClaw/compare/v1.98.0...v1.98.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* **#221,#220:** AI chat forced convergence at step 14 + Android mission adapter NPE guard ([9fdb27c](https://github.com/HankHuang0516/EClaw/commit/9fdb27c04c539b23deafed559675b585caba2ab9)), closes [#221](https://github.com/HankHuang0516/EClaw/issues/221) [#220](https://github.com/HankHuang0516/EClaw/issues/220) [#221](https://github.com/HankHuang0516/EClaw/issues/221) [#220](https://github.com/HankHuang0516/EClaw/issues/220)
+
 # [1.98.0](https://github.com/HankHuang0516/EClaw/compare/v1.97.0...v1.98.0) (2026-03-16)
 
 
