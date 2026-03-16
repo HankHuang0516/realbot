@@ -1,3 +1,10 @@
+# [1.97.0](https://github.com/HankHuang0516/EClaw/compare/v1.96.2...v1.97.0) (2026-03-16)
+
+
+### Features
+
+* **seo:** add robots.txt, sitemap.xml, meta tags, JSON-LD, and hreflang to web portal ([925352f](https://github.com/HankHuang0516/EClaw/commit/925352f5571121550cf6fc4f0b6e2430c21ce36b))
+
 ## [1.96.2](https://github.com/HankHuang0516/EClaw/compare/v1.96.1...v1.96.2) (2026-03-16)
 
 
