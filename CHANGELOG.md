@@ -1,3 +1,10 @@
+# [1.96.0](https://github.com/HankHuang0516/EClaw/compare/v1.95.2...v1.96.0) (2026-03-16)
+
+
+### Features
+
+* **channel:** add E2EE awareness for secure messaging channels ([#212](https://github.com/HankHuang0516/EClaw/issues/212)) ([4fe189e](https://github.com/HankHuang0516/EClaw/commit/4fe189ee2a01e66d2e540717be88e4627acf1407))
+
 ## [1.95.2](https://github.com/HankHuang0516/EClaw/compare/v1.95.1...v1.95.2) (2026-03-15)
 
 
