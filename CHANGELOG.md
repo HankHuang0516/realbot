@@ -1,3 +1,10 @@
+# [1.102.0](https://github.com/HankHuang0516/EClaw/compare/v1.101.0...v1.102.0) (2026-03-16)
+
+
+### Features
+
+* **i18n:** internationalize hard-coded Chinese in OpenClaw usecase examples ([#231](https://github.com/HankHuang0516/EClaw/issues/231)) ([099ac68](https://github.com/HankHuang0516/EClaw/commit/099ac68fcc75f1b7d1e8effca08cf9ce1479306f))
+
 # [1.101.0](https://github.com/HankHuang0516/EClaw/compare/v1.100.0...v1.101.0) (2026-03-16)
 
 
