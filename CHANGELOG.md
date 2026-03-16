@@ -1,3 +1,10 @@
+## [1.103.6](https://github.com/HankHuang0516/EClaw/compare/v1.103.5...v1.103.6) (2026-03-16)
+
+
+### Bug Fixes
+
+* delete-account.html i18n.js path missing ../ ([#240](https://github.com/HankHuang0516/EClaw/issues/240)) ([62dad0c](https://github.com/HankHuang0516/EClaw/commit/62dad0c4c6742521af72fb077e7cdcce6e304f8b))
+
 ## [1.103.5](https://github.com/HankHuang0516/EClaw/compare/v1.103.4...v1.103.5) (2026-03-16)
 
 
