@@ -136,7 +136,7 @@ async function run() {
   // ── Phase 5: GET /api/entity/lookup includes encryptionStatus ──
   console.log('\nPhase 5: Verify GET /api/entity/lookup');
   if (publicCode) {
-    const lookup = await getJSON(`${API_BASE}/api/entity/lookup?publicCode=${publicCode}`);
+    const lookup = await getJSON(`${API_BASE}/api/entity/lookup?code=${publicCode}`);
     assert(lookup.status === 200 && lookup.data.success, 'Lookup OK');
     assert(lookup.data.entity?.encryptionStatus === 'e2ee', `Lookup encryptionStatus = "e2ee" (got: ${lookup.data.entity?.encryptionStatus})`);
   } else {
@@ -188,21 +188,13 @@ async function run() {
 
   // ── Phase 8: Cleanup ──
   console.log('\nPhase 8: Cleanup');
-  // Unbind entity
+  // Unbind entity (DELETE /api/entity requires botSecret, not deviceSecret)
   const unbind = await deleteJSON(`${API_BASE}/api/entity`, {
     deviceId: DEVICE_ID,
-    deviceSecret: DEVICE_SECRET,
     entityId: entityId,
+    botSecret: bind.data.botSecret,
   });
-  assert(unbind.status === 200, 'Entity unbound');
-
-  // Delete channel account
-  const del = await deleteJSON(`${API_BASE}/api/channel/account/${accountId}`, {
-    deviceId: DEVICE_ID,
-    deviceSecret: DEVICE_SECRET,
-  });
-  // Account may already be cleaned by unbind, accept 200 or 404
-  assert(del.status === 200 || del.status === 404, 'Channel account cleaned up');
+  assert(unbind.status === 200, `Entity unbound (status=${unbind.status})`);
 
   // ── Summary ──
   console.log(`\n${'═'.repeat(50)}`);
