@@ -533,6 +533,7 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Schedule Channel | `node backend/tests/test-schedule-channel.js` | Device ID + Secret | Scheduler parity: channel-bound entities receive schedule push |
 | Schedule Cron Update | `node backend/tests/test-schedule-cron-update.js` | Device ID + Secret | Regression: cron schedule update NOT NULL violation on scheduled_at |
 | Card Holder | `node backend/tests/test-card-holder.js` | Device ID + Secret | Card Holder CRUD lifecycle, search, refresh, pin, category, notes |
+| UI Text Contrast | `node backend/tests/test-ui-text-contrast.js` | None | Static analysis: input field text/bg contrast ratio, chat input regression |
 
 ### Jest Unit Tests (CI-run, `npm test`, 11 files)
 
