@@ -1,3 +1,10 @@
+## [1.102.1](https://github.com/HankHuang0516/EClaw/compare/v1.102.0...v1.102.1) (2026-03-16)
+
+
+### Bug Fixes
+
+* cache-busting for i18n.js in info.html ([#232](https://github.com/HankHuang0516/EClaw/issues/232)) ([7e91a42](https://github.com/HankHuang0516/EClaw/commit/7e91a42a1298be781db78a808db320b6f5e82067))
+
 # [1.102.0](https://github.com/HankHuang0516/EClaw/compare/v1.101.0...v1.102.0) (2026-03-16)
 
 
