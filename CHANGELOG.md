@@ -1,3 +1,10 @@
+## [1.103.2](https://github.com/HankHuang0516/EClaw/compare/v1.103.1...v1.103.2) (2026-03-16)
+
+
+### Bug Fixes
+
+* portal screen-control uses deviceSecret instead of botSecret ([#236](https://github.com/HankHuang0516/EClaw/issues/236)) ([0347e6c](https://github.com/HankHuang0516/EClaw/commit/0347e6c7c4bdad4df82bdc3110fa23167e26616f))
+
 ## [1.103.1](https://github.com/HankHuang0516/EClaw/compare/v1.103.0...v1.103.1) (2026-03-16)
 
 
