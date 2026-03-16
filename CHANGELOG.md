@@ -1,3 +1,10 @@
+## [1.103.3](https://github.com/HankHuang0516/EClaw/compare/v1.103.2...v1.103.3) (2026-03-16)
+
+
+### Bug Fixes
+
+* add missing nav_card_holder i18n key for all 8 languages ([#237](https://github.com/HankHuang0516/EClaw/issues/237)) ([e632cde](https://github.com/HankHuang0516/EClaw/commit/e632cde692bb9875affc71d3ddc18fcdad22193d))
+
 ## [1.103.2](https://github.com/HankHuang0516/EClaw/compare/v1.103.1...v1.103.2) (2026-03-16)
 
 
