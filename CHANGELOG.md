@@ -1,3 +1,10 @@
+## [1.96.2](https://github.com/HankHuang0516/EClaw/compare/v1.96.1...v1.96.2) (2026-03-16)
+
+
+### Bug Fixes
+
+* **ui:** UIUX audit P0-P1 fixes — design tokens, accessibility, touch targets ([b1fb5ce](https://github.com/HankHuang0516/EClaw/commit/b1fb5ce4ec7b53de99044649e6bb223f0122d329))
+
 ## [1.96.1](https://github.com/HankHuang0516/EClaw/compare/v1.96.0...v1.96.1) (2026-03-16)
 
 
