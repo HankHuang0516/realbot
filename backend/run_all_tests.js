@@ -66,6 +66,8 @@ const TEST_FILES = [
     'test-grpc-transport.js',       // gRPC: Proto loading, gRPC server, HealthService
     'test-skill-templates.js',      // Skill templates: CRUD, requiredVars format, Gson compat
     'test-ui-text-contrast.js',     // UI: input field text/bg contrast ratio
+    'test-ux-static-audit.js',      // UX Layer 1: static audit (i18n, form, error, loading, empty, auth, telemetry, a11y, script order)
+    'test-ux-parity.js',            // UX Layer 2: cross-platform API-UI parity (Web/Android/iOS)
 
     // ── Credential-based tests (require .env with test device credentials) ──
     'test-channel-e2ee.js',         // Channel E2EE awareness: e2ee_capable flag, encryptionStatus propagation
