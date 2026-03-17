@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import {
   Text,
   Chip,
@@ -90,8 +90,43 @@ export default function FileManagerScreen() {
     }
   };
 
+  const handleDelete = (file: MediaFile) => {
+    Alert.alert(
+      t('files.delete_title', 'Delete File'),
+      t('files.delete_confirm', 'Are you sure you want to delete this file?'),
+      [
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+        {
+          text: t('common.delete', 'Delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await fileApi.delete(file.id);
+              setFiles((prev) => prev.filter((f) => f.id !== file.id));
+              setSnack(t('files.deleted', 'File deleted'));
+            } catch {
+              setSnack(t('errors.server'));
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleLongPress = (file: MediaFile) => {
+    Alert.alert(
+      file.filename || (file.type === 'image' ? 'Photo' : 'Audio'),
+      undefined,
+      [
+        { text: t('files.share', 'Share'), onPress: () => handleShare(file) },
+        { text: t('files.delete', 'Delete'), style: 'destructive', onPress: () => handleDelete(file) },
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+      ],
+    );
+  };
+
   const renderItem = ({ item }: { item: MediaFile }) => (
-    <TouchableOpacity style={styles.gridItem} onLongPress={() => handleShare(item)}>
+    <TouchableOpacity style={styles.gridItem} onLongPress={() => handleLongPress(item)}>
       {item.type === 'image' ? (
         <Image source={{ uri: item.url }} style={styles.image} resizeMode="cover" />
       ) : (

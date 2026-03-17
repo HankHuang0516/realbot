@@ -467,7 +467,6 @@
             <h1 class="page-title" data-i18n="nav_mission">Mission</h1>
             <div class="header-actions">
                 <button class="btn btn-outline" onclick="downloadDashboard()" data-i18n="mc_refresh">Refresh</button>
-                <button class="btn btn-primary" id="btnNotify" onclick="publishNotification()" data-i18n="mc_notify_btn">Publish Notification</button>
             </div>
         </div>
 
@@ -2135,13 +2134,65 @@
                 || JSON.stringify(soul.assignedEntities || []) !== JSON.stringify(prev.assignedEntities || []);
         }
 
-        // --- Cleanup ---
-        window.addEventListener('beforeunload', (e) => {
+        // --- Auto-save & auto-notify on exit ---
+        async function saveAndNotifyOnExit() {
             if (refreshTimer) clearInterval(refreshTimer);
-            // Warn if unsaved changes
-            if (hasChanges) {
-                e.preventDefault();
-                e.returnValue = '';
+
+            // Flush pending auto-save
+            if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+
+            // Save if there are pending changes
+            if (hasChanges && !isSyncing) {
+                try {
+                    const data = await apiCall('POST', '/api/mission/dashboard', {
+                        deviceId: currentUser.deviceId,
+                        deviceSecret: currentUser.deviceSecret,
+                        version: version,
+                        dashboard: dashboard
+                    });
+                    if (data.success) {
+                        version = data.version || version + 1;
+                        hasChanges = false;
+                        lastSavedDashboard = JSON.parse(JSON.stringify(dashboard));
+                    }
+                } catch (e) {
+                    console.warn('Exit auto-save failed:', e.message);
+                }
+            }
+
+            // Auto-notify all changed items (no prompt)
+            const items = getNotifiableItems();
+            if (items.length > 0) {
+                const notifications = items.map(item => ({
+                    type: item.type,
+                    title: item.title,
+                    priority: item.priority,
+                    entityIds: item.entityIds,
+                    url: item.url || ''
+                }));
+                apiCall('POST', '/api/mission/notify', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    notifications
+                }).catch(() => {});
+                updateNotifiedSnapshot();
+            }
+        }
+
+        // Use visibilitychange (reliable) + beforeunload (fallback)
+        let exitHandled = false;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden' && !exitHandled) {
+                exitHandled = true;
+                saveAndNotifyOnExit();
+                // Reset after a short delay in case user comes back
+                setTimeout(() => { exitHandled = false; }, 3000);
+            }
+        });
+        window.addEventListener('beforeunload', () => {
+            if (!exitHandled) {
+                exitHandled = true;
+                saveAndNotifyOnExit();
             }
         });
     </script>

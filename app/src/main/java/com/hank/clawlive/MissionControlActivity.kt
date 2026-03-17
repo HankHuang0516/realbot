@@ -41,6 +41,7 @@ import com.hank.clawlive.ui.RecordingIndicatorHelper
 import com.hank.clawlive.ui.mission.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -106,6 +107,7 @@ class MissionControlActivity : AppCompatActivity() {
         observeState()
         loadEntityOptions()
         loadSkillTemplates()
+        viewModel.fetchSoulTemplates() // pre-fetch so data is warm when user opens dialog
     }
 
     private fun loadSkillTemplates() {
@@ -134,6 +136,32 @@ class MissionControlActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         RecordingIndicatorHelper.detach()
+        // Auto-save and auto-notify on exit
+        autoSaveAndNotify()
+    }
+
+    private fun autoSaveAndNotify() {
+        if (!viewModel.uiState.value.hasLocalChanges && viewModel.getNotifiableItems().isEmpty()) return
+        viewModel.uploadDashboard(
+            onConflict = { _, _ -> /* Silent conflict — will resolve on next open */ },
+            onSuccess = {
+                // Auto-notify all changed items without prompt
+                val items = viewModel.getNotifiableItems()
+                if (items.isNotEmpty()) {
+                    val notifications = items.map { item ->
+                        mapOf<String, Any>(
+                            "type" to item.type,
+                            "title" to item.title,
+                            "priority" to item.priority,
+                            "entityIds" to item.entityIds,
+                            "url" to item.url
+                        )
+                    }
+                    viewModel.notifyEntities(notifications) { _, _ -> }
+                    viewModel.updateNotifiedSnapshot()
+                }
+            }
+        )
     }
 
     private fun loadEntityOptions() {
@@ -234,24 +262,8 @@ class MissionControlActivity : AppCompatActivity() {
             startActivity(Intent(this, ScheduleActivity::class.java))
         }
 
-        findViewById<MaterialButton>(R.id.btnUpload).setOnClickListener {
-            // Flush any pending auto-save first, then show notify prompt
-            viewModel.uploadDashboard(
-                onConflict = { yourVersion, serverVersion ->
-                    runOnUiThread {
-                        MaterialAlertDialogBuilder(this)
-                            .setTitle(getString(R.string.version_conflict_title))
-                            .setMessage(getString(R.string.version_conflict_message, yourVersion, serverVersion))
-                            .setPositiveButton(getString(R.string.download_latest)) { _, _ -> viewModel.downloadDashboard() }
-                            .setNegativeButton(R.string.cancel, null)
-                            .show()
-                    }
-                },
-                onSuccess = {
-                    runOnUiThread { showNotifyPrompt() }
-                }
-            )
-        }
+        // Hide the publish notification button — replaced by auto-save+notify on exit
+        findViewById<MaterialButton>(R.id.btnUpload).visibility = View.GONE
 
         findViewById<MaterialButton>(R.id.btnAddTodo).setOnClickListener { showAddItemDialog() }
         findViewById<MaterialButton>(R.id.btnAddSkill).setOnClickListener { showAddSkillDialog() }
@@ -388,7 +400,7 @@ class MissionControlActivity : AppCompatActivity() {
             priorities.map { it.label })
 
         etTitle.setText(item.title)
-        etDescription.setText(item.description)
+        etDescription.setText(item.description ?: "")
         spinnerPriority.setSelection(priorities.indexOf(item.priority ?: Priority.MEDIUM))
 
         val selectedEntities = item.assignedBot?.split(",")?.map { it.trim() } ?: emptyList()
@@ -477,7 +489,7 @@ class MissionControlActivity : AppCompatActivity() {
 
         etTitle.setText(note.title)
         etContent.setText(note.content)
-        etCategory.setText(note.category)
+        etCategory.setText(note.category ?: "")
 
         val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.edit))
@@ -677,8 +689,8 @@ class MissionControlActivity : AppCompatActivity() {
 
         if (skill != null) {
             etTitle.setText(skill.title)
-            etUrl.setText(skill.url)
-            etSteps.setText(skill.steps)
+            etUrl.setText(skill.url ?: "")
+            etSteps.setText(skill.steps ?: "")
             // System skills: lock title and URL
             if (skill.isSystem) {
                 etTitle.isEnabled = false
@@ -865,7 +877,7 @@ class MissionControlActivity : AppCompatActivity() {
         // Pre-fill fields and button label when editing existing soul
         if (soul != null) {
             etName.setText(soul.name)
-            etDescription.setText(soul.description)
+            etDescription.setText(soul.description ?: "")
             val existingTpl = soulTemplates.find { it.id == soul.templateId }
             if (existingTpl != null) {
                 btnChooseSoulTemplate.text = "🎭 ${getTemplateDisplayName(existingTpl)}"
@@ -874,22 +886,31 @@ class MissionControlActivity : AppCompatActivity() {
 
         // Single Gallery button — shows built-in + community templates unified
         btnChooseSoulTemplate.setOnClickListener {
-            viewModel.fetchSoulTemplates() // trigger background fetch (non-blocking)
-            val builtinList = soulTemplates.map { tpl ->
-                SoulGalleryDialog.BuiltinTemplate(
-                    id          = tpl.id,
-                    icon        = tpl.icon,
-                    name        = getTemplateDisplayName(tpl),
-                    description = getTemplateDescription(tpl)
-                )
+            lifecycleScope.launch {
+                // If community templates aren't loaded yet, fetch and wait
+                if (viewModel.soulTemplates.value.isEmpty()) {
+                    viewModel.fetchSoulTemplates()
+                    // Wait for data to arrive (up to 5s)
+                    withTimeoutOrNull(5000) {
+                        viewModel.soulTemplates.first { it.isNotEmpty() }
+                    }
+                }
+                val builtinList = soulTemplates.map { tpl ->
+                    SoulGalleryDialog.BuiltinTemplate(
+                        id          = tpl.id,
+                        icon        = tpl.icon,
+                        name        = getTemplateDisplayName(tpl),
+                        description = getTemplateDescription(tpl)
+                    )
+                }
+                val communityList = viewModel.soulTemplates.value
+                SoulGalleryDialog(this@MissionControlActivity, builtinList, communityList) { name, desc, templateId ->
+                    etName.setText(name)
+                    etDescription.setText(desc)
+                    selectedTemplateId = templateId
+                    btnChooseSoulTemplate.text = "🎭 $name"
+                }.show()
             }
-            val communityList = viewModel.soulTemplates.value
-            SoulGalleryDialog(this, builtinList, communityList) { name, desc, templateId ->
-                etName.setText(name)
-                etDescription.setText(desc)
-                selectedTemplateId = templateId
-                btnChooseSoulTemplate.text = "🎭 $name"
-            }.show()
         }
 
         val checkboxes = buildEntityCheckboxes(container, soul?.assignedEntities ?: emptyList())
