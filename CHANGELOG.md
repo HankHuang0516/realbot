@@ -1,3 +1,10 @@
+# [1.105.0](https://github.com/HankHuang0516/EClaw/compare/v1.104.1...v1.105.0) (2026-03-17)
+
+
+### Features
+
+* **seo:** rebrand to EClawbot, add landing page, llms.txt, and OG image ([#267](https://github.com/HankHuang0516/EClaw/issues/267)) ([366e744](https://github.com/HankHuang0516/EClaw/commit/366e74497ec4b795504fab0881d9f76158b22897))
+
 ## [1.104.1](https://github.com/HankHuang0516/EClaw/compare/v1.104.0...v1.104.1) (2026-03-17)
 
 
