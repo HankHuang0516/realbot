@@ -19,6 +19,7 @@ class ScheduleAdapter(
     private val onDelete: ((ScheduleItem) -> Unit)? = null,
     private val onEdit: ((ScheduleItem) -> Unit)? = null,
     private val onItemClick: ((ScheduleItem) -> Unit)? = null,
+    private val onTogglePause: ((ScheduleItem) -> Unit)? = null,
     var entityNames: Map<Int, String> = emptyMap(),
     var entityAvatars: Map<Int, String> = emptyMap()
 ) : ListAdapter<ScheduleItem, ScheduleAdapter.ViewHolder>(DIFF) {
@@ -72,21 +73,35 @@ class ScheduleAdapter(
             holder.tvRepeat.visibility = View.GONE
         }
 
-        // Status
-        holder.tvStatus.text = when (item.status) {
-            "pending" -> ctx.getString(R.string.schedule_status_pending)
-            "active" -> ctx.getString(R.string.schedule_status_active)
-            "completed" -> ctx.getString(R.string.schedule_status_completed)
-            "failed" -> ctx.getString(R.string.schedule_status_failed)
-            else -> item.status
+        // Status (show Paused if isPaused, regardless of underlying status)
+        if (item.isPaused) {
+            holder.tvStatus.text = ctx.getString(R.string.schedule_status_paused)
+            holder.tvStatus.setTextColor(Color.parseColor("#FF9800"))
+        } else {
+            holder.tvStatus.text = when (item.status) {
+                "pending" -> ctx.getString(R.string.schedule_status_pending)
+                "active" -> ctx.getString(R.string.schedule_status_active)
+                "completed" -> ctx.getString(R.string.schedule_status_completed)
+                "failed" -> ctx.getString(R.string.schedule_status_failed)
+                else -> item.status
+            }
+            holder.tvStatus.setTextColor(when (item.status) {
+                "pending" -> Color.parseColor("#FFD23F")
+                "active" -> Color.parseColor("#4CAF50")
+                "completed" -> Color.parseColor("#555555")
+                "failed" -> Color.parseColor("#F44336")
+                else -> Color.parseColor("#888888")
+            })
         }
-        holder.tvStatus.setTextColor(when (item.status) {
-            "pending" -> Color.parseColor("#FFD23F")
-            "active" -> Color.parseColor("#4CAF50")
-            "completed" -> Color.parseColor("#555555")
-            "failed" -> Color.parseColor("#F44336")
-            else -> Color.parseColor("#888888")
-        })
+
+        // Toggle pause button (only for upcoming/active items with actions)
+        if (showActions && onTogglePause != null && item.status in listOf("pending", "active")) {
+            holder.tvStatus.setOnClickListener { onTogglePause.invoke(item) }
+            holder.tvStatus.isClickable = true
+        } else {
+            holder.tvStatus.setOnClickListener(null)
+            holder.tvStatus.isClickable = false
+        }
 
         // Message
         holder.tvMessage.text = item.message

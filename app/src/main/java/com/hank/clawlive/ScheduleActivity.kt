@@ -81,7 +81,8 @@ class ScheduleActivity : AppCompatActivity() {
     private fun setupAdapters() {
         upcomingAdapter = ScheduleAdapter(
             showActions = true,
-            onEdit = { showEditDialog(it) }
+            onEdit = { showEditDialog(it) },
+            onTogglePause = { toggleSchedulePause(it) }
         )
         historyAdapter = ScheduleAdapter(
             showActions = false,
@@ -559,6 +560,33 @@ class ScheduleActivity : AppCompatActivity() {
                 Toast.makeText(this@ScheduleActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
                 setLoading(false)
+            }
+        }
+    }
+
+    private fun toggleSchedulePause(item: ScheduleItem) {
+        lifecycleScope.launch {
+            try {
+                val body = mapOf<String, Any>(
+                    "deviceId" to deviceManager.deviceId,
+                    "deviceSecret" to deviceManager.deviceSecret
+                )
+                val response = api.toggleSchedulePause(item.id, body)
+                if (response.success) {
+                    val newState = !(item.isPaused)
+                    val msg = if (newState) getString(R.string.schedule_paused) else getString(R.string.schedule_resumed)
+                    Toast.makeText(this@ScheduleActivity, msg, Toast.LENGTH_SHORT).show()
+                    TelemetryHelper.trackAction("schedule_toggle_pause", mapOf(
+                        "scheduleId" to item.id.toString(),
+                        "paused" to newState.toString()
+                    ))
+                    loadSchedules()
+                } else {
+                    Toast.makeText(this@ScheduleActivity, response.error ?: "Failed", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to toggle schedule pause")
+                Toast.makeText(this@ScheduleActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }

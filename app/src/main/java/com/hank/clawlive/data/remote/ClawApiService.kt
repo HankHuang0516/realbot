@@ -409,6 +409,12 @@ interface ClawApiService {
         @Body body: Map<String, @JvmSuppressWildcards Any>
     ): GenericResponse
 
+    @PATCH("api/schedules/{id}/toggle")
+    suspend fun toggleSchedulePause(
+        @Path("id") scheduleId: Int,
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): ScheduleCreateResponse
+
     @HTTP(method = "DELETE", path = "api/schedules/{id}", hasBody = false)
     suspend fun deleteSchedule(
         @Path("id") id: Int,

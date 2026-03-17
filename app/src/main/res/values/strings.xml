@@ -580,6 +580,11 @@ If you have any questions, please contact us via our official email.
     <string name="schedule_push_ok">Pushed to bot</string>
     <string name="schedule_edit">Edit Schedule</string>
     <string name="schedule_updated">Schedule updated!</string>
+    <string name="schedule_status_paused">Paused</string>
+    <string name="schedule_paused">Schedule paused</string>
+    <string name="schedule_resumed">Schedule resumed</string>
+    <string name="schedule_enable">Enable</string>
+    <string name="schedule_disable">Disable</string>
 
     <!-- Notifications -->
     <string name="notifications_title">Notifications</string>

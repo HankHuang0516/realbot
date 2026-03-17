@@ -15,7 +15,8 @@ data class ScheduleItem(
     @SerializedName("executedAt") val executedAt: String? = null,
     val result: String? = null,
     @SerializedName("resultStatus") val resultStatus: String? = null,
-    val label: String? = null
+    val label: String? = null,
+    @SerializedName("isPaused") val isPaused: Boolean = false
 )
 
 data class ScheduleListResponse(
