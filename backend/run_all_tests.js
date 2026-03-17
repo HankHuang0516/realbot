@@ -46,11 +46,26 @@ const TEST_FILES = [
     'test_mission_publish.js',      // Mission: TODO/RULE CRUD, incremental notify, delta publish
     'test_entity_name_preservation.js', // Entity name persistence across rebind
     'test_entity_echo_bug.js',      // Echo deduplication regression
+    'test_echo_regex_validation.js', // Echo regex validation
+    'test_chat_echo_and_delivery.js', // Chat echo and delivery
+    'test_entity_xp_preservation.js', // Entity XP preservation across operations
+    'test_device_telemetry.js',     // Device telemetry buffer CRUD
+    'test_feedback.js',             // Feedback submission and retrieval
+    'test_gatekeeper.js',           // Gatekeeper security filter
+    'test_entity_management.js',    // Entity management operations
 
     // ── Static code + API shape tests (no auth credentials needed) ──
     'test-broadcast-recipient-block.js', // Unit: buildBroadcastRecipientBlock() output format
     'test-channel-api.js',          // Channel API: auth rejection, required fields, coexistence
     'test-issue-fixes.js',          // Static code checks (#145/#146-149/#150) + GET /api/skill-templates
+    'test-tls-headers.js',          // TLS/Security: HSTS, X-Content-Type-Options, X-Frame-Options
+    'test-oidc-foundation.js',      // OIDC: OAuth providers, OIDC validation
+    'test-rbac.js',                 // RBAC: Roles and user-roles auth protection
+    'test-api-docs.js',             // API Docs: Swagger UI, OpenAPI spec validation
+    'test-sdk-generation.js',       // SDK: OpenAPI spec completeness for SDK gen
+    'test-grpc-transport.js',       // gRPC: Proto loading, gRPC server, HealthService
+    'test-skill-templates.js',      // Skill templates: CRUD, requiredVars format, Gson compat
+    'test-ui-text-contrast.js',     // UI: input field text/bg contrast ratio
 
     // ── Credential-based tests (require .env with test device credentials) ──
     'test-channel-e2ee.js',         // Channel E2EE awareness: e2ee_capable flag, encryptionStatus propagation
@@ -59,14 +74,33 @@ const TEST_FILES = [
     'test-rename-channel.js',       // Rename → NAME_CHANGED channel push (needs BROADCAST_TEST_DEVICE_ID)
     'test-schedule-channel.js',     // Schedule → channel push + eclaw_context (needs BROADCAST_TEST_DEVICE_ID)
     'test-mission-notify-all-types.js', // Mission notify all 4 types to channel bot (needs BROADCAST_TEST_DEVICE_ID)
+    'test-mission-notify-channel.js', // Mission notify to channel-bound entities push payload format
     // Note: test-eclaw-context-injection.js excluded (flaky: fails when bot-to-bot rate limit exhausted)
     'test-bot-api-response.js',     // Bot API response rate >= 90% (needs TEST_DEVICE_ID + live bot)
     'test-discord-webhook.js',      // Discord webhook URL detection, rich message structure, content limits
     'test-agent-card-ui.js',        // Agent Card CRUD lifecycle, field validation
-    'test-publisher-platforms.js',  // Publisher platforms listing + input validation (8 platforms)
+    'test-agent-card.js',           // Agent Card: PUT/GET/DELETE lifecycle
+    'test-publisher-platforms.js',  // Publisher platforms listing + input validation (12 platforms)
     'test-card-holder.js',          // Card Holder CRUD lifecycle, search, refresh, pin, category, notes
     'test-screen-control-auth.js',  // Screen control portal auth: deviceSecret instead of botSecret
     'test-ai-chat-submit-poll.js',  // AI chat submit/poll async pattern (Issue #248)
+    'test-audit-logging.js',        // Audit logging: GET /api/logs format, category filter
+    'test-cross-device-settings.js', // Cross-device settings: CRUD lifecycle, validation, merge
+    'test-edit-mode-public-code.js', // Public code: survives entity reorder
+    'test-multi-entity-push.js',    // Multi-entity push: POST /api/client/speak with entityId array
+    'test-vars-merge.js',           // ENV vars: cross-platform merge, conflict splitting
+    'test-ws-auth.js',              // WebSocket: Socket.IO authentication
+    'test-ai-chat-image.js',        // AI chat: image support
+    'test-ai-diagnostics.js',       // AI diagnostics: context formatting, injection
+    'test-dynamic-entities.js',     // Dynamic entities: add/delete, 20-entity extreme, sparse IDs
+    'test-entity-management.js',    // Entity management: refresh cooldown, reorder validation
+    'test-entity-cards-stability.js', // Entity cards: don't disappear during polling (#16/#29)
+    'test-4th-entity-visibility.js', // 4th entity: shows on home screen after binding (#48)
+    'test-channel-e2e.js',          // Channel E2E: binding, plugin isolation, callback routing
+    'test-oauth-server.js',         // OAuth 2.0: client registration, tokens, introspection
+    'test-a2a-compat.js',           // A2A: .well-known/agent.json, tasks/send
+    'test-a2a-task-dispatch.js',    // A2A: official agent sends structured task to entity
+    'test-schedule-cron-update.js', // Schedule: cron update NOT NULL violation regression
 ];
 
 // Manual UI tests (run on device, not automated):

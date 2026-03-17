@@ -478,17 +478,20 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 
 ## Test Coverage Summary
 
-**238 total API routes** across all modules, **~45% covered** (~107 routes tested).
+**~296 total API routes** across all modules, **~65% covered** (~192 routes tested).
 
 | Module | Coverage | Notes |
 |--------|----------|-------|
 | OAuth Server | 100% (8/8) | Full lifecycle tested |
 | A2A Compat | 100% (6/6) | |
 | Channel API | 100% (3/3) | |
+| Entity Cross-Device Settings | 100% (3/3) | |
+| Auth | 92% (22/24) | Extended: device-login, verify-email, forgot-password, reset-password, bind-email, app-login, OAuth, RBAC, account deletion |
+| Subscription | 100% (5/5) | Status, TapPay, cancel, Google Play, usage |
+| Official Borrow | 100% (6/6) | All 6 endpoints tested |
+| Article Publisher | ~75% (37/49) | Extended: Blogger, Hashnode, X/Twitter, Tumblr, Reddit, LinkedIn, Mastodon |
 | Mission | 54% (14/26) | Missing: reorder, move, archive |
-| Core API (index.js) | ~50% (70/139) | Largest gap area |
-| Auth | 21% (5/24) | Critical gap — OIDC, social OAuth, RBAC endpoints |
-| Article Publisher | 25% (11/44) | Platforms listing + input validation for all new platforms |
+| Core API (index.js) | ~65% (96/148) | Device preferences added |
 
 Full analysis: `docs/reports/2026-03-14-test-coverage-analysis.md`
 
@@ -570,11 +573,16 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Bot Tools | `tests/jest/bot-tools.test.js` | Bot tools API (web-search, web-fetch) validation |
 | File Delete | `tests/jest/file-delete.test.js` | File deletion endpoint validation and mocks |
 | AI Support Chat | `tests/jest/ai-support.test.js` | AI chat submit/poll endpoint validation, auth rejection (Issue #248) |
+| Auth Extended | `tests/jest/auth-extended.test.js` | device-login, verify-email, forgot-password, reset-password, bind-email, app-login, OAuth (Google/Facebook/OIDC), account deletion, RBAC roles |
+| Subscription | `tests/jest/subscription.test.js` | Subscription status, TapPay payment, cancellation, Google Play verification, usage limits |
+| Official Borrow | `tests/jest/official-borrow.test.js` | Official bot borrowing lifecycle (bind-free, bind-personal, add-paid-slot, unbind, verify-subscription) |
+| Device Preferences | `tests/jest/device-preferences.test.js` | Device preference GET/PUT, auth validation |
+| Publisher Extended | `tests/jest/publisher-extended.test.js` | Blogger, Hashnode, X/Twitter, Tumblr, Reddit, LinkedIn, Mastodon publish/delete/me validation |
 
 ### Running All Tests
 ```bash
 node backend/run_all_tests.js          # Run all tests sequentially
-cd backend && npm test                  # Jest unit tests (13 files)
+cd backend && npm test                  # Jest unit tests (18 files)
 cd backend && npm run lint              # ESLint
 ```
 
