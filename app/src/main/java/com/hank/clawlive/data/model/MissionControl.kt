@@ -34,7 +34,7 @@ enum class MissionStatus(val label: String) {
 data class MissionItem(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
-    val description: String = "",
+    val description: String? = null,
     val priority: Priority? = Priority.MEDIUM,
     val status: MissionStatus? = MissionStatus.PENDING,
     val assignedBot: String? = null,  // 負責的 bot ID
@@ -42,7 +42,7 @@ data class MissionItem(
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val completedAt: Long? = null,
-    val createdBy: String = "user"
+    val createdBy: String? = null
 )
 
 /**
@@ -52,10 +52,10 @@ data class MissionNote(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
     val content: String,
-    val category: String = "general",
+    val category: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val createdBy: String = "user"
+    val createdBy: String? = null
 )
 
 /**
@@ -89,13 +89,13 @@ enum class RuleType {
 data class MissionSkill(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
-    val url: String = "",
-    val steps: String = "",
+    val url: String? = null,
+    val steps: String? = null,
     val assignedEntities: List<String> = emptyList(),
     val isSystem: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val createdBy: String = "user"
+    val createdBy: String? = null
 )
 
 /**
@@ -104,13 +104,13 @@ data class MissionSkill(
 data class MissionSoul(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
-    val description: String = "",
+    val description: String? = null,
     val templateId: String? = null,
     val assignedEntities: List<String> = emptyList(),
     val isActive: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val createdBy: String = "user"
+    val createdBy: String? = null
 )
 
 /**

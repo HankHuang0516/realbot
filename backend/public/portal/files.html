@@ -175,6 +175,31 @@
             opacity: 0.5;
         }
 
+        /* Delete button on file card */
+        .file-delete-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .file-card:hover .file-delete-btn {
+            display: flex;
+        }
+        .file-delete-btn:hover {
+            background: var(--error, #e53e3e);
+        }
+
         /* Multi-entity badge overlay on thumbnail */
         .entity-badges {
             position: absolute;
@@ -718,8 +743,10 @@
                 const entityBadgesHtml = renderEntityBadges(file);
                 const entityNamesHtml = renderEntityNames(file);
 
+                const deleteBtn = '<button class="file-delete-btn" onclick="event.stopPropagation();deleteFile(' + idx + ')" title="Delete">&#x2715;</button>';
                 if (file.type === 'photo') {
                     return '<div class="file-card" onclick="previewFile(' + idx + ')">' +
+                        deleteBtn +
                         '<div class="file-thumb">' +
                         '<img src="' + escapeHtml(file.url) + '" alt="photo" loading="lazy" onerror="this.parentElement.innerHTML=\'<div class=file-thumb-icon>🖼️</div>\'">' +
                         entityBadgesHtml +
@@ -733,6 +760,7 @@
                         '</div></div>';
                 } else {
                     return '<div class="file-card" onclick="previewFile(' + idx + ')">' +
+                        deleteBtn +
                         '<div class="file-thumb">' +
                         '<div class="file-thumb-icon">🎙️</div>' +
                         entityBadgesHtml +
@@ -792,6 +820,7 @@
                 '<div class="preview-actions">' +
                 (file.type === 'photo' ? '<button class="btn btn-primary btn-sm" onclick="downloadFile(' + idx + ')">' + i18n.t('files_btn_download') + '</button>' : '') +
                 '<button class="btn btn-outline btn-sm" onclick="shareFile(' + idx + ')">' + i18n.t('files_btn_share') + '</button>' +
+                '<button class="btn btn-outline btn-sm" style="color:var(--error,#e53e3e);border-color:var(--error,#e53e3e)" onclick="deleteFile(' + idx + ')">' + i18n.t('files_btn_delete', 'Delete') + '</button>' +
                 '</div>';
 
             document.body.appendChild(overlay);
@@ -871,6 +900,30 @@
                     showToast(i18n.t('files_share_failed'), 'error');
                 }
                 document.body.removeChild(ta);
+            }
+        }
+
+        // --- Delete ---
+        async function deleteFile(idx) {
+            const file = allFiles[idx];
+            if (!file) return;
+            if (!confirm(i18n.t('files_delete_confirm', 'Are you sure you want to delete this file?'))) return;
+
+            try {
+                const resp = await apiCall('/api/device/files/' + file.id + '?deviceId=' + encodeURIComponent(deviceId) + '&deviceSecret=' + encodeURIComponent(deviceSecret), { method: 'DELETE' });
+                if (resp.success) {
+                    allFiles.splice(idx, 1);
+                    renderFiles();
+                    updateStats();
+                    // Close preview overlay if open
+                    const overlay = document.querySelector('.preview-overlay');
+                    if (overlay) overlay.remove();
+                    showToast(i18n.t('files_deleted', 'File deleted'), 'success');
+                } else {
+                    showToast(resp.error || 'Delete failed', 'error');
+                }
+            } catch (e) {
+                showToast(i18n.t('files_delete_failed', 'Failed to delete file'), 'error');
             }
         }
 

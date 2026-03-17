@@ -214,6 +214,8 @@ export const fileApi = {
     apiClient.get('/api/device/files', { params }),
   download: (fileId: string) =>
     apiClient.get(`/api/chat/file/${fileId}`, { responseType: 'blob' }),
+  delete: (fileId: string) =>
+    apiClient.delete(`/api/device/files/${fileId}`),
 };
 
 // ── Feedback APIs ────────────────────────────────────────────

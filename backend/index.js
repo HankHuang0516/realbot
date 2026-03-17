@@ -491,7 +491,7 @@ async function initPersistence() {
     await backfillPublicCodes();
 
     // Load DB-approved skill contributions (supplements git-tracked skill-templates.json)
-    if (usePostgreSQL) loadApprovedContributions();
+    if (usePostgreSQL) await loadApprovedContributions();
 
     persistenceReady = true;
     console.log(`[Persistence] Ready — ${Object.keys(devices).length} devices loaded`);
@@ -10467,6 +10467,70 @@ app.get('/api/device/files', async (req, res) => {
     } catch (error) {
         console.error('[Files] List error:', error);
         res.status(500).json({ success: false, error: 'Failed to list files' });
+    }
+});
+
+// ============================================
+// DELETE DEVICE FILE (remove chat media record)
+// ============================================
+app.delete('/api/device/files/:fileId', async (req, res) => {
+    const { fileId } = req.params;
+    const deviceId = req.query.deviceId || req.body.deviceId;
+    const deviceSecret = req.query.deviceSecret || req.body.deviceSecret;
+
+    if (!deviceId || !deviceSecret) {
+        return res.status(400).json({ success: false, error: 'Missing credentials' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        const jwt = require('jsonwebtoken');
+        const token = req.cookies && req.cookies.eclaw_session;
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-change-in-production');
+                if (decoded.deviceId !== deviceId) {
+                    return res.status(401).json({ success: false, error: 'Invalid credentials' });
+                }
+            } catch {
+                return res.status(401).json({ success: false, error: 'Invalid credentials' });
+            }
+        } else {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+    }
+
+    try {
+        // Verify the file belongs to this device before deleting
+        const check = await chatPool.query(
+            'SELECT id, media_url FROM chat_messages WHERE id = $1 AND device_id = $2',
+            [fileId, deviceId]
+        );
+        if (check.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'File not found' });
+        }
+
+        // Delete the chat message record (and any broadcast duplicates with same media_url)
+        const mediaUrl = check.rows[0].media_url;
+        const deleted = await chatPool.query(
+            'DELETE FROM chat_messages WHERE device_id = $1 AND media_url = $2 RETURNING id',
+            [deviceId, mediaUrl]
+        );
+
+        // Also delete from chat_uploads if it was a DB-stored file
+        if (mediaUrl && mediaUrl.includes('/api/chat/file/')) {
+            const uploadIdMatch = mediaUrl.match(/\/api\/chat\/file\/(\d+)/);
+            if (uploadIdMatch) {
+                await chatPool.query('DELETE FROM chat_uploads WHERE id = $1 AND device_id = $2',
+                    [parseInt(uploadIdMatch[1]), deviceId]);
+            }
+        }
+
+        serverLog(deviceId, 'file_delete', `Deleted file ${fileId} (${deleted.rowCount} records)`);
+        res.json({ success: true, deletedCount: deleted.rowCount });
+    } catch (error) {
+        console.error('[Files] Delete error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete file' });
     }
 });
 

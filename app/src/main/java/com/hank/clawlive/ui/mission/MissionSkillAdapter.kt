@@ -46,7 +46,7 @@ class MissionSkillAdapter(
                 tvEntities.visibility = View.GONE
             }
 
-            if (skill.url.isNotBlank()) {
+            if (!skill.url.isNullOrBlank()) {
                 tvUrl.text = skill.url
                 tvUrl.visibility = View.VISIBLE
             } else {

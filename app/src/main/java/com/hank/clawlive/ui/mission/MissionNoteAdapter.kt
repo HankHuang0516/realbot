@@ -37,7 +37,7 @@ class MissionNoteAdapter(
         fun bind(note: MissionNote) {
             tvTitle.text = note.title
             markwon?.setMarkdown(tvContent, note.content) ?: run { tvContent.text = note.content }
-            tvCategory.text = note.category
+            tvCategory.text = note.category ?: ""
 
             itemView.setOnClickListener { onNoteClick(note) }
             itemView.setOnLongClickListener {

@@ -395,6 +395,23 @@ class FileManagerActivity : AppCompatActivity() {
         }
         btnRow.addView(btnShare)
 
+        // Delete button
+        val btnDelete = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = getString(R.string.file_btn_delete)
+            setTextColor(getColor(com.google.android.material.R.color.design_default_color_error))
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            lp.marginStart = 16
+            layoutParams = lp
+            setOnClickListener {
+                dialog.dismiss()
+                confirmDeleteFile(file)
+            }
+        }
+        btnRow.addView(btnDelete)
+
         layout.addView(btnRow)
 
         dialog.setContentView(layout)
@@ -443,6 +460,41 @@ class FileManagerActivity : AppCompatActivity() {
             putExtra(Intent.EXTRA_SUBJECT, "E-Claw ${if (file.type == "photo") "Photo" else "Voice"}")
         }
         startActivity(Intent.createChooser(shareIntent, getString(R.string.file_btn_share)))
+    }
+
+    private fun confirmDeleteFile(file: DeviceFile) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.file_delete_title))
+            .setMessage(getString(R.string.file_delete_confirm))
+            .setPositiveButton(getString(R.string.delete)) { _, _ -> performDeleteFile(file) }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    private fun performDeleteFile(file: DeviceFile) {
+        val deviceId = deviceManager.getDeviceId() ?: return
+        val deviceSecret = deviceManager.getDeviceSecret() ?: return
+        TelemetryHelper.trackAction("file_delete", mapOf("type" to file.type))
+
+        lifecycleScope.launch {
+            try {
+                val resp = api.deleteDeviceFile(file.id, deviceId, deviceSecret)
+                if (resp.success) {
+                    allFiles.removeAll { it.id == file.id }
+                    adapter.setFiles(allFiles)
+                    updateUI()
+                    Toast.makeText(this@FileManagerActivity,
+                        getString(R.string.file_deleted), Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@FileManagerActivity,
+                        getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Delete file failed")
+                Toast.makeText(this@FileManagerActivity,
+                    getString(R.string.unknown_error), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun parseTimestamp(isoDate: String): Long? {

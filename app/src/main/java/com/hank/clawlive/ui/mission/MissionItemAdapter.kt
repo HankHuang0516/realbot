@@ -64,7 +64,7 @@ class MissionItemAdapter(
             tvStatus.text = item.status?.label ?: "待處理"
 
             // Description (Markdown)
-            if (item.description.isNotBlank()) {
+            if (!item.description.isNullOrBlank()) {
                 markwon?.setMarkdown(tvDescription, item.description)
                 tvDescription.visibility = View.VISIBLE
             } else {

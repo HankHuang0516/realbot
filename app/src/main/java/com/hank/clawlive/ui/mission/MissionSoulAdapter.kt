@@ -50,7 +50,7 @@ class MissionSoulAdapter(
                 tvEntities.visibility = View.GONE
             }
 
-            if (soul.description.isNotBlank()) {
+            if (!soul.description.isNullOrBlank()) {
                 tvDescription.text = soul.description.take(100)
                 tvDescription.visibility = View.VISIBLE
             } else {

@@ -107,16 +107,17 @@ class SoulGalleryDialog(
                     else ""
                 row.findViewById<TextView>(R.id.tvGalleryMeta).text = meta
                 row.findViewById<TextView>(R.id.tvGalleryStatus).apply {
-                    text = item.description.take(60) + if (item.description.length > 60) "…" else ""
+                    val desc = item.description ?: ""
+                    text = desc.take(60) + if (desc.length > 60) "…" else ""
                     setTextColor(android.graphics.Color.parseColor("#888888"))
                 }
                 row.setOnClickListener {
                     dialog?.dismiss()
-                    onSelected(item.name, item.description, item.templateId)
+                    onSelected(item.name, item.description ?: "", item.templateId)
                 }
                 row.findViewById<MaterialButton>(R.id.btnGallerySelect).setOnClickListener {
                     dialog?.dismiss()
-                    onSelected(item.name, item.description, item.templateId)
+                    onSelected(item.name, item.description ?: "", item.templateId)
                 }
                 listLayout.addView(row)
             }

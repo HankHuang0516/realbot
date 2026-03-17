@@ -277,6 +277,13 @@ interface ClawApiService {
         @Query("since") since: Long? = null
     ): DeviceFilesResponse
 
+    @DELETE("api/device/files/{fileId}")
+    suspend fun deleteDeviceFile(
+        @Path("fileId") fileId: String,
+        @Query("deviceId") deviceId: String,
+        @Query("deviceSecret") deviceSecret: String
+    ): GenericResponse
+
     // ============================================
     // MISSION CONTROL DASHBOARD
     // Auth: deviceId + deviceSecret in query/body
