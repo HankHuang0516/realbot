@@ -1,3 +1,10 @@
+## [1.104.1](https://github.com/HankHuang0516/EClaw/compare/v1.104.0...v1.104.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* scheduled messages not showing in Android app chat ([#261](https://github.com/HankHuang0516/EClaw/issues/261)) ([9485cfc](https://github.com/HankHuang0516/EClaw/commit/9485cfc5cd373e64c24e6d5b1ba3cebfb43c5278))
+
 # [1.104.0](https://github.com/HankHuang0516/EClaw/compare/v1.103.9...v1.104.0) (2026-03-17)
 
 
