@@ -1,3 +1,10 @@
+## [1.103.7](https://github.com/HankHuang0516/EClaw/compare/v1.103.6...v1.103.7) (2026-03-17)
+
+
+### Bug Fixes
+
+* add all missing Card Holder page i18n translations (8 languages) ([#241](https://github.com/HankHuang0516/EClaw/issues/241)) ([4ad8cf1](https://github.com/HankHuang0516/EClaw/commit/4ad8cf166b674cd9286e345b1075be962b1a7eec))
+
 ## [1.103.6](https://github.com/HankHuang0516/EClaw/compare/v1.103.5...v1.103.6) (2026-03-16)
 
 
