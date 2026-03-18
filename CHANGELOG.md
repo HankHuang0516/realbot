@@ -1,3 +1,10 @@
+## [1.109.1](https://github.com/HankHuang0516/EClaw/compare/v1.109.0...v1.109.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* prevent CDN cache mismatch from breaking entity loading on web portal ([#291](https://github.com/HankHuang0516/EClaw/issues/291)) ([c57aba0](https://github.com/HankHuang0516/EClaw/commit/c57aba0cbe763421e2e575bcd911f29fd6cb42f5))
+
 # [1.109.0](https://github.com/HankHuang0516/EClaw/compare/v1.108.1...v1.109.0) (2026-03-18)
 
 
