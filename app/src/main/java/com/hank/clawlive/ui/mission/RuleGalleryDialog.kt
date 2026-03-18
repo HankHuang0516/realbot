@@ -3,9 +3,12 @@ package com.hank.clawlive.ui.mission
 import android.content.Context
 import android.view.LayoutInflater
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.hank.clawlive.R
 import com.hank.clawlive.data.remote.SkillTemplate
@@ -30,9 +33,55 @@ class RuleGalleryDialog(
             return
         }
 
+        // Collect distinct categories for filter chips
+        val categories = templates.mapNotNull { it.category?.takeIf { c -> c.isNotBlank() } }
+            .distinct()
+            .sorted()
+
+        var selectedCategory: String? = null // null means "All"
+
         val outerLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 8, 24, 8)
+        }
+
+        // Category filter chips
+        val chipGroup = ChipGroup(context).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
+        }
+
+        val allChip = Chip(context).apply {
+            text = "All"
+            isCheckable = true
+            isCheckedIconVisible = true
+            isChecked = true
+            setChipBackgroundColorResource(R.color.mtrl_chip_background_color)
+        }
+        chipGroup.addView(allChip)
+
+        val categoryChipMap = mutableMapOf<Int, String>()
+        for (cat in categories) {
+            val chip = Chip(context).apply {
+                text = cat
+                isCheckable = true
+                isCheckedIconVisible = true
+                setChipBackgroundColorResource(R.color.mtrl_chip_background_color)
+            }
+            chipGroup.addView(chip)
+            categoryChipMap[chip.id] = cat
+        }
+
+        if (categories.isNotEmpty()) {
+            val chipScroll = HorizontalScrollView(context).apply {
+                isHorizontalScrollBarEnabled = false
+                addView(chipGroup)
+            }
+            val chipParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 8 }
+            outerLayout.addView(chipScroll, chipParams)
         }
 
         val etSearch = EditText(context).apply {
@@ -59,11 +108,14 @@ class RuleGalleryDialog(
 
         fun buildRows(query: String) {
             listLayout.removeAllViews()
-            val filtered = if (query.isBlank()) templates
-            else templates.filter {
-                it.label.contains(query, ignoreCase = true) ||
-                (it.name?.contains(query, ignoreCase = true) == true) ||
-                (it.author?.contains(query, ignoreCase = true) == true)
+            val filtered = templates.filter { tpl ->
+                val matchesCategory = selectedCategory == null ||
+                    tpl.category.equals(selectedCategory, ignoreCase = true)
+                val matchesQuery = query.isBlank() ||
+                    tpl.label.contains(query, ignoreCase = true) ||
+                    (tpl.name?.contains(query, ignoreCase = true) == true) ||
+                    (tpl.author?.contains(query, ignoreCase = true) == true)
+                matchesCategory && matchesQuery
             }
 
             if (filtered.isEmpty()) {
@@ -104,6 +156,15 @@ class RuleGalleryDialog(
         }
 
         buildRows("")
+
+        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            selectedCategory = if (checkedIds.isEmpty() || checkedIds.first() == allChip.id) {
+                null
+            } else {
+                categoryChipMap[checkedIds.first()]
+            }
+            buildRows(etSearch.text?.toString() ?: "")
+        }
 
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}

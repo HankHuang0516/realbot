@@ -304,6 +304,20 @@
         .tpl-gallery-status { font-size: 11px; margin-top: 4px; }
         .tpl-gallery-status.ok { color: var(--success); }
         .tpl-gallery-status.warn { color: var(--warning-hover); }
+        .tpl-filter-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+        .tpl-filter-chip {
+            font-size: 12px; padding: 4px 12px; border-radius: 999px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .tpl-filter-chip:hover { border-color: var(--primary); color: var(--text); }
+        .tpl-filter-chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .tpl-category-badge {
+            display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 999px;
+            background: var(--surface-hover, #f0f0f0); color: var(--text-muted);
+            margin-top: 3px;
+        }
 
         #dlg_skill_steps {
             min-height: 160px;
@@ -1390,6 +1404,7 @@
 
         function buildGalleryHtml(templates) {
             const vars = loadLocalVars();
+            const categories = [...new Set(templates.map(t => t.category).filter(Boolean))];
             const cards = templates.map(t => {
                 let statusHtml = '';
                 if (t.requiredVars && t.requiredVars.length > 0) {
@@ -1403,10 +1418,11 @@
                 } else {
                     statusHtml = `<div class="tpl-gallery-status" style="color:var(--text-muted);">No API key needed</div>`;
                 }
-                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-title="${esc(t.title || '')}" data-author="${esc(t.author || '')}" onclick="selectTemplateFromGallery('${esc(t.id)}')">
+                const catBadge = t.category ? `<span class="tpl-category-badge">${esc(t.category)}</span>` : '';
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-title="${esc(t.title || '')}" data-author="${esc(t.author || '')}" data-category="${esc(t.category || '')}" onclick="selectTemplateFromGallery('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${t.icon || '📦'}</div>
                     <div class="tpl-gallery-info">
-                        <div class="tpl-gallery-title">${esc(t.label)}</div>
+                        <div class="tpl-gallery-title">${esc(t.label)} ${catBadge}</div>
                         <div class="tpl-gallery-meta">by ${esc(t.author || '—')} · ${esc(t.updatedAt || '')}</div>
                         ${statusHtml}
                     </div>
@@ -1414,10 +1430,15 @@
                 </div>`;
             }).join('');
 
+            const chipAll = `<span class="tpl-filter-chip active" data-cat="" onclick="filterGalleryByCat(this,'tpl_gallery_list')">All</span>`;
+            const catChips = categories.map(c => `<span class="tpl-filter-chip" data-cat="${esc(c)}" onclick="filterGalleryByCat(this,'tpl_gallery_list')">${esc(c)}</span>`).join('');
+            const filterBar = categories.length ? `<div class="tpl-filter-bar">${chipAll}${catChips}</div>` : '';
+
             return `<div class="dialog-overlay" onclick="if(event.target===this)_restoreSkillDialog()">
                 <div class="dialog" style="max-width:480px;">
                     <div class="dialog-title">瀏覽官方模板 (${templates.length})</div>
                     <input id="tpl_gallery_search" type="text" placeholder="搜尋…" oninput="filterGallery(this.value)" style="margin-bottom:12px;" />
+                    ${filterBar}
                     <div id="tpl_gallery_list" style="max-height:380px;overflow-y:auto;">${cards}</div>
                     <div class="dialog-actions">
                         <button class="btn btn-outline" onclick="_restoreSkillDialog()">取消</button>
@@ -1436,6 +1457,28 @@
             });
         }
 
+        function filterGalleryByCat(chip, listId) {
+            const bar = chip.parentElement;
+            bar.querySelectorAll('.tpl-filter-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            const cat = chip.dataset.cat || '';
+            document.querySelectorAll('#' + listId + ' .tpl-gallery-card').forEach(card => {
+                card.style.display = (!cat || (card.dataset.category || '') === cat) ? '' : 'none';
+            });
+            // Also hide section labels that have no visible cards after filtering
+            document.querySelectorAll('#' + listId + ' .tpl-gallery-section-label').forEach(label => {
+                let sibling = label.nextElementSibling;
+                let anyVisible = false;
+                while (sibling && !sibling.classList.contains('tpl-gallery-section-label')) {
+                    if (sibling.classList.contains('tpl-gallery-card') && sibling.style.display !== 'none') {
+                        anyVisible = true; break;
+                    }
+                    sibling = sibling.nextElementSibling;
+                }
+                label.style.display = anyVisible ? '' : 'none';
+            });
+        }
+
         function selectTemplateFromGallery(tplId) {
             _restoreSkillDialog();
             applySkillTemplate(tplId);
@@ -1447,14 +1490,19 @@
 
         // ========== Soul Gallery ==========
         function showSoulGallery() {
+            // Collect categories from both builtin + community
+            const allTemplates = [...SOUL_TEMPLATES, ...soulTemplates];
+            const categories = [...new Set(allTemplates.map(t => t.category).filter(Boolean))];
+
             // Section A: built-in SOUL_TEMPLATES
             const builtinCards = SOUL_TEMPLATES.map(t => {
                 const name = getSoulTemplateName(t);
                 const desc = getSoulTemplateDesc(t);
-                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(name)}" data-source="builtin" onclick="selectBuiltinSoulTemplate('${esc(t.id)}')">
+                const catBadge = t.category ? `<span class="tpl-category-badge">${esc(t.category)}</span>` : '';
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(name)}" data-source="builtin" data-category="${esc(t.category || '')}" onclick="selectBuiltinSoulTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${t.icon || '🧠'}</div>
                     <div class="tpl-gallery-info">
-                        <div class="tpl-gallery-title">${esc(name)}</div>
+                        <div class="tpl-gallery-title">${esc(name)} ${catBadge}</div>
                         <div class="tpl-gallery-meta">${esc(i18n.t('mc_dlg_soul_gallery_builtin'))}</div>
                         <div class="tpl-gallery-status" style="color:var(--text-muted);">${esc(desc.substring(0, 60))}…</div>
                     </div>
@@ -1463,17 +1511,18 @@
             }).join('');
 
             // Section B: community soulTemplates from API
-            const communityCards = soulTemplates.map(t =>
-                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" data-source="custom" onclick="selectCustomSoulTemplate('${esc(t.id)}')">
+            const communityCards = soulTemplates.map(t => {
+                const catBadge = t.category ? `<span class="tpl-category-badge">${esc(t.category)}</span>` : '';
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" data-source="custom" data-category="${esc(t.category || '')}" onclick="selectCustomSoulTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${esc(t.icon) || '🧠'}</div>
                     <div class="tpl-gallery-info">
-                        <div class="tpl-gallery-title">${esc(t.label)}</div>
+                        <div class="tpl-gallery-title">${esc(t.label)} ${catBadge}</div>
                         <div class="tpl-gallery-meta">by ${esc(t.author || '—')} · ${esc(t.updatedAt || '')}</div>
                         <div class="tpl-gallery-status" style="color:var(--text-muted);">${esc((t.description || '').substring(0, 60))}…</div>
                     </div>
                     <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;flex-shrink:0;" onclick="event.stopPropagation();selectCustomSoulTemplate('${esc(t.id)}')">Select</button>
-                </div>`
-            ).join('');
+                </div>`;
+            }).join('');
 
             const communitySectionHtml = communityCards ? `
                 <div class="tpl-gallery-section-label" style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;padding:8px 0 4px;">${esc(i18n.t('mc_dlg_soul_gallery_community'))}</div>
@@ -1484,11 +1533,16 @@
                 ${builtinCards}
                 ${communitySectionHtml}`;
 
+            const chipAll = `<span class="tpl-filter-chip active" data-cat="" onclick="filterGalleryByCat(this,'soul_gallery_list')">All</span>`;
+            const catChips = categories.map(c => `<span class="tpl-filter-chip" data-cat="${esc(c)}" onclick="filterGalleryByCat(this,'soul_gallery_list')">${esc(c)}</span>`).join('');
+            const filterBar = categories.length ? `<div class="tpl-filter-bar">${chipAll}${catChips}</div>` : '';
+
             document.body.insertAdjacentHTML('beforeend',
                 `<div id="soul_gallery_overlay" class="dialog-overlay" onclick="if(event.target===this)document.getElementById('soul_gallery_overlay').remove()">
                     <div class="dialog" style="max-width:480px;">
                         <div class="dialog-title">${esc(i18n.t('mc_dlg_soul_template'))} (${SOUL_TEMPLATES.length + soulTemplates.length})</div>
                         <input type="text" placeholder="${esc(i18n.t('mc_search_placeholder') || '搜尋…')}" oninput="filterSoulGallery(this.value)" style="margin-bottom:12px;" />
+                        ${filterBar}
                         <div id="soul_gallery_list" style="max-height:380px;overflow-y:auto;">${allCards}</div>
                         <div class="dialog-actions">
                             <button class="btn btn-outline" onclick="document.getElementById('soul_gallery_overlay').remove()">${esc(i18n.t('mc_dlg_cancel'))}</button>
@@ -1558,23 +1612,31 @@
         }
 
         function showRuleGallery() {
-            const cards = ruleTemplates.map(t =>
-                `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" onclick="selectRuleTemplate('${esc(t.id)}')">
+            const categories = [...new Set(ruleTemplates.map(t => t.category || t.ruleType).filter(Boolean))];
+            const cards = ruleTemplates.map(t => {
+                const cat = t.category || t.ruleType || '';
+                const catBadge = cat ? `<span class="tpl-category-badge">${esc(cat)}</span>` : '';
+                return `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" data-category="${esc(cat)}" onclick="selectRuleTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${esc(t.icon) || '📋'}</div>
                     <div class="tpl-gallery-info">
-                        <div class="tpl-gallery-title">${esc(t.label)}</div>
+                        <div class="tpl-gallery-title">${esc(t.label)} ${catBadge}</div>
                         <div class="tpl-gallery-meta">by ${esc(t.author || '—')} · ${esc(t.ruleType || '')} · ${esc(t.updatedAt || '')}</div>
                         <div class="tpl-gallery-status" style="color:var(--text-muted);">${esc((t.description || '').substring(0, 60))}…</div>
                     </div>
                     <button class="btn btn-outline" style="font-size:12px;padding:5px 12px;flex-shrink:0;" onclick="event.stopPropagation();selectRuleTemplate('${esc(t.id)}')">Select</button>
-                </div>`
-            ).join('') || '<p style="color:var(--text-muted);text-align:center;">No templates available</p>';
+                </div>`;
+            }).join('') || '<p style="color:var(--text-muted);text-align:center;">No templates available</p>';
+
+            const chipAll = `<span class="tpl-filter-chip active" data-cat="" onclick="filterGalleryByCat(this,'rule_gallery_list')">All</span>`;
+            const catChips = categories.map(c => `<span class="tpl-filter-chip" data-cat="${esc(c)}" onclick="filterGalleryByCat(this,'rule_gallery_list')">${esc(c)}</span>`).join('');
+            const filterBar = categories.length ? `<div class="tpl-filter-bar">${chipAll}${catChips}</div>` : '';
 
             document.body.insertAdjacentHTML('beforeend',
                 `<div id="rule_gallery_overlay" class="dialog-overlay" onclick="if(event.target===this)document.getElementById('rule_gallery_overlay').remove()">
                     <div class="dialog" style="max-width:480px;">
                         <div class="dialog-title">規則模板 (${ruleTemplates.length})</div>
                         <input type="text" placeholder="搜尋…" oninput="filterRuleGallery(this.value)" style="margin-bottom:12px;" />
+                        ${filterBar}
                         <div id="rule_gallery_list" style="max-height:380px;overflow-y:auto;">${cards}</div>
                         <div class="dialog-actions">
                             <button class="btn btn-outline" onclick="document.getElementById('rule_gallery_overlay').remove()">取消</button>

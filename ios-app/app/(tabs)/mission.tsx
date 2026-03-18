@@ -69,6 +69,11 @@ export default function MissionScreen() {
   const [ruleTemplates, setRuleTemplates] = useState<RuleTemplate[]>([]);
   const [templateSearch, setTemplateSearch] = useState('');
 
+  // Category filter state
+  const [selectedSkillCategory, setSelectedSkillCategory] = useState('');
+  const [selectedSoulCategory, setSelectedSoulCategory] = useState('');
+  const [selectedRuleCategory, setSelectedRuleCategory] = useState('');
+
   // JIT vars approval
   const [varsRequest, setVarsRequest] = useState<VarsApprovalRequest | null>(null);
 
@@ -119,6 +124,9 @@ export default function MissionScreen() {
         .catch(() => {});
     }
     setTemplateSearch('');
+    setSelectedSkillCategory('');
+    setSelectedSoulCategory('');
+    setSelectedRuleCategory('');
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Socket.IO: JIT vars approval request
@@ -167,39 +175,71 @@ export default function MissionScreen() {
     await saveDashboard(updated);
   };
 
-  // Filtered templates
+  // Extract unique categories per template type
+  const skillCategories = useMemo(
+    () => [...new Set(skillTemplates.map((t) => t.category).filter(Boolean))] as string[],
+    [skillTemplates]
+  );
+  const soulCategories = useMemo(
+    () => [...new Set(soulTemplates.map((t) => t.category).filter(Boolean))] as string[],
+    [soulTemplates]
+  );
+  const ruleCategories = useMemo(
+    () => [...new Set(ruleTemplates.map((t) => t.category).filter(Boolean))] as string[],
+    [ruleTemplates]
+  );
+
+  // Filtered templates (search + category)
   const filteredSkills = useMemo(() => {
-    if (!templateSearch) return skillTemplates;
-    const q = templateSearch.toLowerCase();
-    return skillTemplates.filter(
-      (t) =>
-        t.label.toLowerCase().includes(q) ||
-        (t.title?.toLowerCase().includes(q)) ||
-        (t.author?.toLowerCase().includes(q))
-    );
-  }, [skillTemplates, templateSearch]);
+    let list = skillTemplates;
+    if (selectedSkillCategory) {
+      list = list.filter((t) => t.category === selectedSkillCategory);
+    }
+    if (templateSearch) {
+      const q = templateSearch.toLowerCase();
+      list = list.filter(
+        (t) =>
+          t.label.toLowerCase().includes(q) ||
+          (t.title?.toLowerCase().includes(q)) ||
+          (t.author?.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [skillTemplates, templateSearch, selectedSkillCategory]);
 
   const filteredSouls = useMemo(() => {
-    if (!templateSearch) return soulTemplates;
-    const q = templateSearch.toLowerCase();
-    return soulTemplates.filter(
-      (t) =>
-        (t.label?.toLowerCase().includes(q)) ||
-        (t.name?.toLowerCase().includes(q)) ||
-        (t.author?.toLowerCase().includes(q))
-    );
-  }, [soulTemplates, templateSearch]);
+    let list = soulTemplates;
+    if (selectedSoulCategory) {
+      list = list.filter((t) => t.category === selectedSoulCategory);
+    }
+    if (templateSearch) {
+      const q = templateSearch.toLowerCase();
+      list = list.filter(
+        (t) =>
+          (t.label?.toLowerCase().includes(q)) ||
+          (t.name?.toLowerCase().includes(q)) ||
+          (t.author?.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [soulTemplates, templateSearch, selectedSoulCategory]);
 
   const filteredRules = useMemo(() => {
-    if (!templateSearch) return ruleTemplates;
-    const q = templateSearch.toLowerCase();
-    return ruleTemplates.filter(
-      (t) =>
-        t.label.toLowerCase().includes(q) ||
-        (t.name?.toLowerCase().includes(q)) ||
-        (t.author?.toLowerCase().includes(q))
-    );
-  }, [ruleTemplates, templateSearch]);
+    let list = ruleTemplates;
+    if (selectedRuleCategory) {
+      list = list.filter((t) => t.category === selectedRuleCategory);
+    }
+    if (templateSearch) {
+      const q = templateSearch.toLowerCase();
+      list = list.filter(
+        (t) =>
+          t.label.toLowerCase().includes(q) ||
+          (t.name?.toLowerCase().includes(q)) ||
+          (t.author?.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [ruleTemplates, templateSearch, selectedRuleCategory]);
 
   // Tab label with count for template tabs
   const getTabLabel = (tab: { key: TabKey; i18nKey: string }) => {
@@ -331,31 +371,78 @@ export default function MissionScreen() {
     </Card>
   );
 
+  const renderCategoryChips = (
+    categories: string[],
+    selected: string,
+    onSelect: (cat: string) => void
+  ) => {
+    if (categories.length === 0) return null;
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryRow}
+      >
+        <Chip
+          selected={selected === ''}
+          onPress={() => onSelect('')}
+          style={styles.categoryChip}
+          mode={selected === '' ? 'flat' : 'outlined'}
+          compact
+        >
+          {t('mission.category_all')}
+        </Chip>
+        {categories.map((cat) => (
+          <Chip
+            key={cat}
+            selected={selected === cat}
+            onPress={() => onSelect(cat)}
+            style={styles.categoryChip}
+            mode={selected === cat ? 'flat' : 'outlined'}
+            compact
+          >
+            {cat}
+          </Chip>
+        ))}
+      </ScrollView>
+    );
+  };
+
+  const getCategoryState = (type: 'skills' | 'souls' | 'rules') => {
+    if (type === 'skills') return { categories: skillCategories, selected: selectedSkillCategory, onSelect: setSelectedSkillCategory };
+    if (type === 'souls') return { categories: soulCategories, selected: selectedSoulCategory, onSelect: setSelectedSoulCategory };
+    return { categories: ruleCategories, selected: selectedRuleCategory, onSelect: setSelectedRuleCategory };
+  };
+
   const renderTemplateTab = (
     type: 'skills' | 'souls' | 'rules',
     items: SkillTemplate[] | SoulTemplate[] | RuleTemplate[],
     renderCard: (item: any) => React.ReactNode,
     emptyKey: string
-  ) => (
-    <View style={styles.tabContent}>
-      <TextInput
-        mode="outlined"
-        dense
-        placeholder={t('mission.search_placeholder')}
-        value={templateSearch}
-        onChangeText={setTemplateSearch}
-        left={<TextInput.Icon icon="magnify" />}
-        style={{ marginBottom: 12 }}
-      />
-      {items.length === 0 ? (
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 16 }}>
-          {t(emptyKey)}
-        </Text>
-      ) : (
-        items.map(renderCard)
-      )}
-    </View>
-  );
+  ) => {
+    const { categories, selected, onSelect } = getCategoryState(type);
+    return (
+      <View style={styles.tabContent}>
+        <TextInput
+          mode="outlined"
+          dense
+          placeholder={t('mission.search_placeholder')}
+          value={templateSearch}
+          onChangeText={setTemplateSearch}
+          left={<TextInput.Icon icon="magnify" />}
+          style={{ marginBottom: 8 }}
+        />
+        {renderCategoryChips(categories, selected, onSelect)}
+        {items.length === 0 ? (
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 16 }}>
+            {t(emptyKey)}
+          </Text>
+        ) : (
+          items.map(renderCard)
+        )}
+      </View>
+    );
+  };
 
   if (!selectedEntity) {
     return (
@@ -497,4 +584,6 @@ const styles = StyleSheet.create({
   itemContent: { flexDirection: 'row', alignItems: 'center' },
   templateHeader: { flexDirection: 'row', alignItems: 'center' },
   fab: { position: 'absolute', bottom: 24, right: 16 },
+  categoryRow: { marginBottom: 12, flexGrow: 0 },
+  categoryChip: { marginRight: 6 },
 });

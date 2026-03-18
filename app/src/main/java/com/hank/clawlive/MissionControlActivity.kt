@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.TextView
@@ -24,6 +25,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.hank.clawlive.data.local.DeviceManager
 import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.LocalVarsManager
@@ -755,10 +758,56 @@ class MissionControlActivity : AppCompatActivity() {
     private fun showTemplateGalleryDialogInternal(onSelect: (SkillTemplate) -> Unit) {
         val localVars = LocalVarsManager.getInstance(this).getAll()
 
-        // Outer container: search bar + scrollable list
+        // Collect distinct categories for filter chips
+        val categories = skillTemplates.mapNotNull { it.category?.takeIf { c -> c.isNotBlank() } }
+            .distinct()
+            .sorted()
+
+        var selectedCategory: String? = null // null means "All"
+
+        // Outer container: chips + search bar + scrollable list
         val outerLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(24, 8, 24, 8)
+        }
+
+        // Category filter chips
+        val chipGroup = ChipGroup(this).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
+        }
+
+        val allChip = Chip(this).apply {
+            text = "All"
+            isCheckable = true
+            isCheckedIconVisible = true
+            isChecked = true
+            setChipBackgroundColorResource(R.color.mtrl_chip_background_color)
+        }
+        chipGroup.addView(allChip)
+
+        val categoryChipMap = mutableMapOf<Int, String>()
+        for (cat in categories) {
+            val chip = Chip(this).apply {
+                text = cat
+                isCheckable = true
+                isCheckedIconVisible = true
+                setChipBackgroundColorResource(R.color.mtrl_chip_background_color)
+            }
+            chipGroup.addView(chip)
+            categoryChipMap[chip.id] = cat
+        }
+
+        if (categories.isNotEmpty()) {
+            val chipScroll = HorizontalScrollView(this).apply {
+                isHorizontalScrollBarEnabled = false
+                addView(chipGroup)
+            }
+            val chipParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 8 }
+            outerLayout.addView(chipScroll, chipParams)
         }
 
         // Search bar
@@ -786,11 +835,14 @@ class MissionControlActivity : AppCompatActivity() {
 
         fun buildRows(query: String) {
             listLayout.removeAllViews()
-            val filtered = if (query.isBlank()) skillTemplates
-            else skillTemplates.filter {
-                it.label.contains(query, ignoreCase = true) ||
-                (it.title?.contains(query, ignoreCase = true) == true) ||
-                (it.author?.contains(query, ignoreCase = true) == true)
+            val filtered = skillTemplates.filter { tpl ->
+                val matchesCategory = selectedCategory == null ||
+                    tpl.category.equals(selectedCategory, ignoreCase = true)
+                val matchesQuery = query.isBlank() ||
+                    tpl.label.contains(query, ignoreCase = true) ||
+                    (tpl.title?.contains(query, ignoreCase = true) == true) ||
+                    (tpl.author?.contains(query, ignoreCase = true) == true)
+                matchesCategory && matchesQuery
             }
             if (filtered.isEmpty()) {
                 listLayout.addView(TextView(this).apply {

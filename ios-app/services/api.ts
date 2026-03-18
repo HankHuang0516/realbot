@@ -161,6 +161,7 @@ export interface SkillTemplate {
   updatedAt?: string;
   requiredVars: TemplateRequiredVar[];
   steps?: string;
+  category?: string;
 }
 
 export interface SoulTemplate {
@@ -171,6 +172,7 @@ export interface SoulTemplate {
   description?: string;
   author?: string;
   updatedAt?: string;
+  category?: string;
 }
 
 export interface RuleTemplate {
@@ -182,6 +184,7 @@ export interface RuleTemplate {
   ruleType?: string;
   author?: string;
   updatedAt?: string;
+  category?: string;
 }
 
 export const templateApi = {

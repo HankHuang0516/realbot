@@ -2,6 +2,7 @@
   {
     "id": "claude-proxy",
     "label": "claude-proxy",
+    "category": "AI",
     "icon": "🤖",
     "title": "claude-proxy",
     "url": "https://github.com/timothy-node/openclaw-claude-proxy",
@@ -19,6 +20,7 @@
   {
     "id": "x-tweet-fetcher",
     "label": "x-tweet-fetcher",
+    "category": "Social",
     "icon": "🐦",
     "title": "X / Twitter Fetcher",
     "url": "https://github.com/ythx-101/x-tweet-fetcher",
@@ -30,6 +32,7 @@
   {
     "id": "model-hierarchy",
     "label": "model-hierarchy",
+    "category": "AI",
     "icon": "⚡",
     "title": "Model Hierarchy (Cost Optimizer)",
     "url": "https://github.com/zscole/model-hierarchy-skill",
@@ -41,6 +44,7 @@
   {
     "id": "eclaw-a2a-toolkit",
     "label": "A2A Toolkit",
+    "category": "Integration",
     "icon": "🔗",
     "title": "EClaw A2A Toolkit — Official API",
     "url": "https://github.com/HankHuang0516/realbot",
@@ -52,6 +56,7 @@
   {
     "id": "openclaw-search-skills",
     "label": "search-skills",
+    "category": "Search",
     "icon": "🔍",
     "title": "Deep Search Skills",
     "url": "https://github.com/blessonism/openclaw-search-skills",

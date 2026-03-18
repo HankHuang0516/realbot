@@ -2,6 +2,7 @@
   {
     "id": "reply-in-english",
     "label": "Reply in English",
+    "category": "Communication",
     "icon": "🇬🇧",
     "ruleType": "COMMUNICATION",
     "name": "Reply in English",
@@ -12,6 +13,7 @@
   {
     "id": "daily-summary",
     "label": "Daily Summary",
+    "category": "Workflow",
     "icon": "📋",
     "ruleType": "WORKFLOW",
     "name": "Daily Summary",

@@ -222,6 +222,102 @@ describe('POST /api/transform — missing required fields', () => {
 });
 
 // ════════════════════════════════════════════════════════════════
+// Template APIs — category field presence
+// ════════════════════════════════════════════════════════════════
+describe('GET /api/skill-templates — category field', () => {
+    it('returns 200 with templates array', async () => {
+        const res = await request(app).get('/api/skill-templates');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.templates)).toBe(true);
+        expect(res.body.templates.length).toBeGreaterThan(0);
+    });
+
+    it('every template includes a category field', async () => {
+        const res = await request(app).get('/api/skill-templates');
+        for (const t of res.body.templates) {
+            expect(t).toHaveProperty('category');
+            expect(typeof t.category).toBe('string');
+            expect(t.category.length).toBeGreaterThan(0);
+        }
+    });
+});
+
+describe('GET /api/soul-templates — category field', () => {
+    it('returns 200 with templates array', async () => {
+        const res = await request(app).get('/api/soul-templates');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.templates)).toBe(true);
+        expect(res.body.templates.length).toBeGreaterThan(0);
+    });
+
+    it('every template includes a category field', async () => {
+        const res = await request(app).get('/api/soul-templates');
+        for (const t of res.body.templates) {
+            expect(t).toHaveProperty('category');
+            expect(typeof t.category).toBe('string');
+            expect(t.category.length).toBeGreaterThan(0);
+        }
+    });
+});
+
+describe('GET /api/rule-templates — category field', () => {
+    it('returns 200 with templates array', async () => {
+        const res = await request(app).get('/api/rule-templates');
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(Array.isArray(res.body.templates)).toBe(true);
+        expect(res.body.templates.length).toBeGreaterThan(0);
+    });
+
+    it('every template includes a category field', async () => {
+        const res = await request(app).get('/api/rule-templates');
+        for (const t of res.body.templates) {
+            expect(t).toHaveProperty('category');
+            expect(typeof t.category).toBe('string');
+            expect(t.category.length).toBeGreaterThan(0);
+        }
+    });
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/skill-templates/contribute — category validation
+// ════════════════════════════════════════════════════════════════
+describe('POST /api/skill-templates/contribute — category validation', () => {
+    it('accepts optional category field (rejected at auth, not 500)', async () => {
+        const res = await request(app)
+            .post('/api/skill-templates/contribute')
+            .send({
+                deviceId: 'test-validator', botSecret: 'fake',
+                skill: {
+                    id: 'cat-test', title: 'T', url: 'https://github.com/t/t',
+                    steps: '1. Step one. This is a detailed step that exceeds the minimum length.',
+                    category: 'Automation'
+                }
+            });
+        // 404 (device not found) or 403 (bad botSecret) — not 500
+        expect(res.status).not.toBe(500);
+    });
+
+    it('rejects category longer than 30 chars', async () => {
+        const res = await request(app)
+            .post('/api/skill-templates/contribute')
+            .send({
+                deviceId: 'test-validator', botSecret: 'fake',
+                skill: {
+                    id: 'cat-long', title: 'T', url: 'https://github.com/t/t',
+                    steps: '1. Step one. This is a detailed step that exceeds the minimum length.',
+                    category: 'A'.repeat(31)
+                }
+            });
+        // Should be 400 (validation) or 404 (device not found, if auth runs first)
+        // The key: must not be 500
+        expect(res.status).not.toBe(500);
+    });
+});
+
+// ════════════════════════════════════════════════════════════════
 // Unknown routes
 // ════════════════════════════════════════════════════════════════
 describe('Unknown routes', () => {

@@ -509,7 +509,8 @@ data class SkillTemplate(
     val name: String? = null,
     val description: String? = null,
     val ruleType: String? = null,
-    val steps: String? = null
+    val steps: String? = null,
+    val category: String? = null
 )
 
 data class SkillRequiredVar(

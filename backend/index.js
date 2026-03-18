@@ -892,9 +892,12 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
         return res.status(403).json({ success: false, error: 'Invalid botSecret or no bound entity found' });
     }
 
-    const { id, label, icon, title, url, author, requiredVars, steps } = skill;
+    const { id, label, icon, title, url, author, requiredVars, steps, category } = skill;
     if (!id || !title || !url || !steps) {
         return res.status(400).json({ success: false, error: 'skill must include: id, title, url, steps' });
+    }
+    if (category !== undefined && (typeof category !== 'string' || category.length > 30)) {
+        return res.status(400).json({ success: false, error: 'category must be a string (max 30 chars)' });
     }
 
     // Validate requiredVars format: must be array of {key} objects or strings (auto-normalized)
@@ -945,6 +948,7 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
         label: label || id, icon: icon || '🔧',
         title, url, author: author || entity.name || `entity_${eId}`,
         requiredVars: normalizeRequiredVars(requiredVars), steps,
+        ...(category ? { category } : {}),
         submittedBy: { deviceId, entityId: eId, entityName: entity.name || null }
     };
 
@@ -984,7 +988,8 @@ app.post('/api/skill-templates/contribute', async (req, res) => {
                     id, label: entry.label, icon: entry.icon, title, url,
                     author: entry.author,
                     updatedAt: new Date().toISOString().slice(0, 10),
-                    requiredVars: normalizeRequiredVars(entry.requiredVars), steps
+                    requiredVars: normalizeRequiredVars(entry.requiredVars), steps,
+                    ...(entry.category ? { category: entry.category } : {})
                 };
                 skillTemplatesData.push(approved);
                 fs.writeFileSync(path.join(__dirname, 'data/skill-templates.json'), JSON.stringify(skillTemplatesData, null, 2));
@@ -1132,7 +1137,10 @@ app.post('/api/soul-templates/contribute', async (req, res) => {
     const validationError = validateSoulPayload(soul);
     if (validationError) return res.status(400).json({ success: false, error: validationError });
 
-    const { id, label, icon, name, description, author } = soul;
+    const { id, label, icon, name, description, author, category } = soul;
+    if (category !== undefined && (typeof category !== 'string' || category.length > 30)) {
+        return res.status(400).json({ success: false, error: 'category must be a string (max 30 chars)' });
+    }
 
     if (soulTemplatesData.some(t => t.id === id)) {
         serverLog('warn', 'soul_contribute', `Duplicate soul id rejected: ${id}`, { deviceId, entityId: eId });
@@ -1147,7 +1155,8 @@ app.post('/api/soul-templates/contribute', async (req, res) => {
         name,
         description,
         author:      author || entity.name || `entity_${eId}`,
-        updatedAt:   new Date().toISOString().slice(0, 10)
+        updatedAt:   new Date().toISOString().slice(0, 10),
+        ...(category ? { category } : {})
     };
     const entry = { pendingId, ...approved, submittedBy: { deviceId, entityId: eId, entityName: entity.name || null } };
 
@@ -1218,7 +1227,10 @@ app.post('/api/rule-templates/contribute', async (req, res) => {
     const validationError = validateRulePayload(rule);
     if (validationError) return res.status(400).json({ success: false, error: validationError });
 
-    const { id, label, icon, ruleType, name, description, author } = rule;
+    const { id, label, icon, ruleType, name, description, author, category } = rule;
+    if (category !== undefined && (typeof category !== 'string' || category.length > 30)) {
+        return res.status(400).json({ success: false, error: 'category must be a string (max 30 chars)' });
+    }
 
     if (ruleTemplatesData.some(t => t.id === id)) {
         serverLog('warn', 'rule_contribute', `Duplicate rule id rejected: ${id}`, { deviceId, entityId: eId });
@@ -1234,7 +1246,8 @@ app.post('/api/rule-templates/contribute', async (req, res) => {
         name,
         description,
         author:      author || entity.name || `entity_${eId}`,
-        updatedAt:   new Date().toISOString().slice(0, 10)
+        updatedAt:   new Date().toISOString().slice(0, 10),
+        ...(category ? { category } : {})
     };
     const entry = { pendingId, ...approved, submittedBy: { deviceId, entityId: eId, entityName: entity.name || null } };
 
