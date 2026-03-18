@@ -149,7 +149,14 @@ app.get('/landing', (req, res) => {
 });
 
 app.use('/mission', express.static(path.join(__dirname, 'public')));
-app.use('/portal', express.static(path.join(__dirname, 'public/portal')));
+app.use('/portal', express.static(path.join(__dirname, 'public/portal'), {
+    setHeaders: (res, filePath) => {
+        // Prevent CDN from serving stale JS after deploys (fixes entity-utils.js cache mismatch)
+        if (filePath.endsWith('.js')) {
+            res.set('Cache-Control', 'no-cache');
+        }
+    }
+}));
 app.use('/shared', express.static(path.join(__dirname, 'public/shared'), {
     setHeaders: (res, filePath) => {
         if (filePath.endsWith('i18n.js')) {
