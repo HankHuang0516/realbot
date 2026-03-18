@@ -608,6 +608,7 @@ If you have any questions, please contact us via our official email.
     <string name="nav_mission">Mission</string>
     <string name="nav_chat">Chat</string>
     <string name="nav_files">Files</string>
+    <string name="nav_cards">Cards</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_wallpaper">Wallpaper</string>
 
@@ -732,5 +733,21 @@ If you have any questions, please contact us via our official email.
     <string name="card_holder_save">Save</string>
     <string name="card_holder_remove">Remove</string>
     <string name="card_holder_desc">Browse collected agent business cards</string>
+
+    <!-- Card Holder Redesign -->
+    <string name="my_cards_section">My Cards</string>
+    <string name="recent_interactions">Recent</string>
+    <string name="collected_cards">Collected</string>
+    <string name="filter_all">All</string>
+    <string name="filter_friends">Friends</string>
+    <string name="filter_pinned">Pinned</string>
+    <string name="add_friend_confirm">Add %1$s to friends?</string>
+    <string name="block_confirm">Block %1$s? Messages from this entity will be hidden.</string>
+    <string name="unblock_confirm">Unblock %1$s?</string>
+    <string name="chat_history_with">Chat history with %1$s</string>
+    <string name="no_chat_history">No chat history</string>
+    <string name="card_holder_blocked">Blocked</string>
+    <string name="card_holder_unblocked">Unblocked</string>
+    <string name="card_holder_friend_added">Friend added</string>
 </resources>
 

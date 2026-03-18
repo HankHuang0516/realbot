@@ -238,6 +238,10 @@ async function createTables() {
         await client.query(`
             CREATE INDEX IF NOT EXISTS idx_card_holder_pinned ON agent_card_holder(device_id, pinned)
         `);
+        // Migration: add blocked + last_interacted_at columns (Card Holder redesign)
+        await client.query(`ALTER TABLE agent_card_holder ADD COLUMN IF NOT EXISTS blocked BOOLEAN DEFAULT false`);
+        await client.query(`ALTER TABLE agent_card_holder ADD COLUMN IF NOT EXISTS last_interacted_at BIGINT DEFAULT NULL`);
+        await client.query(`CREATE INDEX IF NOT EXISTS idx_card_holder_recent ON agent_card_holder(device_id, last_interacted_at DESC NULLS LAST)`);
 
         // Migration: copy cross_device_contacts → agent_card_holder (idempotent)
         await client.query(`
@@ -919,16 +923,18 @@ async function saveFeedback(deviceId, message, appVersion) {
 }
 
 // ── Agent Card Holder (replaces Cross-Device Contacts) ──
-async function getCardHolder(deviceId, { pinned, category, limit, offset } = {}) {
+async function getCardHolder(deviceId, { pinned, category, limit, offset, includeBlocked } = {}) {
     if (!pool) return [];
     try {
         let sql = `SELECT public_code AS "publicCode", contact_name AS name, contact_character AS character,
                     contact_avatar AS avatar, added_at AS "addedAt", card_snapshot AS "cardSnapshot",
                     exchange_type AS "exchangeType", last_refreshed AS "lastRefreshed",
-                    notes, pinned, category, interaction_count AS "interactionCount"
+                    notes, pinned, category, interaction_count AS "interactionCount",
+                    blocked, last_interacted_at AS "lastInteractedAt"
                     FROM agent_card_holder WHERE device_id = $1`;
         const params = [deviceId];
         let idx = 2;
+        if (!includeBlocked) { sql += ` AND (blocked = false OR blocked IS NULL)`; }
         if (pinned !== undefined) { sql += ` AND pinned = $${idx++}`; params.push(pinned); }
         if (category) { sql += ` AND category = $${idx++}`; params.push(category); }
         sql += ` ORDER BY pinned DESC, added_at DESC`;
@@ -958,7 +964,8 @@ async function addCard(deviceId, publicCode, { name, character, avatar, cardSnap
              RETURNING id, public_code AS "publicCode", contact_name AS name, contact_character AS character,
                 contact_avatar AS avatar, added_at AS "addedAt", card_snapshot AS "cardSnapshot",
                 exchange_type AS "exchangeType", last_refreshed AS "lastRefreshed",
-                notes, pinned, category, interaction_count AS "interactionCount"`,
+                notes, pinned, category, interaction_count AS "interactionCount",
+                blocked, last_interacted_at AS "lastInteractedAt"`,
             [deviceId, publicCode, name || null, character || null, avatar || null, Date.now(),
              cardSnapshot ? JSON.stringify(cardSnapshot) : null, exchangeType || 'manual']
         );
@@ -971,7 +978,7 @@ async function addCard(deviceId, publicCode, { name, character, avatar, cardSnap
 
 async function updateCard(deviceId, publicCode, updates) {
     if (!pool) return null;
-    const allowed = ['notes', 'pinned', 'category'];
+    const allowed = ['notes', 'pinned', 'category', 'blocked'];
     const sets = [];
     const params = [deviceId, publicCode];
     let idx = 3;
@@ -986,7 +993,7 @@ async function updateCard(deviceId, publicCode, updates) {
         const result = await pool.query(
             `UPDATE agent_card_holder SET ${sets.join(', ')}
              WHERE device_id = $1 AND public_code = $2
-             RETURNING public_code AS "publicCode", notes, pinned, category`,
+             RETURNING public_code AS "publicCode", notes, pinned, category, blocked`,
             params
         );
         return result.rows[0] || null;
@@ -1025,10 +1032,13 @@ async function searchCards(deviceId, query) {
             `SELECT public_code AS "publicCode", contact_name AS name, contact_character AS character,
                     contact_avatar AS avatar, added_at AS "addedAt", card_snapshot AS "cardSnapshot",
                     exchange_type AS "exchangeType", last_refreshed AS "lastRefreshed",
-                    notes, pinned, category, interaction_count AS "interactionCount"
+                    notes, pinned, category, interaction_count AS "interactionCount",
+                    blocked, last_interacted_at AS "lastInteractedAt"
              FROM agent_card_holder WHERE device_id = $1
+             AND (blocked = false OR blocked IS NULL)
              AND (
-                 contact_name ILIKE $2
+                 public_code ILIKE $2
+                 OR contact_name ILIKE $2
                  OR category ILIKE $2
                  OR notes ILIKE $2
                  OR card_snapshot::text ILIKE $2
@@ -1050,7 +1060,8 @@ async function getCardByCode(deviceId, publicCode) {
             `SELECT public_code AS "publicCode", contact_name AS name, contact_character AS character,
                     contact_avatar AS avatar, added_at AS "addedAt", card_snapshot AS "cardSnapshot",
                     exchange_type AS "exchangeType", last_refreshed AS "lastRefreshed",
-                    notes, pinned, category, interaction_count AS "interactionCount"
+                    notes, pinned, category, interaction_count AS "interactionCount",
+                    blocked, last_interacted_at AS "lastInteractedAt"
              FROM agent_card_holder WHERE device_id = $1 AND public_code = $2`,
             [deviceId, publicCode]
         );
@@ -1100,6 +1111,67 @@ async function incrementInteraction(deviceId, publicCode) {
     } catch (err) {
         // Non-critical, just log
         console.error('[DB] Failed to increment interaction:', err.message);
+    }
+}
+
+async function getRecentInteractions(deviceId, limit = 20) {
+    if (!pool) return [];
+    try {
+        const result = await pool.query(
+            `SELECT public_code AS "publicCode", contact_name AS name, contact_character AS character,
+                    contact_avatar AS avatar, added_at AS "addedAt", card_snapshot AS "cardSnapshot",
+                    exchange_type AS "exchangeType", last_refreshed AS "lastRefreshed",
+                    notes, pinned, category, interaction_count AS "interactionCount",
+                    blocked, last_interacted_at AS "lastInteractedAt"
+             FROM agent_card_holder WHERE device_id = $1
+             AND last_interacted_at IS NOT NULL
+             AND (blocked = false OR blocked IS NULL)
+             ORDER BY last_interacted_at DESC LIMIT $2`,
+            [deviceId, limit]
+        );
+        return result.rows;
+    } catch (err) {
+        console.error('[DB] Failed to get recent interactions:', err.message);
+        return [];
+    }
+}
+
+async function upsertRecentInteraction(deviceId, publicCode, { name, character, avatar, cardSnapshot } = {}) {
+    if (!pool) return null;
+    try {
+        const now = Date.now();
+        const result = await pool.query(
+            `INSERT INTO agent_card_holder (device_id, public_code, contact_name, contact_character, contact_avatar, added_at, card_snapshot, exchange_type, last_refreshed, last_interacted_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'incoming', $6, $6)
+             ON CONFLICT (device_id, public_code) DO UPDATE SET
+                contact_name = COALESCE(EXCLUDED.contact_name, agent_card_holder.contact_name),
+                contact_character = COALESCE(EXCLUDED.contact_character, agent_card_holder.contact_character),
+                contact_avatar = COALESCE(EXCLUDED.contact_avatar, agent_card_holder.contact_avatar),
+                card_snapshot = COALESCE(EXCLUDED.card_snapshot, agent_card_holder.card_snapshot),
+                last_interacted_at = EXCLUDED.last_interacted_at,
+                interaction_count = agent_card_holder.interaction_count + 1
+             RETURNING public_code AS "publicCode", blocked`,
+            [deviceId, publicCode, name || null, character || null, avatar || null, now,
+             cardSnapshot ? JSON.stringify(cardSnapshot) : null]
+        );
+        return result.rows[0] || null;
+    } catch (err) {
+        console.error('[DB] Failed to upsert recent interaction:', err.message);
+        return null;
+    }
+}
+
+async function isBlocked(deviceId, publicCode) {
+    if (!pool) return false;
+    try {
+        const result = await pool.query(
+            `SELECT blocked FROM agent_card_holder WHERE device_id = $1 AND public_code = $2`,
+            [deviceId, publicCode]
+        );
+        return result.rows.length > 0 && result.rows[0].blocked === true;
+    } catch (err) {
+        console.error('[DB] Failed to check blocked status:', err.message);
+        return false;
     }
 }
 
@@ -1443,6 +1515,9 @@ module.exports = {
     removeCard,
     getCardCount,
     incrementInteraction,
+    getRecentInteractions,
+    upsertRecentInteraction,
+    isBlocked,
     // Legacy aliases (backward compat)
     getContacts,
     addContact,

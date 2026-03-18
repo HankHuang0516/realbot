@@ -275,8 +275,8 @@ class SettingsActivity : AppCompatActivity() {
             startActivity(Intent(this, WallpaperPreviewActivity::class.java))
         }
 
-        findViewById<MaterialButton>(R.id.btnCardHolder).setOnClickListener {
-            startActivity(Intent(this, CardHolderActivity::class.java))
+        findViewById<MaterialButton>(R.id.btnFileManager).setOnClickListener {
+            startActivity(Intent(this, FileManagerActivity::class.java))
         }
 
         btnFeedback.setOnClickListener {

@@ -4511,6 +4511,11 @@ app.post('/api/entity/cross-speak', async (req, res) => {
     const xdSettings = await crossDeviceSettings.getSettings(target.deviceId, target.entityId);
     const senderCode = fromEntity.publicCode;
 
+    // Card Holder block check (target device blocked the sender)
+    if (await db.isBlocked(target.deviceId, senderCode)) {
+        return res.status(403).json({ success: false, message: 'Message rejected', reason: 'blocked' });
+    }
+
     // Blacklist check
     if (xdSettings.blacklist.length > 0 && xdSettings.blacklist.includes(senderCode)) {
         const msg = xdSettings.reject_message || 'Message rejected';
@@ -4654,6 +4659,9 @@ app.post('/api/entity/cross-speak', async (req, res) => {
                     // Auto-collect: sender collects target's card, target collects sender's card
                     autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
                     autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
+                    // Record recent interaction on both sides
+                    db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
+                    db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
             } else {
                 serverLog('warn', 'cross_speak_push', `${fromEntity.publicCode} -> ${targetCode} not-pushed: ${pushResult.reason || 'unknown'}`, { deviceId, entityId: fromId });
             }
@@ -4971,6 +4979,68 @@ app.delete('/api/contacts', async (req, res) => {
 });
 
 /**
+ * GET /api/contacts/my-cards — Get all bound entities' cards for this device
+ * Query: ?deviceId=X&deviceSecret=Y
+ * NOTE: Must be registered BEFORE /api/contacts/:publicCode
+ */
+app.get('/api/contacts/my-cards', async (req, res) => {
+    let deviceId = req.query.deviceId;
+    let deviceSecret = req.query.deviceSecret;
+    if (!deviceId && req.user) { deviceId = req.user.deviceId; deviceSecret = req.user.deviceSecret; }
+    if (!deviceId || !deviceSecret) return res.status(400).json({ success: false, error: 'Missing credentials' });
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        if (!req.user || req.user.deviceId !== deviceId) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+    }
+
+    const cards = [];
+    for (const [eid, ent] of Object.entries(device.entities)) {
+        if (!ent.isBound) continue;
+        // Fetch agentCard from DB via existing API
+        let agentCard = ent.agentCard || null;
+        cards.push({
+            entityId: parseInt(eid),
+            name: ent.name || null,
+            character: ent.character || null,
+            avatar: ent.avatar || null,
+            publicCode: ent.publicCode || null,
+            description: agentCard?.description || null,
+            contactEmail: agentCard?.contactEmail || null,
+            website: agentCard?.website || null,
+            agentCard
+        });
+    }
+    res.json({ success: true, cards });
+});
+
+/**
+ * GET /api/contacts/recent — Get recently interacted cards (via publicCode conversations)
+ * Query: ?deviceId=X&deviceSecret=Y&limit=20
+ * NOTE: Must be registered BEFORE /api/contacts/:publicCode
+ */
+app.get('/api/contacts/recent', async (req, res) => {
+    let deviceId = req.query.deviceId;
+    let deviceSecret = req.query.deviceSecret;
+    if (!deviceId && req.user) { deviceId = req.user.deviceId; deviceSecret = req.user.deviceSecret; }
+    if (!deviceId || !deviceSecret) return res.status(400).json({ success: false, error: 'Missing credentials' });
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        if (!req.user || req.user.deviceId !== deviceId) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+    }
+
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const cards = await db.getRecentInteractions(deviceId, limit);
+    const enriched = cards.map(enrichCardHolderEntry);
+    res.json({ success: true, contacts: enriched });
+});
+
+/**
  * GET /api/contacts/search — Search card holder by name, tags, capabilities, notes
  * Query: ?deviceId=X&q=translate
  * NOTE: Must be registered BEFORE /api/contacts/:publicCode to avoid "search" being captured as param
@@ -4986,7 +5056,33 @@ app.get('/api/contacts/search', async (req, res) => {
 
     const cards = await db.searchCards(deviceId, q);
     const enriched = cards.map(enrichCardHolderEntry);
-    res.json({ success: true, cards: enriched });
+
+    // If query looks like a publicCode (3-8 alphanumeric), also search externally
+    let external = [];
+    if (/^[a-z0-9]{3,8}$/i.test(q)) {
+        const code = q.toLowerCase();
+        const live = publicCodeIndex[code];
+        if (live) {
+            // Check if already in holder
+            const existing = cards.find(c => c.publicCode === code);
+            if (!existing) {
+                const dev = devices[live.deviceId];
+                const ent = dev?.entities?.[live.entityId];
+                if (ent && ent.isBound) {
+                    external.push({
+                        publicCode: code,
+                        name: ent.name || null,
+                        character: ent.character || null,
+                        avatar: ent.avatar || null,
+                        agentCard: ent.agentCard || null,
+                        online: true
+                    });
+                }
+            }
+        }
+    }
+
+    res.json({ success: true, cards: enriched, saved: enriched, external });
 });
 
 /**
@@ -5008,7 +5104,7 @@ app.get('/api/contacts/:publicCode', async (req, res) => {
  * Body: { deviceId, deviceSecret, notes?, pinned?, category? }
  */
 app.patch('/api/contacts/:publicCode', async (req, res) => {
-    let { deviceId, deviceSecret, notes, pinned, category } = req.body;
+    let { deviceId, deviceSecret, notes, pinned, category, blocked } = req.body;
     if (!deviceId && req.user) { deviceId = req.user.deviceId; deviceSecret = req.user.deviceSecret; }
     if (!deviceId) return res.status(400).json({ success: false, error: 'Missing deviceId' });
 
@@ -5024,6 +5120,7 @@ app.patch('/api/contacts/:publicCode', async (req, res) => {
     if (notes !== undefined) updates.notes = typeof notes === 'string' ? notes.slice(0, 500) : null;
     if (pinned !== undefined) updates.pinned = !!pinned;
     if (category !== undefined) updates.category = typeof category === 'string' ? category.slice(0, 50) : null;
+    if (blocked !== undefined) updates.blocked = !!blocked;
 
     if (Object.keys(updates).length === 0) {
         return res.status(400).json({ success: false, error: 'No valid fields to update' });
@@ -5133,6 +5230,11 @@ app.post('/api/client/cross-speak', async (req, res) => {
     const xdSettingsClient = await crossDeviceSettings.getSettings(target.deviceId, target.entityId);
     const senderCodeClient = fromEntity.publicCode;
 
+    // Card Holder block check (target device blocked the sender)
+    if (await db.isBlocked(target.deviceId, senderCodeClient)) {
+        return res.status(403).json({ success: false, message: 'Message rejected', reason: 'blocked' });
+    }
+
     if (xdSettingsClient.blacklist.length > 0 && xdSettingsClient.blacklist.includes(senderCodeClient)) {
         const msg = xdSettingsClient.reject_message || 'Message rejected';
         return res.status(403).json({ success: false, message: msg, reason: 'blacklisted' });
@@ -5237,6 +5339,9 @@ app.post('/api/client/cross-speak', async (req, res) => {
                     // Auto-collect: sender collects target's card, target collects sender's card
                     autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
                     autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
+                    // Record recent interaction on both sides
+                    db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
+                    db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
             }
         }).catch(err => {
             console.error(`[ClientCrossSpeak] Push failed: ${err.message}`);
@@ -10202,6 +10307,43 @@ app.get('/api/chat/history', async (req, res) => {
         });
     } catch (error) {
         console.error('[Chat] History error:', error);
+        res.status(500).json({ success: false, error: 'Failed to get chat history' });
+    }
+});
+
+/**
+ * GET /api/chat/history-by-code — Get chat history involving a specific publicCode
+ * Query: ?deviceId=X&deviceSecret=Y&publicCode=ABC123&limit=50
+ */
+app.get('/api/chat/history-by-code', async (req, res) => {
+    let { deviceId, deviceSecret, publicCode, limit } = req.query;
+    if (!deviceId && req.user) { deviceId = req.user.deviceId; deviceSecret = req.user.deviceSecret; }
+    if (!deviceId || !deviceSecret || !publicCode) {
+        return res.status(400).json({ success: false, error: 'Missing deviceId, deviceSecret, or publicCode' });
+    }
+
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        if (!req.user || req.user.deviceId !== deviceId) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        }
+    }
+
+    const code = publicCode.trim().toLowerCase();
+    const maxLimit = Math.min(parseInt(limit) || 50, 200);
+
+    try {
+        // Cross-speak messages have source like "xdevice:{code}:{char}->{target}" or "->{code}"
+        const result = await chatPool.query(
+            `SELECT * FROM chat_messages
+             WHERE device_id = $1
+             AND (source ILIKE $2 OR source ILIKE $3)
+             ORDER BY created_at DESC LIMIT $4`,
+            [deviceId, `%xdevice:${code}:%`, `%->` + code, maxLimit]
+        );
+        res.json({ success: true, messages: result.rows.reverse() });
+    } catch (error) {
+        console.error('[Chat] History-by-code error:', error);
         res.status(500).json({ success: false, error: 'Failed to get chat history' });
     }
 });

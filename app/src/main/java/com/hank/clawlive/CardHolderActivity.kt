@@ -1,15 +1,22 @@
 package com.hank.clawlive
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -21,29 +28,47 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.hank.clawlive.data.local.DeviceManager
+import com.hank.clawlive.data.model.AgentCard
+import com.hank.clawlive.data.model.ChatHistoryMessage
 import com.hank.clawlive.data.model.Contact
+import com.hank.clawlive.data.model.ExternalCardResult
+import com.hank.clawlive.data.model.MyCardEntry
 import com.hank.clawlive.data.remote.NetworkModule
 import com.hank.clawlive.data.remote.TelemetryHelper
+import com.hank.clawlive.ui.BottomNavHelper
+import com.hank.clawlive.ui.NavItem
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class CardHolderActivity : AppCompatActivity() {
 
     private val deviceManager: DeviceManager by lazy { DeviceManager.getInstance(this) }
-    private var allCards: MutableList<Contact> = mutableListOf()
-    private var filteredCards: MutableList<Contact> = mutableListOf()
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var emptyView: TextView
-    private lateinit var countView: TextView
+
+    // Data
+    private var myCards: List<MyCardEntry> = emptyList()
+    private var recentContacts: List<Contact> = emptyList()
+    private var collectedContacts: List<Contact> = emptyList()
+
+    // Filter state
+    private enum class FilterMode { ALL, FRIENDS, PINNED }
+    private var currentFilter = FilterMode.ALL
+
+    // Edit mode
+    private var editMode = false
+
+    // Main content container (rebuilt on data change)
+    private lateinit var contentLayout: LinearLayout
     private lateinit var searchInput: EditText
-    private var adapter: CardAdapter? = null
+    private lateinit var scrollView: ScrollView
+
+    // Search results
+    private var searchSaved: List<Contact> = emptyList()
+    private var searchExternal: List<ExternalCardResult> = emptyList()
+    private var isSearching = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,30 +76,34 @@ class CardHolderActivity : AppCompatActivity() {
         window.statusBarColor = Color.parseColor("#0D0D1A")
         window.navigationBarColor = Color.parseColor("#0D0D1A")
 
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+        val rootLayout = FrameLayout(this).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
             setBackgroundColor(Color.parseColor("#0D0D1A"))
-            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        }
+
+        val mainColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
         }
 
         // Edge-to-edge insets
-        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(mainColumn) { v, insets ->
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(top = sys.top, bottom = sys.bottom)
+            v.updatePadding(top = sys.top)
             insets
         }
 
-        // ── Top bar ──
-        val topBar = LinearLayout(this).apply {
+        // -- Toolbar --
+        val toolbar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(16), dp(12), dp(16), dp(12))
-        }
-        val btnBack = MaterialButton(this, null, com.google.android.material.R.attr.materialIconButtonStyle).apply {
-            text = "\u2190"
-            setTextColor(Color.WHITE)
-            textSize = 18f
-            setOnClickListener { finish() }
         }
         val title = TextView(this).apply {
             text = getString(R.string.card_holder_title)
@@ -82,21 +111,24 @@ class CardHolderActivity : AppCompatActivity() {
             textSize = 20f
             typeface = Typeface.DEFAULT_BOLD
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            setPadding(dp(8), 0, 0, 0)
         }
-        val btnAdd = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "+ ${getString(R.string.card_holder_add)}"
-            setTextColor(Color.parseColor("#6C63FF"))
-            textSize = 13f
-            cornerRadius = dp(20)
-            setOnClickListener { showAddDialog() }
+        val editBtn = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_edit)
+            setColorFilter(Color.WHITE)
+            val size = dp(40)
+            layoutParams = LinearLayout.LayoutParams(size, size)
+            setPadding(dp(8), dp(8), dp(8), dp(8))
+            setOnClickListener {
+                editMode = !editMode
+                setColorFilter(if (editMode) Color.parseColor("#6C63FF") else Color.WHITE)
+                rebuildContent()
+            }
         }
-        topBar.addView(btnBack)
-        topBar.addView(title)
-        topBar.addView(btnAdd)
-        root.addView(topBar)
+        toolbar.addView(title)
+        toolbar.addView(editBtn)
+        mainColumn.addView(toolbar)
 
-        // ── Search ──
+        // -- Search bar --
         searchInput = EditText(this).apply {
             hint = getString(R.string.card_holder_search)
             setHintTextColor(Color.parseColor("#777777"))
@@ -109,158 +141,737 @@ class CardHolderActivity : AppCompatActivity() {
             }
             setPadding(dp(16), dp(10), dp(16), dp(10))
             val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.setMargins(dp(16), 0, dp(16), dp(12))
+            lp.setMargins(dp(16), 0, dp(16), dp(8))
             layoutParams = lp
             addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-                override fun afterTextChanged(s: Editable?) { applyFilter() }
+                override fun afterTextChanged(s: Editable?) {
+                    val q = s?.toString()?.trim() ?: ""
+                    if (q.length >= 2) {
+                        performSearch(q)
+                    } else if (q.isEmpty()) {
+                        isSearching = false
+                        searchSaved = emptyList()
+                        searchExternal = emptyList()
+                        rebuildContent()
+                    }
+                }
             })
         }
-        root.addView(searchInput)
+        mainColumn.addView(searchInput)
 
-        // ── Count ──
-        countView = TextView(this).apply {
-            setTextColor(Color.parseColor("#777777"))
-            textSize = 12f
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-            lp.setMargins(dp(16), 0, dp(16), dp(8))
+        // -- Filter chips --
+        val chipScroll = HorizontalScrollView(this).apply {
+            isHorizontalScrollBarEnabled = false
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(dp(12), 0, dp(12), dp(8))
             layoutParams = lp
         }
-        root.addView(countView)
+        val chipGroup = ChipGroup(this).apply {
+            isSingleSelection = true
+            isSingleLine = true
+        }
+        val chipAll = createFilterChip("All", true) { setFilter(FilterMode.ALL) }
+        val chipFriends = createFilterChip("Friends", false) { setFilter(FilterMode.FRIENDS) }
+        val chipPinned = createFilterChip("Pinned", false) { setFilter(FilterMode.PINNED) }
+        chipGroup.addView(chipAll)
+        chipGroup.addView(chipFriends)
+        chipGroup.addView(chipPinned)
+        chipScroll.addView(chipGroup)
+        mainColumn.addView(chipScroll)
 
-        // ── RecyclerView ──
-        recyclerView = RecyclerView(this).apply {
+        // -- Scrollable content --
+        scrollView = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
-            setPadding(dp(8), 0, dp(8), dp(8))
             clipToPadding = false
-            layoutManager = GridLayoutManager(this@CardHolderActivity, 2)
         }
-        adapter = CardAdapter()
-        recyclerView.adapter = adapter
-        root.addView(recyclerView)
-
-        // ── Empty state ──
-        emptyView = TextView(this).apply {
-            text = getString(R.string.card_holder_empty)
-            setTextColor(Color.parseColor("#777777"))
-            textSize = 15f
-            gravity = Gravity.CENTER
-            visibility = View.GONE
-            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            layoutParams = lp
+        contentLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), 0, dp(12), dp(80)) // bottom padding for bottom nav
         }
-        root.addView(emptyView)
+        scrollView.addView(contentLayout)
+        mainColumn.addView(scrollView)
 
-        setContentView(root)
-        loadCards()
+        rootLayout.addView(mainColumn)
+
+        // -- Bottom nav (inflate XML layout) --
+        layoutInflater.inflate(R.layout.layout_bottom_nav, rootLayout)
+
+        setContentView(rootLayout)
+        BottomNavHelper.setup(this, NavItem.CARDS)
+
+        loadAllData()
         TelemetryHelper.trackPageView(this, "card_holder")
     }
 
-    private fun loadCards() {
+    // ── Filter chip factory ──
+
+    private fun createFilterChip(label: String, checked: Boolean, onClick: () -> Unit): Chip {
+        return Chip(this).apply {
+            text = label
+            isCheckable = true
+            isChecked = checked
+            setTextColor(Color.WHITE)
+            chipBackgroundColor = android.content.res.ColorStateList.valueOf(
+                if (checked) Color.parseColor("#6C63FF") else Color.parseColor("#252540")
+            )
+            setOnClickListener {
+                onClick()
+            }
+        }
+    }
+
+    private fun setFilter(mode: FilterMode) {
+        currentFilter = mode
+        // Update chip visuals
+        val chipGroup = (scrollView.parent as? LinearLayout)?.let { parent ->
+            val scrollHost = parent.getChildAt(3) as? HorizontalScrollView
+            scrollHost?.getChildAt(0) as? ChipGroup
+        }
+        chipGroup?.let { group ->
+            for (i in 0 until group.childCount) {
+                val chip = group.getChildAt(i) as? Chip ?: continue
+                val isActive = when (i) {
+                    0 -> mode == FilterMode.ALL
+                    1 -> mode == FilterMode.FRIENDS
+                    2 -> mode == FilterMode.PINNED
+                    else -> false
+                }
+                chip.isChecked = isActive
+                chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(
+                    if (isActive) Color.parseColor("#6C63FF") else Color.parseColor("#252540")
+                )
+            }
+        }
+        rebuildContent()
+    }
+
+    // ── Data loading ──
+
+    private fun loadAllData() {
+        val deviceId = deviceManager.deviceId ?: return
+        val deviceSecret = deviceManager.deviceSecret ?: return
+
+        lifecycleScope.launch {
+            try {
+                val myCardsResp = NetworkModule.api.getMyCards(deviceId, deviceSecret)
+                if (myCardsResp.success) myCards = myCardsResp.cards
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load my cards")
+            }
+
+            try {
+                val recentResp = NetworkModule.api.getRecentContacts(deviceId, deviceSecret)
+                if (recentResp.success) recentContacts = recentResp.contacts
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load recent contacts")
+            }
+
+            try {
+                val collectedResp = NetworkModule.api.getContacts(deviceId)
+                if (collectedResp.success) collectedContacts = collectedResp.contacts
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load collected contacts")
+            }
+
+            rebuildContent()
+        }
+    }
+
+    private fun performSearch(query: String) {
         val deviceId = deviceManager.deviceId ?: return
         lifecycleScope.launch {
             try {
-                val resp = NetworkModule.api.getContacts(deviceId)
+                val resp = NetworkModule.api.searchCards(deviceId, query)
                 if (resp.success) {
-                    allCards = resp.contacts.toMutableList()
-                    applyFilter()
+                    searchSaved = resp.saved
+                    searchExternal = resp.external
+                    isSearching = true
+                    rebuildContent()
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to load cards")
+                Timber.e(e, "Search failed")
             }
         }
     }
 
-    private fun applyFilter() {
-        val query = searchInput.text.toString().lowercase()
-        filteredCards = if (query.isEmpty()) {
-            // Pinned first, then by addedAt desc
-            allCards.sortedWith(compareByDescending<Contact> { it.pinned }.thenByDescending { it.addedAt }).toMutableList()
-        } else {
-            allCards.filter { c ->
-                val snap = c.cardSnapshot
-                val searchable = listOfNotNull(
-                    c.name, c.publicCode, c.notes, c.category,
-                    snap?.description
-                ) + (snap?.tags ?: emptyList()) + (snap?.capabilities?.map { it.name } ?: emptyList())
-                searchable.any { it.lowercase().contains(query) }
-            }.toMutableList()
+    // ── Content rendering ──
+
+    private fun rebuildContent() {
+        contentLayout.removeAllViews()
+
+        if (isSearching) {
+            buildSearchResults()
+            return
         }
-        countView.text = "${filteredCards.size} / ${allCards.size}"
-        adapter?.notifyDataSetChanged()
-        emptyView.visibility = if (filteredCards.isEmpty()) View.VISIBLE else View.GONE
-        recyclerView.visibility = if (filteredCards.isEmpty()) View.GONE else View.VISIBLE
+
+        // Section 1: My Cards
+        if (myCards.isNotEmpty()) {
+            addSectionHeader("My Cards")
+            for (card in myCards) {
+                contentLayout.addView(buildMyCardView(card))
+            }
+        }
+
+        // Section 2: Recent
+        val filteredRecent = applyContactFilter(recentContacts)
+        if (filteredRecent.isNotEmpty()) {
+            addSectionHeader("Recent")
+            for (contact in filteredRecent) {
+                contentLayout.addView(buildRecentContactView(contact))
+            }
+        }
+
+        // Section 3: Collected
+        val filteredCollected = applyContactFilter(collectedContacts)
+        if (filteredCollected.isNotEmpty()) {
+            addSectionHeader("Collected")
+            for (contact in filteredCollected) {
+                contentLayout.addView(buildContactCardView(contact))
+            }
+        }
+
+        // Empty state
+        if (myCards.isEmpty() && filteredRecent.isEmpty() && filteredCollected.isEmpty()) {
+            contentLayout.addView(TextView(this).apply {
+                text = getString(R.string.card_holder_empty)
+                setTextColor(Color.parseColor("#777777"))
+                textSize = 15f
+                gravity = Gravity.CENTER
+                setPadding(dp(16), dp(48), dp(16), dp(48))
+            })
+        }
     }
 
-    private fun showAddDialog() {
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(16), dp(24), dp(8))
+    private fun applyContactFilter(contacts: List<Contact>): List<Contact> {
+        val sorted = contacts.sortedWith(
+            compareByDescending<Contact> { it.pinned }.thenByDescending { it.lastInteractedAt ?: it.addedAt ?: 0L }
+        )
+        return when (currentFilter) {
+            FilterMode.ALL -> sorted
+            FilterMode.FRIENDS -> sorted.filter { !it.blocked && it.exchangeType != null }
+            FilterMode.PINNED -> sorted.filter { it.pinned }
         }
-        val inputLayout = TextInputLayout(this).apply {
-            hint = getString(R.string.card_holder_code_hint)
-            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+    }
+
+    private fun buildSearchResults() {
+        if (searchSaved.isNotEmpty()) {
+            addSectionHeader("Saved Results")
+            for (contact in searchSaved) {
+                contentLayout.addView(buildContactCardView(contact))
+            }
         }
-        val input = TextInputEditText(this).apply {
-            maxLines = 1
+        if (searchExternal.isNotEmpty()) {
+            addSectionHeader("External Results")
+            for (ext in searchExternal) {
+                contentLayout.addView(buildExternalCardView(ext))
+            }
         }
-        inputLayout.addView(input)
-        val preview = TextView(this).apply {
-            setPadding(0, dp(8), 0, 0)
+        if (searchSaved.isEmpty() && searchExternal.isEmpty()) {
+            contentLayout.addView(TextView(this).apply {
+                text = "No results found"
+                setTextColor(Color.parseColor("#777777"))
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setPadding(dp(16), dp(32), dp(16), dp(32))
+            })
+        }
+    }
+
+    // ── Section header ──
+
+    private fun addSectionHeader(title: String) {
+        contentLayout.addView(TextView(this).apply {
+            text = title
+            setTextColor(Color.parseColor("#AAAAAA"))
             textSize = 13f
-        }
-        layout.addView(inputLayout)
-        layout.addView(preview)
-
-        val dialog = AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
-            .setTitle(R.string.card_holder_add)
-            .setView(layout)
-            .setPositiveButton(R.string.card_holder_add, null)
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-
-        dialog.show()
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-
-        input.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val code = s?.toString()?.trim()?.lowercase() ?: ""
-                if (code.length < 3) {
-                    preview.text = ""
-                    dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-                    return
-                }
-                lifecycleScope.launch {
-                    try {
-                        val resp = NetworkModule.api.lookupEntity(code)
-                        if (resp.success && resp.entity != null) {
-                            val e = resp.entity
-                            val avatar = if (e.character == "PIG") "\uD83D\uDC37" else "\uD83E\uDD9E"
-                            preview.text = "$avatar ${e.name ?: e.character ?: code}"
-                            preview.setTextColor(Color.parseColor("#4CAF50"))
-                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
-                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).tag = code
-                        } else {
-                            preview.text = getString(R.string.card_holder_not_found)
-                            preview.setTextColor(Color.parseColor("#F44336"))
-                            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-                        }
-                    } catch (_: Exception) {
-                        preview.text = getString(R.string.card_holder_not_found)
-                        preview.setTextColor(Color.parseColor("#F44336"))
-                        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
-                    }
-                }
-            }
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(4), dp(12), 0, dp(8))
         })
+    }
 
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val code = dialog.getButton(AlertDialog.BUTTON_POSITIVE).tag as? String ?: return@setOnClickListener
-            addCard(code)
-            dialog.dismiss()
+    // ── Card views ──
+
+    private fun buildMyCardView(card: MyCardEntry): View {
+        val cardView = MaterialCardView(this).apply {
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(0, dp(4), 0, dp(4))
+            layoutParams = lp
+            setCardBackgroundColor(Color.parseColor("#1A1A2E"))
+            strokeColor = Color.parseColor("#333355")
+            strokeWidth = dp(1)
+            radius = dp(12).toFloat()
+            cardElevation = 0f
+        }
+
+        val inner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(14), dp(14), dp(12))
+        }
+
+        // Avatar + name row
+        val nameRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        nameRow.addView(buildAvatar(card.avatar, card.character))
+        val nameCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        nameCol.addView(TextView(this).apply {
+            text = card.name ?: card.publicCode ?: "Unknown"
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 1
+        })
+        if (card.publicCode != null) {
+            nameCol.addView(buildCopyableBadge(card.publicCode))
+        }
+        nameRow.addView(nameCol)
+        inner.addView(nameRow)
+
+        // Contact info
+        if (!card.contactEmail.isNullOrEmpty()) {
+            inner.addView(buildInfoLine("\u2709 ${card.contactEmail}"))
+        }
+        if (!card.website.isNullOrEmpty()) {
+            inner.addView(buildInfoLine("\uD83C\uDF10 ${card.website}"))
+        }
+        if (!card.description.isNullOrEmpty()) {
+            inner.addView(TextView(this).apply {
+                text = card.description
+                setTextColor(Color.parseColor("#AAAAAA"))
+                textSize = 12f
+                maxLines = 1
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+
+        // Edit mode: inline fields for agentCard
+        if (editMode && card.publicCode != null) {
+            inner.addView(buildEditSection(card))
+        }
+
+        cardView.addView(inner)
+        cardView.setOnClickListener {
+            if (!editMode) showMyCardDetailDialog(card)
+        }
+        return cardView
+    }
+
+    private fun buildEditSection(card: MyCardEntry): LinearLayout {
+        val editLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, dp(10), 0, 0)
+        }
+
+        val divider = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1))
+            setBackgroundColor(Color.parseColor("#333355"))
+        }
+        editLayout.addView(divider)
+
+        editLayout.addView(sectionTitle("Edit Agent Card"))
+
+        val descInput = makeEditField("Description", card.agentCard?.description ?: "")
+        val emailInput = makeEditField("Contact Email", card.agentCard?.contactEmail ?: card.contactEmail ?: "")
+        val websiteInput = makeEditField("Website", card.agentCard?.website ?: card.website ?: "")
+
+        editLayout.addView(descInput)
+        editLayout.addView(emailInput)
+        editLayout.addView(websiteInput)
+
+        val saveBtn = TextView(this).apply {
+            text = "Save"
+            setTextColor(Color.parseColor("#0D0D1A"))
+            textSize = 13f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#6C63FF"))
+                cornerRadius = dp(8).toFloat()
+            }
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(0, dp(8), 0, 0)
+            lp.gravity = Gravity.END
+            layoutParams = lp
+            setOnClickListener {
+                saveAgentCard(
+                    card.publicCode!!,
+                    (descInput.getChildAt(1) as EditText).text.toString(),
+                    (emailInput.getChildAt(1) as EditText).text.toString(),
+                    (websiteInput.getChildAt(1) as EditText).text.toString()
+                )
+            }
+        }
+        editLayout.addView(saveBtn)
+        return editLayout
+    }
+
+    private fun makeEditField(label: String, value: String): LinearLayout {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(0, dp(6), 0, 0)
+            layoutParams = lp
+
+            addView(TextView(this@CardHolderActivity).apply {
+                text = label
+                setTextColor(Color.parseColor("#777777"))
+                textSize = 11f
+            })
+            addView(EditText(this@CardHolderActivity).apply {
+                setText(value)
+                setTextColor(Color.WHITE)
+                setHintTextColor(Color.parseColor("#555555"))
+                hint = label
+                textSize = 13f
+                maxLines = 1
+                inputType = InputType.TYPE_CLASS_TEXT
+                background = GradientDrawable().apply {
+                    setColor(Color.parseColor("#252540"))
+                    cornerRadius = dp(6).toFloat()
+                    setStroke(1, Color.parseColor("#333355"))
+                }
+                setPadding(dp(10), dp(6), dp(10), dp(6))
+            })
+        }
+    }
+
+    private fun saveAgentCard(publicCode: String, description: String, email: String, website: String) {
+        val deviceId = deviceManager.deviceId ?: return
+        val deviceSecret = deviceManager.deviceSecret ?: return
+        lifecycleScope.launch {
+            try {
+                NetworkModule.api.updateCard(publicCode, mapOf(
+                    "deviceId" to deviceId,
+                    "deviceSecret" to deviceSecret,
+                    "description" to description,
+                    "contactEmail" to email,
+                    "website" to website
+                ))
+                Toast.makeText(this@CardHolderActivity, R.string.card_holder_saved, Toast.LENGTH_SHORT).show()
+                loadAllData()
+            } catch (e: Exception) {
+                Toast.makeText(this@CardHolderActivity, e.message ?: "Error", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun buildRecentContactView(contact: Contact): View {
+        val cardView = makeCardShell()
+        val inner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(14), dp(14), dp(12))
+        }
+
+        // Top row: avatar + name + action icons
+        val topRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        topRow.addView(buildAvatar(contact.avatar, contact.character))
+        val nameCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        nameCol.addView(TextView(this).apply {
+            text = contact.name ?: contact.publicCode
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 1
+        })
+        nameCol.addView(buildCopyableBadge(contact.publicCode))
+        topRow.addView(nameCol)
+
+        // Online dot
+        topRow.addView(buildOnlineDot(contact.online))
+
+        // Action icons: add friend + block
+        val addFriendBtn = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_add)
+            setColorFilter(Color.parseColor("#4CAF50"))
+            val size = dp(32)
+            layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(4), 0, 0, 0) }
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            setOnClickListener { confirmAddFriend(contact) }
+        }
+        val blockBtn = ImageView(this).apply {
+            setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
+            setColorFilter(if (contact.blocked) Color.parseColor("#F44336") else Color.parseColor("#777777"))
+            val size = dp(32)
+            layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(4), 0, 0, 0) }
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            setOnClickListener {
+                if (contact.blocked) confirmUnblock(contact) else confirmBlock(contact)
+            }
+        }
+        topRow.addView(addFriendBtn)
+        topRow.addView(blockBtn)
+        inner.addView(topRow)
+
+        // Description
+        val snap = contact.cardSnapshot
+        if (!snap?.description.isNullOrEmpty()) {
+            inner.addView(TextView(this).apply {
+                text = snap!!.description
+                setTextColor(Color.parseColor("#AAAAAA"))
+                textSize = 12f
+                maxLines = 1
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+
+        // Contact info from snapshot
+        if (!snap?.contactEmail.isNullOrEmpty()) {
+            inner.addView(buildInfoLine("\u2709 ${snap!!.contactEmail}"))
+        }
+        if (!snap?.website.isNullOrEmpty()) {
+            inner.addView(buildInfoLine("\uD83C\uDF10 ${snap!!.website}"))
+        }
+
+        cardView.addView(inner)
+        cardView.setOnClickListener { showContactDetailDialog(contact) }
+        return cardView
+    }
+
+    private fun buildContactCardView(contact: Contact): View {
+        val cardView = makeCardShell()
+        if (contact.pinned) {
+            cardView.strokeColor = Color.parseColor("#FFD700")
+        }
+
+        val inner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(14), dp(14), dp(12))
+        }
+
+        // Avatar + name row
+        val nameRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        nameRow.addView(buildAvatar(contact.avatar, contact.character))
+        val nameCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        nameCol.addView(TextView(this).apply {
+            text = contact.name ?: contact.publicCode
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 1
+        })
+        nameCol.addView(buildCopyableBadge(contact.publicCode))
+        nameRow.addView(nameCol)
+        nameRow.addView(buildOnlineDot(contact.online))
+        inner.addView(nameRow)
+
+        // Description
+        val snap = contact.cardSnapshot
+        if (!snap?.description.isNullOrEmpty()) {
+            inner.addView(TextView(this).apply {
+                text = snap!!.description
+                setTextColor(Color.parseColor("#AAAAAA"))
+                textSize = 12f
+                maxLines = 1
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+
+        // Contact info
+        if (!snap?.contactEmail.isNullOrEmpty()) {
+            inner.addView(buildInfoLine("\u2709 ${snap!!.contactEmail}"))
+        }
+        if (!snap?.website.isNullOrEmpty()) {
+            inner.addView(buildInfoLine("\uD83C\uDF10 ${snap!!.website}"))
+        }
+
+        cardView.addView(inner)
+        cardView.setOnClickListener { showContactDetailDialog(contact) }
+        return cardView
+    }
+
+    private fun buildExternalCardView(ext: ExternalCardResult): View {
+        val cardView = makeCardShell()
+        val inner = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(14), dp(14), dp(14), dp(12))
+        }
+
+        val nameRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        nameRow.addView(buildAvatar(ext.avatar, ext.character))
+        val nameCol = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(10), 0, 0, 0)
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+        }
+        nameCol.addView(TextView(this).apply {
+            text = ext.name ?: ext.publicCode
+            setTextColor(Color.WHITE)
+            textSize = 15f
+            typeface = Typeface.DEFAULT_BOLD
+            maxLines = 1
+        })
+        nameCol.addView(buildCopyableBadge(ext.publicCode))
+        nameRow.addView(nameCol)
+        nameRow.addView(buildOnlineDot(ext.online))
+        inner.addView(nameRow)
+
+        if (!ext.agentCard?.description.isNullOrEmpty()) {
+            inner.addView(TextView(this).apply {
+                text = ext.agentCard!!.description
+                setTextColor(Color.parseColor("#AAAAAA"))
+                textSize = 12f
+                maxLines = 1
+                setPadding(0, dp(4), 0, 0)
+            })
+        }
+
+        // Add button for external results
+        val addBtn = TextView(this).apply {
+            text = "+ ${getString(R.string.card_holder_add)}"
+            setTextColor(Color.parseColor("#6C63FF"))
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(0, dp(6), 0, 0)
+            setOnClickListener { addCard(ext.publicCode) }
+        }
+        inner.addView(addBtn)
+
+        cardView.addView(inner)
+        return cardView
+    }
+
+    // ── Shared view builders ──
+
+    private fun makeCardShell(): MaterialCardView {
+        return MaterialCardView(this).apply {
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(0, dp(4), 0, dp(4))
+            layoutParams = lp
+            setCardBackgroundColor(Color.parseColor("#1A1A2E"))
+            strokeColor = Color.parseColor("#333355")
+            strokeWidth = dp(1)
+            radius = dp(12).toFloat()
+            cardElevation = 0f
+        }
+    }
+
+    private fun buildAvatar(avatar: String?, character: String?): View {
+        val size = dp(64)
+        return TextView(this).apply {
+            val emoji = avatar ?: if (character == "PIG") "\uD83D\uDC37" else "\uD83E\uDD9E"
+            text = emoji
+            textSize = 28f
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(size, size)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#252540"))
+            }
+        }
+    }
+
+    private fun buildCopyableBadge(publicCode: String): View {
+        return TextView(this).apply {
+            text = publicCode
+            setTextColor(Color.parseColor("#6C63FF"))
+            textSize = 11f
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#1a1a3f"))
+                cornerRadius = dp(4).toFloat()
+            }
+            setPadding(dp(6), dp(2), dp(6), dp(2))
+            setOnClickListener {
+                val clip = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clip.setPrimaryClip(ClipData.newPlainText("publicCode", publicCode))
+                Toast.makeText(this@CardHolderActivity, "Copied: $publicCode", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun buildOnlineDot(online: Boolean): View {
+        val size = dp(8)
+        return View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(6), 0, 0, 0) }
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(if (online) Color.parseColor("#4CAF50") else Color.parseColor("#777777"))
+            }
+        }
+    }
+
+    private fun buildInfoLine(text: String): TextView {
+        return TextView(this).apply {
+            this.text = text
+            setTextColor(Color.parseColor("#999999"))
+            textSize = 12f
+            maxLines = 1
+            setPadding(0, dp(2), 0, 0)
+        }
+    }
+
+    // ── Friend / Block actions ──
+
+    private fun confirmAddFriend(contact: Contact) {
+        AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setTitle("Add Friend")
+            .setMessage("Add ${contact.name ?: contact.publicCode} to your contacts?")
+            .setPositiveButton(R.string.card_holder_add) { _, _ -> addCard(contact.publicCode) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun confirmBlock(contact: Contact) {
+        AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setTitle("Block")
+            .setMessage("Block ${contact.name ?: contact.publicCode}? They will no longer be able to interact with you.")
+            .setPositiveButton("Block") { _, _ -> setBlocked(contact.publicCode, true) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun confirmUnblock(contact: Contact) {
+        AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setTitle("Unblock")
+            .setMessage("Unblock ${contact.name ?: contact.publicCode}?")
+            .setPositiveButton("Unblock") { _, _ -> setBlocked(contact.publicCode, false) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun setBlocked(publicCode: String, blocked: Boolean) {
+        val deviceId = deviceManager.deviceId ?: return
+        val deviceSecret = deviceManager.deviceSecret ?: return
+        lifecycleScope.launch {
+            try {
+                NetworkModule.api.updateCard(publicCode, mapOf(
+                    "deviceId" to deviceId,
+                    "deviceSecret" to deviceSecret,
+                    "blocked" to blocked
+                ))
+                Toast.makeText(
+                    this@CardHolderActivity,
+                    if (blocked) "Blocked" else "Unblocked",
+                    Toast.LENGTH_SHORT
+                ).show()
+                loadAllData()
+            } catch (e: Exception) {
+                Toast.makeText(this@CardHolderActivity, e.message ?: "Error", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -274,11 +885,10 @@ class CardHolderActivity : AppCompatActivity() {
                     "deviceSecret" to deviceSecret,
                     "publicCode" to code
                 ))
-                if (resp.success && resp.contact != null) {
-                    allCards.add(0, resp.contact)
-                    applyFilter()
+                if (resp.success) {
                     Toast.makeText(this@CardHolderActivity, R.string.card_holder_added, Toast.LENGTH_SHORT).show()
                     TelemetryHelper.trackAction("card_holder_add", mapOf("code" to code))
+                    loadAllData()
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@CardHolderActivity, e.message ?: "Error", Toast.LENGTH_SHORT).show()
@@ -286,7 +896,9 @@ class CardHolderActivity : AppCompatActivity() {
         }
     }
 
-    private fun showDetailDialog(card: Contact) {
+    // ── Detail dialogs ──
+
+    private fun showMyCardDetailDialog(card: MyCardEntry) {
         val scroll = ScrollView(this)
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -294,108 +906,257 @@ class CardHolderActivity : AppCompatActivity() {
         }
         scroll.addView(layout)
 
-        val snap = card.cardSnapshot
         val avatar = card.avatar ?: if (card.character == "PIG") "\uD83D\uDC37" else "\uD83E\uDD9E"
-
-        // Header
-        val header = TextView(this).apply {
-            text = "$avatar ${card.name ?: card.publicCode}"
+        layout.addView(TextView(this).apply {
+            text = "$avatar ${card.name ?: card.publicCode ?: "Unknown"}"
             textSize = 18f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
+        })
+        if (card.publicCode != null) {
+            layout.addView(TextView(this).apply {
+                text = card.publicCode
+                textSize = 12f
+                setTextColor(Color.parseColor("#6C63FF"))
+                setPadding(0, 0, 0, dp(12))
+            })
         }
-        val codeView = TextView(this).apply {
-            text = card.publicCode
+        if (!card.description.isNullOrEmpty()) {
+            addDialogSection(layout, getString(R.string.card_holder_description), card.description)
+        }
+        if (!card.contactEmail.isNullOrEmpty()) {
+            addDialogSection(layout, "Email", card.contactEmail)
+        }
+        if (!card.website.isNullOrEmpty()) {
+            addDialogSection(layout, "Website", card.website)
+        }
+
+        val ac = card.agentCard
+        if (ac != null) {
+            val caps = ac.capabilities ?: emptyList()
+            if (caps.isNotEmpty()) {
+                addDialogSection(layout, getString(R.string.card_holder_capabilities),
+                    caps.joinToString("\n") { "\u2022 ${it.name}${if (it.description.isNotEmpty()) " - ${it.description}" else ""}" })
+            }
+            val tags = ac.tags ?: emptyList()
+            if (tags.isNotEmpty()) {
+                addDialogSection(layout, getString(R.string.card_holder_tags), tags.joinToString(", ") { "#$it" })
+            }
+            val protocols = ac.protocols ?: emptyList()
+            if (protocols.isNotEmpty()) {
+                addDialogSection(layout, getString(R.string.card_holder_protocols), protocols.joinToString(", "))
+            }
+        }
+
+        AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
+            .setView(scroll)
+            .setPositiveButton(android.R.string.ok, null)
+            .create()
+            .show()
+    }
+
+    private fun showContactDetailDialog(contact: Contact) {
+        val scroll = ScrollView(this)
+        val tabHost = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(16), dp(24), dp(8))
+        }
+        scroll.addView(tabHost)
+
+        val snap = contact.cardSnapshot
+        val avatar = contact.avatar ?: if (contact.character == "PIG") "\uD83D\uDC37" else "\uD83E\uDD9E"
+
+        // Header
+        tabHost.addView(TextView(this).apply {
+            text = "$avatar ${contact.name ?: contact.publicCode}"
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.WHITE)
+        })
+        tabHost.addView(TextView(this).apply {
+            text = contact.publicCode
             textSize = 12f
-            setTextColor(Color.parseColor("#777777"))
-            setPadding(0, 0, 0, dp(12))
-        }
-        layout.addView(header)
-        layout.addView(codeView)
+            setTextColor(Color.parseColor("#6C63FF"))
+            setPadding(0, 0, 0, dp(8))
+        })
 
-        // Description
+        // Tab buttons
+        val tabRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 0, 0, dp(8))
+        }
+        val detailsPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+        }
+        val chatPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+        }
+
+        val detailsTab = TextView(this).apply {
+            text = "Details"
+            setTextColor(Color.WHITE)
+            textSize = 13f
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(12), dp(6), dp(12), dp(6))
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#6C63FF"))
+                cornerRadius = dp(6).toFloat()
+            }
+        }
+        val chatTab = TextView(this).apply {
+            text = "Chat History"
+            setTextColor(Color.parseColor("#AAAAAA"))
+            textSize = 13f
+            setPadding(dp(12), dp(6), dp(12), dp(6))
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#252540"))
+                cornerRadius = dp(6).toFloat()
+            }
+        }
+
+        detailsTab.setOnClickListener {
+            detailsPanel.visibility = View.VISIBLE
+            chatPanel.visibility = View.GONE
+            detailsTab.setTextColor(Color.WHITE)
+            detailsTab.typeface = Typeface.DEFAULT_BOLD
+            (detailsTab.background as GradientDrawable).setColor(Color.parseColor("#6C63FF"))
+            chatTab.setTextColor(Color.parseColor("#AAAAAA"))
+            chatTab.typeface = Typeface.DEFAULT
+            (chatTab.background as GradientDrawable).setColor(Color.parseColor("#252540"))
+        }
+        chatTab.setOnClickListener {
+            detailsPanel.visibility = View.GONE
+            chatPanel.visibility = View.VISIBLE
+            chatTab.setTextColor(Color.WHITE)
+            chatTab.typeface = Typeface.DEFAULT_BOLD
+            (chatTab.background as GradientDrawable).setColor(Color.parseColor("#6C63FF"))
+            detailsTab.setTextColor(Color.parseColor("#AAAAAA"))
+            detailsTab.typeface = Typeface.DEFAULT
+            (detailsTab.background as GradientDrawable).setColor(Color.parseColor("#252540"))
+            loadChatHistory(contact.publicCode, chatPanel)
+        }
+
+        tabRow.addView(detailsTab)
+        tabRow.addView(chatTab.apply {
+            (layoutParams as? LinearLayout.LayoutParams)?.setMargins(dp(8), 0, 0, 0)
+                ?: run {
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { setMargins(dp(8), 0, 0, 0) }
+                }
+        })
+        tabHost.addView(tabRow)
+
+        // Details content
         if (!snap?.description.isNullOrEmpty()) {
-            addSection(layout, getString(R.string.card_holder_description), snap!!.description!!)
+            addDialogSection(detailsPanel, getString(R.string.card_holder_description), snap!!.description!!)
         }
-
-        // Capabilities
+        if (!snap?.contactEmail.isNullOrEmpty()) {
+            addDialogSection(detailsPanel, "Email", snap!!.contactEmail!!)
+        }
+        if (!snap?.website.isNullOrEmpty()) {
+            addDialogSection(detailsPanel, "Website", snap!!.website!!)
+        }
         val caps = snap?.capabilities ?: emptyList()
         if (caps.isNotEmpty()) {
-            addSection(layout, getString(R.string.card_holder_capabilities),
-                caps.joinToString("\n") { "\u2022 ${it.name}${if (!it.description.isNullOrEmpty()) " - ${it.description}" else ""}" })
+            addDialogSection(detailsPanel, getString(R.string.card_holder_capabilities),
+                caps.joinToString("\n") { "\u2022 ${it.name}${if (it.description.isNotEmpty()) " - ${it.description}" else ""}" })
         }
-
-        // Tags
         val tags = snap?.tags ?: emptyList()
         if (tags.isNotEmpty()) {
-            addSection(layout, getString(R.string.card_holder_tags), tags.joinToString(", ") { "#$it" })
+            addDialogSection(detailsPanel, getString(R.string.card_holder_tags), tags.joinToString(", ") { "#$it" })
         }
-
-        // Protocols
-        val protocols = snap?.protocols ?: emptyList()
-        if (protocols.isNotEmpty()) {
-            addSection(layout, getString(R.string.card_holder_protocols), protocols.joinToString(", "))
-        }
-
-        // Details
         val details = StringBuilder()
-        details.appendLine("${getString(R.string.card_holder_exchange_type)}: ${card.exchangeType ?: "manual"}")
-        details.appendLine("${getString(R.string.card_holder_interactions)}: ${card.interactionCount}")
-        if (card.addedAt != null) details.appendLine("${getString(R.string.card_holder_added_at)}: ${java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(card.addedAt))}")
-        addSection(layout, getString(R.string.card_holder_details), details.toString().trim())
-
-        // Notes
-        val notesInput = EditText(this).apply {
-            hint = getString(R.string.card_holder_notes_hint)
-            setText(card.notes ?: "")
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#777777"))
-            textSize = 13f
-            background = GradientDrawable().apply {
-                setColor(Color.parseColor("#252540"))
-                cornerRadius = dp(8).toFloat()
-                setStroke(1, Color.parseColor("#333355"))
-            }
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-            minLines = 2
+        details.appendLine("${getString(R.string.card_holder_exchange_type)}: ${contact.exchangeType ?: "manual"}")
+        details.appendLine("${getString(R.string.card_holder_interactions)}: ${contact.interactionCount}")
+        if (contact.addedAt != null) {
+            details.appendLine("${getString(R.string.card_holder_added_at)}: ${
+                java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date(contact.addedAt))
+            }")
         }
-        val notesLabel = sectionTitle(getString(R.string.card_holder_notes))
-        layout.addView(notesLabel)
-        layout.addView(notesInput)
+        addDialogSection(detailsPanel, getString(R.string.card_holder_details), details.toString().trim())
 
-        // Category
-        val catInput = EditText(this).apply {
-            hint = getString(R.string.card_holder_category_hint)
-            setText(card.category ?: "")
-            setTextColor(Color.WHITE)
-            setHintTextColor(Color.parseColor("#777777"))
+        tabHost.addView(detailsPanel)
+
+        // Chat history panel (loaded on tab click)
+        chatPanel.addView(TextView(this).apply {
+            text = "Loading..."
+            setTextColor(Color.parseColor("#777777"))
             textSize = 13f
-            background = GradientDrawable().apply {
-                setColor(Color.parseColor("#252540"))
-                cornerRadius = dp(8).toFloat()
-                setStroke(1, Color.parseColor("#333355"))
-            }
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-            maxLines = 1
-        }
-        val catLabel = sectionTitle(getString(R.string.card_holder_category))
-        catLabel.setPadding(0, dp(12), 0, dp(4))
-        layout.addView(catLabel)
-        layout.addView(catInput)
+        })
+        tabHost.addView(chatPanel)
 
         val dialog = AlertDialog.Builder(this, com.google.android.material.R.style.ThemeOverlay_Material3_MaterialAlertDialog)
             .setView(scroll)
-            .setPositiveButton(R.string.card_holder_save) { _, _ ->
-                saveCardMeta(card.publicCode, notesInput.text.toString(), catInput.text.toString(), card.pinned)
-            }
-            .setNeutralButton(if (card.pinned) R.string.card_holder_unpin else R.string.card_holder_pin) { _, _ ->
-                saveCardMeta(card.publicCode, notesInput.text.toString(), catInput.text.toString(), !card.pinned)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton(if (contact.pinned) R.string.card_holder_unpin else R.string.card_holder_pin) { _, _ ->
+                saveCardMeta(contact.publicCode, contact.notes ?: "", contact.category ?: "", !contact.pinned)
             }
             .setNegativeButton(R.string.card_holder_remove) { _, _ ->
-                removeCard(card.publicCode)
+                removeCard(contact.publicCode)
             }
             .create()
         dialog.show()
+    }
+
+    private fun loadChatHistory(publicCode: String, panel: LinearLayout) {
+        val deviceId = deviceManager.deviceId ?: return
+        val deviceSecret = deviceManager.deviceSecret ?: return
+        lifecycleScope.launch {
+            try {
+                val resp = NetworkModule.api.getChatHistoryByCode(deviceId, deviceSecret, publicCode)
+                panel.removeAllViews()
+                if (resp.success && resp.messages.isNotEmpty()) {
+                    for (msg in resp.messages) {
+                        panel.addView(buildChatMessageView(msg))
+                    }
+                } else {
+                    panel.addView(TextView(this@CardHolderActivity).apply {
+                        text = "No chat history"
+                        setTextColor(Color.parseColor("#777777"))
+                        textSize = 13f
+                        setPadding(0, dp(8), 0, dp(8))
+                    })
+                }
+            } catch (e: Exception) {
+                panel.removeAllViews()
+                panel.addView(TextView(this@CardHolderActivity).apply {
+                    text = "Failed to load chat history"
+                    setTextColor(Color.parseColor("#F44336"))
+                    textSize = 13f
+                })
+            }
+        }
+    }
+
+    private fun buildChatMessageView(msg: ChatHistoryMessage): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val lp = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            lp.setMargins(0, dp(4), 0, dp(4))
+            layoutParams = lp
+            background = GradientDrawable().apply {
+                setColor(if (msg.isFromUser) Color.parseColor("#1A2A1A") else Color.parseColor("#252540"))
+                cornerRadius = dp(8).toFloat()
+            }
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+
+            addView(TextView(this@CardHolderActivity).apply {
+                text = msg.text ?: "[media]"
+                setTextColor(Color.WHITE)
+                textSize = 13f
+            })
+            if (msg.createdAt != null) {
+                addView(TextView(this@CardHolderActivity).apply {
+                    text = msg.createdAt
+                    setTextColor(Color.parseColor("#555555"))
+                    textSize = 10f
+                    gravity = Gravity.END
+                })
+            }
+        }
     }
 
     private fun saveCardMeta(publicCode: String, notes: String, category: String, pinned: Boolean) {
@@ -410,13 +1171,8 @@ class CardHolderActivity : AppCompatActivity() {
                     "category" to category.ifBlank { null },
                     "pinned" to pinned
                 ))
-                // Update local data
-                val idx = allCards.indexOfFirst { it.publicCode == publicCode }
-                if (idx >= 0) {
-                    allCards[idx] = allCards[idx].copy(notes = notes, category = category.ifBlank { null }, pinned = pinned)
-                    applyFilter()
-                }
                 Toast.makeText(this@CardHolderActivity, R.string.card_holder_saved, Toast.LENGTH_SHORT).show()
+                loadAllData()
             } catch (e: Exception) {
                 Toast.makeText(this@CardHolderActivity, e.message ?: "Error", Toast.LENGTH_SHORT).show()
             }
@@ -433,151 +1189,17 @@ class CardHolderActivity : AppCompatActivity() {
                     "deviceSecret" to deviceSecret,
                     "publicCode" to publicCode
                 ))
-                allCards.removeAll { it.publicCode == publicCode }
-                applyFilter()
                 Toast.makeText(this@CardHolderActivity, R.string.card_holder_removed, Toast.LENGTH_SHORT).show()
+                loadAllData()
             } catch (e: Exception) {
                 Toast.makeText(this@CardHolderActivity, e.message ?: "Error", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // ── Adapter ──
-    inner class CardAdapter : RecyclerView.Adapter<CardAdapter.VH>() {
-        inner class VH(val card: MaterialCardView) : RecyclerView.ViewHolder(card)
+    // ── Dialog utilities ──
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-            val card = MaterialCardView(parent.context).apply {
-                layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                    setMargins(dp(6), dp(6), dp(6), dp(6))
-                }
-                setCardBackgroundColor(Color.parseColor("#1A1A2E"))
-                strokeColor = Color.parseColor("#333355")
-                strokeWidth = dp(1)
-                radius = dp(12).toFloat()
-                cardElevation = 0f
-            }
-            val inner = LinearLayout(parent.context).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(14), dp(14), dp(14), dp(12))
-                tag = "inner"
-            }
-            card.addView(inner)
-            return VH(card)
-        }
-
-        override fun getItemCount() = filteredCards.size
-
-        override fun onBindViewHolder(holder: VH, position: Int) {
-            val c = filteredCards[position]
-            val inner = holder.card.findViewWithTag<LinearLayout>("inner")
-            inner.removeAllViews()
-
-            val snap = c.cardSnapshot
-            val avatar = c.avatar ?: if (c.character == "PIG") "\uD83D\uDC37" else "\uD83E\uDD9E"
-
-            // Pin badge + status
-            if (c.pinned) {
-                holder.card.strokeColor = Color.parseColor("#FFD700")
-            } else {
-                holder.card.strokeColor = Color.parseColor("#333355")
-            }
-
-            // Name row
-            val nameRow = LinearLayout(this@CardHolderActivity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-            }
-            nameRow.addView(TextView(this@CardHolderActivity).apply {
-                text = avatar
-                textSize = 24f
-            })
-            val nameCol = LinearLayout(this@CardHolderActivity).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(8), 0, 0, 0)
-                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            nameCol.addView(TextView(this@CardHolderActivity).apply {
-                text = c.name ?: c.publicCode
-                setTextColor(Color.WHITE)
-                textSize = 14f
-                typeface = Typeface.DEFAULT_BOLD
-                maxLines = 1
-            })
-            nameCol.addView(TextView(this@CardHolderActivity).apply {
-                text = c.publicCode
-                setTextColor(Color.parseColor("#777777"))
-                textSize = 11f
-            })
-            nameRow.addView(nameCol)
-            // Online dot
-            val dot = View(this@CardHolderActivity).apply {
-                val size = dp(8)
-                layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(4), 0, 0, 0) }
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(if (c.online) Color.parseColor("#4CAF50") else Color.parseColor("#777777"))
-                }
-            }
-            nameRow.addView(dot)
-            inner.addView(nameRow)
-
-            // Description
-            if (!snap?.description.isNullOrEmpty()) {
-                inner.addView(TextView(this@CardHolderActivity).apply {
-                    text = snap!!.description
-                    setTextColor(Color.parseColor("#AAAAAA"))
-                    textSize = 12f
-                    maxLines = 2
-                    setPadding(0, dp(6), 0, 0)
-                })
-            }
-
-            // Tags
-            val tags = snap?.tags ?: emptyList()
-            if (tags.isNotEmpty()) {
-                inner.addView(TextView(this@CardHolderActivity).apply {
-                    text = tags.take(3).joinToString("  ") { "#$it" }
-                    setTextColor(Color.parseColor("#6C63FF"))
-                    textSize = 11f
-                    setPadding(0, dp(4), 0, 0)
-                })
-            }
-
-            // Footer: exchange type + interactions
-            val footer = LinearLayout(this@CardHolderActivity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, dp(8), 0, 0)
-            }
-            footer.addView(TextView(this@CardHolderActivity).apply {
-                text = (c.exchangeType ?: "manual").replace("_", " ")
-                textSize = 10f
-                setTextColor(Color.parseColor("#6C63FF"))
-                background = GradientDrawable().apply {
-                    setColor(Color.parseColor("#1a1a3f"))
-                    cornerRadius = dp(4).toFloat()
-                }
-                setPadding(dp(6), dp(2), dp(6), dp(2))
-            })
-            if (c.interactionCount > 0) {
-                footer.addView(TextView(this@CardHolderActivity).apply {
-                    text = "${c.interactionCount} \u2194"
-                    textSize = 10f
-                    setTextColor(Color.parseColor("#777777"))
-                    setPadding(dp(8), 0, 0, 0)
-                })
-            }
-            inner.addView(footer)
-
-            holder.card.setOnClickListener { showDetailDialog(c) }
-        }
-    }
-
-    // ── Utility ──
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
-
-    private fun addSection(layout: LinearLayout, title: String, body: String) {
+    private fun addDialogSection(layout: LinearLayout, title: String, body: String) {
         layout.addView(sectionTitle(title))
         layout.addView(TextView(this).apply {
             text = body
@@ -594,4 +1216,8 @@ class CardHolderActivity : AppCompatActivity() {
         typeface = Typeface.DEFAULT_BOLD
         setPadding(0, dp(8), 0, dp(4))
     }
+
+    // ── Utility ──
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 }
