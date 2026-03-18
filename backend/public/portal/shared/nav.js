@@ -26,7 +26,8 @@ function renderNav(activePage) {
             }
         }
     };
-    setTimeout(window._addAdminLink, 600);
+    // _addAdminLink is called by checkAuth() after user data is available,
+    // or manually by pages with custom auth flows (e.g., info.html).
 
     const t = (key, fallback) => typeof i18n !== 'undefined' ? i18n.t(key) : fallback;
 
