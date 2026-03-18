@@ -7,7 +7,8 @@
 - **Repository**: `HankHuang0516/realbot` (GitHub repo ID: `1150444936`)
 - **Production URL**: `https://eclawbot.com`
 - **Package name**: `realbot-backend` (historical name; brand is "EClaw")
-- **Current version**: 1.103.9 (via semantic-release; `package.json` stays 1.0.0 placeholder)
+- **Current version**: 1.110.0 (via semantic-release; `package.json` stays 1.0.0 placeholder)
+- **Brand name**: "EClawbot" (rebranded from "EClaw" in v1.105.0; domain `eclawbot.com`)
 
 ---
 
@@ -16,7 +17,7 @@
 ```
 EClaw/
 ├── backend/                  # Node.js Express server (deployed to Railway)
-│   ├── index.js              # Main server (~11,030 lines) — all API routes
+│   ├── index.js              # Main server (~11,279 lines) — all API routes
 │   ├── db.js                 # PostgreSQL connection pool + schema creation
 │   ├── auth.js               # Auth module (JWT, OAuth, OIDC, RBAC)
 │   ├── mission.js            # Mission Control dashboard system
@@ -71,14 +72,22 @@ EClaw/
 │   │   │   └── release-notes.html # Release notes
 │   │   ├── shared/
 │   │   │   ├── telemetry.js       # Client-side telemetry SDK
-│   │   │   └── i18n.js            # Internationalization
+│   │   │   ├── i18n.js            # Internationalization
+│   │   │   ├── entity-utils.js    # Avatar rendering helpers (renderAvatarHtml, isAvatarUrl)
+│   │   │   ├── nav.js             # Shared navigation bar
+│   │   │   ├── footer.js          # Shared footer
+│   │   │   └── style.css          # Shared styles (agent card, avatar, etc.)
+│   │   ├── landing.html           # EClawbot brand landing page (SEO, JSON-LD)
+│   │   ├── llms.txt               # AI search engine discovery file
 │   │   ├── robots.txt             # SEO: crawler directives
-│   │   ├── sitemap.xml            # SEO: sitemap for search engines
+│   │   ├── sitemap.xml            # SEO: sitemap (5 URLs)
 │   │   ├── sw.js                  # Service worker for PWA support
+│   │   ├── assets/
+│   │   │   └── og-image.png       # Open Graph social sharing image
 │   │   └── docs/
 │   │       └── webhook-troubleshooting.md
-│   ├── tests/                # Regression + integration tests (43 files)
-│   ├── tests/jest/           # Jest unit tests (13 files, CI-run via `npm test`)
+│   ├── tests/                # Regression + integration tests (50 files)
+│   ├── tests/jest/           # Jest unit tests (20 files, CI-run via `npm test`)
 │   └── scripts/              # Setup scripts
 ├── app/                      # Android app (Kotlin)
 │   └── src/main/java/com/hank/clawlive/
@@ -117,7 +126,7 @@ EClaw/
 │   ├── go/                        # Go SDK
 │   └── rust/                      # Rust SDK
 ├── docs/
-│   ├── plans/                     # Design documents (18 files)
+│   ├── plans/                     # Design documents (20 files)
 │   ├── reports/                   # Test & analysis reports (7 files)
 │   └── issues/                    # Issue documentation (4 files)
 ├── .github/workflows/
@@ -142,7 +151,7 @@ EClaw/
 
 ### Backend (Node.js/Express)
 
-- **Single-file server**: `backend/index.js` (~11,030 lines) contains all API routes
+- **Single-file server**: `backend/index.js` (~11,279 lines) contains all API routes
 - **Database**: PostgreSQL (Railway-managed), connection in `backend/db.js`
 - **Real-time**: Socket.IO for live updates to Web Portal and Android app
 - **Auth**: JWT tokens (cookie-based for web, header-based for API), social OAuth (Google, Facebook), OIDC
@@ -160,7 +169,7 @@ EClaw/
 | `official_bots` | Registry of official bots available for borrowing |
 | `official_bot_bindings` | Current official bot binding assignments |
 | `feedback` | User feedback/bug reports |
-| `agent_card_holder` | Collected agent cards per device (replaces `cross_device_contacts`) |
+| `agent_card_holder` | Collected agent cards per device (blocked, last_interacted_at columns for Card Holder redesign) |
 | `device_vars` | Per-device environment variables with cross-platform merge |
 | `channel_accounts` | OpenClaw channel integration accounts (e2ee_capable flag for E2EE awareness) |
 | `skill_contributions` | Community-contributed skill templates |
@@ -209,7 +218,9 @@ EClaw/
 | `/api/soul-templates` | index.js | Soul template CRUD |
 | `/api/rule-templates` | index.js | Rule template CRUD |
 | `/api/official-borrow/*` | index.js | Official bot borrowing system |
+| `/api/device/entity/avatar/upload` | index.js + flickr.js | Avatar photo upload (multipart, 5MB, Flickr storage) |
 | `/api/health`, `/api/version` | index.js | Health check and version |
+| `/`, `/landing`, `/llms.txt` | index.js | Landing page, SEO, AI search discovery |
 
 ### Web Portal Pages
 
@@ -225,8 +236,11 @@ EClaw/
 | Files | `/portal/files.html` | File manager |
 | Feedback | `/portal/feedback.html` | Bug reports and feedback |
 | Admin | `/portal/admin.html` | Admin management panel |
-| Card Holder | `/portal/card-holder.html` | Agent card collection (名片夾) |
+| Card Holder | `/portal/card-holder.html` | Agent card collection (3-section: My Cards, Recent, Collected) |
+| Info | `/portal/info.html` | Device info |
 | Screen Control | `/portal/screen-control.html` | Remote screen capture/control |
+| Delete Account | `/portal/delete-account.html` | Account deletion |
+| Landing | `/` (root) | EClawbot brand landing page (public, SEO) |
 
 ### Android App (Kotlin)
 
@@ -237,6 +251,9 @@ EClaw/
 - Push: Firebase Cloud Messaging (`ClawFcmService.kt`)
 - Live Wallpaper: Custom `ClawRenderer` engine
 - Billing: Google Play Billing (`BillingManager.kt`)
+- AI Chat: `AiChatViewModel.kt` manages state (fixes message loss, typing race condition)
+- Bottom nav: FILES tab renamed to CARDS (Card Holder); Files link moved to Settings
+- App version: 1.0.50
 
 ### iOS/React Native App (Expo)
 
@@ -476,6 +493,19 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 - **Publisher Enhancements**: Expanded to 12 platforms (Blogger, Hashnode, X, DEV.to, WordPress, Telegraph, Qiita, WeChat, Tumblr, Reddit, LinkedIn, Mastodon); publisher Jest tests fixed for env var isolation (#238)
 - **Bot Tools API**: `web-search` and `web-fetch` endpoints for bots; dedicated Jest test file (`bot-tools.test.js`)
 
+### Recent Features (v1.104.x – v1.110.x)
+
+- **AI Chat ViewModel Refactor (v1.104)**: Android `AiChatBottomSheet` refactored to use `AiChatViewModel`; fixes typing indicator race condition, message loss on reopen, idle timeout increased 60s→90s
+- **Jest Test Coverage Expansion (v1.104)**: Added 9 new Jest test files (auth-extended, subscription, official-borrow, device-preferences, publisher-extended, health, ai-support, card-holder, avatar-upload); total 20 files, ~65% API coverage
+- **UX Validation Framework (v1.104)**: 3-layer validation (static audit, cross-platform parity, live endpoint); report-only, non-blocking
+- **SEO Rebrand to EClawbot (v1.105)**: Root `/` serves landing page with hero, FAQ, JSON-LD; `llms.txt` for AI search discovery; OG image; sitemap expanded to 5 URLs; all portal pages rebranded "EClaw" → "EClawbot"
+- **Card Holder Redesign (v1.106–v1.108)**: 3-section layout (My Cards, Recent, Collected); block/unblock with DB-level enforcement; unified search (saved + external); chat history modal per card; cross-speak block enforcement; `blocked` and `last_interacted_at` columns added to `agent_card_holder`
+- **Complete Agent Card Rendering (v1.108)**: Full agent card display (capabilities, protocols, tags) across Web Portal, Android, iOS
+- **Avatar Photo Upload (v1.109–v1.110)**: `POST /api/device/entity/avatar/upload` multipart endpoint (5MB limit); Flickr storage integration; drag-drop UI on web; photo picker on Android; all pages render image avatars via `entity-utils.js`
+- **Portal Shared Modules**: Extracted `entity-utils.js`, `nav.js`, `footer.js`, `style.css` for cross-page reuse
+- **CDN Cache Fix (v1.109.1)**: Cache-control headers for `.js` files to prevent stale `entity-utils.js`
+- **Dialog Spam-Click Fix (v1.109.2)**: Template gallery buttons debounced to prevent multiple dialogs
+
 ---
 
 ## Test Coverage Summary
@@ -556,8 +586,14 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | UI Text Contrast | `node backend/tests/test-ui-text-contrast.js` | None | Static analysis: input field text/bg contrast ratio, chat input regression |
 | Screen Control Auth | `node backend/tests/test-screen-control-auth.js` | Device ID + Secret | Regression: portal screen-capture/control uses deviceSecret not botSecret |
 | AI Chat Submit/Poll | `node backend/tests/test-ai-chat-submit-poll.js` | Device ID + Secret | AI chat async submit/poll pattern, validation, auth, idempotency, completion (Issue #248) |
+| Card Holder Redesign | `node backend/tests/test-card-holder-redesign.js` | Device ID + Secret | Card Holder 3-section redesign (My Cards, Recent, Collected), block/unblock |
+| Portal Duplicate Vars | `node backend/tests/test-portal-duplicate-vars.js` | Device ID + Secret | Portal env-vars duplicate variable detection |
+| Scheduled Chat Visibility | `node backend/tests/test-scheduled-chat-visibility.js` | Device ID + Secret | Scheduled messages visibility regression |
+| UX Parity | `node backend/tests/test-ux-parity.js` | Device ID + Secret | Cross-platform (Web/Android/iOS) UX feature parity |
+| UX Static Audit | `node backend/tests/test-ux-static-audit.js` | None | Static audit: i18n coverage, form closure, auth guards |
+| UX Live Validation | `node backend/tests/test-ux-live-validation.js` | None | Live server validation: page reachability, security headers, static assets |
 
-### Jest Unit Tests (CI-run, `npm test`, 13 files)
+### Jest Unit Tests (CI-run, `npm test`, 20 files)
 
 | Test | File | Description |
 |------|------|-------------|
@@ -580,11 +616,12 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Official Borrow | `tests/jest/official-borrow.test.js` | Official bot borrowing lifecycle (bind-free, bind-personal, add-paid-slot, unbind, verify-subscription) |
 | Device Preferences | `tests/jest/device-preferences.test.js` | Device preference GET/PUT, auth validation |
 | Publisher Extended | `tests/jest/publisher-extended.test.js` | Blogger, Hashnode, X/Twitter, Tumblr, Reddit, LinkedIn, Mastodon publish/delete/me validation |
+| Avatar Upload | `tests/jest/avatar-upload.test.js` | Avatar photo upload endpoint validation (multipart, size limit, auth) |
 
 ### Running All Tests
 ```bash
 node backend/run_all_tests.js          # Run all tests sequentially
-cd backend && npm test                  # Jest unit tests (18 files)
+cd backend && npm test                  # Jest unit tests (20 files)
 cd backend && npm run lint              # ESLint
 ```
 
@@ -603,7 +640,7 @@ Set in `backend/.env` (gitignored):
 - `server_logs` schema extension is backward-compatible — all existing 67+ `serverLog()` calls work without modification (new fields default to null)
 - Entity unbind calls `createDefaultEntity()` which resets all fields including new ones — no separate cleanup needed
 - `const` redeclaration in same scope is a JS error — check existing variable names before adding new ones (e.g., `adminAuth` already declared at line 1198)
-- `index.js` is a single 11,030-line file — use line numbers when referencing specific code sections
+- `index.js` is a single 11,279-line file — use line numbers when referencing specific code sections
 - Module initialization order matters: `db.js` → `devices` in-memory map → module `require()` calls with dependency injection
 
 ### Gatekeeper System
@@ -626,8 +663,26 @@ Set in `backend/.env` (gitignored):
 - Jest config in `backend/jest.config.js`: `runInBand: true` (Windows compat), `forceExit: true`, `testTimeout: 15000`
 - Jest tests use `supertest` against the Express app directly (no live server needed)
 - Integration tests in `backend/tests/` hit the live production server (`eclawbot.com`)
-- `backend/run_all_tests.js` orchestrates 43 registered integration tests sequentially
+- `backend/run_all_tests.js` orchestrates 50 registered integration tests sequentially
 - `requiredVars` in skill templates must be `KEY=value` or `KEY=` format (Gson deserialization constraint)
+
+### Avatar & Entity Utils
+- Avatar can be either an emoji character or an `https://` URL (Flickr image)
+- Use `isAvatarUrl(avatar)` helper from `entity-utils.js` to distinguish
+- `renderAvatarHtml(avatar, size)` generates either `<img>` or text span
+- All portal pages include `entity-utils.js` for consistent avatar rendering
+- Flickr upload via `POST /api/device/entity/avatar/upload` (multipart, 5MB limit)
+
+### Branding
+- Brand name changed from "EClaw" to "EClawbot" in v1.105.0
+- Root `/` now serves a landing page (was redirect to `/portal/`)
+- `llms.txt` at root for AI search engine discovery
+- Portal title/headers all reference "EClawbot"
+
+### CDN & Caching
+- Cloudflare CDN can cache stale `.js` files — use `Cache-Control: no-cache` for shared modules
+- After updating shared JS files (entity-utils.js, nav.js), verify CDN serves fresh version
+- CDN cache mismatch caused entity loading failures in v1.109.1
 
 ### Deployment & Monitoring
 - Railway sits behind Cloudflare CDN — deploy can take 2-5 minutes
@@ -650,7 +705,7 @@ Set in `backend/.env` (gitignored):
 | `2026-03-15-ui-code-audit.md` | UI code audit (contrast, accessibility) |
 
 ### Design Plans (`docs/plans/`)
-Key documents: `broadcast-recipient-info-design`, `env-vars-encrypted-persistence`, `channel-bot-context-parity`, `rebrand-ai-agent`, `soul-rule-templates`, `ai-search-brand-platform-design`, `news-publishing-api`
+Key documents: `broadcast-recipient-info-design`, `env-vars-encrypted-persistence`, `channel-bot-context-parity`, `rebrand-ai-agent`, `soul-rule-templates`, `ai-search-brand-platform-design`, `news-publishing-api`, `ai-chat-viewmodel-refactor`, `eclawbot-seo-implementation`
 
 ### Known Issues (`docs/issues/`)
 - `entity-speak-to-disabled-for-free-bots.md` — Free bots cannot use speak-to
