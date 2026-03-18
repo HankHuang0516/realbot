@@ -83,9 +83,5 @@ function getEntityLabel(entityId) {
     const escapeFn = typeof escapeHtml === 'function' ? escapeHtml
         : typeof esc === 'function' ? esc
         : (s) => s;
-    // For image URL avatars, skip the emoji prefix in text-only contexts
-    if (isAvatarUrl(avatar)) {
-        return `${escapeFn(name)} (#${entityId})`;
-    }
-    return `${avatar} ${escapeFn(name)} (#${entityId})`;
+    return `${renderAvatarHtml(avatar, 20)} ${escapeFn(name)} (#${entityId})`;
 }
