@@ -218,6 +218,57 @@
             font-weight: 600;
         }
 
+        /* ── Rich Message Templates ── */
+        .rich-embed {
+            border-left: 3px solid #5865F2;
+            background: var(--input-bg);
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-top: 6px;
+            display: flex;
+            gap: 12px;
+        }
+        .rich-embed-body { flex: 1; min-width: 0; }
+        .rich-embed-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+        .rich-embed-title a { color: var(--primary); text-decoration: none; }
+        .rich-embed-title a:hover { text-decoration: underline; }
+        .rich-embed-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; white-space: pre-wrap; }
+        .rich-embed-fields { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+        .rich-embed-field { min-width: 100%; }
+        .rich-embed-field.inline { min-width: 0; flex: 1; }
+        .rich-embed-field-name { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .rich-embed-field-value { font-size: 13px; }
+        .rich-embed-thumb { width: 60px; height: 60px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+        .rich-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .rich-btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.15s;
+        }
+        .rich-btn:hover { background: var(--input-bg); }
+        .rich-btn-url { color: var(--primary); border-color: var(--primary); }
+        .rich-btn-url:hover { background: rgba(59, 130, 246, 0.08); }
+        .rich-quick-replies { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .rich-qr {
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            transition: all 0.15s;
+        }
+        .rich-qr:hover { background: var(--primary); color: #fff; }
+        .rich-qr.used { opacity: 0.5; pointer-events: none; }
+
         /* ── Entity Label Coloring ── */
         .entity-label { font-weight: 600; }
         .entity-label[data-entity="0"],
@@ -1926,10 +1977,41 @@
                         </div>`;
                 }
 
+                // Rich content (quick replies, buttons, embeds)
+                let richHtml = '';
+                if (msg.rich_content) {
+                    const rc = msg.rich_content;
+                    if (rc.embeds && rc.embeds.length) {
+                        richHtml += rc.embeds.map(em => {
+                            const borderColor = em.color || '#5865F2';
+                            let embedBody = '';
+                            if (em.title) embedBody += `<div class="rich-embed-title">${em.url ? `<a href="${escapeHtml(em.url)}" target="_blank" rel="noopener">${escapeHtml(em.title)}</a>` : escapeHtml(em.title)}</div>`;
+                            if (em.description) embedBody += `<div class="rich-embed-desc">${escapeHtml(em.description)}</div>`;
+                            if (em.fields && em.fields.length) {
+                                embedBody += `<div class="rich-embed-fields">${em.fields.map(f => `<div class="rich-embed-field${f.inline ? ' inline' : ''}"><div class="rich-embed-field-name">${escapeHtml(f.name)}</div><div class="rich-embed-field-value">${escapeHtml(f.value)}</div></div>`).join('')}</div>`;
+                            }
+                            const thumb = em.thumbnail ? `<img class="rich-embed-thumb" src="${escapeHtml(em.thumbnail)}" alt="" loading="lazy">` : '';
+                            return `<div class="rich-embed" style="border-left-color:${escapeHtml(borderColor)}"><div class="rich-embed-body">${embedBody}</div>${thumb}</div>`;
+                        }).join('');
+                    }
+                    if (rc.buttons && rc.buttons.length) {
+                        richHtml += `<div class="rich-buttons">${rc.buttons.map(btn =>
+                            btn.action === 'url'
+                                ? `<a class="rich-btn rich-btn-url" href="${escapeHtml(btn.value)}" target="_blank" rel="noopener">${escapeHtml(btn.label)}</a>`
+                                : `<button class="rich-btn rich-btn-callback" data-callback="${escapeHtml(btn.value)}" onclick="handleRichCallback(this)">${escapeHtml(btn.label)}</button>`
+                        ).join('')}</div>`;
+                    }
+                    if (rc.quickReplies && rc.quickReplies.length) {
+                        richHtml += `<div class="rich-quick-replies">${rc.quickReplies.map(qr =>
+                            `<button class="rich-qr" data-value="${escapeHtml(qr.value)}" onclick="handleQuickReply(this)">${escapeHtml(qr.label)}</button>`
+                        ).join('')}</div>`;
+                    }
+                }
+
                 return `
                     <div class="chat-msg ${msgClass}">
                         <div class="chat-source">${sourceLabel}</div>
-                        <div class="chat-bubble">${textHtml}${mediaHtml}${inlineImgHtml}</div>
+                        <div class="chat-bubble">${textHtml}${mediaHtml}${inlineImgHtml}${richHtml}</div>
                         ${previewId ? `<div class="link-preview-slot" id="${previewId}" data-url="${escapeHtml(firstUrl)}"></div>` : ''}
                         ${reactionsHtml}
                         <div class="chat-meta">${time}</div>
@@ -2055,6 +2137,42 @@
 
             // Fallback for other sources
             return `${entityHtml} &middot; ${escapeHtml(msg.source || 'unknown')}`;
+        }
+
+        // ── Rich Message Handlers ──
+        function handleQuickReply(btn) {
+            const value = btn.dataset.value;
+            if (!value) return;
+            // Mark all quick replies in this group as used
+            btn.closest('.rich-quick-replies').querySelectorAll('.rich-qr').forEach(b => b.classList.add('used'));
+            // Send as a normal message
+            const input = document.getElementById('chatInput');
+            if (input) { input.value = value; }
+            sendMessage();
+        }
+
+        function handleRichCallback(btn) {
+            const callbackId = btn.dataset.callback;
+            if (!callbackId || !currentDeviceId || selectedEntityId === null) return;
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            // Send callback via client/speak (the bot will receive it as a message)
+            apiCall(`/api/client/speak`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    deviceId: currentDeviceId,
+                    deviceSecret: currentDeviceSecret,
+                    entityId: selectedEntityId,
+                    text: callbackId,
+                    source: 'button_callback'
+                })
+            }).then(() => {
+                btn.textContent += ' \u2713';
+            }).catch(() => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
         }
 
         // ── Message Reactions ──

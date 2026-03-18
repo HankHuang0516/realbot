@@ -1,5 +1,31 @@
 import { create } from 'zustand';
 
+export interface RichEmbed {
+  title?: string;
+  description?: string;
+  color?: string;
+  url?: string;
+  thumbnail?: string;
+  fields?: Array<{ name: string; value: string; inline?: boolean }>;
+}
+
+export interface RichButton {
+  label: string;
+  action: 'url' | 'callback';
+  value: string;
+}
+
+export interface RichQuickReply {
+  label: string;
+  value: string;
+}
+
+export interface RichContent {
+  embeds?: RichEmbed[];
+  buttons?: RichButton[];
+  quickReplies?: RichQuickReply[];
+}
+
 export interface ChatMessage {
   id: string;
   entityId: string;
@@ -9,6 +35,7 @@ export interface ChatMessage {
   mediaUrl?: string;
   mediaType?: 'image' | 'audio' | 'video';
   isRead?: boolean;
+  richContent?: RichContent;
 }
 
 interface ChatState {

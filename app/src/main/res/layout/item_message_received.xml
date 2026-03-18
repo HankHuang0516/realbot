@@ -188,6 +188,15 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Rich content: embeds, buttons, quick replies -->
+            <LinearLayout
+                android:id="@+id/layoutRichContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="gone" />
+
             <!-- Read receipt: "Entity X 已讀" -->
             <TextView
                 android:id="@+id/tvReadReceipt"

@@ -2867,7 +2867,7 @@ app.get('/api/status', (req, res) => {
  * REQUIRES botSecret for authentication!
  */
 app.post('/api/transform', (req, res) => {
-    const { deviceId, entityId, botSecret, name, character, state, message, parts } = req.body;
+    const { deviceId, entityId, botSecret, name, character, state, message, parts, richContent } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -2946,8 +2946,9 @@ app.post('/api/transform', (req, res) => {
     entity.lastUpdated = Date.now();
 
     // Save bot message to chat history so it appears in Chat page
-    if (finalMessage) {
-        saveChatMessage(deviceId, eId, finalMessage, entity.name || `Entity ${eId}`, false, true);
+    const validRichContent = richContent ? validateRichContent(richContent) : null;
+    if (finalMessage || validRichContent) {
+        saveChatMessage(deviceId, eId, finalMessage || '', entity.name || `Entity ${eId}`, false, true, null, null, null, null, validRichContent);
         markMessagesAsRead(deviceId, eId);
 
         // XP: Award +10 for correctly replying to a user message
@@ -3751,7 +3752,7 @@ app.put('/api/device/entity/avatar', async (req, res) => {
  * If bot has registered webhook, push notification is sent.
  */
 app.post('/api/client/speak', async (req, res) => {
-    const { deviceId, deviceSecret, entityId, text, source = "client", mediaType, mediaUrl } = req.body;
+    const { deviceId, deviceSecret, entityId, text, source = "client", mediaType, mediaUrl, richContent } = req.body;
 
     if (!deviceId) {
         return res.status(400).json({ success: false, message: "deviceId required" });
@@ -3961,7 +3962,8 @@ app.post('/api/client/speak', async (req, res) => {
             mediaUrl: mediaUrl || null
         };
         entity.messageQueue.push(messageObj);
-        saveChatMessage(deviceId, eId, text, source, true, false, mediaType || null, mediaUrl || null);
+        const validRc = richContent ? validateRichContent(richContent) : null;
+        saveChatMessage(deviceId, eId, text, source, true, false, mediaType || null, mediaUrl || null, null, null, validRc);
 
         // Reset bot-to-bot counter: human message breaks the loop
         resetBotToBotCounter(deviceId);
@@ -3981,7 +3983,8 @@ app.post('/api/client/speak', async (req, res) => {
                 mediaUrl: mediaUrl || null,
                 backupUrl: mediaType === 'photo' ? getBackupUrl(mediaUrl) : null,
                 isBroadcast: targetIds.length > 1,
-                broadcastRecipients: targetIds.length > 1 ? targetIds : null
+                broadcastRecipients: targetIds.length > 1 ? targetIds : null,
+                richContent: validRc || null
             }, entity.channelAccountId);
 
             if (pushResult.pushed) {
@@ -7893,6 +7896,39 @@ async function pushToBot(entity, deviceId, eventType, payload) {
             if (entity.name && !discordOpts.username) {
                 discordOpts.username = entity.name;
             }
+            // Convert EClaw richContent to Discord format
+            if (payload.richContent) {
+                const rc = payload.richContent;
+                if (rc.embeds && rc.embeds.length) {
+                    if (!discordOpts.embeds) discordOpts.embeds = [];
+                    for (const em of rc.embeds) {
+                        const dEmbed = {};
+                        if (em.title) dEmbed.title = em.title;
+                        if (em.description) dEmbed.description = em.description;
+                        if (em.url) dEmbed.url = em.url;
+                        if (em.color) dEmbed.color = parseInt(em.color.replace('#', ''), 16) || 0;
+                        if (em.thumbnail) dEmbed.thumbnail = { url: em.thumbnail };
+                        if (em.fields) dEmbed.fields = em.fields.map(f => ({ name: f.name, value: f.value, inline: !!f.inline }));
+                        discordOpts.embeds.push(dEmbed);
+                    }
+                }
+                if (rc.buttons && rc.buttons.length) {
+                    if (!discordOpts.components) discordOpts.components = [];
+                    const row = { type: 1, components: [] };
+                    for (const btn of rc.buttons.slice(0, 5)) {
+                        if (btn.action === 'url') {
+                            row.components.push({ type: 2, style: 5, label: btn.label, url: btn.value });
+                        } else {
+                            row.components.push({ type: 2, style: 1, label: btn.label, custom_id: btn.value });
+                        }
+                    }
+                    discordOpts.components.push(row);
+                }
+                if (rc.quickReplies && rc.quickReplies.length && !rc.buttons) {
+                    // Discord has no quick replies — append as text fallback
+                    messageContent += '\n' + rc.quickReplies.map(qr => `• ${qr.label}`).join('\n');
+                }
+            }
             const response = await discordPush(url, messageContent, discordOpts);
 
             if (response.ok || response.status === 204) {
@@ -8635,6 +8671,7 @@ chatPool.query(`
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS schedule_label TEXT DEFAULT NULL;
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS like_count INTEGER DEFAULT 0;
     ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS dislike_count INTEGER DEFAULT 0;
+    ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS rich_content JSONB DEFAULT NULL;
 `).catch(() => {});
 
 // Auto-migrate: create message_reactions table (message_id must be UUID to match chat_messages.id)
@@ -8681,7 +8718,8 @@ const channelModule = require('./channel-api')(devices, {
     io,
     saveData,
     createDefaultEntity,
-    apiBase: process.env.API_BASE || 'https://eclawbot.com'
+    apiBase: process.env.API_BASE || 'https://eclawbot.com',
+    validateRichContent
 });
 app.use('/api/channel', channelModule.router);
 // Wire channel push into mission module (Bot Push Parity Rule — must be after channelModule init)
@@ -9576,9 +9614,50 @@ app.delete('/api/bot/schedules/:id', async (req, res) => {
     }
 });
 
+// ── Rich Content validation ──
+// Validates and sanitizes richContent (quickReplies, buttons, embeds)
+function validateRichContent(rc) {
+    if (!rc || typeof rc !== 'object') return null;
+    const result = {};
+    if (Array.isArray(rc.quickReplies)) {
+        result.quickReplies = rc.quickReplies.slice(0, 10).map(qr => ({
+            label: String(qr.label || '').slice(0, 40),
+            value: String(qr.value || qr.label || '').slice(0, 200)
+        })).filter(qr => qr.label);
+    }
+    if (Array.isArray(rc.buttons)) {
+        result.buttons = rc.buttons.slice(0, 5).map(btn => ({
+            label: String(btn.label || '').slice(0, 40),
+            action: ['url', 'callback'].includes(btn.action) ? btn.action : 'callback',
+            value: String(btn.value || '').slice(0, 500)
+        })).filter(btn => btn.label);
+    }
+    if (Array.isArray(rc.embeds)) {
+        result.embeds = rc.embeds.slice(0, 3).map(em => {
+            const embed = {};
+            if (em.title) embed.title = String(em.title).slice(0, 256);
+            if (em.description) embed.description = String(em.description).slice(0, 2048);
+            if (em.color) embed.color = String(em.color).slice(0, 7);
+            if (em.url) embed.url = String(em.url).slice(0, 500);
+            if (em.thumbnail) embed.thumbnail = String(em.thumbnail).slice(0, 500);
+            if (Array.isArray(em.fields)) {
+                embed.fields = em.fields.slice(0, 10).map(f => ({
+                    name: String(f.name || '').slice(0, 256),
+                    value: String(f.value || '').slice(0, 1024),
+                    inline: !!f.inline
+                }));
+            }
+            return embed;
+        });
+    }
+    // Return null if no valid sub-fields
+    if (!result.quickReplies?.length && !result.buttons?.length && !result.embeds?.length) return null;
+    return result;
+}
+
 // Save chat message to database, returns row ID (UUID) or null
 // Deduplication: bot messages with identical text for the same entity within 10s are skipped
-async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot, mediaType = null, mediaUrl = null, scheduleId = null, scheduleLabel = null) {
+async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isFromBot, mediaType = null, mediaUrl = null, scheduleId = null, scheduleLabel = null, richContent = null) {
     try {
         // Dedup: skip if the same BOT message was already saved recently
         // Bot dedup: prevents echo when bot calls multiple endpoints (broadcast + sync-message + transform)
@@ -9598,10 +9677,11 @@ async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isF
             }
         }
 
+        const validRc = richContent ? validateRichContent(richContent) : null;
         const result = await chatPool.query(
-            `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot, media_type, media_url, schedule_id, schedule_label)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
-            [deviceId, entityId, text, source, isFromUser || false, isFromBot || false, mediaType, mediaUrl, scheduleId, scheduleLabel]
+            `INSERT INTO chat_messages (device_id, entity_id, text, source, is_from_user, is_from_bot, media_type, media_url, schedule_id, schedule_label, rich_content)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
+            [deviceId, entityId, text, source, isFromUser || false, isFromBot || false, mediaType, mediaUrl, scheduleId, scheduleLabel, validRc ? JSON.stringify(validRc) : null]
         );
         const msgId = result.rows[0]?.id || null;
 
@@ -9618,6 +9698,7 @@ async function saveChatMessage(deviceId, entityId, text, source, isFromUser, isF
                 media_url: mediaUrl,
                 schedule_id: scheduleId || null,
                 schedule_label: scheduleLabel || null,
+                rich_content: validRc || null,
                 created_at: Date.now()
             });
         }

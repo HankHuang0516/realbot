@@ -22,9 +22,98 @@ import * as ImagePicker from 'expo-image-picker';
 import { useChat } from '../../hooks/useChat';
 import { useEntityStore } from '../../store/entityStore';
 import { chatApi } from '../../services/api';
-import { ChatMessage } from '../../store/chatStore';
+import { ChatMessage, RichContent } from '../../store/chatStore';
+import { Linking, TouchableOpacity } from 'react-native';
 
-function ChatBubble({ message, isMe }: { message: ChatMessage; isMe: boolean }) {
+function RichContentView({ richContent, onQuickReply, onCallback }: {
+  richContent: RichContent;
+  onQuickReply?: (value: string) => void;
+  onCallback?: (value: string) => void;
+}) {
+  const theme = useTheme();
+  const [usedQR, setUsedQR] = React.useState(false);
+
+  return (
+    <View style={{ marginTop: 6 }}>
+      {richContent.embeds?.map((em, i) => (
+        <View key={`embed-${i}`} style={{
+          borderLeftWidth: 3,
+          borderLeftColor: em.color || '#5865F2',
+          backgroundColor: 'rgba(0,0,0,0.05)',
+          borderRadius: 4,
+          padding: 8,
+          marginTop: 4,
+        }}>
+          {em.title && (
+            <Text style={{ fontWeight: 'bold', fontSize: 14, color: theme.colors.onSurface }}>
+              {em.title}
+            </Text>
+          )}
+          {em.description && (
+            <Text style={{ fontSize: 13, color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+              {em.description}
+            </Text>
+          )}
+          {em.fields?.map((f, j) => (
+            <Text key={`f-${j}`} style={{ fontSize: 12, marginTop: 2, color: theme.colors.onSurface }}>
+              {f.name}: {f.value}
+            </Text>
+          ))}
+        </View>
+      ))}
+      {richContent.buttons && richContent.buttons.length > 0 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, gap: 6 }}>
+          {richContent.buttons.map((btn, i) => (
+            <TouchableOpacity
+              key={`btn-${i}`}
+              style={{
+                paddingHorizontal: 12, paddingVertical: 6,
+                borderRadius: 6, borderWidth: 1,
+                borderColor: btn.action === 'url' ? theme.colors.primary : theme.colors.outline,
+              }}
+              onPress={() => {
+                if (btn.action === 'url') Linking.openURL(btn.value);
+                else onCallback?.(btn.value);
+              }}
+            >
+              <Text style={{
+                fontSize: 13,
+                color: btn.action === 'url' ? theme.colors.primary : theme.colors.onSurface,
+              }}>{btn.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+      {richContent.quickReplies && richContent.quickReplies.length > 0 && !usedQR && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 6 }}>
+          {richContent.quickReplies.map((qr, i) => (
+            <TouchableOpacity
+              key={`qr-${i}`}
+              style={{
+                paddingHorizontal: 12, paddingVertical: 5,
+                borderRadius: 16, borderWidth: 1,
+                borderColor: theme.colors.primary,
+              }}
+              onPress={() => {
+                setUsedQR(true);
+                onQuickReply?.(qr.value);
+              }}
+            >
+              <Text style={{ fontSize: 12, color: theme.colors.primary }}>{qr.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function ChatBubble({ message, isMe, onQuickReply, onCallback }: {
+  message: ChatMessage;
+  isMe: boolean;
+  onQuickReply?: (value: string) => void;
+  onCallback?: (value: string) => void;
+}) {
   const theme = useTheme();
   const { t } = useTranslation();
   const time = new Date(message.timestamp).toLocaleTimeString([], {
@@ -54,6 +143,13 @@ function ChatBubble({ message, isMe }: { message: ChatMessage; isMe: boolean }) 
           <Text style={{ color: isMe ? 'white' : theme.colors.onSurface }}>
             {message.content}
           </Text>
+        )}
+        {message.richContent && !isMe && (
+          <RichContentView
+            richContent={message.richContent}
+            onQuickReply={onQuickReply}
+            onCallback={onCallback}
+          />
         )}
         <Text
           style={[
@@ -148,11 +244,24 @@ export default function ChatScreen() {
     }
   };
 
+  const handleQuickReply = useCallback((value: string) => {
+    sendMessage(value).catch(() => setSnack(t('chat.failed_to_send')));
+  }, [sendMessage]);
+
+  const handleCallback = useCallback((value: string) => {
+    sendMessage(value).catch(() => setSnack(t('chat.failed_to_send')));
+  }, [sendMessage]);
+
   const renderItem = useCallback(
     ({ item }: { item: ChatMessage }) => (
-      <ChatBubble message={item} isMe={item.sender === 'user'} />
+      <ChatBubble
+        message={item}
+        isMe={item.sender === 'user'}
+        onQuickReply={handleQuickReply}
+        onCallback={handleCallback}
+      />
     ),
-    []
+    [handleQuickReply, handleCallback]
   );
 
   return (

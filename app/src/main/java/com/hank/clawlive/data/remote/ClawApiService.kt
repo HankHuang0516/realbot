@@ -593,7 +593,8 @@ data class ChatHistoryMessage(
     val schedule_label: String? = null,
     val like_count: Int = 0,
     val dislike_count: Int = 0,
-    val user_reaction: String? = null
+    val user_reaction: String? = null,
+    val rich_content: Any? = null  // JSONB from backend, stored as JSON string in Room
 )
 
 data class ReactToMessageResponse(

@@ -8,6 +8,7 @@ import com.hank.clawlive.data.local.database.MessageType
 import com.hank.clawlive.data.model.EntityStatus
 import com.hank.clawlive.data.remote.ChatHistoryMessage
 import com.hank.clawlive.data.remote.ClawApiService
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import java.text.SimpleDateFormat
@@ -527,9 +528,12 @@ class ChatRepository private constructor(
                 )
             }
 
-            chatDao.insert(message)
+            // Attach rich content JSON if present
+            val richJson = msg.rich_content?.let { try { Gson().toJson(it) } catch (_: Exception) { null } }
+            val finalMessage = if (richJson != null) message.copy(richContent = richJson) else message
+            chatDao.insert(finalMessage)
             addedCount++
-            Timber.d("Synced backend message from entity ${message.fromEntityId}: ${msg.text.take(30)}...")
+            Timber.d("Synced backend message from entity ${finalMessage.fromEntityId}: ${msg.text.take(30)}...")
         }
 
         if (addedCount > 0) {

@@ -18,7 +18,7 @@ const express = require('express');
 const crypto = require('crypto');
 const db = require('./db');
 
-module.exports = function (devices, { authMiddleware, serverLog, generateBotSecret, generatePublicCode, publicCodeIndex, saveChatMessage, io, saveData, createDefaultEntity, apiBase }) {
+module.exports = function (devices, { authMiddleware, serverLog, generateBotSecret, generatePublicCode, publicCodeIndex, saveChatMessage, io, saveData, createDefaultEntity, apiBase, validateRichContent }) {
     const router = express.Router();
 
     // ── In-memory test sink (for self-testing without ngrok) ──
@@ -544,7 +544,7 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
     // ============================================
     router.post('/message', async (req, res) => {
         try {
-            const { channel_api_key, deviceId, entityId, botSecret, message, state, mediaType, mediaUrl } = req.body;
+            const { channel_api_key, deviceId, entityId, botSecret, message, state, mediaType, mediaUrl, richContent } = req.body;
 
             if (process.env.DEBUG === 'true') serverLog('info', 'client_push', `[PUSH] /channel/message called, state=${state}, hasMsg=${!!message}`, { deviceId, entityId: parseInt(entityId) });
 
@@ -585,8 +585,9 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             entity.lastUpdated = Date.now();
 
             // Save to chat history
-            if (message) {
-                saveChatMessage(deviceId, eId, message, 'bot', false, true, mediaType || null, mediaUrl || null);
+            const validRc = richContent && validateRichContent ? validateRichContent(richContent) : null;
+            if (message || validRc) {
+                saveChatMessage(deviceId, eId, message || '', 'bot', false, true, mediaType || null, mediaUrl || null, null, null, validRc);
             }
 
             // Emit real-time update via Socket.IO
@@ -617,6 +618,45 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
             });
         } catch (err) {
             console.error('[Channel] Message error:', err.message);
+            res.status(500).json({ success: false, message: 'Internal error' });
+        }
+    });
+
+    // ============================================
+    // POST /button-callback — User clicked a rich message button
+    // Plugin sends: { channel_api_key, deviceId, entityId, callbackId, userId? }
+    // Server pushes event to the bot so it can handle the action
+    // ============================================
+    router.post('/button-callback', async (req, res) => {
+        try {
+            const { channel_api_key, deviceId, entityId, callbackId, userId } = req.body;
+            if (!channel_api_key || !deviceId || entityId === undefined || !callbackId) {
+                return res.status(400).json({ success: false, message: 'channel_api_key, deviceId, entityId, and callbackId required' });
+            }
+
+            const account = await db.getChannelAccountByKey(channel_api_key);
+            if (!account) {
+                return res.status(403).json({ success: false, message: 'Invalid channel API key' });
+            }
+
+            const eId = parseInt(entityId);
+            const device = devices[deviceId];
+            if (!device) return res.status(404).json({ success: false, message: 'Device not found' });
+            const entity = device.entities[eId];
+            if (!entity) return res.status(404).json({ success: false, message: 'Entity not found' });
+
+            // Push button_callback event to the bot
+            const pushResult = await pushToChannelCallback(deviceId, eId, {
+                event: 'button_callback',
+                from: userId || 'user',
+                text: callbackId,
+                callbackId
+            }, entity.channelAccountId);
+
+            serverLog('info', 'channel', `Button callback for Entity ${eId}: ${callbackId}`, { deviceId, entityId: eId });
+            res.json({ success: true, pushed: pushResult.pushed });
+        } catch (err) {
+            console.error('[Channel] Button callback error:', err.message);
             res.status(500).json({ success: false, message: 'Internal error' });
         }
     });
@@ -666,6 +706,8 @@ module.exports = function (devices, { authMiddleware, serverLog, generateBotSecr
                     fromEntityId: payload.fromEntityId,
                     fromCharacter: payload.fromCharacter,
                     fromPublicCode: payload.fromPublicCode,
+                    richContent: payload.richContent || null,
+                    callbackId: payload.callbackId || null,
                     eclaw_context: payload.eclaw_context || null,
                     e2ee: !!account.e2ee_capable
                 }),

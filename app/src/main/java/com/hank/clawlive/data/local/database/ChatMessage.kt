@@ -87,7 +87,10 @@ data class ChatMessage(
     val fromPublicCode: String? = null,
 
     /** Cross-device: target's public code */
-    val targetPublicCode: String? = null
+    val targetPublicCode: String? = null,
+
+    /** Rich content JSON: { quickReplies, buttons, embeds } */
+    val richContent: String? = null
 ) {
     /**
      * Get display name for the message sender

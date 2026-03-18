@@ -473,6 +473,7 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 - **File Delete Fix (#250-#251)**: Race condition, NPE, file deletion issues resolved; proper Jest mocks added
 - **Publisher Enhancements**: Expanded to 12 platforms (Blogger, Hashnode, X, DEV.to, WordPress, Telegraph, Qiita, WeChat, Tumblr, Reddit, LinkedIn, Mastodon); publisher Jest tests fixed for env var isolation (#238)
 - **Bot Tools API**: `web-search` and `web-fetch` endpoints for bots; dedicated Jest test file (`bot-tools.test.js`)
+- **Rich Message Templates (#258)**: Platform-agnostic rich message support — Quick Replies, Inline Buttons, Rich Embeds; three-platform rendering (Web Portal `chat.html`, Android `ChatAdapter.kt`, iOS `[entityId].tsx`); channel push payload + Discord auto-conversion; `POST /api/channel/button-callback` endpoint; `rich_content` JSONB column in chat_messages; Jest test (`rich-message.test.js`)
 
 ---
 
@@ -573,6 +574,7 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Bot Tools | `tests/jest/bot-tools.test.js` | Bot tools API (web-search, web-fetch) validation |
 | File Delete | `tests/jest/file-delete.test.js` | File deletion endpoint validation and mocks |
 | AI Support Chat | `tests/jest/ai-support.test.js` | AI chat submit/poll endpoint validation, auth rejection (Issue #248) |
+| Rich Message Templates | `tests/jest/rich-message.test.js` | richContent validation, transform/speak/channel acceptance, button-callback endpoint (#258) |
 | Auth Extended | `tests/jest/auth-extended.test.js` | device-login, verify-email, forgot-password, reset-password, bind-email, app-login, OAuth (Google/Facebook/OIDC), account deletion, RBAC roles |
 | Subscription | `tests/jest/subscription.test.js` | Subscription status, TapPay payment, cancellation, Google Play verification, usage limits |
 | Official Borrow | `tests/jest/official-borrow.test.js` | Official bot borrowing lifecycle (bind-free, bind-personal, add-paid-slot, unbind, verify-subscription) |

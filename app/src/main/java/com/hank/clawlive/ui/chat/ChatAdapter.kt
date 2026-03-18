@@ -23,6 +23,8 @@ import com.hank.clawlive.R
 import com.hank.clawlive.data.local.EntityAvatarManager
 import com.hank.clawlive.data.local.database.ChatMessage
 import com.hank.clawlive.data.local.database.MessageType
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -47,6 +49,12 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
 
     /** Cross-device contact label cache (publicCode -> display name), set from Activity */
     var xdeviceLabels: Map<String, String> = emptyMap()
+
+    /** Callback for rich button clicks: (callbackValue: String) */
+    var onRichButtonClick: ((String) -> Unit)? = null
+
+    /** Callback for quick reply: (value: String) */
+    var onQuickReplyClick: ((String) -> Unit)? = null
 
     fun getEntityDisplayName(entityId: Int): String {
         return entityNames[entityId]?.let { "$it (#$entityId)" } ?: "Entity $entityId"
@@ -348,6 +356,9 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
         private val tvLinkDesc: TextView = itemView.findViewById(R.id.tvLinkDesc)
         private val tvLinkDomain: TextView = itemView.findViewById(R.id.tvLinkDomain)
 
+        // Rich content container
+        private val layoutRichContent: LinearLayout = itemView.findViewById(R.id.layoutRichContent)
+
         // Reaction UI
         private val layoutReactions: LinearLayout = itemView.findViewById(R.id.layoutReactions)
         private val btnLike: ImageButton = itemView.findViewById(R.id.btnLike)
@@ -404,6 +415,9 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             // Reaction buttons (only for bot messages, not entity-to-entity)
             bindReactions(message, adapter)
 
+            // Rich content (embeds, buttons, quick replies)
+            bindRichContent(message, adapter)
+
             // Link preview
             bindLinkPreview(message)
         }
@@ -448,6 +462,128 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             btnDislike.setOnClickListener {
                 val newReaction = if (isDisliked) null else "dislike"
                 adapter.onReactionClick?.invoke(message.id, message.backendId!!, newReaction)
+            }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun bindRichContent(message: ChatMessage, adapter: ChatAdapter) {
+            layoutRichContent.removeAllViews()
+            val json = message.richContent
+            if (json.isNullOrBlank()) {
+                layoutRichContent.visibility = View.GONE
+                return
+            }
+            try {
+                val type = object : TypeToken<Map<String, Any>>() {}.type
+                val rc: Map<String, Any> = Gson().fromJson(json, type)
+                val ctx = itemView.context
+                var hasContent = false
+
+                // Embeds
+                val embeds = rc["embeds"] as? List<*>
+                if (!embeds.isNullOrEmpty()) {
+                    for (raw in embeds) {
+                        val em = raw as? Map<*, *> ?: continue
+                        val embedView = LinearLayout(ctx).apply {
+                            orientation = LinearLayout.VERTICAL
+                            setPadding(24, 16, 24, 16)
+                            val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                            lp.topMargin = 8
+                            layoutParams = lp
+                            setBackgroundColor(0x10808080.toInt())
+                        }
+                        val title = em["title"] as? String
+                        if (title != null) {
+                            embedView.addView(TextView(ctx).apply {
+                                text = title; textSize = 14f
+                                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                            })
+                        }
+                        val desc = em["description"] as? String
+                        if (desc != null) {
+                            embedView.addView(TextView(ctx).apply {
+                                text = desc; textSize = 13f
+                                val lp2 = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                                lp2.topMargin = 4; layoutParams = lp2
+                            })
+                        }
+                        val fields = em["fields"] as? List<*>
+                        if (!fields.isNullOrEmpty()) {
+                            for (fRaw in fields) {
+                                val f = fRaw as? Map<*, *> ?: continue
+                                embedView.addView(TextView(ctx).apply {
+                                    text = "${f["name"] ?: ""}: ${f["value"] ?: ""}"; textSize = 12f
+                                })
+                            }
+                        }
+                        layoutRichContent.addView(embedView)
+                        hasContent = true
+                    }
+                }
+
+                // Buttons
+                val buttons = rc["buttons"] as? List<*>
+                if (!buttons.isNullOrEmpty()) {
+                    val btnContainer = LinearLayout(ctx).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                        lp.topMargin = 8; layoutParams = lp
+                    }
+                    for (raw in buttons) {
+                        val btn = raw as? Map<*, *> ?: continue
+                        val label = btn["label"] as? String ?: continue
+                        val action = btn["action"] as? String ?: "callback"
+                        val value = btn["value"] as? String ?: ""
+                        btnContainer.addView(android.widget.Button(ctx).apply {
+                            text = label; textSize = 12f; isAllCaps = false
+                            val lp4 = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                            lp4.marginEnd = 8; layoutParams = lp4
+                            setOnClickListener {
+                                if (action == "url") {
+                                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(value)))
+                                } else {
+                                    isEnabled = false; alpha = 0.6f
+                                    adapter.onRichButtonClick?.invoke(value)
+                                }
+                            }
+                        })
+                    }
+                    layoutRichContent.addView(btnContainer)
+                    hasContent = true
+                }
+
+                // Quick replies
+                val quickReplies = rc["quickReplies"] as? List<*>
+                if (!quickReplies.isNullOrEmpty()) {
+                    val qrContainer = LinearLayout(ctx).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                        lp.topMargin = 8; layoutParams = lp
+                    }
+                    for (raw in quickReplies) {
+                        val qr = raw as? Map<*, *> ?: continue
+                        val label = qr["label"] as? String ?: continue
+                        val value = qr["value"] as? String ?: label
+                        qrContainer.addView(TextView(ctx).apply {
+                            text = label; textSize = 12f; setPadding(24, 10, 24, 10)
+                            val lp5 = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                            lp5.marginEnd = 8; layoutParams = lp5
+                            setBackgroundResource(android.R.drawable.btn_default)
+                            setOnClickListener { v ->
+                                for (i in 0 until qrContainer.childCount) {
+                                    qrContainer.getChildAt(i).apply { isEnabled = false; alpha = 0.5f }
+                                }
+                                adapter.onQuickReplyClick?.invoke(value)
+                            }
+                        })
+                    }
+                    layoutRichContent.addView(qrContainer)
+                    hasContent = true
+                }
+
+                layoutRichContent.visibility = if (hasContent) View.VISIBLE else View.GONE
+            } catch (_: Exception) {
+                layoutRichContent.visibility = View.GONE
             }
         }
 
