@@ -1,3 +1,10 @@
+## [1.109.2](https://github.com/HankHuang0516/EClaw/compare/v1.109.1...v1.109.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* prevent template gallery buttons from opening multiple dialogs on spam-click ([#292](https://github.com/HankHuang0516/EClaw/issues/292)) ([edbfada](https://github.com/HankHuang0516/EClaw/commit/edbfada869d5751d30f4c0da1bfb68d11599d6bb))
+
 ## [1.109.1](https://github.com/HankHuang0516/EClaw/compare/v1.109.0...v1.109.1) (2026-03-18)
 
 
