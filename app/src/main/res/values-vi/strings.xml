@@ -456,6 +456,7 @@ Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ qua email chín
     <string name="nav_home">Trang chủ</string>
     <string name="nav_mission">Nhiệm vụ</string>
     <string name="nav_chat">Trò chuyện</string>
+    <string name="nav_cards">Danh thiếp</string>
     <string name="nav_files">Tệp</string>
     <string name="nav_settings">Cài đặt</string>
     <string name="nav_wallpaper">Hình nền</string>

@@ -456,6 +456,7 @@ Jika Anda memiliki pertanyaan, silakan hubungi kami melalui email resmi kami.
     <string name="nav_home">Beranda</string>
     <string name="nav_mission">Misi</string>
     <string name="nav_chat">Obrolan</string>
+    <string name="nav_cards">Kartu</string>
     <string name="nav_files">Berkas</string>
     <string name="nav_settings">Pengaturan</string>
     <string name="nav_wallpaper">Wallpaper</string>
