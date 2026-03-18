@@ -1,3 +1,10 @@
+# [1.111.0](https://github.com/HankHuang0516/EClaw/compare/v1.110.1...v1.111.0) (2026-03-18)
+
+
+### Features
+
+* add 10 new Jest test suites and fix test infrastructure ([#297](https://github.com/HankHuang0516/EClaw/issues/297)) ([9baf8b1](https://github.com/HankHuang0516/EClaw/commit/9baf8b1aa0315ed00ed93bab17b150f4fbad9e49))
+
 ## [1.110.1](https://github.com/HankHuang0516/EClaw/compare/v1.110.0...v1.110.1) (2026-03-18)
 
 
