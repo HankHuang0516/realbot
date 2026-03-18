@@ -1,3 +1,10 @@
+## [1.106.6](https://github.com/HankHuang0516/EClaw/compare/v1.106.5...v1.106.6) (2026-03-18)
+
+
+### Bug Fixes
+
+* resolve pre-existing Android CI failures (NavItem, MissionViewModel) ([#282](https://github.com/HankHuang0516/EClaw/issues/282)) ([5b877df](https://github.com/HankHuang0516/EClaw/commit/5b877df4f91611550904bf47000a237b6ad81b84))
+
 ## [1.106.5](https://github.com/HankHuang0516/EClaw/compare/v1.106.4...v1.106.5) (2026-03-18)
 
 
