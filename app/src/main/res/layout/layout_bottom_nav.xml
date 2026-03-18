@@ -109,9 +109,9 @@
 
     </LinearLayout>
 
-    <!-- Files -->
+    <!-- Cards -->
     <LinearLayout
-        android:id="@+id/navFiles"
+        android:id="@+id/navCards"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
@@ -124,18 +124,18 @@
         android:focusable="true">
 
         <ImageView
-            android:id="@+id/navFilesIcon"
+            android:id="@+id/navCardsIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:importantForAccessibility="no"
-            android:src="@drawable/ic_folder"
+            android:src="@drawable/ic_contacts"
             app:tint="@color/text_on_surface" />
 
         <TextView
-            android:id="@+id/navFilesText"
+            android:id="@+id/navCardsText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/nav_files"
+            android:text="@string/nav_cards"
             android:textSize="10sp"
             android:textColor="@color/text_secondary"
             android:layout_marginTop="2dp" />

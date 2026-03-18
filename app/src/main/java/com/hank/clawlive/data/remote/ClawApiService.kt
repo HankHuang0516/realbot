@@ -204,6 +204,15 @@ interface ClawApiService {
     @GET("api/contacts/search")
     suspend fun searchCards(@Query("deviceId") deviceId: String, @Query("q") query: String): CardSearchResponse
 
+    @GET("api/contacts/my-cards")
+    suspend fun getMyCards(@Query("deviceId") deviceId: String, @Query("deviceSecret") deviceSecret: String): MyCardsResponse
+
+    @GET("api/contacts/recent")
+    suspend fun getRecentContacts(@Query("deviceId") deviceId: String, @Query("deviceSecret") deviceSecret: String, @Query("limit") limit: Int = 20): ContactListResponse
+
+    @GET("api/chat/history-by-code")
+    suspend fun getChatHistoryByCode(@Query("deviceId") deviceId: String, @Query("deviceSecret") deviceSecret: String, @Query("publicCode") publicCode: String, @Query("limit") limit: Int = 50): ChatHistoryByCodeResponse
+
     @GET("api/entity/lookup")
     suspend fun lookupEntity(@Query("code") code: String): EntityLookupResponse
 

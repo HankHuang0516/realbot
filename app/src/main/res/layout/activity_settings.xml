@@ -607,12 +607,12 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Card Holder Button -->
+            <!-- File Manager Button (moved from bottom nav) -->
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCardHolder"
+                android:id="@+id/btnFileManager"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/card_holder_title"
+                android:text="@string/nav_files"
                 android:textColor="@color/text_white_80"
                 app:backgroundTint="@color/surface_input"
                 app:cornerRadius="12dp"

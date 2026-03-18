@@ -155,18 +155,8 @@ class EntityCardAdapter(
                 xpBarRow.visibility = View.GONE
             }
 
-            // Public code
-            if (!entity.publicCode.isNullOrBlank()) {
-                publicCodeRow.visibility = View.VISIBLE
-                tvPublicCode.text = itemView.context.getString(R.string.entity_public_code, entity.publicCode)
-                tvPublicCode.setOnClickListener {
-                    val clipboard = itemView.context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Public Code", entity.publicCode))
-                    android.widget.Toast.makeText(itemView.context, R.string.code_copied, android.widget.Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                publicCodeRow.visibility = View.GONE
-            }
+            // Public code — moved to Card Holder tab, hidden on Dashboard
+            publicCodeRow.visibility = View.GONE
 
             // Edit mode: drag handle + action buttons
             ivDragHandle.visibility = if (isEditMode) View.VISIBLE else View.GONE

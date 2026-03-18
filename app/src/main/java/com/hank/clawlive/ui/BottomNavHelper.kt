@@ -9,14 +9,14 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.hank.clawlive.ChatActivity
-import com.hank.clawlive.FileManagerActivity
+import com.hank.clawlive.CardHolderActivity
 import com.hank.clawlive.MainActivity
 import com.hank.clawlive.MissionControlActivity
 import com.hank.clawlive.R
 import com.hank.clawlive.SettingsActivity
 
 enum class NavItem {
-    HOME, MISSION, CHAT, FILES, SETTINGS
+    HOME, MISSION, CHAT, CARDS, SETTINGS
 }
 
 object BottomNavHelper {
@@ -40,7 +40,7 @@ object BottomNavHelper {
             R.id.navHome to Pair(NavItem.HOME, MainActivity::class.java),
             R.id.navMission to Pair(NavItem.MISSION, MissionControlActivity::class.java),
             R.id.navChat to Pair(NavItem.CHAT, ChatActivity::class.java),
-            R.id.navFiles to Pair(NavItem.FILES, FileManagerActivity::class.java),
+            R.id.navCards to Pair(NavItem.CARDS, CardHolderActivity::class.java),
             R.id.navSettings to Pair(NavItem.SETTINGS, SettingsActivity::class.java),
         )
 
@@ -65,7 +65,7 @@ object BottomNavHelper {
             Triple(R.id.navHomeIcon, R.id.navHomeText, NavItem.HOME),
             Triple(R.id.navMissionIcon, R.id.navMissionText, NavItem.MISSION),
             Triple(R.id.navChatIcon, R.id.navChatText, NavItem.CHAT),
-            Triple(R.id.navFilesIcon, R.id.navFilesText, NavItem.FILES),
+            Triple(R.id.navCardsIcon, R.id.navCardsText, NavItem.CARDS),
             Triple(R.id.navSettingsIcon, R.id.navSettingsText, NavItem.SETTINGS),
         )
 
