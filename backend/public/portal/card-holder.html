@@ -29,20 +29,6 @@
             align-items: center;
         }
 
-        .edit-toggle {
-            background: none;
-            border: 1px solid var(--card-border);
-            color: var(--text-muted);
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .edit-toggle:hover { border-color: var(--primary); color: var(--text); }
-        .edit-toggle.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
         /* ── Search bar ── */
         .search-bar {
             display: flex;
@@ -213,19 +199,50 @@
         .card-action-btn.block-btn:hover { border-color: var(--danger); color: var(--danger); }
         .card-action-btn.block-btn.blocked { border-color: var(--danger); color: var(--danger); }
 
-        /* ── Edit mode ── */
-        .edit-section {
-            border-top: 1px solid var(--card-border);
-            margin-top: 10px;
-            padding-top: 10px;
+        /* ── Agent Card edit (dashboard-style) ── */
+        .ac-caps-list { margin: 8px 0; }
+        .ac-cap-item {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: var(--input-bg);
+            border-radius: 6px;
+            border: 1px solid var(--card-border);
+        }
+        .ac-cap-item input { flex: 1; min-width: 0; }
+        .ac-cap-remove {
+            background: none; border: none; color: var(--danger);
+            cursor: pointer; font-size: 16px; padding: 4px; line-height: 1;
         }
 
-        .edit-section-title {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-muted);
-            margin-bottom: 8px;
+        .ac-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
         }
+        .ac-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 3px 10px;
+            font-size: 12px;
+            color: var(--text);
+        }
+        .ac-tag-remove {
+            background: none; border: none; color: var(--text-secondary);
+            cursor: pointer; font-size: 14px; padding: 0; line-height: 1;
+        }
+        .ac-tag-input {
+            display: flex; gap: 6px; margin-top: 6px;
+        }
+        .ac-tag-input input { flex: 1; }
+        .ac-tag-input button { flex-shrink: 0; }
 
         .edit-field {
             margin-bottom: 6px;
@@ -533,7 +550,6 @@
                     <span>&#x1F50D;</span>
                     <input type="text" id="searchInput" placeholder="Search cards..." data-i18n-placeholder="cardholder_search">
                 </div>
-                <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()" title="Edit Mode">&#x270F;</button>
             </div>
         </div>
 
@@ -571,7 +587,6 @@
         let recentCards = [];
         let collectedCards = [];
         let currentFilter = 'all';
-        let editMode = false;
         let isSearching = false;
         let searchSaved = [];
         let searchExternal = [];
@@ -627,13 +642,6 @@
             document.querySelectorAll('.filter-chip').forEach(el => {
                 el.classList.toggle('active', el.dataset.filter === filter);
             });
-            rebuildContent();
-        }
-
-        // ── Edit mode ──
-        function toggleEditMode() {
-            editMode = !editMode;
-            document.getElementById('editToggle').classList.toggle('active', editMode);
             rebuildContent();
         }
 
@@ -711,7 +719,6 @@
                     </div>
                 </div>`;
 
-            // Contact info lines
             if (c.contactEmail || ac.contactEmail) {
                 html += `<div class="card-info-line">\u2709 ${escapeHtml(c.contactEmail || ac.contactEmail)}</div>`;
             }
@@ -720,26 +727,6 @@
             }
             if (c.description || ac.description) {
                 html += `<div class="card-desc">${escapeHtml(c.description || ac.description)}</div>`;
-            }
-
-            // Edit mode inline fields
-            if (editMode && c.publicCode) {
-                html += `<div class="edit-section" onclick="event.stopPropagation()">
-                    <div class="edit-section-title">${t('cardholder_edit_agent_card', 'Edit Agent Card')}</div>
-                    <div class="edit-field">
-                        <label>${t('cardholder_description', 'Description')}</label>
-                        <input type="text" id="edit-desc-${c.publicCode}" value="${escapeAttr(ac.description || '')}" maxlength="500">
-                    </div>
-                    <div class="edit-field">
-                        <label>Email</label>
-                        <input type="text" id="edit-email-${c.publicCode}" value="${escapeAttr(ac.contactEmail || c.contactEmail || '')}" maxlength="255">
-                    </div>
-                    <div class="edit-field">
-                        <label>Website</label>
-                        <input type="text" id="edit-web-${c.publicCode}" value="${escapeAttr(ac.website || c.website || '')}" maxlength="500">
-                    </div>
-                    <button class="edit-save-btn" onclick="saveAgentCard('${escapeAttr(c.publicCode)}')">${t('common_save', 'Save')}</button>
-                </div>`;
             }
 
             html += '</div>';
@@ -860,17 +847,13 @@
             container.innerHTML = html;
         }
 
-        // ── My Card Detail dialog ──
+        // ── My Card Detail dialog (editable, dashboard-style) ──
         function showMyCardDetail(publicCode) {
-            if (editMode) return; // Don't open detail in edit mode
             const card = myCards.find(c => c.publicCode === publicCode);
             if (!card) return;
 
             const ac = card.agentCard || {};
             const avatar = card.avatar || '\u{1F99E}';
-            const caps = ac.capabilities || [];
-            const tags = ac.tags || [];
-            const protocols = ac.protocols || [];
 
             const content = document.getElementById('detailContent');
             content.innerHTML = `
@@ -883,43 +866,121 @@
                     <button class="modal-close" onclick="closeDetail()">&#x2715;</button>
                 </div>
 
-                ${ac.description ? `<div class="modal-section">
-                    <div class="modal-section-title">${t('cardholder_description', 'Description')}</div>
-                    <div style="font-size:14px; line-height:1.5; color:var(--text-secondary);">${escapeHtml(ac.description)}</div>
-                </div>` : ''}
+                <div class="modal-section">
+                    <div class="modal-section-title">${t('cardholder_edit_agent_card', 'Edit Agent Card')}</div>
 
-                ${ac.contactEmail ? `<div class="modal-section">
-                    <div class="modal-section-title">Email</div>
-                    <div style="font-size:14px;"><a href="mailto:${escapeAttr(ac.contactEmail)}" style="color:var(--primary);">${escapeHtml(ac.contactEmail)}</a></div>
-                </div>` : ''}
-
-                ${ac.website ? `<div class="modal-section">
-                    <div class="modal-section-title">Website</div>
-                    <div style="font-size:14px;"><a href="${escapeAttr(ac.website)}" target="_blank" rel="noopener" style="color:var(--primary);">${escapeHtml(ac.website)}</a></div>
-                </div>` : ''}
-
-                ${caps.length ? `<div class="modal-section">
-                    <div class="modal-section-title">${t('cardholder_capabilities', 'Capabilities')}</div>
-                    <div class="cap-list">
-                        ${caps.map(cp => `<div class="cap-item"><div class="cap-name">${escapeHtml(cp.name)}</div>${cp.description ? `<div class="cap-desc">${escapeHtml(cp.description)}</div>` : ''}</div>`).join('')}
+                    <div class="edit-field">
+                        <label>${t('cardholder_description', 'Description')}</label>
+                        <textarea id="edit-desc" rows="3" maxlength="500" style="resize:vertical;" placeholder="${t('cardholder_desc_placeholder', 'Describe this entity\'s purpose and capabilities...')}">${escapeHtml(ac.description || '')}</textarea>
                     </div>
-                </div>` : ''}
 
-                ${tags.length ? `<div class="modal-section">
-                    <div class="modal-section-title">${t('cardholder_tags', 'Tags')}</div>
-                    <div class="tag-list">${tags.map(tg => `<span class="tag-badge">#${escapeHtml(tg)}</span>`).join('')}</div>
-                </div>` : ''}
+                    <div class="edit-field">
+                        <label>${t('cardholder_capabilities', 'Capabilities')}</label>
+                        <div class="ac-caps-list" id="editCaps"></div>
+                        <button class="btn btn-sm btn-outline" onclick="addEditCapability()" style="font-size:12px;">+ ${t('cardholder_add_capability', 'Add Capability')}</button>
+                    </div>
 
-                ${protocols.length ? `<div class="modal-section">
-                    <div class="modal-section-title">${t('cardholder_protocols', 'Protocols')}</div>
-                    <div class="protocol-list">${protocols.map(p => `<span class="protocol-badge">${escapeHtml(p)}</span>`).join('')}</div>
-                </div>` : ''}
+                    <div class="edit-field">
+                        <label>${t('cardholder_protocols', 'Protocols')}</label>
+                        <div class="ac-tags" id="editProtos"></div>
+                        <div class="ac-tag-input">
+                            <input type="text" id="editProtoInput" placeholder="e.g. A2A, REST, gRPC" maxlength="64">
+                            <button class="btn btn-sm btn-outline" onclick="addEditTag('editProtos', 'editProtoInput', 10)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="edit-field">
+                        <label>${t('cardholder_tags', 'Tags')}</label>
+                        <div class="ac-tags" id="editTags"></div>
+                        <div class="ac-tag-input">
+                            <input type="text" id="editTagInput" placeholder="${t('cardholder_tags_placeholder', 'tag1, tag2, tag3')}" maxlength="64">
+                            <button class="btn btn-sm btn-outline" onclick="addEditTag('editTags', 'editTagInput', 20)">+</button>
+                        </div>
+                    </div>
+
+                    <div class="edit-field">
+                        <label>Version</label>
+                        <input type="text" id="edit-version" value="${escapeAttr(ac.version || '')}" maxlength="50" placeholder="1.0.0">
+                    </div>
+
+                    <div class="edit-field">
+                        <label>Website</label>
+                        <input type="url" id="edit-website" value="${escapeAttr(ac.website || '')}" maxlength="500" placeholder="https://...">
+                    </div>
+
+                    <div class="edit-field">
+                        <label>Email</label>
+                        <input type="email" id="edit-email" value="${escapeAttr(ac.contactEmail || '')}" maxlength="255" placeholder="contact@example.com">
+                    </div>
+                </div>
 
                 <div class="modal-actions">
-                    <button class="btn btn-primary btn-sm" onclick="closeDetail()">${t('common_ok', 'OK')}</button>
+                    <button class="btn btn-primary btn-sm" onclick="saveAgentCard('${escapeAttr(card.publicCode)}')">${t('common_save', 'Save')}</button>
+                    <button class="btn btn-outline btn-sm" onclick="closeDetail()">${t('common_cancel', 'Cancel')}</button>
                 </div>`;
 
+            // Populate capabilities
+            (ac.capabilities || []).forEach(function(cap) {
+                appendEditCapability(cap.name || '', cap.description || '');
+            });
+
+            // Populate protocols
+            renderEditTags('editProtos', ac.protocols || []);
+
+            // Populate tags
+            renderEditTags('editTags', ac.tags || []);
+
             document.getElementById('detailModal').classList.add('open');
+        }
+
+        // ── Dashboard-style edit helpers ──
+        function appendEditCapability(name, desc) {
+            const container = document.getElementById('editCaps');
+            const row = document.createElement('div');
+            row.className = 'ac-cap-item';
+            row.innerHTML = '<input type="text" placeholder="Name" value="' + escapeHtml(name) + '" class="ac-cap-name" style="padding:6px 8px;border:1px solid var(--card-border);border-radius:4px;background:var(--input-bg);color:var(--text);font-size:12px;">' +
+                '<input type="text" placeholder="Description" value="' + escapeHtml(desc) + '" class="ac-cap-desc" style="padding:6px 8px;border:1px solid var(--card-border);border-radius:4px;background:var(--input-bg);color:var(--text);font-size:12px;">' +
+                '<button class="ac-cap-remove" title="Remove">&times;</button>';
+            row.querySelector('.ac-cap-remove').onclick = function() { row.remove(); };
+            container.appendChild(row);
+        }
+
+        function addEditCapability() {
+            const container = document.getElementById('editCaps');
+            if (container.children.length >= 10) {
+                showToast('Maximum 10 capabilities', 'error');
+                return;
+            }
+            appendEditCapability('', '');
+        }
+
+        function renderEditTags(containerId, tags) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            tags.forEach(function(tag) {
+                const span = document.createElement('span');
+                span.className = 'ac-tag';
+                span.innerHTML = escapeHtml(tag) + ' <button class="ac-tag-remove">&times;</button>';
+                span.querySelector('.ac-tag-remove').onclick = function() { span.remove(); };
+                container.appendChild(span);
+            });
+        }
+
+        function addEditTag(containerId, inputId, maxCount) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+            const val = (input.value || '').trim();
+            if (!val) return;
+            if (container.children.length >= maxCount) {
+                showToast('Maximum ' + maxCount + ' items', 'error');
+                return;
+            }
+            const span = document.createElement('span');
+            span.className = 'ac-tag';
+            span.innerHTML = escapeHtml(val) + ' <button class="ac-tag-remove">&times;</button>';
+            span.querySelector('.ac-tag-remove').onclick = function() { span.remove(); };
+            container.appendChild(span);
+            input.value = '';
         }
 
         // ── Contact Detail dialog (with Details / Chat History tabs) ──
@@ -1064,19 +1125,52 @@
 
         // ── Actions ──
         async function saveAgentCard(publicCode) {
-            const desc = document.getElementById(`edit-desc-${publicCode}`).value.trim();
-            const email = document.getElementById(`edit-email-${publicCode}`).value.trim();
-            const website = document.getElementById(`edit-web-${publicCode}`).value.trim();
+            const desc = document.getElementById('edit-desc').value.trim();
+            const email = document.getElementById('edit-email').value.trim();
+            const website = document.getElementById('edit-website').value.trim();
+            const version = document.getElementById('edit-version').value.trim();
+
+            // Collect capabilities (dashboard-style)
+            const caps = [];
+            document.querySelectorAll('#editCaps .ac-cap-item').forEach(function(row) {
+                const name = row.querySelector('.ac-cap-name').value.trim();
+                const cdesc = row.querySelector('.ac-cap-desc').value.trim();
+                if (name) caps.push({ id: name.toLowerCase().replace(/\s+/g, '-'), name: name, description: cdesc });
+            });
+
+            // Collect protocols (tag chips)
+            const protocols = [];
+            document.querySelectorAll('#editProtos .ac-tag').forEach(function(tag) {
+                const v = tag.firstChild.textContent.trim();
+                if (v) protocols.push(v);
+            });
+
+            // Collect tags (tag chips)
+            const tags = [];
+            document.querySelectorAll('#editTags .ac-tag').forEach(function(tag) {
+                const v = tag.firstChild.textContent.trim();
+                if (v) tags.push(v);
+            });
+
+            const agentCard = {
+                description: desc,
+                capabilities: caps,
+                protocols: protocols,
+                tags: tags,
+                version: version,
+                website: website,
+                contactEmail: email
+            };
+
             try {
                 await apiCall('PUT', '/api/entity/agent-card', {
                     deviceId: currentUser.deviceId,
                     deviceSecret: currentUser.deviceSecret,
                     publicCode,
-                    description: desc,
-                    contactEmail: email || undefined,
-                    website: website || undefined
+                    agentCard
                 });
                 showToast(t('common_saved', 'Saved'));
+                closeDetail();
                 await loadMyCards();
                 rebuildContent();
             } catch (err) {

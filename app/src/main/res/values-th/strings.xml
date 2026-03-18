@@ -456,6 +456,7 @@
     <string name="nav_home">หน้าหลัก</string>
     <string name="nav_mission">ภารกิจ</string>
     <string name="nav_chat">แชท</string>
+    <string name="nav_cards">การ์ด</string>
     <string name="nav_files">ไฟล์</string>
     <string name="nav_settings">ตั้งค่า</string>
     <string name="nav_wallpaper">วอลเปเปอร์</string>
