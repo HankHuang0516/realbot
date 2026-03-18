@@ -23,6 +23,10 @@ async function checkAuth() {
         const emailEl = document.getElementById('navEmail');
         if (emailEl) emailEl.textContent = currentUser.email;
 
+        // Ensure admin link is added after user data is available
+        // (the 600ms timeout in nav.js may fire before this API call completes)
+        if (typeof window._addAdminLink === 'function') window._addAdminLink();
+
         return currentUser;
     } catch (e) {
         window.location.href = 'index.html';

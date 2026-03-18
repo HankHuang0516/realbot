@@ -511,6 +511,24 @@ function auditScriptOrder(html, page) {
     return passed;
 }
 
+/**
+ * 10. Admin Link After Auth
+ * shared/auth.js must call _addAdminLink() after setting window.currentUser
+ * to avoid race condition with the 600ms setTimeout in nav.js.
+ */
+function auditAdminLinkAfterAuth() {
+    const authPath = path.join(PORTAL_DIR, 'shared', 'auth.js');
+    if (!fs.existsSync(authPath)) {
+        check('admin link after auth', false, 'shared/auth.js not found');
+        return false;
+    }
+    const src = fs.readFileSync(authPath, 'utf8');
+    const hasCall = /_addAdminLink/.test(src);
+    check('admin link after auth', hasCall,
+        hasCall ? 'checkAuth() calls _addAdminLink()' : 'checkAuth() missing _addAdminLink() — admin nav link may not appear on slow networks');
+    return hasCall;
+}
+
 // ── Main ────────────────────────────────────────────────────
 
 console.log('\n\u{1F50D} UX Static Audit \u2014 Layer 1\n');
@@ -518,6 +536,10 @@ console.log('\n\u{1F50D} UX Static Audit \u2014 Layer 1\n');
 let totalChecks = 0;
 let totalPassed = 0;
 let totalFailed = 0;
+
+// Global checks (not per-page)
+console.log('\u2500\u2500 Global Checks \u2500\u2500');
+auditAdminLinkAfterAuth();
 
 for (const page of PAGES) {
     const filePath = path.join(PORTAL_DIR, page);
