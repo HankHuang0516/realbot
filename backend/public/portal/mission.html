@@ -1447,6 +1447,8 @@
 
         // ========== Soul Gallery ==========
         function showSoulGallery() {
+            // Prevent duplicate overlays from spam-clicking
+            if (document.getElementById('soul_gallery_overlay')) return;
             // Section A: built-in SOUL_TEMPLATES
             const builtinCards = SOUL_TEMPLATES.map(t => {
                 const name = getSoulTemplateName(t);
@@ -1558,6 +1560,8 @@
         }
 
         function showRuleGallery() {
+            // Prevent duplicate overlays from spam-clicking
+            if (document.getElementById('rule_gallery_overlay')) return;
             const cards = ruleTemplates.map(t =>
                 `<div class="tpl-gallery-card" data-id="${esc(t.id)}" data-label="${esc(t.label)}" data-author="${esc(t.author || '')}" onclick="selectRuleTemplate('${esc(t.id)}')">
                     <div class="tpl-gallery-icon">${esc(t.icon) || '📋'}</div>
