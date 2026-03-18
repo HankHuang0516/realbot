@@ -20,12 +20,21 @@ class RuleGalleryDialog(
     private val templates: List<SkillTemplate>,
     private val onTemplateSelected: (name: String, description: String, ruleType: String) -> Unit
 ) {
+    private var onDismissListener: (() -> Unit)? = null
+
+    /** Set a listener to be invoked when the dialog is dismissed (by selection, cancel, or back). */
+    fun setOnDismissListener(listener: () -> Unit): RuleGalleryDialog {
+        onDismissListener = listener
+        return this
+    }
+
     fun show() {
         if (templates.isEmpty()) {
             MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.mission_rule_gallery_title))
                 .setMessage(context.getString(R.string.mission_template_empty))
                 .setPositiveButton(android.R.string.ok, null)
+                .setOnDismissListener { onDismissListener?.invoke() }
                 .show()
             return
         }
@@ -118,6 +127,7 @@ class RuleGalleryDialog(
             .setTitle(title)
             .setView(outerLayout)
             .setNegativeButton(android.R.string.cancel, null)
+            .setOnDismissListener { onDismissListener?.invoke() }
             .show()
     }
 }

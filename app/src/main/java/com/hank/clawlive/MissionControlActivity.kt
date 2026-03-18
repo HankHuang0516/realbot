@@ -532,6 +532,8 @@ class MissionControlActivity : AppCompatActivity() {
 
         // Wire up server-side rule gallery button
         btnChooseRuleTemplate.setOnClickListener {
+            if (isGalleryOpen) return@setOnClickListener
+            isGalleryOpen = true
             viewModel.fetchRuleTemplates()
             lifecycleScope.launch {
                 val templates = viewModel.ruleTemplates.first { it.isNotEmpty() }
@@ -540,6 +542,8 @@ class MissionControlActivity : AppCompatActivity() {
                     etDescription.setText(desc)
                     val idx = types.indexOfFirst { it.name == ruleType }
                     if (idx >= 0) spinnerType.setSelection(idx)
+                }.apply {
+                    setOnDismissListener { isGalleryOpen = false }
                 }.show()
             }
         }
@@ -733,8 +737,13 @@ class MissionControlActivity : AppCompatActivity() {
         }
     }
 
+    /** Prevents duplicate gallery dialogs from spam-clicking. */
+    private var isGalleryOpen = false
+
     /** Opens a scrollable gallery dialog listing all official skill templates. */
     private fun showTemplateGalleryDialog(onSelect: (SkillTemplate) -> Unit) {
+        if (isGalleryOpen) return
+        isGalleryOpen = true
         if (skillTemplates.isEmpty()) {
             lifecycleScope.launch {
                 try {
@@ -849,6 +858,7 @@ class MissionControlActivity : AppCompatActivity() {
             .setTitle(title)
             .setView(outerLayout)
             .setNegativeButton(R.string.cancel, null)
+            .setOnDismissListener { isGalleryOpen = false }
             .show()
     }
 
@@ -886,6 +896,8 @@ class MissionControlActivity : AppCompatActivity() {
 
         // Single Gallery button — shows built-in + community templates unified
         btnChooseSoulTemplate.setOnClickListener {
+            if (isGalleryOpen) return@setOnClickListener
+            isGalleryOpen = true
             lifecycleScope.launch {
                 // If community templates aren't loaded yet, fetch and wait
                 if (viewModel.soulTemplates.value.isEmpty()) {
@@ -909,6 +921,8 @@ class MissionControlActivity : AppCompatActivity() {
                     etDescription.setText(desc)
                     selectedTemplateId = templateId
                     btnChooseSoulTemplate.text = "🎭 $name"
+                }.apply {
+                    setOnDismissListener { isGalleryOpen = false }
                 }.show()
             }
         }

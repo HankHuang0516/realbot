@@ -22,6 +22,14 @@ class SoulGalleryDialog(
     private val communityTemplates: List<SkillTemplate>,
     private val onSelected: (name: String, description: String, templateId: String?) -> Unit
 ) {
+    private var onDismissListener: (() -> Unit)? = null
+
+    /** Set a listener to be invoked when the dialog is dismissed (by selection, cancel, or back). */
+    fun setOnDismissListener(listener: () -> Unit): SoulGalleryDialog {
+        onDismissListener = listener
+        return this
+    }
+
     data class BuiltinTemplate(
         val id: String,
         val icon: String,
@@ -138,6 +146,7 @@ class SoulGalleryDialog(
             .setTitle(title)
             .setView(outerLayout)
             .setNegativeButton(android.R.string.cancel, null)
+            .setOnDismissListener { onDismissListener?.invoke() }
             .show()
     }
 }
