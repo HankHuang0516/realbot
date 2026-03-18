@@ -1,3 +1,10 @@
+# [1.112.0](https://github.com/HankHuang0516/EClaw/compare/v1.111.3...v1.112.0) (2026-03-18)
+
+
+### Features
+
+* expand eclaw-a2a-toolkit with all 93 API endpoints ([#302](https://github.com/HankHuang0516/EClaw/issues/302)) ([891fe94](https://github.com/HankHuang0516/EClaw/commit/891fe94031826bb6d27828698fda8eedb1e6b0c0))
+
 ## [1.111.3](https://github.com/HankHuang0516/EClaw/compare/v1.111.2...v1.111.3) (2026-03-18)
 
 
