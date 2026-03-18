@@ -1,3 +1,10 @@
+## [1.106.7](https://github.com/HankHuang0516/EClaw/compare/v1.106.6...v1.106.7) (2026-03-18)
+
+
+### Bug Fixes
+
+* replace non-existent onAuth() with checkAuth() in card-holder.html ([#283](https://github.com/HankHuang0516/EClaw/issues/283)) ([db4ebfb](https://github.com/HankHuang0516/EClaw/commit/db4ebfbb96124f97af13e2a9fcd7865518560f90))
+
 ## [1.106.6](https://github.com/HankHuang0516/EClaw/compare/v1.106.5...v1.106.6) (2026-03-18)
 
 
