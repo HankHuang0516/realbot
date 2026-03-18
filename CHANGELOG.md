@@ -1,3 +1,10 @@
+## [1.113.1](https://github.com/HankHuang0516/EClaw/compare/v1.113.0...v1.113.1) (2026-03-18)
+
+
+### Bug Fixes
+
+* resolve admin nav link race condition in checkAuth() ([#305](https://github.com/HankHuang0516/EClaw/issues/305)) ([f99788f](https://github.com/HankHuang0516/EClaw/commit/f99788f67a05e4fdddb233482c757603c9981e0f))
+
 # [1.113.0](https://github.com/HankHuang0516/EClaw/compare/v1.112.0...v1.113.0) (2026-03-18)
 
 
