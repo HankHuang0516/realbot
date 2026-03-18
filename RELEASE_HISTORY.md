@@ -5,11 +5,13 @@ Track git commits for each release to enable changelog generation via `git diff`
 ---
 
 ## Latest
-v1.0.47 | db40f7e | 2026-03-15
+v1.0.49 | aabf637 | 2026-03-18
+
 
 ---
 
 ## History
+v1.0.47 | db40f7e | 2026-03-15
 v1.0.46 | 634a564 | 2026-03-12
 v1.0.45 | 589b10d | 2026-03-12
 
@@ -27,6 +29,7 @@ v1.0.38 | 9e62bd0 | 2026-03-04
 ---
 
 ## History
+v1.0.47 | db40f7e | 2026-03-15
 
 | Version | Commit | Date | Notes |
 |---------|--------|------|-------|
@@ -73,7 +76,9 @@ v1.0.38 | 9e62bd0 | 2026-03-04
 ### Generate Changelog for New Release
 ```bash
 # 1. Get previous release commit
-PREV=$(grep -A1 "## Latest" RELEASE_HISTORY.md | tail -1 | cut -d'|' -f2 | tr -d ' ')
+PREV=$(grep -A1 "## Latest
+v1.0.49 | aabf637 | 2026-03-18
+" RELEASE_HISTORY.md | tail -1 | cut -d'|' -f2 | tr -d ' ')
 
 # 2. View changes since last release
 git log --oneline $PREV..HEAD
