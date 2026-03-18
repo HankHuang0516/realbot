@@ -1,3 +1,10 @@
+## [1.107.2](https://github.com/HankHuang0516/EClaw/compare/v1.107.1...v1.107.2) (2026-03-18)
+
+
+### Bug Fixes
+
+* preserve scroll position when switching bottom nav tabs ([#287](https://github.com/HankHuang0516/EClaw/issues/287)) ([f357db1](https://github.com/HankHuang0516/EClaw/commit/f357db176285249a885e16f255ff0da33a952676))
+
 ## [1.107.1](https://github.com/HankHuang0516/EClaw/compare/v1.107.0...v1.107.1) (2026-03-18)
 
 
