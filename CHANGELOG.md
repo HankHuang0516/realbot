@@ -1,3 +1,10 @@
+## [1.106.4](https://github.com/HankHuang0516/EClaw/compare/v1.106.3...v1.106.4) (2026-03-18)
+
+
+### Bug Fixes
+
+* remove duplicate filter_all string resource in strings.xml ([#280](https://github.com/HankHuang0516/EClaw/issues/280)) ([2799a2d](https://github.com/HankHuang0516/EClaw/commit/2799a2db83fff8e2e76666c3753e03cafc416c74))
+
 ## [1.106.3](https://github.com/HankHuang0516/EClaw/compare/v1.106.2...v1.106.3) (2026-03-18)
 
 
