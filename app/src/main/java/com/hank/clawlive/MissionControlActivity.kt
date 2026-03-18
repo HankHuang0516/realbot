@@ -887,6 +887,15 @@ class MissionControlActivity : AppCompatActivity() {
 
         buildRows("")
 
+        chipGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            selectedCategory = if (checkedIds.isEmpty() || checkedIds.first() == allChip.id) {
+                null
+            } else {
+                categoryChipMap[checkedIds.first()]
+            }
+            buildRows(etSearch.text?.toString() ?: "")
+        }
+
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
