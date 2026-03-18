@@ -1,3 +1,10 @@
+## [1.106.8](https://github.com/HankHuang0516/EClaw/compare/v1.106.7...v1.106.8) (2026-03-18)
+
+
+### Bug Fixes
+
+* bump versionCode to 56 (55 already used on Play Store) ([1f03d13](https://github.com/HankHuang0516/EClaw/commit/1f03d13f911f11c8fb7b46839873ec30ee11f87c))
+
 ## [1.106.7](https://github.com/HankHuang0516/EClaw/compare/v1.106.6...v1.106.7) (2026-03-18)
 
 
