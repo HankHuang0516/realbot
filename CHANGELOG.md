@@ -1,3 +1,10 @@
+# [1.113.0](https://github.com/HankHuang0516/EClaw/compare/v1.112.0...v1.113.0) (2026-03-18)
+
+
+### Features
+
+* improve agent card editing UX with chip-based UI (Android) ([11654bf](https://github.com/HankHuang0516/EClaw/commit/11654bfe0736787909dc4dcd9fb3eefb39c499dd)), closes [#296](https://github.com/HankHuang0516/EClaw/issues/296)
+
 # [1.112.0](https://github.com/HankHuang0516/EClaw/compare/v1.111.3...v1.112.0) (2026-03-18)
 
 
