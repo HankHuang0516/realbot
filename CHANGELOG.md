@@ -1,3 +1,10 @@
+# [1.119.0](https://github.com/HankHuang0516/EClaw/compare/v1.118.0...v1.119.0) (2026-03-19)
+
+
+### Features
+
+* add web-image-search bot tool for article illustrations ([#329](https://github.com/HankHuang0516/EClaw/issues/329)) ([65b27cf](https://github.com/HankHuang0516/EClaw/commit/65b27cf783787b42c8bde8f779c0dae53c78a841)), closes [#27](https://github.com/HankHuang0516/EClaw/issues/27) [#42](https://github.com/HankHuang0516/EClaw/issues/42) [#43](https://github.com/HankHuang0516/EClaw/issues/43)
+
 # [1.118.0](https://github.com/HankHuang0516/EClaw/compare/v1.117.2...v1.118.0) (2026-03-19)
 
 
