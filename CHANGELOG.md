@@ -1,3 +1,10 @@
+# [1.117.0](https://github.com/HankHuang0516/EClaw/compare/v1.116.0...v1.117.0) (2026-03-19)
+
+
+### Features
+
+* remove JIT owner approval for device-vars bot read ([fed3abf](https://github.com/HankHuang0516/EClaw/commit/fed3abf1d2c63bfb7d813bf8153fadf8269a9d19))
+
 # [1.116.0](https://github.com/HankHuang0516/EClaw/compare/v1.115.2...v1.116.0) (2026-03-19)
 
 
