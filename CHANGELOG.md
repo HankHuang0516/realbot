@@ -1,3 +1,10 @@
+## [1.115.2](https://github.com/HankHuang0516/EClaw/compare/v1.115.1...v1.115.2) (2026-03-19)
+
+
+### Bug Fixes
+
+* sync openclaw-channel-eclaw to v1.2.1, fix parseBody overwriting pre-parsed body ([#321](https://github.com/HankHuang0516/EClaw/issues/321)) ([57ff332](https://github.com/HankHuang0516/EClaw/commit/57ff3320fae46e5b23d1f0a84e9d1c60baa82801))
+
 ## [1.115.1](https://github.com/HankHuang0516/EClaw/compare/v1.115.0...v1.115.1) (2026-03-19)
 
 
