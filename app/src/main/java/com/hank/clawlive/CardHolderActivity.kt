@@ -197,6 +197,9 @@ class CardHolderActivity : AppCompatActivity() {
 
         // -- Bottom nav (inflate XML layout) --
         layoutInflater.inflate(R.layout.layout_bottom_nav, rootLayout)
+        rootLayout.findViewById<LinearLayout>(R.id.bottomNav)?.let {
+            (it.layoutParams as? FrameLayout.LayoutParams)?.gravity = Gravity.BOTTOM
+        }
 
         setContentView(rootLayout)
         BottomNavHelper.setup(this, NavItem.CARDS)
