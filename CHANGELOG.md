@@ -1,3 +1,10 @@
+## [1.114.1](https://github.com/HankHuang0516/EClaw/compare/v1.114.0...v1.114.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* compact entity slots to [#0](https://github.com/HankHuang0516/EClaw/issues/0) when all others are deleted ([#312](https://github.com/HankHuang0516/EClaw/issues/312)) ([cc60b8a](https://github.com/HankHuang0516/EClaw/commit/cc60b8abb6d646ece20042af20b0099b802be409)), closes [#30](https://github.com/HankHuang0516/EClaw/issues/30)
+
 # [1.114.0](https://github.com/HankHuang0516/EClaw/compare/v1.113.2...v1.114.0) (2026-03-19)
 
 
