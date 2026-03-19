@@ -67,8 +67,14 @@ export async function startAccount(ctx: any): Promise<void> {
   const callbackToken = randomBytes(32).toString('hex');
 
   // Webhook URL: account config > env var > warn
-  const publicUrl = account.webhookUrl?.replace(/\/$/, '')
+  let publicUrl = account.webhookUrl?.replace(/\/$/, '')
     || process.env.ECLAW_WEBHOOK_URL?.replace(/\/$/, '');
+
+  // Auto-upgrade HTTP to HTTPS for non-localhost URLs to avoid
+  // 301/302 redirects that convert POST→GET and lose the request body
+  if (publicUrl && publicUrl.startsWith('http://') && !publicUrl.includes('localhost') && !publicUrl.includes('127.0.0.1')) {
+    publicUrl = publicUrl.replace('http://', 'https://');
+  }
 
   if (!publicUrl) {
     console.warn(

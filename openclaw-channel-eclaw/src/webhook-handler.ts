@@ -36,6 +36,8 @@ export function createWebhookHandler(
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true }));
 
+    console.log(`[E-Claw] Webhook received: event=${msg?.event || 'message'}, entity=${msg?.entityId}, from=${msg?.from}, hasText=${!!(msg?.text)}, method=${req.method}`);
+
     // Dispatch to OpenClaw agent
     try {
       const rt = getPluginRuntime();
