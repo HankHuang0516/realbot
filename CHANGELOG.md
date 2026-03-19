@@ -1,3 +1,10 @@
+# [1.116.0](https://github.com/HankHuang0516/EClaw/compare/v1.115.2...v1.116.0) (2026-03-19)
+
+
+### Features
+
+* add webhook URL to push logs and debug/webhooks endpoint ([#322](https://github.com/HankHuang0516/EClaw/issues/322)) ([6ba1ad7](https://github.com/HankHuang0516/EClaw/commit/6ba1ad70c6e3d17be405a5fb9a6c845e8418ba86))
+
 ## [1.115.2](https://github.com/HankHuang0516/EClaw/compare/v1.115.1...v1.115.2) (2026-03-19)
 
 
