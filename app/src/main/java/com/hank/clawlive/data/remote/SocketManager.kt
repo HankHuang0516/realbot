@@ -32,9 +32,6 @@ object SocketManager {
     private val _notificationFlow = MutableSharedFlow<JSONObject>(extraBufferCapacity = 16)
     val notificationFlow: SharedFlow<JSONObject> = _notificationFlow
 
-    private val _varsApprovalFlow = MutableSharedFlow<JSONObject>(extraBufferCapacity = 8)
-    val varsApprovalFlow: SharedFlow<JSONObject> = _varsApprovalFlow
-
     private val _screenRequestFlow = MutableSharedFlow<JSONObject>(extraBufferCapacity = 4)
     val screenRequestFlow: SharedFlow<JSONObject> = _screenRequestFlow
 
@@ -95,12 +92,6 @@ object SocketManager {
                 on("notification") { args ->
                     val json = args.firstOrNull() as? JSONObject ?: return@on
                     _notificationFlow.tryEmit(json)
-                }
-
-                on("vars:approval-request") { args ->
-                    val json = args.firstOrNull() as? JSONObject ?: return@on
-                    Timber.d("[Socket] vars:approval-request received: $json")
-                    _varsApprovalFlow.tryEmit(json)
                 }
 
                 on("device:screen-request") { args ->

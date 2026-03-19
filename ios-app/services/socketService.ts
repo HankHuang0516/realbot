@@ -9,7 +9,6 @@ export type SocketEvent =
   | 'entity:update'
   | 'chat:message'
   | 'notification'
-  | 'vars:approval-request'
   | 'screen:request'
   | 'control:command';
 
@@ -29,13 +28,6 @@ export interface EntityUpdate {
   character?: string;
   state?: string;
   message?: string;
-}
-
-export interface VarsApprovalRequest {
-  requestId: string;
-  entityId: string;
-  entityName: string;
-  varKeys: string[];
 }
 
 type EventCallback<T = unknown> = (data: T) => void;
@@ -85,7 +77,6 @@ class SocketService {
       'entity:update',
       'chat:message',
       'notification',
-      'vars:approval-request',
     ];
 
     domainEvents.forEach((event) => {
@@ -127,14 +118,6 @@ class SocketService {
     }
   }
 
-  /** Send vars approval response to server */
-  approveVarsRequest(requestId: string, approved: boolean): void {
-    if (!this.socket?.connected) {
-      console.warn('[SOCKET] Cannot send: not connected');
-      return;
-    }
-    this.socket.emit('vars:approval-response', { requestId, approved });
-  }
 }
 
 // Singleton instance
