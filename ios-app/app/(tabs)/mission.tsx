@@ -7,8 +7,6 @@ import {
   Chip,
   Card,
   IconButton,
-  Dialog,
-  Portal,
   useTheme,
   ActivityIndicator,
   Snackbar,
@@ -19,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEntityStore } from '../../store/entityStore';
 import { missionApi, templateApi } from '../../services/api';
 import type { SkillTemplate, SoulTemplate, RuleTemplate } from '../../services/api';
-import { socketService, VarsApprovalRequest } from '../../services/socketService';
+import { socketService } from '../../services/socketService';
 
 type TabKey = 'todo' | 'missions' | 'done' | 'notes' | 'skills' | 'souls' | 'rules' | 'variables';
 
@@ -68,9 +66,6 @@ export default function MissionScreen() {
   const [soulTemplates, setSoulTemplates] = useState<SoulTemplate[]>([]);
   const [ruleTemplates, setRuleTemplates] = useState<RuleTemplate[]>([]);
   const [templateSearch, setTemplateSearch] = useState('');
-
-  // JIT vars approval
-  const [varsRequest, setVarsRequest] = useState<VarsApprovalRequest | null>(null);
 
   const loadDashboard = useCallback(async () => {
     if (!selectedEntity) return;
@@ -121,23 +116,6 @@ export default function MissionScreen() {
     setTemplateSearch('');
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Socket.IO: JIT vars approval request
-  useEffect(() => {
-    const unsubscribe = socketService.on<VarsApprovalRequest>(
-      'vars:approval-request',
-      (req) => {
-        setVarsRequest(req);
-      }
-    );
-    return unsubscribe;
-  }, []);
-
-  const handleVarsApproval = (approved: boolean) => {
-    if (!varsRequest) return;
-    socketService.approveVarsRequest(varsRequest.requestId, approved);
-    setVarsRequest(null);
-    setSnack(approved ? t('mission.vars_approve') : t('mission.vars_deny'));
-  };
 
   const addTodo = async (title: string) => {
     if (!dashboard || !title.trim()) return;
@@ -455,29 +433,6 @@ export default function MissionScreen() {
           }}
         />
       )}
-
-      {/* JIT Vars Approval Dialog */}
-      <Portal>
-        <Dialog visible={!!varsRequest} onDismiss={() => setVarsRequest(null)}>
-          <Dialog.Title>{t('mission.vars_approval_title')}</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodyMedium">
-              {t('mission.vars_approval_desc', {
-                entityName: varsRequest?.entityName ?? '',
-                varKeys: varsRequest?.varKeys.join(', ') ?? '',
-              })}
-            </Text>
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => handleVarsApproval(false)} textColor={theme.colors.error}>
-              {t('mission.vars_deny')}
-            </Button>
-            <Button mode="contained" onPress={() => handleVarsApproval(true)}>
-              {t('mission.vars_approve')}
-            </Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
 
       <Snackbar visible={!!snack} onDismiss={() => setSnack('')} duration={2000}>
         {snack}

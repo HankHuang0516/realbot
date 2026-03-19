@@ -74,20 +74,6 @@ io.on('connection', (socket) => {
     socket.join(`device:${deviceId}`);
     console.log(`[Socket.IO] Connected: device ${deviceId} (${io.engine.clientsCount} total)`);
 
-    // Handle vars approval response from Portal/App
-    socket.on('vars:approval-response', (data) => {
-        const { requestId, approved } = data || {};
-        const pending = varsApprovalPending.get(deviceId);
-        if (!pending || pending.requestId !== requestId) return;
-
-        clearTimeout(pending.timer);
-        varsApprovalPending.delete(deviceId);
-
-        for (const { resolve } of pending.resolvers) {
-            resolve(approved === true);
-        }
-    });
-
     socket.on('disconnect', () => {
         console.log(`[Socket.IO] Disconnected: device ${deviceId}`);
     });
@@ -2381,12 +2367,6 @@ function decryptVars(encrypted, ivHex, authTagHex) {
     return JSON.parse(decrypted);
 }
 
-// JIT approval cache — deviceId → { approvedAt, expiresAt }
-const varsApprovalCache = new Map();
-// Pending approval requests — deviceId → { requestId, resolvers: [{ resolve, reject }], timer }
-const varsApprovalPending = new Map();
-const VARS_APPROVAL_TTL = 5 * 60 * 1000; // 5 minutes
-const VARS_APPROVAL_TIMEOUT = 60 * 1000; // 60 seconds
 
 // ============================================
 // REMOTE SCREEN CONTROL
@@ -2397,12 +2377,6 @@ const screenCaptureRateLimits = {}; // deviceId -> { lastAt }
 const SCREEN_CAPTURE_MIN_INTERVAL_MS = 500;
 
 
-setInterval(() => {
-    const now = Date.now();
-    for (const [id, entry] of varsApprovalCache) {
-        if (now >= entry.expiresAt) varsApprovalCache.delete(id);
-    }
-}, 10 * 60 * 1000);
 
 /* global AbortController, TextDecoder */
 app.get('/api/link-preview', async (req, res) => {
@@ -8461,7 +8435,7 @@ async function pushToBot(entity, deviceId, eventType, payload) {
         if (varsMeta && !varsMeta.is_locked && varsMeta.var_keys && varsMeta.var_keys.length > 0) {
             const varKeys = varsMeta.var_keys.join(', ');
             const apiBase = process.env.API_BASE || 'https://eclawbot.com';
-            messageContent += `\n\n[Local Variables available: ${varKeys}]\nNote: Reading vars requires owner approval (60s timeout).\nexec: curl -s "${apiBase}/api/device-vars?deviceId=${deviceId}&botSecret=${entity.botSecret}"`;
+            messageContent += `\n\n[Local Variables available: ${varKeys}]\nexec: curl -s "${apiBase}/api/device-vars?deviceId=${deviceId}&botSecret=${entity.botSecret}"`;
         }
     } catch (err) {
         // Non-critical — just skip the hint
@@ -10489,7 +10463,7 @@ app.post('/api/device-vars', async (req, res) => {
     }
 });
 
-// GET /api/device-vars — bot reads vars (JIT approval required)
+// GET /api/device-vars — bot reads vars (botSecret auth)
 // Auth: botSecret (entity must be bound to the device)
 app.get('/api/device-vars', async (req, res) => {
     const { deviceId, botSecret } = req.query;
@@ -10519,95 +10493,13 @@ app.get('/api/device-vars', async (req, res) => {
         return res.status(403).json({ success: false, error: 'locked', message: 'Variables are locked by owner' });
     }
 
-    // Check approval cache
-    const cached = varsApprovalCache.get(deviceId);
-    if (cached && Date.now() < cached.expiresAt) {
-        try {
-            const vars = decryptVars(row.encrypted_vars, row.iv, row.auth_tag);
-            return res.json({ success: true, vars });
-        } catch (err) {
-            console.error(`[Vars] Decrypt failed for ${deviceId}:`, err.message);
-            return res.status(500).json({ success: false, error: 'Decryption failed' });
-        }
-    }
-
-    // Check if owner is online via Socket.IO
-    const sockets = await io.in(`device:${deviceId}`).fetchSockets();
-    if (sockets.length === 0) {
-        return res.status(403).json({ success: false, error: 'owner_offline', message: 'Device owner is not online — open Portal or App to approve' });
-    }
-
-    // Check if there's already a pending approval for this device
-    const pending = varsApprovalPending.get(deviceId);
-    if (pending) {
-        // Piggyback on the existing approval request
-        try {
-            const approved = await new Promise((resolve, reject) => {
-                pending.resolvers.push({ resolve, reject });
-            });
-            if (!approved) {
-                return res.status(403).json({ success: false, error: 'denied', message: 'Access denied by owner' });
-            }
-            const vars = decryptVars(row.encrypted_vars, row.iv, row.auth_tag);
-            return res.json({ success: true, vars });
-        } catch (err) {
-            if (err.message === 'timeout') {
-                return res.status(408).json({ success: false, error: 'timeout', message: 'Approval request timed out (60s)' });
-            }
-            return res.status(500).json({ success: false, error: err.message });
-        }
-    }
-
-    // Create new approval request
-    const requestId = crypto.randomBytes(8).toString('hex');
-    const entityName = botEntity.name || `Entity ${botEntity.entityId}`;
-    const varKeys = row.var_keys || [];
-
+    // Decrypt and return
     try {
-        const approved = await new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
-                const entry = varsApprovalPending.get(deviceId);
-                if (entry && entry.requestId === requestId) {
-                    varsApprovalPending.delete(deviceId);
-                    for (const { reject: rej } of entry.resolvers) {
-                        rej(new Error('timeout'));
-                    }
-                }
-            }, VARS_APPROVAL_TIMEOUT);
-
-            const entry = {
-                requestId,
-                resolvers: [{ resolve, reject }],
-                timer
-            };
-            varsApprovalPending.set(deviceId, entry);
-
-            // Emit to all connected clients for this device
-            io.to(`device:${deviceId}`).emit('vars:approval-request', {
-                requestId,
-                entityName,
-                varKeys,
-                expiresAt: Date.now() + VARS_APPROVAL_TIMEOUT
-            });
-        });
-
-        if (!approved) {
-            return res.status(403).json({ success: false, error: 'denied', message: 'Access denied by owner' });
-        }
-
-        // Approved — decrypt and return
         const vars = decryptVars(row.encrypted_vars, row.iv, row.auth_tag);
-        varsApprovalCache.set(deviceId, {
-            approvedAt: Date.now(),
-            expiresAt: Date.now() + VARS_APPROVAL_TTL
-        });
         return res.json({ success: true, vars });
     } catch (err) {
-        if (err.message === 'timeout') {
-            return res.status(408).json({ success: false, error: 'timeout', message: 'Approval request timed out (60s)' });
-        }
-        console.error(`[Vars] Approval error for ${deviceId}:`, err.message);
-        return res.status(500).json({ success: false, error: 'Approval failed' });
+        console.error(`[Vars] Decrypt failed for ${deviceId}:`, err.message);
+        return res.status(500).json({ success: false, error: 'Decryption failed' });
     }
 });
 
@@ -10623,7 +10515,6 @@ app.delete('/api/device-vars', async (req, res) => {
         return res.status(403).json({ success: false, error: 'Invalid credentials' });
     }
     await db.deleteDeviceVars(deviceId);
-    varsApprovalCache.delete(deviceId);
     res.json({ success: true });
 });
 
