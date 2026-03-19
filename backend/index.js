@@ -3382,6 +3382,30 @@ app.delete('/api/device/entity/:entityId/permanent', async (req, res) => {
         await db.deleteEntity(deviceId, eId);
     }
 
+    // Compact: if only 1 unbound entity remains with ID > 0, move it to slot #0
+    let compactedFrom = null;
+    const remainingIds = Object.keys(device.entities).map(Number);
+    if (remainingIds.length === 1 && remainingIds[0] > 0) {
+        const oldId = remainingIds[0];
+        const remainingEntity = device.entities[oldId];
+        if (!remainingEntity.isBound) {
+            // Move entity from oldId to 0
+            remainingEntity.entityId = 0;
+            device.entities[0] = remainingEntity;
+            delete device.entities[oldId];
+            device.nextEntityId = 1;
+
+            // Update DB: delete old row, saveData will create new row at id 0
+            if (usePostgreSQL) {
+                await db.deleteEntity(deviceId, oldId);
+            }
+
+            compactedFrom = oldId;
+            console.log(`[DynamicEntity] Compacted: deviceId=${deviceId}, moved entity #${oldId} → #0, reset nextEntityId=1`);
+            serverLog('info', 'entity_compact', `Entity #${oldId} compacted to #0`, { deviceId, fromEntityId: oldId });
+        }
+    }
+
     // Save device state (updated entities + nextEntityId)
     await saveData();
 
@@ -3390,12 +3414,16 @@ app.delete('/api/device/entity/:entityId/permanent', async (req, res) => {
 
     // Notify clients
     io.to(deviceId).emit('entityDeleted', { entityId: eId, totalSlots: entityCount(device) });
+    if (compactedFrom !== null) {
+        io.to(deviceId).emit('entityCompacted', { fromEntityId: compactedFrom, toEntityId: 0, totalSlots: entityCount(device) });
+    }
 
     res.json({
         success: true,
         deletedEntityId: eId,
         remainingEntities: entityCount(device),
-        entityIds: Object.keys(device.entities).map(Number)
+        entityIds: Object.keys(device.entities).map(Number),
+        compacted: compactedFrom !== null ? { from: compactedFrom, to: 0 } : undefined
     });
 });
 
