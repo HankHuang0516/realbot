@@ -44,6 +44,19 @@ export function createWebhookHandler(
       const client = getClient(accountId);
       const conversationId = msg.conversationId || `${msg.deviceId}:${msg.entityId}`;
 
+      // Auto-rebind if the incoming entityId differs from the stored one.
+      // This happens when the user moves the channel binding to a different slot
+      // via the EClaw app — the plugin needs to update its botSecret/entityId.
+      if (client && msg.entityId !== undefined && client.currentEntityId !== msg.entityId) {
+        try {
+          console.log(`[E-Claw] Entity mismatch: bound=${client.currentEntityId}, incoming=${msg.entityId}. Rebinding...`);
+          const bindData = await client.rebindToEntity(msg.entityId);
+          console.log(`[E-Claw] Rebound to entity ${bindData.entityId}, publicCode: ${bindData.publicCode}`);
+        } catch (err) {
+          console.error(`[E-Claw] Rebind to entity ${msg.entityId} failed:`, err);
+        }
+      }
+
       // Capture event context for deliver routing
       const event = msg.event || 'message';
       const fromEntityId = msg.fromEntityId;

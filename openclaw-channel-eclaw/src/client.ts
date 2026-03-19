@@ -164,4 +164,13 @@ export class EClawClient {
   get currentDeviceId(): string | null { return this.deviceId; }
   get currentBotSecret(): string | null { return this.botSecret; }
   get currentEntityId(): number | undefined { return this.entityId; }
+
+  /** Rebind to a different entity slot (e.g. when the user moves the channel binding).
+   *  Updates internal botSecret and entityId.
+   */
+  async rebindToEntity(entityId: number, name?: string): Promise<BindResponse> {
+    const data = await this.bindEntity(entityId, name);
+    // bindEntity already updates this.botSecret, this.entityId, this.deviceId
+    return data;
+  }
 }
