@@ -1,3 +1,10 @@
+## [1.117.1](https://github.com/HankHuang0516/EClaw/compare/v1.117.0...v1.117.1) (2026-03-19)
+
+
+### Bug Fixes
+
+* set bottom nav layout_gravity to BOTTOM in CardHolderActivity ([31486b0](https://github.com/HankHuang0516/EClaw/commit/31486b08e2f1b94752059ffe654789910ee4d960))
+
 # [1.117.0](https://github.com/HankHuang0516/EClaw/compare/v1.116.0...v1.117.0) (2026-03-19)
 
 
