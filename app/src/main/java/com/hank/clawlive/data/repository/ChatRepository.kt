@@ -183,7 +183,7 @@ class ChatRepository private constructor(
         // The actual message is already tracked via syncFromBackend() as a single record
         // under the SENDER entity with correct fromEntityId and delivery tracking.
         // Note: must use DOT_MATCHES_ALL because A2A messages can be multi-line.
-        if (entity.message.matches(Regex("^entity:\\d+:[A-Z]+:.*", RegexOption.DOT_MATCHES_ALL))) {
+        if (entity.message.matches(Regex("^entity:\\d+:[^:]+:.*", RegexOption.DOT_MATCHES_ALL))) {
             Timber.d("[A2A_POLL_ENTITY_SKIP] Skipping entity-to-entity msg on Entity${entity.entityId}: ${entity.message.take(60)}")
             return
         }
