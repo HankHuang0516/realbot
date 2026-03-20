@@ -5410,17 +5410,8 @@ app.put('/api/entity/agent-card', (req, res) => {
 
     const { valid, card, error } = validateAgentCard(agentCard);
     if (!valid) return res.status(400).json({ success: false, error });
-<<<<<<< HEAD
     syncEntityCard(entity, card);
     // Persist to DB
-=======
-    entity.agentCard = card;
-    // Sync to identity.public for unified identity layer
-    if (!entity.identity) entity.identity = {};
-    entity.identity.public = card;
-    entity.lastUpdated = Date.now();
-    // Persist identity sync to DB
->>>>>>> f12ba08 (fix: persist identity sync in agent-card PUT/DELETE endpoints)
     if (typeof db.saveDeviceData === 'function') {
         db.saveDeviceData(deviceId, device).catch(err => console.error('[AgentCard] DB save error:', err.message));
     }
@@ -5786,13 +5777,15 @@ app.put('/api/entity/identity', async (req, res) => {
     // Partial merge: only update provided fields
     const existing = entity.identity || {};
     const merged = { ...existing, ...cleaned };
-    // Handle public sub-object merge
+    // Handle public sub-object: deep merge when existing, otherwise the spread above already set it
     if (cleaned.public !== undefined) {
         if (cleaned.public === null) {
             delete merged.public;
         } else if (existing.public && typeof existing.public === 'object') {
+            // Deep merge only when both old and new public exist
             merged.public = { ...existing.public, ...cleaned.public };
         }
+        // else: no existing public — the { ...existing, ...cleaned } spread already set merged.public = cleaned.public
     }
     entity.identity = merged;
     // Sync agentCard from identity.public for backward compat
