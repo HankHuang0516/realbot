@@ -1,3 +1,10 @@
+# [1.123.0](https://github.com/HankHuang0516/EClaw/compare/v1.122.0...v1.123.0) (2026-03-20)
+
+
+### Features
+
+* **i18n:** add Identity Panel translations for all 8 languages ([#354](https://github.com/HankHuang0516/EClaw/issues/354)) ([396e834](https://github.com/HankHuang0516/EClaw/commit/396e83466899b1000cbda4b00e6f43f9bed1d2e1)), closes [#5](https://github.com/HankHuang0516/EClaw/issues/5) [#7](https://github.com/HankHuang0516/EClaw/issues/7) [#8](https://github.com/HankHuang0516/EClaw/issues/8) [#10](https://github.com/HankHuang0516/EClaw/issues/10) [#1](https://github.com/HankHuang0516/EClaw/issues/1) [#3](https://github.com/HankHuang0516/EClaw/issues/3) [#4](https://github.com/HankHuang0516/EClaw/issues/4) [#6](https://github.com/HankHuang0516/EClaw/issues/6) [#9](https://github.com/HankHuang0516/EClaw/issues/9)
+
 # [1.122.0](https://github.com/HankHuang0516/EClaw/compare/v1.121.0...v1.122.0) (2026-03-20)
 
 
