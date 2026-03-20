@@ -1,3 +1,10 @@
+## [1.119.1](https://github.com/HankHuang0516/EClaw/compare/v1.119.0...v1.119.1) (2026-03-20)
+
+
+### Bug Fixes
+
+* add back button to FileManagerActivity and align Files button style ([#333](https://github.com/HankHuang0516/EClaw/issues/333)) ([1ea4e2c](https://github.com/HankHuang0516/EClaw/commit/1ea4e2c6109d0216566d30d54ea7426250213cf5))
+
 # [1.119.0](https://github.com/HankHuang0516/EClaw/compare/v1.118.0...v1.119.0) (2026-03-19)
 
 
