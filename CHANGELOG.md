@@ -1,3 +1,10 @@
+## [1.119.3](https://github.com/HankHuang0516/EClaw/compare/v1.119.2...v1.119.3) (2026-03-20)
+
+
+### Bug Fixes
+
+* remove message_count check and GitHub issue auto-creation from ChatIntegrity ([#347](https://github.com/HankHuang0516/EClaw/issues/347)) ([ad3bf85](https://github.com/HankHuang0516/EClaw/commit/ad3bf85ebbeb71079615b5a053735f4a8fbc83cb))
+
 ## [1.119.2](https://github.com/HankHuang0516/EClaw/compare/v1.119.1...v1.119.2) (2026-03-20)
 
 
