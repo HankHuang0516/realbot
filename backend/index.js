@@ -5410,8 +5410,17 @@ app.put('/api/entity/agent-card', (req, res) => {
 
     const { valid, card, error } = validateAgentCard(agentCard);
     if (!valid) return res.status(400).json({ success: false, error });
+<<<<<<< HEAD
     syncEntityCard(entity, card);
     // Persist to DB
+=======
+    entity.agentCard = card;
+    // Sync to identity.public for unified identity layer
+    if (!entity.identity) entity.identity = {};
+    entity.identity.public = card;
+    entity.lastUpdated = Date.now();
+    // Persist identity sync to DB
+>>>>>>> f12ba08 (fix: persist identity sync in agent-card PUT/DELETE endpoints)
     if (typeof db.saveDeviceData === 'function') {
         db.saveDeviceData(deviceId, device).catch(err => console.error('[AgentCard] DB save error:', err.message));
     }
@@ -5663,6 +5672,7 @@ app.delete('/api/entity/identity', async (req, res) => {
         if (Object.keys(entity.identity).length === 0) entity.identity = null;
     }
     entity.lastUpdated = Date.now();
+<<<<<<< HEAD
 
     if (typeof db.saveDeviceData === 'function') {
         db.saveDeviceData(deviceId, device).catch(err => console.error('[Identity] DB save error:', err.message));
@@ -5670,6 +5680,12 @@ app.delete('/api/entity/identity', async (req, res) => {
 
     io.to(deviceId).emit('entity:identity-updated', { entityId: parseInt(entityId), identity: null });
     serverLog('info', 'identity', `Entity ${entityId} identity cleared`, { deviceId, entityId: parseInt(entityId) });
+=======
+    // Persist identity sync to DB
+    if (typeof db.saveDeviceData === 'function') {
+        db.saveDeviceData(deviceId, device).catch(err => console.error('[AgentCard] DB save error:', err.message));
+    }
+>>>>>>> f12ba08 (fix: persist identity sync in agent-card PUT/DELETE endpoints)
     res.json({ success: true });
 });
 
