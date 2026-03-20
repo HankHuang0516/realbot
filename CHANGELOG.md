@@ -1,3 +1,10 @@
+## [1.120.2](https://github.com/HankHuang0516/EClaw/compare/v1.120.1...v1.120.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* fix A2A message rendering and add full closed-loop debug logging ([#349](https://github.com/HankHuang0516/EClaw/issues/349)) ([091e166](https://github.com/HankHuang0516/EClaw/commit/091e166ae6f96ce5308937865d5564eac115932c))
+
 ## [1.120.1](https://github.com/HankHuang0516/EClaw/compare/v1.120.0...v1.120.1) (2026-03-20)
 
 
