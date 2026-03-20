@@ -1,3 +1,10 @@
+# [1.122.0](https://github.com/HankHuang0516/EClaw/compare/v1.121.0...v1.122.0) (2026-03-20)
+
+
+### Features
+
+* add shareable chat link with QR code for Card Holder entities ([#353](https://github.com/HankHuang0516/EClaw/issues/353)) ([ba346ba](https://github.com/HankHuang0516/EClaw/commit/ba346ba9f5f8a80f54fc131bd8eca0909a8396a2))
+
 # [1.121.0](https://github.com/HankHuang0516/EClaw/compare/v1.120.3...v1.121.0) (2026-03-20)
 
 
