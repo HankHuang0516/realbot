@@ -1,3 +1,10 @@
+## [1.119.2](https://github.com/HankHuang0516/EClaw/compare/v1.119.1...v1.119.2) (2026-03-20)
+
+
+### Bug Fixes
+
+* fix A2A message rendering — eliminate duplicates and multi-line regex ([#339](https://github.com/HankHuang0516/EClaw/issues/339)) ([7082f33](https://github.com/HankHuang0516/EClaw/commit/7082f3341e53ad548519fc880f8791ed5dfa4db4))
+
 ## [1.119.1](https://github.com/HankHuang0516/EClaw/compare/v1.119.0...v1.119.1) (2026-03-20)
 
 
