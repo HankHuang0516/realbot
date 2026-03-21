@@ -198,7 +198,7 @@
             renderEntityHeader(targetEntity);
 
             // Update OG meta for link previews
-            document.title = `Chat with ${targetEntity.name || targetCode} - EClawbot`;
+            document.title = t('sc_chat_with', 'Chat with {name}').replace('{name}', targetEntity.name || targetCode) + ' - EClawbot';
         } catch (e) {
             document.getElementById('entityName').textContent = t('sc_failed_to_load', 'Failed to load');
             document.getElementById('sendBtn').disabled = true;
@@ -382,7 +382,7 @@
             });
             const data = await resp.json();
             if (!resp.ok || !data.success) {
-                errEl.textContent = data.error || 'Registration failed';
+                errEl.textContent = data.error || t('sc_registration_failed', 'Registration failed');
                 btn.disabled = false;
                 return;
             }
@@ -443,7 +443,7 @@
             });
             const data = await resp.json();
             if (!resp.ok || !data.success) {
-                errEl.textContent = data.error || 'Login failed';
+                errEl.textContent = data.error || t('sc_login_failed', 'Login failed');
                 btn.disabled = false;
                 return;
             }
