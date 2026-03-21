@@ -736,6 +736,8 @@ Set in `backend/.env` (gitignored):
 - `renderAvatarHtml(avatar, size)` generates either `<img>` or text span
 - All portal pages include `entity-utils.js` for consistent avatar rendering
 - Flickr upload via `POST /api/device/entity/avatar/upload` (multipart, 5MB limit)
+- **⚠️ RECURRING BUG (reported 4 times)**: Cross-device contact avatar rendering — when building `xdeviceLabelCache` in `chat.html`, **always** use `renderAvatarHtml(avatar, 20)` not raw `${avatar}`. Every code path that populates `xdeviceLabelCache` must call `renderAvatarHtml()`. Same pattern on Android: use `EntityAvatarManager.resolveContactAvatar()` and `EntityAvatarManager.isImageUrl()` for contact avatars, never inline the fallback logic.
+- Android shared helpers: `EntityAvatarManager.resolveContactAvatar(avatar, character)` resolves fallback emoji; `EntityAvatarManager.isImageUrl(avatar)` checks for URL; `ChatAdapter.ReceivedMessageViewHolder.bindAvatar(avatarValue)` handles Glide-or-emoji rendering
 
 ### Branding
 - Brand name changed from "EClaw" to "EClawbot" in v1.105.0
