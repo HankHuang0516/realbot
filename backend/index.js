@@ -6219,7 +6219,7 @@ app.post('/api/client/cross-speak', async (req, res) => {
     // Push to target bot — channel callback or traditional webhook
     const isChannelBound = toEntity.bindingType === 'channel';
     const hasWebhook = !!toEntity.webhook;
-    console.log(`[ClientCrossSpeak:DEBUG] isChannelBound=${isChannelBound}, hasWebhook=${hasWebhook}, webhookUrl=${toEntity.webhook ? toEntity.webhook.slice(0, 40) + '...' : 'null'}`);
+    console.log(`[ClientCrossSpeak:DEBUG] isChannelBound=${isChannelBound}, hasWebhook=${hasWebhook}, webhookUrl=${toEntity.webhook && typeof toEntity.webhook === 'string' ? toEntity.webhook.slice(0, 40) + '...' : String(toEntity.webhook)}`);
     if (isChannelBound) {
         // Channel plugin: send structured JSON
         channelModule.pushToChannelCallback(target.deviceId, target.entityId, {
