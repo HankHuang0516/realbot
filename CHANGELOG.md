@@ -1,3 +1,10 @@
+# [1.127.0](https://github.com/HankHuang0516/EClaw/compare/v1.126.5...v1.127.0) (2026-03-21)
+
+
+### Features
+
+* **share-chat:** add social login and terms consent to modals ([#371](https://github.com/HankHuang0516/EClaw/issues/371)) ([7c049ae](https://github.com/HankHuang0516/EClaw/commit/7c049aeef90955eb243ca40c22200a2daefff7a9))
+
 ## [1.126.5](https://github.com/HankHuang0516/EClaw/compare/v1.126.4...v1.126.5) (2026-03-21)
 
 
