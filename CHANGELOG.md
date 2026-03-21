@@ -1,3 +1,10 @@
+# [1.128.0](https://github.com/HankHuang0516/EClaw/compare/v1.127.4...v1.128.0) (2026-03-21)
+
+
+### Features
+
+* integrate E-claw_mcp_skill.md into eclaw-a2a-toolkit (single source of truth) ([#377](https://github.com/HankHuang0516/EClaw/issues/377)) ([ba81ff6](https://github.com/HankHuang0516/EClaw/commit/ba81ff6a17f9b7b61237e45db7873a356245dd5e))
+
 ## [1.127.4](https://github.com/HankHuang0516/EClaw/compare/v1.127.3...v1.127.4) (2026-03-21)
 
 
