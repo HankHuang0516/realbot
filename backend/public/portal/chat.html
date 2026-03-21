@@ -1565,7 +1565,7 @@
                     localStorage.setItem('chat_last_contact_targets', codes.join(','));
                     const c = data.contact;
                     const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
-                    xdeviceLabelCache[c.publicCode] = `${avatar} ${escapeHtml(c.name || c.character || c.publicCode)}`;
+                    xdeviceLabelCache[c.publicCode] = `${renderAvatarHtml(avatar, 20)} ${escapeHtml(c.name || c.character || c.publicCode)}`;
                     showToast(i18n.t('chat_contacts_added'), 'success');
                     renderTargetBar();
                 }
@@ -1724,10 +1724,13 @@
 
             // Cross-device contact filter chips
             xdeviceCodesWithMessages.forEach(code => {
-                const existing = group.querySelector(`[data-filter="xdevice-${code}"]`);
-                if (existing) return;
                 const shortCode = code.length > 12 ? code.slice(0, 8) : code;
                 const label = xdeviceLabelCache[code] || `\u{1F310} ${shortCode}`;
+                const existing = group.querySelector(`[data-filter="xdevice-${code}"]`);
+                if (existing) {
+                    if (existing.innerHTML !== label) existing.innerHTML = label;
+                    return;
+                }
                 const chip = document.createElement('span');
                 chip.className = `filter-chip filter-chip-entity filter-chip-contact${currentFilter === 'xdevice-' + code ? ' active' : ''}`;
                 chip.dataset.filter = `xdevice-${code}`;

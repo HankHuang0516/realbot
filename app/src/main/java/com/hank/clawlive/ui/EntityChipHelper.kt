@@ -2,7 +2,12 @@ package com.hank.clawlive.ui
 
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import com.bumptech.glide.Glide
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.hank.clawlive.BuildConfig
@@ -110,9 +115,32 @@ object EntityChipHelper {
         val chips = mutableMapOf<String, Chip>()
 
         for (contact in contacts) {
-            val label = contact.name ?: contact.publicCode
-            val chip = createContactChip(context, label, contact.publicCode, contact.publicCode in checkedCodes)
+            val name = contact.name ?: contact.publicCode
+            val resolved = EntityAvatarManager.resolveContactAvatar(contact.avatar, contact.character)
+            val isUrl = EntityAvatarManager.isImageUrl(resolved)
+            val chipEmoji = if (isUrl) "\uD83E\uDD9E" else resolved
+            val chip = createContactChip(context, name, contact.publicCode, contact.publicCode in checkedCodes, chipEmoji)
             chip.alpha = if (contact.online) 1.0f else 0.6f
+
+            if (isUrl) {
+                val sizePx = (24 * context.resources.displayMetrics.density).toInt()
+                Glide.with(context)
+                    .asBitmap()
+                    .load(resolved)
+                    .override(sizePx, sizePx)
+                    .circleCrop()
+                    .into(object : CustomTarget<Bitmap>(sizePx, sizePx) {
+                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                            chip.chipIcon = BitmapDrawable(context.resources, resource)
+                            chip.isChipIconVisible = true
+                            chip.text = name
+                        }
+                        override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) {
+                            chip.chipIcon = null
+                            chip.isChipIconVisible = false
+                        }
+                    })
+            }
 
             if (onRemoveClick != null) {
                 chip.isCloseIconVisible = true
@@ -143,9 +171,9 @@ object EntityChipHelper {
         }
     }
 
-    private fun createContactChip(context: Context, label: String, publicCode: String, checked: Boolean): Chip {
+    private fun createContactChip(context: Context, label: String, publicCode: String, checked: Boolean, avatarEmoji: String = "\uD83C\uDF10"): Chip {
         return Chip(context).apply {
-            text = "\uD83C\uDF10 $label"  // 🌐 globe prefix
+            text = "$avatarEmoji $label"
             isCheckable = true
             isChecked = checked
             tag = "contact:$publicCode"

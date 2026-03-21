@@ -48,6 +48,14 @@ class EntityAvatarManager private constructor(context: Context) {
             // Row 5: People & misc
             "😎", "🥷", "🧙", "🦸", "🐧", "🦅"
         )
+
+        /** Check if an avatar value is an image URL (not an emoji). */
+        fun isImageUrl(avatar: String): Boolean = avatar.startsWith("https://")
+
+        /** Resolve a contact's avatar: use stored avatar, or fall back by character type. */
+        fun resolveContactAvatar(avatar: String?, character: String?): String {
+            return avatar ?: if (character == "PIG") "\uD83D\uDC37" else "\uD83E\uDD9E"
+        }
     }
 
     fun getAvatar(entityId: Int): String {
@@ -59,6 +67,6 @@ class EntityAvatarManager private constructor(context: Context) {
         prefs.edit().putString("emoji_$entityId", avatar).apply()
     }
 
-    /** Check if an avatar value is an image URL (not an emoji). */
-    fun isImageUrl(avatar: String): Boolean = avatar.startsWith("https://")
+    /** Instance method delegates to companion for backward compat. */
+    fun isImageUrl(avatar: String): Boolean = Companion.isImageUrl(avatar)
 }

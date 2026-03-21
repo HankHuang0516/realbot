@@ -49,6 +49,9 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
     /** Cross-device contact label cache (publicCode -> display name), set from Activity */
     var xdeviceLabels: Map<String, String> = emptyMap()
 
+    /** Cross-device contact avatar cache (publicCode -> avatar emoji or URL), set from Activity */
+    var xdeviceAvatars: Map<String, String> = emptyMap()
+
     fun getEntityDisplayName(entityId: Int): String {
         return entityNames[entityId]?.let { "$it (#$entityId)" } ?: "Entity $entityId"
     }
@@ -366,6 +369,21 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
             previewScope = null
         }
 
+        private fun bindAvatar(avatarValue: String) {
+            if (EntityAvatarManager.isImageUrl(avatarValue) && imgAvatar != null) {
+                tvAvatar.visibility = View.GONE
+                imgAvatar.visibility = View.VISIBLE
+                Glide.with(itemView.context)
+                    .load(avatarValue)
+                    .circleCrop()
+                    .into(imgAvatar)
+            } else {
+                tvAvatar.visibility = View.VISIBLE
+                imgAvatar?.visibility = View.GONE
+                tvAvatar.text = avatarValue
+            }
+        }
+
         fun bind(message: ChatMessage, adapter: ChatAdapter) {
             tvTime.text = formatTime(message.timestamp)
 
@@ -375,23 +393,12 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(ChatDiffCa
                 tvAvatar.text = "\uD83E\uDD9E"  // lobster emoji
                 tvEntityName.text = "E-Claw"
             } else if (message.messageType == MessageType.CROSS_DEVICE_RECEIVED && message.fromPublicCode != null) {
-                tvAvatar.text = "\uD83C\uDF10"  // 🌐 globe
+                val contactAvatar = adapter.xdeviceAvatars[message.fromPublicCode] ?: "\uD83C\uDF10"
+                bindAvatar(contactAvatar)
                 tvEntityName.text = adapter.getXDeviceLabel(message.fromPublicCode)
             } else {
                 val entityId = message.fromEntityId ?: 0
-                val avatarValue = avatarManager.getAvatar(entityId)
-                if (avatarValue.startsWith("https://") && imgAvatar != null) {
-                    tvAvatar.visibility = android.view.View.GONE
-                    imgAvatar.visibility = android.view.View.VISIBLE
-                    com.bumptech.glide.Glide.with(itemView.context)
-                        .load(avatarValue)
-                        .circleCrop()
-                        .into(imgAvatar)
-                } else {
-                    tvAvatar.visibility = android.view.View.VISIBLE
-                    imgAvatar?.visibility = android.view.View.GONE
-                    tvAvatar.text = avatarValue
-                }
+                bindAvatar(avatarManager.getAvatar(entityId))
                 tvEntityName.text = adapter.getEntityDisplayName(entityId)
             }
 

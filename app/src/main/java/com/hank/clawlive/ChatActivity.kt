@@ -372,12 +372,14 @@ class ChatActivity : AppCompatActivity() {
                 if (response.success) {
                     contacts = response.contacts
 
-                    // Build xdevice label cache for ChatAdapter
                     val labels = mutableMapOf<String, String>()
+                    val avatars = mutableMapOf<String, String>()
                     contacts.forEach { c ->
                         labels[c.publicCode] = c.name ?: c.publicCode
+                        avatars[c.publicCode] = EntityAvatarManager.resolveContactAvatar(c.avatar, c.character)
                     }
                     chatAdapter.xdeviceLabels = labels
+                    chatAdapter.xdeviceAvatars = avatars
 
                     renderContactChips()
 
