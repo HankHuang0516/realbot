@@ -442,7 +442,8 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
     // ============================================
     router.get('/verify-email', async (req, res) => {
         try {
-            const { token } = req.query;
+            const { token, returnTo } = req.query;
+            console.log('[Auth] verify-email called', { hasToken: !!token, returnTo: returnTo || null });
             if (!token) {
                 return res.status(400).send('Missing verification token');
             }
@@ -453,12 +454,15 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
             );
 
             if (result.rows.length === 0) {
+                console.log('[Auth] verify-email: invalid token (no matching user)');
                 return res.status(400).send('Invalid verification token');
             }
 
             const user = result.rows[0];
+            console.log('[Auth] verify-email: found user', { userId: user.id, email: user.email, deviceId: user.device_id });
 
             if (user.verify_token_expires && user.verify_token_expires < Date.now()) {
+                console.log('[Auth] verify-email: token expired', { expires: user.verify_token_expires, now: Date.now() });
                 return res.status(400).send('Verification token expired. Please register again.');
             }
 
@@ -466,18 +470,28 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
                 'UPDATE user_accounts SET email_verified = TRUE, verify_token = NULL, verify_token_expires = NULL WHERE id = $1',
                 [user.id]
             );
+            console.log('[Auth] verify-email: email_verified set to TRUE for user', user.id);
 
             // Flush pending cross-device messages (queued before verification)
             if (_onEmailVerified && user.device_id) {
                 try {
+                    console.log('[Auth] verify-email: calling _onEmailVerified for device', user.device_id);
                     await _onEmailVerified(user.device_id);
+                    console.log('[Auth] verify-email: _onEmailVerified completed');
                 } catch (flushErr) {
                     console.error('[Auth] Pending message flush error:', flushErr.message);
                 }
+            } else {
+                console.log('[Auth] verify-email: no _onEmailVerified callback or no device_id', { hasCallback: !!_onEmailVerified, deviceId: user.device_id });
             }
 
-            // Redirect to portal login page
-            res.redirect(`${BASE_URL}/portal/index.html?verified=true`);
+            // Redirect back to share-chat page if returnTo is provided, otherwise portal login
+            if (returnTo && returnTo.startsWith('/c/')) {
+                console.log('[Auth] verify-email: redirecting to share-chat returnTo', returnTo);
+                res.redirect(`${BASE_URL}${returnTo}?verified=true`);
+            } else {
+                res.redirect(`${BASE_URL}/portal/index.html?verified=true`);
+            }
         } catch (error) {
             console.error('[Auth] Verify email error:', error);
             res.status(500).send('Verification failed');

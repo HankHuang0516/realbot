@@ -435,12 +435,18 @@
     }
 
     function onAuthReady() {
+        dbg('info', 'onAuthReady called', { emailVerified, hasUser: !!currentUser, deviceId: currentUser?.deviceId });
         // Show sender selector only for verified users
         if (emailVerified) {
+            dbg('info', 'Email verified — loading entities, chat history, starting poll');
             loadEntities();
             document.getElementById('senderBar').style.display = 'flex';
             // Load existing conversation and start polling for replies
             loadChatHistory().then(() => startPolling());
+        } else {
+            dbg('warn', 'onAuthReady: email NOT verified — sender bar hidden, no chat history loaded');
+            // Start verification polling if logged in but unverified
+            if (currentUser) startVerificationPolling();
         }
     }
 
@@ -482,9 +488,10 @@
 
         // Logged in but unverified -> queue as pending
         if (!emailVerified) {
-            dbg('warn', 'Email not verified — queuing as pending');
+            dbg('warn', 'Email not verified — queuing as pending', { deviceId: currentUser.deviceId, targetCode, textLen: text.length });
             addLocalMessage(text, 'pending');
             try {
+                dbg('info', 'Saving to pending-cross-speak API', { targetCode, text: text.slice(0, 50) });
                 const pendResp = await fetch(`${API_BASE}/api/chat/pending-cross-speak`, {
                     method: 'POST',
                     credentials: 'include',
@@ -493,11 +500,18 @@
                 });
                 const pendData = await pendResp.json().catch(() => ({}));
                 dbg('info', `Pending queue response: ${pendResp.status}`, pendData);
-                showToast('Message queued (email verification required)', 'warn');
+                if (pendResp.ok) {
+                    showToast(t('sc_message_queued', 'Message queued (email verification required)'), 'warn');
+                } else {
+                    dbg('error', 'Pending queue failed', pendData);
+                    showToast(t('sc_queue_failed', 'Failed to queue message'), 'error');
+                }
             } catch (e) {
                 dbg('error', `Failed to queue pending: ${e.message}`);
-                showToast('Failed to queue message', 'error');
+                showToast(t('sc_queue_failed', 'Failed to queue message'), 'error');
             }
+            // Ensure verification polling is running
+            if (!verifyPollTimer) startVerificationPolling();
             return;
         }
 
@@ -828,7 +842,7 @@
     }
 
     async function doRegister() {
-        dbg('info', 'doRegister called');
+        dbg('info', 'doRegister called', { pendingText: pendingText ? pendingText.slice(0, 50) : null });
         const email = document.getElementById('regEmail').value.trim();
         const pw = document.getElementById('regPassword').value;
         const errEl = document.getElementById('regError');
@@ -836,6 +850,7 @@
         const btn = document.getElementById('regSubmitBtn');
         btn.disabled = true;
         try {
+            dbg('info', 'Calling POST /api/auth/register', { email });
             const resp = await fetch(`${API_BASE}/api/auth/register`, {
                 method: 'POST',
                 credentials: 'include',
@@ -843,6 +858,7 @@
                 body: JSON.stringify({ email, password: pw })
             });
             const data = await resp.json();
+            dbg('info', `Register response: ${resp.status}`, data);
             if (!resp.ok || !data.success) {
                 errEl.textContent = data.error || t('sc_registration_failed', 'Registration failed');
                 btn.disabled = false;
@@ -850,6 +866,7 @@
             }
 
             // Auto-login after register
+            dbg('info', 'Calling POST /api/auth/login (auto-login after register)');
             const loginResp = await fetch(`${API_BASE}/api/auth/login`, {
                 method: 'POST',
                 credentials: 'include',
@@ -857,19 +874,51 @@
                 body: JSON.stringify({ email, password: pw })
             });
             const loginData = await loginResp.json();
+            dbg('info', `Auto-login response: ${loginResp.status}`, { success: loginData.success, deviceId: loginData.user?.deviceId, emailVerified: loginData.user?.emailVerified });
             if (loginResp.ok && loginData.success) {
                 currentUser = loginData.user;
                 emailVerified = false;
             } else {
-                dbg('warn', 'Auto-login failed after register (email not verified), staying on page');
+                dbg('warn', 'Auto-login failed after register — no session cookie', loginData);
             }
 
-            // Stay on share-chat page — email verification required before redirect
+            // Save pending message to DB so it survives page reload
             const saved = pendingText;
+            dbg('info', 'Post-register state', { saved: saved ? saved.slice(0, 50) : null, hasCurrentUser: !!currentUser, targetCode });
             closeModal();
-            if (saved) addLocalMessage(saved, 'pending');
+
+            if (saved && currentUser) {
+                dbg('info', 'Saving pending message to DB via pending-cross-speak API');
+                addLocalMessage(saved, 'pending');
+                try {
+                    const pendResp = await fetch(`${API_BASE}/api/chat/pending-cross-speak`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ targetCode, text: saved })
+                    });
+                    const pendData = await pendResp.json().catch(() => ({}));
+                    dbg('info', `Pending-cross-speak response: ${pendResp.status}`, pendData);
+                    if (!pendResp.ok) {
+                        dbg('error', 'Failed to save pending message to DB', pendData);
+                    }
+                } catch (e) {
+                    dbg('error', `Pending-cross-speak network error: ${e.message}`);
+                }
+            } else if (saved) {
+                dbg('warn', 'Has pending text but no currentUser — message NOT saved to DB');
+                addLocalMessage(saved, 'pending');
+            }
+
             showToast(t('sc_register_success_verify', 'Account created! Check your email to verify.'), 'success');
+
+            // Start polling for email verification status
+            if (currentUser && !emailVerified) {
+                dbg('info', 'Starting email verification polling');
+                startVerificationPolling();
+            }
         } catch (e) {
+            dbg('error', `doRegister error: ${e.message}`);
             errEl.textContent = t('sc_network_error', 'Network error');
             btn.disabled = false;
         }
@@ -908,6 +957,43 @@
             errEl.textContent = t('sc_network_error', 'Network error');
             btn.disabled = false;
         }
+    }
+
+    // ── Email verification polling ──
+    let verifyPollTimer = null;
+    function startVerificationPolling() {
+        if (verifyPollTimer) return;
+        dbg('info', 'Verification polling started (5s interval)');
+        verifyPollTimer = setInterval(async () => {
+            try {
+                dbg('info', 'Verification poll: checking /api/auth/me');
+                const resp = await fetch(`${API_BASE}/api/auth/me`, { credentials: 'include' });
+                if (!resp.ok) { dbg('warn', `Verification poll: /me returned ${resp.status}`); return; }
+                const data = await resp.json();
+                dbg('info', 'Verification poll result', { emailVerified: data.user?.emailVerified, email: data.user?.email });
+                if (data.success && data.user && data.user.emailVerified) {
+                    dbg('info', 'Email verified! Upgrading session state');
+                    clearInterval(verifyPollTimer);
+                    verifyPollTimer = null;
+                    emailVerified = true;
+                    currentUser = data.user;
+
+                    // Upgrade pending messages in DOM
+                    document.querySelectorAll('.msg.pending').forEach(el => {
+                        el.classList.remove('pending');
+                        el.classList.add('sent');
+                        const hint = el.querySelector('.verify-hint');
+                        if (hint) hint.remove();
+                        dbg('info', 'Upgraded pending message to sent');
+                    });
+
+                    onAuthReady();
+                    showToast(t('sc_email_verified', 'Email verified! You can now chat.'), 'success');
+                }
+            } catch (e) {
+                dbg('error', `Verification poll error: ${e.message}`);
+            }
+        }, 5000);
     }
 
     function escapeHtml(s) {

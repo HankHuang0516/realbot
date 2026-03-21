@@ -1477,6 +1477,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "Registration failed",
         "sc_register_success_verify": "Account created! Check your email to verify.",
         "sc_login_failed": "Login failed",
+        "sc_email_verified": "Email verified! You can now chat.",
+        "sc_message_queued": "Message queued (email verification required)",
+        "sc_queue_failed": "Failed to queue message",
         "sc_qr_loading": "QR loading...",
         "sc_qr_failed": "QR failed to load",
 
@@ -3187,6 +3190,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "註冊失敗",
         "sc_register_success_verify": "帳號已建立！請至信箱驗證後即可開始聊天。",
         "sc_login_failed": "登入失敗",
+        "sc_email_verified": "郵件已驗證！現在可以開始聊天了。",
+        "sc_message_queued": "訊息已排入佇列（需先驗證電子郵件）",
+        "sc_queue_failed": "訊息排入佇列失敗",
         "sc_qr_loading": "QR 載入中...",
         "sc_qr_failed": "QR 載入失敗",
 
@@ -4935,6 +4941,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "注册失败",
         "sc_register_success_verify": "账号已创建！请查收邮件完成验证。",
         "sc_login_failed": "登录失败",
+        "sc_email_verified": "邮箱已验证！现在可以开始聊天了。",
+        "sc_message_queued": "消息已排队（需先验证邮箱）",
+        "sc_queue_failed": "消息排队失败",
         "sc_qr_loading": "QR 加载中...",
         "sc_qr_failed": "QR 加载失败",
 
@@ -6494,6 +6503,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "登録に失敗しました",
         "sc_register_success_verify": "アカウントが作成されました！メールを確認して認証してください。",
         "sc_login_failed": "ログインに失敗しました",
+        "sc_email_verified": "メール認証完了！チャットを開始できます。",
+        "sc_message_queued": "メッセージがキューに追加されました（メール認証が必要です）",
+        "sc_queue_failed": "メッセージのキュー追加に失敗しました",
         "sc_qr_loading": "QR 読み込み中...",
         "sc_qr_failed": "QR の読み込みに失敗しました",
 
@@ -8176,6 +8188,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "회원가입 실패",
         "sc_register_success_verify": "계정이 생성되었습니다! 이메일을 확인하여 인증해 주세요.",
         "sc_login_failed": "로그인 실패",
+        "sc_email_verified": "이메일 인증 완료! 이제 채팅할 수 있습니다.",
+        "sc_message_queued": "메시지가 대기열에 추가됨 (이메일 인증 필요)",
+        "sc_queue_failed": "메시지 대기열 추가 실패",
         "sc_qr_loading": "QR 로딩 중...",
         "sc_qr_failed": "QR 로드 실패",
 
@@ -9864,6 +9879,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "ลงทะเบียนไม่สำเร็จ",
         "sc_register_success_verify": "สร้างบัญชีสำเร็จ! กรุณาตรวจสอบอีเมลเพื่อยืนยัน",
         "sc_login_failed": "เข้าสู่ระบบไม่สำเร็จ",
+        "sc_email_verified": "ยืนยันอีเมลสำเร็จ! คุณสามารถแชทได้แล้ว",
+        "sc_message_queued": "ข้อความอยู่ในคิว (ต้องยืนยันอีเมลก่อน)",
+        "sc_queue_failed": "ไม่สามารถเพิ่มข้อความในคิวได้",
         "sc_qr_loading": "กำลังโหลด QR...",
         "sc_qr_failed": "โหลด QR ไม่สำเร็จ",
 
@@ -11546,6 +11564,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "Đăng ký thất bại",
         "sc_register_success_verify": "Tài khoản đã được tạo! Vui lòng kiểm tra email để xác minh.",
         "sc_login_failed": "Đăng nhập thất bại",
+        "sc_email_verified": "Email đã xác minh! Bạn có thể trò chuyện ngay.",
+        "sc_message_queued": "Tin nhắn đã xếp hàng (cần xác minh email)",
+        "sc_queue_failed": "Không thể xếp hàng tin nhắn",
         "sc_qr_loading": "Đang tải QR...",
         "sc_qr_failed": "Tải QR thất bại",
 
@@ -13228,6 +13249,9 @@ const TRANSLATIONS = {
         "sc_registration_failed": "Pendaftaran gagal",
         "sc_register_success_verify": "Akun berhasil dibuat! Silakan periksa email untuk verifikasi.",
         "sc_login_failed": "Login gagal",
+        "sc_email_verified": "Email terverifikasi! Anda sekarang bisa mengobrol.",
+        "sc_message_queued": "Pesan diantrekan (perlu verifikasi email)",
+        "sc_queue_failed": "Gagal mengantrikan pesan",
         "sc_qr_loading": "Memuat QR...",
         "sc_qr_failed": "Gagal memuat QR",
 
