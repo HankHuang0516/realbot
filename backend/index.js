@@ -764,7 +764,24 @@ authModule.setOnEmailVerified(async (deviceId) => {
             toEntity.message = `xdevice:owner: ${msg.text}`;
             toEntity.lastUpdated = Date.now();
 
-            if (toEntity.webhook) {
+            if (toEntity.bindingType === 'channel') {
+                // Channel plugin: send structured JSON
+                channelModule.pushToChannelCallback(target.deviceId, target.entityId, {
+                    event: 'cross_device_message',
+                    from: `New User (${deviceId})`,
+                    text: msg.text,
+                    mediaType: msg.media_type || null,
+                    mediaUrl: msg.media_url || null,
+                    fromEntityId: -1,
+                    fromPublicCode: null,
+                    isOwnerMode: true,
+                    eclaw_context: {
+                        missionHints: getMissionApiHints('https://eclawbot.com', target.deviceId, target.entityId, toEntity.botSecret),
+                        silentToken: '[SILENT]',
+                        identitySetupRequired: !toEntity.identity
+                    }
+                }, toEntity.channelAccountId).catch(() => {});
+            } else if (toEntity.webhook) {
                 const apiBase = 'https://eclawbot.com';
                 let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
                 pushMsg += `To update your wallpaper status:\n`;
@@ -5262,9 +5279,46 @@ app.post('/api/entity/cross-speak', async (req, res) => {
 
     console.log(`[CrossSpeak] ${deviceId}:${fromId} (${fromEntity.publicCode}) -> ${target.deviceId}:${target.entityId} (${targetCode}): "${crossText}"`);
 
-    // Push to target bot webhook
+    // Push to target bot — channel callback or traditional webhook
+    const isChannelBound = toEntity.bindingType === 'channel';
     const hasWebhook = !!toEntity.webhook;
-    if (hasWebhook) {
+    if (isChannelBound) {
+        // Channel plugin: send structured JSON
+        channelModule.pushToChannelCallback(target.deviceId, target.entityId, {
+            event: 'cross_device_message',
+            from: `${fromEntity.name || 'Entity'} (${fromEntity.publicCode})`,
+            text: crossText,
+            mediaType: mediaType || null,
+            mediaUrl: mediaUrl || null,
+            backupUrl: mediaType === 'photo' ? getBackupUrl(mediaUrl) : null,
+            fromEntityId: fromId,
+            fromPublicCode: fromEntity.publicCode,
+            fromCharacter: fromEntity.character,
+            eclaw_context: {
+                csRemaining: getCrossSpeakRemaining(target.deviceId, target.entityId),
+                csMax: CROSS_SPEAK_MAX_MESSAGES,
+                missionHints: getMissionApiHints('https://eclawbot.com', target.deviceId, target.entityId, toEntity.botSecret),
+                silentToken: '[SILENT]',
+                identitySetupRequired: !toEntity.identity,
+                preInject: xdSettings.pre_inject || null
+            }
+        }, toEntity.channelAccountId).then(pushResult => {
+            if (pushResult.pushed) {
+                messageObj.delivered = true;
+                markChatMessageDelivered(chatMsgId, String(target.entityId));
+                serverLog('info', 'cross_speak_push', `${fromEntity.publicCode} -> ${targetCode} channel push OK`, { deviceId, entityId: fromId, metadata: { targetCode, targetDeviceId: target.deviceId, mode: 'channel' } });
+                autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
+                autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
+                db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
+                db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
+            } else {
+                serverLog('warn', 'cross_speak_push', `${fromEntity.publicCode} -> ${targetCode} channel not-pushed: ${pushResult.reason || 'unknown'}`, { deviceId, entityId: fromId });
+            }
+        }).catch(err => {
+            console.error(`[CrossSpeak] Channel push failed: ${err.message}`);
+            serverLog('error', 'cross_speak_push', `${fromEntity.publicCode} -> ${targetCode} channel FAILED: ${err.message}`, { deviceId, entityId: fromId });
+        });
+    } else if (hasWebhook) {
         const apiBase = 'https://eclawbot.com';
         const csRemaining = getCrossSpeakRemaining(target.deviceId, target.entityId);
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
@@ -5298,12 +5352,10 @@ app.post('/api/entity/cross-speak', async (req, res) => {
                 messageObj.delivered = true;
                 markChatMessageDelivered(chatMsgId, String(target.entityId));
                 serverLog('info', 'cross_speak_push', `${fromEntity.publicCode} -> ${targetCode} push OK`, { deviceId, entityId: fromId, metadata: { targetCode, targetDeviceId: target.deviceId } });
-                    // Auto-collect: sender collects target's card, target collects sender's card
-                    autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
-                    autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
-                    // Record recent interaction on both sides
-                    db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
-                    db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
+                autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
+                autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
+                db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
+                db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
             } else {
                 serverLog('warn', 'cross_speak_push', `${fromEntity.publicCode} -> ${targetCode} not-pushed: ${pushResult.reason || 'unknown'}`, { deviceId, entityId: fromId });
             }
@@ -5318,8 +5370,8 @@ app.post('/api/entity/cross-speak', async (req, res) => {
         message: `Cross-device message sent`,
         from: { publicCode: fromEntity.publicCode, character: fromEntity.character, entityId: fromId },
         to: { publicCode: targetCode, character: toEntity.character },
-        pushed: hasWebhook ? "pending" : false,
-        mode: hasWebhook ? "push" : "polling"
+        pushed: isChannelBound || hasWebhook ? "pending" : false,
+        mode: isChannelBound ? "channel" : (hasWebhook ? "push" : "polling")
     });
 });
 
@@ -6150,10 +6202,47 @@ app.post('/api/client/cross-speak', async (req, res) => {
     console.log(`[ClientCrossSpeak] ${deviceId}:${fromId} (${senderLabel}) -> ${target.deviceId}:${target.entityId} (${targetCode}): "${text}"`);
     serverLog('info', 'cross_speak', `[DEBUG] ClientCrossSpeak ${senderLabel} -> ${targetCode}: queued=${!!messageObj}, chatMsgId=${chatMsgId}`, { deviceId, entityId: fromId, metadata: { targetCode, targetDeviceId: target.deviceId, isOwnerMode, hasWebhook: !!toEntity.webhook } });
 
-    // Push to target bot
+    // Push to target bot — channel callback or traditional webhook
+    const isChannelBound = toEntity.bindingType === 'channel';
     const hasWebhook = !!toEntity.webhook;
-    console.log(`[ClientCrossSpeak:DEBUG] hasWebhook=${hasWebhook}, webhookUrl=${toEntity.webhook ? toEntity.webhook.slice(0, 40) + '...' : 'null'}`);
-    if (hasWebhook) {
+    console.log(`[ClientCrossSpeak:DEBUG] isChannelBound=${isChannelBound}, hasWebhook=${hasWebhook}, webhookUrl=${toEntity.webhook ? toEntity.webhook.slice(0, 40) + '...' : 'null'}`);
+    if (isChannelBound) {
+        // Channel plugin: send structured JSON
+        channelModule.pushToChannelCallback(target.deviceId, target.entityId, {
+            event: 'cross_device_message',
+            from: isOwnerMode ? `Device Owner (${senderName})` : `${fromEntity.name || 'User'} (${fromEntity.publicCode})`,
+            text,
+            mediaType: mediaType || null,
+            mediaUrl: mediaUrl || null,
+            backupUrl: mediaType === 'photo' ? getBackupUrl(mediaUrl) : null,
+            fromEntityId: isOwnerMode ? -1 : fromId,
+            fromPublicCode: isOwnerMode ? null : fromEntity.publicCode,
+            isOwnerMode,
+            eclaw_context: {
+                missionHints: getMissionApiHints('https://eclawbot.com', target.deviceId, target.entityId, toEntity.botSecret),
+                silentToken: '[SILENT]',
+                identitySetupRequired: !toEntity.identity,
+                preInject: xdSettingsClient.pre_inject || null
+            }
+        }, toEntity.channelAccountId).then(pushResult => {
+            if (pushResult.pushed) {
+                messageObj.delivered = true;
+                markChatMessageDelivered(chatMsgId, String(target.entityId));
+                serverLog('info', 'cross_speak_push', `Client ${senderLabel} -> ${targetCode} channel push OK`, { deviceId, entityId: fromId, metadata: { mode: 'channel' } });
+                if (!isOwnerMode) {
+                    autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
+                    autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
+                    db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
+                    db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
+                }
+            } else {
+                serverLog('warn', 'cross_speak_push', `Client ${senderLabel} -> ${targetCode} channel not-pushed: ${pushResult.reason || 'unknown'}`, { deviceId, entityId: fromId });
+            }
+        }).catch(err => {
+            console.error(`[ClientCrossSpeak] Channel push failed: ${err.message}`);
+            serverLog('error', 'cross_speak_push', `ClientCrossSpeak ${senderLabel} -> ${targetCode} channel FAILED: ${err.message}`, { deviceId, entityId: fromId });
+        });
+    } else if (hasWebhook) {
         const apiBase = 'https://eclawbot.com';
         let pushMsg = `[ACTION REQUIRED] You MUST use exec tool with curl to call the API. Your text reply is DISCARDED.\n`;
         pushMsg += `To update your wallpaper status:\n`;
@@ -6186,17 +6275,15 @@ app.post('/api/client/cross-speak', async (req, res) => {
                 markChatMessageDelivered(chatMsgId, String(target.entityId));
                 serverLog('info', 'cross_speak_push', `Client ${senderLabel} -> ${targetCode} push OK`, { deviceId, entityId: fromId });
                 if (!isOwnerMode) {
-                    // Auto-collect: sender collects target's card, target collects sender's card
                     autoCollectCard(deviceId, targetCode, toEntity, 'auto_speak');
                     autoCollectCard(target.deviceId, fromEntity.publicCode, fromEntity, 'auto_speak');
-                    // Record recent interaction on both sides
                     db.upsertRecentInteraction(target.deviceId, fromEntity.publicCode, { name: fromEntity.name, character: fromEntity.character, avatar: fromEntity.avatar, cardSnapshot: fromEntity.agentCard }).catch(() => {});
                     db.upsertRecentInteraction(deviceId, targetCode, { name: toEntity.name, character: toEntity.character, avatar: toEntity.avatar, cardSnapshot: toEntity.agentCard }).catch(() => {});
                 }
             }
         }).catch(err => {
             console.error(`[ClientCrossSpeak] Push failed: ${err.message}`);
-            serverLog('error', 'push_error', `ClientCrossSpeak ${senderLabel} -> ${targetCode} FAILED: ${err.message}`, { deviceId, entityId: fromId });
+            serverLog('error', 'cross_speak_push', `ClientCrossSpeak ${senderLabel} -> ${targetCode} FAILED: ${err.message}`, { deviceId, entityId: fromId });
         });
     } else {
         console.log(`[ClientCrossSpeak:DEBUG] No webhook on target entity ${targetCode} — message queued but NOT pushed`);
@@ -6208,8 +6295,8 @@ app.post('/api/client/cross-speak', async (req, res) => {
         message: `Cross-device message sent`,
         from: isOwnerMode ? { owner: true } : { publicCode: fromEntity.publicCode, character: fromEntity.character },
         to: { publicCode: targetCode, character: toEntity.character },
-        pushed: hasWebhook ? "pending" : false,
-        _debug: { senderDeviceId: deviceId, targetDeviceId: target.deviceId, targetEntityId: target.entityId, isOwnerMode, hasWebhook, chatMsgId }
+        pushed: isChannelBound || hasWebhook ? "pending" : false,
+        _debug: { senderDeviceId: deviceId, targetDeviceId: target.deviceId, targetEntityId: target.entityId, isOwnerMode, isChannelBound, hasWebhook, chatMsgId }
     };
     console.log(`[ClientCrossSpeak:DEBUG] Response:`, JSON.stringify(responsePayload));
     res.json(responsePayload);
@@ -12207,3 +12294,4 @@ app.get('/api/bot/pending-messages', (req, res) => {
 module.exports = app;
 module.exports.httpServer = httpServer;
 module.exports.io = io;
+module.exports.devices = devices;
