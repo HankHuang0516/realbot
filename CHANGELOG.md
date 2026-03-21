@@ -1,3 +1,10 @@
+## [1.126.3](https://github.com/HankHuang0516/EClaw/compare/v1.126.2...v1.126.3) (2026-03-21)
+
+
+### Bug Fixes
+
+* **cross-speak:** channel auto-route, /c/:code redirect, avatar rendering ([#368](https://github.com/HankHuang0516/EClaw/issues/368)) ([76ec2c8](https://github.com/HankHuang0516/EClaw/commit/76ec2c8b15e0c0f5c7825989ae14dbe6a78d0648))
+
 ## [1.126.2](https://github.com/HankHuang0516/EClaw/compare/v1.126.1...v1.126.2) (2026-03-21)
 
 
