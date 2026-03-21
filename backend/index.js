@@ -9856,7 +9856,8 @@ const channelModule = require('./channel-api')(devices, {
     createDefaultEntity,
     apiBase: process.env.API_BASE || 'https://eclawbot.com',
     awardEntityXP,
-    XP_AMOUNTS
+    XP_AMOUNTS,
+    notifyDevice
 });
 app.use('/api/channel', channelModule.router);
 // Wire channel push into mission module (Bot Push Parity Rule — must be after channelModule init)
