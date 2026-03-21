@@ -859,12 +859,16 @@
             const loginData = await loginResp.json();
             if (loginResp.ok && loginData.success) {
                 currentUser = loginData.user;
-                emailVerified = false; // just registered, not verified yet
+                emailVerified = false;
+            } else {
+                dbg('warn', 'Auto-login failed after register (email not verified), staying on page');
             }
 
+            // Stay on share-chat page — email verification required before redirect
             const saved = pendingText;
             closeModal();
-            dispatchPendingAndRedirect(saved, false);
+            if (saved) addLocalMessage(saved, 'pending');
+            showToast(t('sc_register_success_verify', 'Account created! Check your email to verify.'), 'success');
         } catch (e) {
             errEl.textContent = t('sc_network_error', 'Network error');
             btn.disabled = false;
