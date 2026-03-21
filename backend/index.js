@@ -752,7 +752,9 @@ authModule.initAuthDatabase();
 
 // Wire up pending message flush on email verification
 authModule.setOnEmailVerified(async (deviceId) => {
+    console.log(`[PendingFlush] onEmailVerified triggered for device ${deviceId}`);
     const pending = await db.getPendingCrossMessages(deviceId);
+    console.log(`[PendingFlush] Found ${pending.length} pending cross-speak messages for device ${deviceId}`);
     if (pending.length === 0) return;
     console.log(`[PendingFlush] Flushing ${pending.length} pending cross-speak messages for device ${deviceId}`);
 

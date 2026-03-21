@@ -300,4 +300,37 @@ describe('share-chat registration flow (static analysis)', () => {
         const count = (i18nContent.match(/sc_register_success_verify/g) || []).length;
         expect(count).toBeGreaterThanOrEqual(langs.length);
     });
+
+    it('doRegister saves pending message to DB via pending-cross-speak API', () => {
+        const match = html.match(/async function doRegister\(\)\s*\{([\s\S]*?)^\s{4}\}/m);
+        expect(match).toBeTruthy();
+        const body = match[1];
+        expect(body).toContain('pending-cross-speak');
+    });
+
+    it('doRegister starts verification polling after register', () => {
+        const match = html.match(/async function doRegister\(\)\s*\{([\s\S]*?)^\s{4}\}/m);
+        expect(match).toBeTruthy();
+        const body = match[1];
+        expect(body).toContain('startVerificationPolling');
+    });
+
+    it('startVerificationPolling function exists and polls /api/auth/me', () => {
+        expect(html).toContain('function startVerificationPolling()');
+        expect(html).toContain('/api/auth/me');
+        // Should upgrade pending messages when verified
+        expect(html).toContain("el.classList.remove('pending')");
+        expect(html).toContain("el.classList.add('sent')");
+    });
+
+    it('i18n keys sc_email_verified, sc_message_queued, sc_queue_failed exist in all languages', () => {
+        const i18nContent = fs.readFileSync(
+            path.join(__dirname, '../../public/shared/i18n.js'), 'utf8'
+        );
+        const langs = ['en', 'zh-TW', 'zh-CN', 'ja', 'ko', 'th', 'vi', 'id'];
+        for (const key of ['sc_email_verified', 'sc_message_queued', 'sc_queue_failed']) {
+            const count = (i18nContent.match(new RegExp(key, 'g')) || []).length;
+            expect(count).toBeGreaterThanOrEqual(langs.length);
+        }
+    });
 });
