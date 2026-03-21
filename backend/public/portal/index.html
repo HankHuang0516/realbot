@@ -574,7 +574,7 @@
 
             try {
                 await apiCall('POST', '/api/auth/register', { email, password });
-                showMsg('regSuccess', 'Account created! Check your email for verification link.', 'success');
+                showMsg('regSuccess', i18n.t('sc_register_success_verify'), 'success');
                 document.getElementById('regEmail').value = '';
                 document.getElementById('regPassword').value = '';
                 document.getElementById('regPasswordConfirm').value = '';

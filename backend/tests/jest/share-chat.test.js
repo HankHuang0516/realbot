@@ -258,3 +258,46 @@ describe('POST /api/chat/pending-cross-speak', () => {
         expect([400, 401]).toContain(res.status);
     });
 });
+
+// ════════════════════════════════════════════════════════════════
+// Regression: share-chat registration must NOT redirect away
+// ════════════════════════════════════════════════════════════════
+describe('share-chat registration flow (static analysis)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const html = fs.readFileSync(
+        path.join(__dirname, '../../public/portal/share-chat.html'), 'utf8'
+    );
+
+    it('doRegister does not call dispatchPendingAndRedirect', () => {
+        // Extract the doRegister function body
+        const match = html.match(/async function doRegister\(\)\s*\{([\s\S]*?)^\s{4}\}/m);
+        expect(match).toBeTruthy();
+        const body = match[1];
+        expect(body).not.toContain('dispatchPendingAndRedirect');
+    });
+
+    it('doRegister shows success toast with i18n key', () => {
+        const match = html.match(/async function doRegister\(\)\s*\{([\s\S]*?)^\s{4}\}/m);
+        expect(match).toBeTruthy();
+        const body = match[1];
+        expect(body).toContain('sc_register_success_verify');
+    });
+
+    it('doRegister shows pending message on successful registration', () => {
+        const match = html.match(/async function doRegister\(\)\s*\{([\s\S]*?)^\s{4}\}/m);
+        expect(match).toBeTruthy();
+        const body = match[1];
+        expect(body).toContain("addLocalMessage(saved, 'pending')");
+    });
+
+    it('i18n key sc_register_success_verify exists in all languages', () => {
+        const i18nContent = fs.readFileSync(
+            path.join(__dirname, '../../public/shared/i18n.js'), 'utf8'
+        );
+        const langs = ['en', 'zh-TW', 'zh-CN', 'ja', 'ko', 'th', 'vi', 'id'];
+        // The key should appear once per language
+        const count = (i18nContent.match(/sc_register_success_verify/g) || []).length;
+        expect(count).toBeGreaterThanOrEqual(langs.length);
+    });
+});
