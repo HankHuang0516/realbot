@@ -1,3 +1,10 @@
+## [1.128.4](https://github.com/HankHuang0516/EClaw/compare/v1.128.3...v1.128.4) (2026-03-21)
+
+
+### Bug Fixes
+
+* register endpoint sets session cookie so pending messages can be saved ([#381](https://github.com/HankHuang0516/EClaw/issues/381)) ([dbd8010](https://github.com/HankHuang0516/EClaw/commit/dbd8010b6d9d87525babc0e5a738635cad0441ed))
+
 ## [1.128.3](https://github.com/HankHuang0516/EClaw/compare/v1.128.2...v1.128.3) (2026-03-21)
 
 
