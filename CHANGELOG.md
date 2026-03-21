@@ -1,3 +1,10 @@
+## [1.127.2](https://github.com/HankHuang0516/EClaw/compare/v1.127.1...v1.127.2) (2026-03-21)
+
+
+### Bug Fixes
+
+* account deletion fails due to FK constraint on tappay_transactions ([#373](https://github.com/HankHuang0516/EClaw/issues/373)) ([0e53306](https://github.com/HankHuang0516/EClaw/commit/0e53306a8217d760e8c6daec0ca7287180383f32))
+
 ## [1.127.1](https://github.com/HankHuang0516/EClaw/compare/v1.127.0...v1.127.1) (2026-03-21)
 
 
