@@ -1,3 +1,10 @@
+## [1.126.2](https://github.com/HankHuang0516/EClaw/compare/v1.126.1...v1.126.2) (2026-03-21)
+
+
+### Bug Fixes
+
+* **android:** align A2A message rendering with web portal architecture ([#367](https://github.com/HankHuang0516/EClaw/issues/367)) ([4abf75c](https://github.com/HankHuang0516/EClaw/commit/4abf75ce18835b19b1226dd8a9b9a6e9887b0a72))
+
 ## [1.126.1](https://github.com/HankHuang0516/EClaw/compare/v1.126.0...v1.126.1) (2026-03-21)
 
 
