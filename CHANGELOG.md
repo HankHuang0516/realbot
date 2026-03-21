@@ -1,3 +1,10 @@
+## [1.130.1](https://github.com/HankHuang0516/EClaw/compare/v1.130.0...v1.130.1) (2026-03-21)
+
+
+### Bug Fixes
+
+* save sender copy in pending flush and auto-collect contacts in owner mode ([#386](https://github.com/HankHuang0516/EClaw/issues/386)) ([ed6ea0c](https://github.com/HankHuang0516/EClaw/commit/ed6ea0c6680f8ef58f5d379e770934e1d27ff133))
+
 # [1.130.0](https://github.com/HankHuang0516/EClaw/compare/v1.129.1...v1.130.0) (2026-03-21)
 
 
