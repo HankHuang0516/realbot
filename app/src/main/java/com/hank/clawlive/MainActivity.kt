@@ -1,6 +1,7 @@
 package com.hank.clawlive
 
 import android.Manifest
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -830,12 +831,12 @@ class MainActivity : AppCompatActivity() {
                 inputStream.close()
 
                 val requestFile = okhttp3.RequestBody.create(
-                    okhttp3.MediaType.parse("image/jpeg"), bytes
+                    "image/jpeg".toMediaTypeOrNull(), bytes
                 )
                 val filePart = okhttp3.MultipartBody.Part.createFormData("file", "avatar.jpg", requestFile)
-                val deviceIdPart = okhttp3.RequestBody.create(okhttp3.MediaType.parse("text/plain"), deviceManager.deviceId)
-                val secretPart = okhttp3.RequestBody.create(okhttp3.MediaType.parse("text/plain"), deviceManager.deviceSecret)
-                val entityIdPart = okhttp3.RequestBody.create(okhttp3.MediaType.parse("text/plain"), entityId.toString())
+                val deviceIdPart = okhttp3.RequestBody.create("text/plain".toMediaTypeOrNull(), deviceManager.deviceId)
+                val secretPart = okhttp3.RequestBody.create("text/plain".toMediaTypeOrNull(), deviceManager.deviceSecret)
+                val entityIdPart = okhttp3.RequestBody.create("text/plain".toMediaTypeOrNull(), entityId.toString())
 
                 val response = withContext(Dispatchers.IO) {
                     api.uploadEntityAvatar(filePart, deviceIdPart, secretPart, entityIdPart)
@@ -844,8 +845,7 @@ class MainActivity : AppCompatActivity() {
                 if (response.success && response.avatar != null) {
                     avatarManager.setAvatar(entityId, response.avatar)
                     android.widget.Toast.makeText(this@MainActivity, R.string.avatar_upload_success, android.widget.Toast.LENGTH_SHORT).show()
-                    // Refresh UI
-                    viewModel.loadEntities(deviceManager.deviceId, deviceManager.deviceSecret)
+                    // UI will refresh via status polling
                 } else {
                     android.widget.Toast.makeText(this@MainActivity, R.string.avatar_upload_failed, android.widget.Toast.LENGTH_SHORT).show()
                 }

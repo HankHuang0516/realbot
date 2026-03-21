@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "857252321032",
+    "project_id": "eclaw-cc72a",
+    "storage_bucket": "eclaw-cc72a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:857252321032:android:5761988a68ed9e723abebd",
+        "android_client_info": {
+          "package_name": "com.hank.clawlive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsY_ayM0vMXilM8taRPmJ3VSvyqEKjPZo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
