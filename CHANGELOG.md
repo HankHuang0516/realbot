@@ -1,3 +1,10 @@
+## [1.124.1](https://github.com/HankHuang0516/EClaw/compare/v1.124.0...v1.124.1) (2026-03-21)
+
+
+### Bug Fixes
+
+* **ui:** WCAG contrast, CSS vars, i18n gaps ([#360](https://github.com/HankHuang0516/EClaw/issues/360)) ([8a12e6f](https://github.com/HankHuang0516/EClaw/commit/8a12e6f49eb20d77c57e94bb9e4e07ec4ed87398)), closes [#777](https://github.com/HankHuang0516/EClaw/issues/777) [#999](https://github.com/HankHuang0516/EClaw/issues/999) [text_hint/#777](https://github.com/HankHuang0516/EClaw/issues/777) [text_disabled/#666](https://github.com/HankHuang0516/EClaw/issues/666) [#64B5F6](https://github.com/HankHuang0516/EClaw/issues/64B5F6)
+
 # [1.124.0](https://github.com/HankHuang0516/EClaw/compare/v1.123.3...v1.124.0) (2026-03-21)
 
 
