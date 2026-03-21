@@ -319,6 +319,15 @@ class ChatRepository private constructor(
         val msgType = if (isEntityToEntity) MessageType.ENTITY_TO_ENTITY else MessageType.ENTITY_BROADCAST
         val targets = if (isEntityToEntity) targetEntityId.toString() else null
 
+        // Construct source field in same format as web portal: "entity:{from}:{char}->{target}"
+        // This ensures consistent rendering across platforms. For broadcasts without a known
+        // target, use the receiving entity's ID (will be enriched by backend sync later).
+        val sourceField = if (isEntityToEntity) {
+            "entity:$fromEntityId:$fromCharacter->$targetEntityId"
+        } else {
+            "entity:$fromEntityId:$fromCharacter->$fromEntityId"
+        }
+
         val message = ChatMessage(
             text = text,
             timestamp = timestamp,
@@ -327,6 +336,7 @@ class ChatRepository private constructor(
             fromEntityId = fromEntityId,
             fromEntityCharacter = fromCharacter,
             targetEntityIds = targets,
+            source = sourceField,
             deduplicationKey = deduplicationKey,
             isSynced = true
         )
@@ -378,10 +388,29 @@ class ChatRepository private constructor(
             if (!msg.is_from_user && msg.entity_id != null) {
                 val sinceTimestamp = timestamp - DEDUP_WINDOW_MS
                 if (chatDao.existsByContentAndEntity(msg.entity_id, msg.text, sinceTimestamp)) {
-                    // Update backendId AND deduplicationKey so ChatIntegrityValidator can find
-                    // this message by its backend key ("backend_${id}") and reactions work.
-                    chatDao.setBackendIdByContentMatch(msg.entity_id, msg.text, sinceTimestamp, msg.id, "backend_${msg.id}")
-                    Timber.d("[A2A_DEDUP_CROSS] Skipping backend message (already stored from entity polling/mq): entity_id=${msg.entity_id} source=${msg.source} text=${msg.text.take(60)}")
+                    // Enrich the existing message with full A2A metadata from backend.
+                    // Previously only set backendId — now also updates source, targets,
+                    // delivery status so rendering matches web portal architecture.
+                    val entityPattern = Regex("^entity:(\\d+):([^:]+)->(\\S+)$")
+                    val match = entityPattern.find(msg.source)
+                    if (match != null) {
+                        val targets = match.groupValues[3]
+                        chatDao.enrichFromBackendSync(
+                            entityId = msg.entity_id,
+                            text = msg.text,
+                            sinceTimestamp = sinceTimestamp,
+                            backendId = msg.id,
+                            newDedupKey = "backend_${msg.id}",
+                            source = msg.source,
+                            messageType = if (targets.contains(",")) MessageType.ENTITY_BROADCAST else MessageType.ENTITY_TO_ENTITY,
+                            targetEntityIds = targets,
+                            isDelivered = msg.is_delivered,
+                            deliveredTo = msg.delivered_to
+                        )
+                    } else {
+                        chatDao.setBackendIdByContentMatch(msg.entity_id, msg.text, sinceTimestamp, msg.id, "backend_${msg.id}")
+                    }
+                    Timber.d("[A2A_DEDUP_CROSS] Enriched existing message: entity_id=${msg.entity_id} source=${msg.source}")
                     continue
                 }
             }
@@ -466,15 +495,16 @@ class ChatRepository private constructor(
                 val senderEntityId = entityMatch.groupValues[1].toIntOrNull()
                 val senderCharacter = entityMatch.groupValues[2]
                 val targets = entityMatch.groupValues[3] // "1" or "1,2,3"
+                // Web portal treats all entity->target messages the same way (sender → targets).
+                // Use ENTITY_BROADCAST for multi-target, ENTITY_TO_ENTITY for single-target.
                 val msgType = if (targets.contains(",")) MessageType.ENTITY_BROADCAST else MessageType.ENTITY_TO_ENTITY
-
-                Timber.d("[A2A_SYNC_BACKEND] type=$msgType from=Entity$senderEntityId($senderCharacter) targets=$targets source=${msg.source} backendId=${msg.id} delivered=${msg.is_delivered} deliveredTo=${msg.delivered_to} text=${msg.text.take(60)}")
 
                 ChatMessage(
                     text = msg.text,
                     timestamp = timestamp,
                     isFromUser = false,
                     messageType = msgType,
+                    source = msg.source,
                     fromEntityId = senderEntityId,
                     fromEntityCharacter = senderCharacter,
                     targetEntityIds = targets,

@@ -163,6 +163,33 @@ interface ChatMessageDao {
     suspend fun setBackendIdByContentMatch(entityId: Int, text: String, sinceTimestamp: Long, backendId: String, newDedupKey: String)
 
     /**
+     * Enrich a previously stored message (from messageQueue or entity polling) with full
+     * A2A metadata from backend sync. Updates source, targets, delivery status, and backendId
+     * so rendering matches web portal's architecture.
+     */
+    @Query("""
+        UPDATE chat_messages SET
+            backendId = :backendId,
+            deduplicationKey = :newDedupKey,
+            source = :source,
+            messageType = :messageType,
+            targetEntityIds = :targetEntityIds,
+            isDelivered = :isDelivered,
+            deliveredTo = :deliveredTo
+        WHERE fromEntityId = :entityId
+          AND text = :text
+          AND isFromUser = 0
+          AND timestamp > :sinceTimestamp
+          AND backendId IS NULL
+    """)
+    suspend fun enrichFromBackendSync(
+        entityId: Int, text: String, sinceTimestamp: Long,
+        backendId: String, newDedupKey: String,
+        source: String, messageType: MessageType, targetEntityIds: String?,
+        isDelivered: Boolean, deliveredTo: String?
+    )
+
+    /**
      * Clear all messages
      */
     @Query("DELETE FROM chat_messages")
