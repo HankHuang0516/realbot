@@ -1,3 +1,10 @@
+## [1.124.3](https://github.com/HankHuang0516/EClaw/compare/v1.124.2...v1.124.3) (2026-03-21)
+
+
+### Bug Fixes
+
+* **channel:** add channel push support to cross-speak and pending-flush endpoints ([#362](https://github.com/HankHuang0516/EClaw/issues/362)) ([e1acf43](https://github.com/HankHuang0516/EClaw/commit/e1acf432daec9884e78751a3e004e29d9fdbbfd6))
+
 ## [1.124.2](https://github.com/HankHuang0516/EClaw/compare/v1.124.1...v1.124.2) (2026-03-21)
 
 
