@@ -771,19 +771,23 @@ authModule.setOnEmailVerified(async (deviceId) => {
 
             if (toEntity.bindingType === 'channel') {
                 // Channel plugin: send structured JSON
+                const flushXdSettings = await crossDeviceSettings.getSettings(target.deviceId, target.entityId);
                 channelModule.pushToChannelCallback(target.deviceId, target.entityId, {
                     event: 'cross_device_message',
                     from: `New User (${deviceId})`,
                     text: msg.text,
                     mediaType: msg.media_type || null,
                     mediaUrl: msg.media_url || null,
+                    backupUrl: msg.media_type === 'photo' ? getBackupUrl(msg.media_url) : null,
                     fromEntityId: -1,
                     fromPublicCode: null,
+                    fromDeviceId: deviceId,
                     isOwnerMode: true,
                     eclaw_context: {
                         missionHints: getMissionApiHints('https://eclawbot.com', target.deviceId, target.entityId, toEntity.botSecret),
                         silentToken: '[SILENT]',
-                        identitySetupRequired: !toEntity.identity
+                        identitySetupRequired: !toEntity.identity,
+                        preInject: flushXdSettings.pre_inject || null
                     }
                 }, toEntity.channelAccountId).catch(() => {});
             } else if (toEntity.webhook) {
