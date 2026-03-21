@@ -1,3 +1,10 @@
+## [1.128.5](https://github.com/HankHuang0516/EClaw/compare/v1.128.4...v1.128.5) (2026-03-21)
+
+
+### Bug Fixes
+
+* remove local messages before history reload to prevent duplicates ([#382](https://github.com/HankHuang0516/EClaw/issues/382)) ([fe46aa9](https://github.com/HankHuang0516/EClaw/commit/fe46aa952da209c1aa29e0418efc4e941f7c79b8))
+
 ## [1.128.4](https://github.com/HankHuang0516/EClaw/compare/v1.128.3...v1.128.4) (2026-03-21)
 
 
