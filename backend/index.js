@@ -649,17 +649,39 @@ initPersistence().catch(err => {
 });
 
 // ============================================
-// SKILL DOCUMENTATION (serve E-claw_mcp_skill.md as HTML)
+// SKILL DOCUMENTATION (serve eclaw-a2a-toolkit + E-claw_mcp_skill.md as HTML)
 // ============================================
 app.get('/api/skill-doc', (req, res) => {
     try {
-        const mdPath = path.join(__dirname, 'E-claw_mcp_skill.md');
-        const mdContent = fs.readFileSync(mdPath, 'utf8');
+        // Primary source: eclaw-a2a-toolkit from skill-templates.json
+        // Fallback: E-claw_mcp_skill.md
+        let mdContent;
+        let title = 'EClaw A2A Toolkit — Official API';
+        try {
+            const templatesPath = path.join(__dirname, 'data', 'skill-templates.json');
+            const templates = JSON.parse(fs.readFileSync(templatesPath, 'utf8'));
+            const toolkit = templates.find(t => t.id === 'eclaw-a2a-toolkit');
+            if (toolkit && toolkit.steps) {
+                mdContent = `# ${toolkit.title || 'EClaw A2A Toolkit'}\n\n${toolkit.steps}`;
+                title = toolkit.title || title;
+            }
+        } catch (_) { /* fall through to md file */ }
+        if (!mdContent) {
+            const mdPath = path.join(__dirname, 'E-claw_mcp_skill.md');
+            mdContent = fs.readFileSync(mdPath, 'utf8');
+            title = 'E-Claw MCP Skills Documentation';
+        }
+
+        // ?format=text returns raw text (for bots/agents)
+        if (req.query.format === 'text') {
+            return res.type('text').send(mdContent);
+        }
+
         // Serve as HTML page with marked.js CDN for client-side rendering
         res.type('html').send(`<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>E-Claw MCP Skills Documentation</title>
+<title>${title}</title>
 <style>
 body{max-width:900px;margin:0 auto;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#e0e0e0;line-height:1.6}
 h1,h2,h3{color:#00d4ff}h1{border-bottom:2px solid #00d4ff;padding-bottom:8px}
