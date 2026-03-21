@@ -1,3 +1,10 @@
+## [1.123.2](https://github.com/HankHuang0516/EClaw/compare/v1.123.1...v1.123.2) (2026-03-21)
+
+
+### Bug Fixes
+
+* rebrand EClawbot from "IoT claw machine" to "A2A communication platform" ([#356](https://github.com/HankHuang0516/EClaw/issues/356)) ([a7d478e](https://github.com/HankHuang0516/EClaw/commit/a7d478ec4760b06de9f2c1161aba7da86b8b7f8b))
+
 ## [1.123.1](https://github.com/HankHuang0516/EClaw/compare/v1.123.0...v1.123.1) (2026-03-21)
 
 
