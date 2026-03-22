@@ -341,3 +341,74 @@ describe('share-chat registration flow (static analysis)', () => {
         }
     });
 });
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/chat/share-history — Regression: no data leakage
+// ════════════════════════════════════════════════════════════════
+describe('GET /api/chat/share-history', () => {
+    it('rejects unauthenticated requests', async () => {
+        const res = await request(app).get('/api/chat/share-history?code=abc123');
+        expect(res.status).toBe(401);
+    });
+
+    it('rejects missing code parameter (with invalid auth)', async () => {
+        const res = await request(app)
+            .get('/api/chat/share-history')
+            .set('Cookie', 'eclaw_session=invalid');
+        // 401 (invalid cookie) or 400 (missing code) — both acceptable
+        expect([400, 401]).toContain(res.status);
+    });
+});
+
+// ════════════════════════════════════════════════════════════════
+// Regression: share-history must NOT use broad is_from_bot filter
+// ════════════════════════════════════════════════════════════════
+describe('share-history query isolation (static analysis)', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const indexSource = fs.readFileSync(
+        path.join(__dirname, '../../index.js'), 'utf8'
+    );
+
+    // Extract the share-history route handler
+    const routeMatch = indexSource.match(
+        /app\.get\('\/api\/chat\/share-history'[\s\S]*?\n\}\);/
+    );
+    const routeBody = routeMatch ? routeMatch[0] : '';
+
+    it('share-history handler exists', () => {
+        expect(routeBody.length).toBeGreaterThan(100);
+    });
+
+    it('queries BOTH target device and sender device via UNION', () => {
+        // The fix uses UNION ALL to merge target-device sender messages
+        // and sender-device auto-routed bot replies
+        expect(routeBody).toContain('UNION ALL');
+    });
+
+    it('does NOT use broad is_from_bot on target device', () => {
+        // The old buggy query had: WHERE device_id = $1 ... AND (source ILIKE $3 OR is_from_bot = true)
+        // This leaked ALL bot messages. After fix, is_from_bot should only appear
+        // in the sender-device subquery, not in the target-device subquery.
+        // Split the UNION: first subquery should NOT contain is_from_bot
+        const parts = routeBody.split('UNION ALL');
+        if (parts.length >= 2) {
+            // First subquery (target device): must NOT have is_from_bot = true
+            // It should only filter by source ILIKE (sender's messages)
+            const firstSubquery = parts[0];
+            // The first SELECT should use entity_id and source ILIKE, not is_from_bot
+            expect(firstSubquery).toContain('source ILIKE');
+            // Ensure no standalone "is_from_bot = true" in first subquery
+            // (it can appear in the SELECT column list, but not in WHERE)
+            const firstWhere = firstSubquery.split('WHERE').slice(1).join('WHERE');
+            expect(firstWhere).not.toMatch(/is_from_bot\s*=\s*true/);
+        }
+    });
+
+    it('sender device query filters by target publicCode pattern', () => {
+        // The second subquery should search sender's device for auto-routed
+        // replies containing the target publicCode
+        expect(routeBody).toContain('targetCodePattern');
+        expect(routeBody).toContain('senderDeviceId');
+    });
+});
