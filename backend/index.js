@@ -6099,12 +6099,6 @@ app.post('/api/contacts', async (req, res) => {
         return res.status(404).json({ success: false, error: 'Entity not found' });
     }
 
-    // Check duplicate
-    const existing = await db.getCardByCode(deviceId, publicCode);
-    if (existing) {
-        return res.status(409).json({ success: false, error: 'Already in contacts' });
-    }
-
     // Get live entity data + agent card snapshot
     const dev = devices[selfEntry.deviceId];
     const ent = dev?.entities?.[selfEntry.entityId];
@@ -6113,6 +6107,7 @@ app.post('/api/contacts', async (req, res) => {
     const avatar = ent?.avatar || null;
     const cardSnapshot = ent?.agentCard || null;
 
+    // Upsert: addCard handles ON CONFLICT (updates last_interacted_at for existing contacts)
     const card = await db.addCard(deviceId, publicCode, {
         name, character, avatar, cardSnapshot, exchangeType: 'manual'
     });
