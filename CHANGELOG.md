@@ -1,3 +1,11 @@
+## [1.137.2](https://github.com/HankHuang0516/EClaw/compare/v1.137.1...v1.137.2) (2026-03-22)
+
+
+### Bug Fixes
+
+* **i18n:** comprehensive i18n audit — add missing translations for all 8 languages ([#401](https://github.com/HankHuang0516/EClaw/issues/401)) ([a027bdc](https://github.com/HankHuang0516/EClaw/commit/a027bdc0b766444d3e0739a6960e438ea5e19182))
+* **share-chat:** prevent message leakage in share-history and fix pending flush sender copy ([#402](https://github.com/HankHuang0516/EClaw/issues/402)) ([f141673](https://github.com/HankHuang0516/EClaw/commit/f1416739efd1659179f0d11812f0da20c573b287))
+
 ## [1.137.1](https://github.com/HankHuang0516/EClaw/compare/v1.137.0...v1.137.1) (2026-03-22)
 
 
