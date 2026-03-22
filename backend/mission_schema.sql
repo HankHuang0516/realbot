@@ -218,6 +218,25 @@ CREATE TABLE IF NOT EXISTS bot_files (
 CREATE INDEX IF NOT EXISTS idx_bot_files_device_entity
 ON bot_files(device_id, entity_id);
 
+-- ============================================
+-- Migration: Extend mission_items for all types
+-- (todo, mission, done, note, rule, skill, soul)
+-- ============================================
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS category VARCHAR(64);
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS content TEXT DEFAULT '';
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS rule_type VARCHAR(64);
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS assigned_entities JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS is_enabled BOOLEAN DEFAULT true;
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS config JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS url TEXT DEFAULT '';
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS template_id VARCHAR(64);
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS is_system BOOLEAN DEFAULT false;
+ALTER TABLE mission_items ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_mission_items_device_type ON mission_items(device_id, list_type);
+CREATE INDEX IF NOT EXISTS idx_mission_items_category ON mission_items(category);
+
 -- Grant execute to app user (adjust as needed)
 -- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO app_user;
 -- GRANT ALL ON ALL TABLES IN SCHEMA public TO app_user;
