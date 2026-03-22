@@ -1,3 +1,10 @@
+# [1.141.0](https://github.com/HankHuang0516/EClaw/compare/v1.140.0...v1.141.0) (2026-03-22)
+
+
+### Features
+
+* unify all website icons to circular ic_launcher_round ([#413](https://github.com/HankHuang0516/EClaw/issues/413)) ([b8cff35](https://github.com/HankHuang0516/EClaw/commit/b8cff35c994fad8f0a6c2ec8337ae5686ea588fd))
+
 # [1.140.0](https://github.com/HankHuang0516/EClaw/compare/v1.139.2...v1.140.0) (2026-03-22)
 
 
