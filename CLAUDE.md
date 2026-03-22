@@ -323,6 +323,7 @@ EClaw/
     - 所有使用者可見的文字（按鈕、標題、提示、錯誤訊息、placeholder）都使用 `data-i18n` 屬性或 `i18n.t()` 呼叫
     - 新增的 i18n key 必須同步加入所有語言檔案（Web `i18n.js`、Android `strings.xml`、iOS `i18n/`）
     - 不可有 hardcoded 文字殘留在 HTML/Kotlin/React 中
+    - **Push 前 i18n 渲染驗證**：在 push 之前，必須實際檢查新增的 UI 程式碼，比對所有 `i18n.t('key')` 和 `data-i18n="key"` 引用的 key 是否都存在於 i18n.js 的所有 8 種語言中。若畫面上出現 `_key_name_` 或多個底線 `___` 的文字，代表缺少對應的 i18n 翻譯，必須補齊後才能 push。
 
 11. **Post-Push Production Verification** — push 到 main 後**必須**驗證 production：
     - 等 Railway 部署完成（檢查 `/api/health` 的 build 版本或 uptime 重置）
