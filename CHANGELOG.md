@@ -1,3 +1,10 @@
+## [1.142.1](https://github.com/HankHuang0516/EClaw/compare/v1.142.0...v1.142.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* **android:** resolve compilation errors in note page viewer ([#416](https://github.com/HankHuang0516/EClaw/issues/416)) ([33d60ea](https://github.com/HankHuang0516/EClaw/commit/33d60ea2b4f108137d2af4b3912ce207bd0f9163))
+
 # [1.142.0](https://github.com/HankHuang0516/EClaw/compare/v1.141.0...v1.142.0) (2026-03-22)
 
 
