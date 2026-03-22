@@ -576,7 +576,7 @@ class FileManagerActivity : AppCompatActivity() {
                 isCheckable = true
                 isCloseIconVisible = true
                 setOnCloseIconClickListener { showDeleteFolderDialog(folder) }
-                chipGroupFolder.generateViewId().also { id = it }
+                View.generateViewId().also { id = it }
             }
             chipGroupFolder.addView(chip)
         }
