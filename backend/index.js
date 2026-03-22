@@ -979,7 +979,11 @@ authModule.setOnEmailVerified(async (deviceId) => {
             await saveChatMessage(target.deviceId, target.entityId, msg.text, sourceTag, true, false, msg.media_type || null, msg.media_url || null);
             // Also save sender's copy (same as /api/client/cross-speak)
             if (deviceId !== target.deviceId) {
-                await saveChatMessage(deviceId, 0, msg.text, sourceTag, true, false, msg.media_type || null, msg.media_url || null);
+                const senderMsgId = await saveChatMessage(deviceId, 0, msg.text, sourceTag, true, false, msg.media_type || null, msg.media_url || null);
+                if (!senderMsgId) {
+                    console.warn(`[PendingFlush] Sender copy save returned null for device ${deviceId}, retrying...`);
+                    await saveChatMessage(deviceId, 0, msg.text, sourceTag, true, false, msg.media_type || null, msg.media_url || null);
+                }
             }
             // Auto-collect target card for sender so it appears in chat.html "Send to" bar
             autoCollectCard(deviceId, msg.target_code, toEntity, 'auto_speak');
@@ -11759,7 +11763,10 @@ app.get('/api/chat/history-by-code', async (req, res) => {
 /**
  * GET /api/chat/share-history — Get cross-speak conversation for shareable chat link
  * Returns messages between the authenticated sender and the target entity (by publicCode).
- * Queries the TARGET device's chat history for cross-device messages involving this sender.
+ * Queries TWO sources:
+ *   1. Target device: sender's cross-device messages (source contains sender deviceId)
+ *   2. Sender device: auto-routed bot replies (source contains target publicCode)
+ * This avoids leaking unrelated bot messages from the target device.
  * Auth: JWT cookie (eclaw_session) required.
  * Query: ?code=ABC123&limit=50&since=TIMESTAMP_MS
  */
@@ -11783,33 +11790,39 @@ app.get('/api/chat/share-history', async (req, res) => {
     const senderDeviceId = req.user.deviceId;
 
     try {
-        // Bot replies via /api/transform don't carry sender correlation, so we constrain
-        // them to only those after this sender's first message to avoid leaking other conversations
+        // Query two sources to build the full conversation:
+        // 1. Target device: sender's messages (source contains sender's deviceId)
+        // 2. Sender device: auto-routed bot replies (source contains target publicCode like "xdevice:CODE:...")
         const senderPattern = `%${senderDeviceId}%`;
+        const targetCodePattern = `%${code}%`;
         let query, params;
         if (since) {
             const sinceTs = new Date(parseInt(since));
-            query = `SELECT id, text, source, is_from_user, is_from_bot, media_type, media_url, created_at, is_delivered
-                     FROM chat_messages
-                     WHERE device_id = $1 AND entity_id = $2
-                     AND (source ILIKE $3 OR is_from_bot = true)
-                     AND created_at > $5
-                     ORDER BY created_at ASC LIMIT $4`;
-            params = [target.deviceId, target.entityId, senderPattern, maxLimit, sinceTs];
+            query = `(SELECT id, text, source, is_from_user, is_from_bot, media_type, media_url, created_at, is_delivered
+                      FROM chat_messages
+                      WHERE device_id = $1 AND entity_id = $2
+                      AND source ILIKE $3
+                      AND created_at > $6)
+                     UNION ALL
+                     (SELECT id, text, source, is_from_user, is_from_bot, media_type, media_url, created_at, is_delivered
+                      FROM chat_messages
+                      WHERE device_id = $5 AND is_from_bot = true
+                      AND source ILIKE $4
+                      AND created_at > $6)
+                     ORDER BY created_at ASC LIMIT $7`;
+            params = [target.deviceId, target.entityId, senderPattern, targetCodePattern, senderDeviceId, sinceTs, maxLimit];
         } else {
-            query = `SELECT id, text, source, is_from_user, is_from_bot, media_type, media_url, created_at, is_delivered
-                     FROM chat_messages
-                     WHERE device_id = $1 AND entity_id = $2
-                     AND (
-                         source ILIKE $3
-                         OR (is_from_bot = true AND created_at >= (
-                             SELECT COALESCE(MIN(created_at), NOW())
-                             FROM chat_messages
-                             WHERE device_id = $1 AND entity_id = $2 AND source ILIKE $3
-                         ))
-                     )
-                     ORDER BY created_at ASC LIMIT $4`;
-            params = [target.deviceId, target.entityId, senderPattern, maxLimit];
+            query = `(SELECT id, text, source, is_from_user, is_from_bot, media_type, media_url, created_at, is_delivered
+                      FROM chat_messages
+                      WHERE device_id = $1 AND entity_id = $2
+                      AND source ILIKE $3)
+                     UNION ALL
+                     (SELECT id, text, source, is_from_user, is_from_bot, media_type, media_url, created_at, is_delivered
+                      FROM chat_messages
+                      WHERE device_id = $5 AND is_from_bot = true
+                      AND source ILIKE $4)
+                     ORDER BY created_at ASC LIMIT $6`;
+            params = [target.deviceId, target.entityId, senderPattern, targetCodePattern, senderDeviceId, maxLimit];
         }
 
         const result = await chatPool.query(query, params);
