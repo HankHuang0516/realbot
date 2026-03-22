@@ -1,3 +1,10 @@
+## [1.138.3](https://github.com/HankHuang0516/EClaw/compare/v1.138.2...v1.138.3) (2026-03-22)
+
+
+### Bug Fixes
+
+* **api:** improve speak-to and client/speak error diagnostics ([#404](https://github.com/HankHuang0516/EClaw/issues/404)) ([#407](https://github.com/HankHuang0516/EClaw/issues/407)) ([e24a44c](https://github.com/HankHuang0516/EClaw/commit/e24a44c501b7ea7c35aaa9f4124eeff26cc980e2))
+
 ## [1.138.2](https://github.com/HankHuang0516/EClaw/compare/v1.138.1...v1.138.2) (2026-03-22)
 
 
