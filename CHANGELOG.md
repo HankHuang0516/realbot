@@ -1,3 +1,10 @@
+## [1.138.2](https://github.com/HankHuang0516/EClaw/compare/v1.138.1...v1.138.2) (2026-03-22)
+
+
+### Bug Fixes
+
+* **portal:** remove duplicate usecases, fix double bullets, replace nav logo with app icon ([#406](https://github.com/HankHuang0516/EClaw/issues/406)) ([e881fb3](https://github.com/HankHuang0516/EClaw/commit/e881fb301aed4604f271dac7c641bd921416d6de))
+
 ## [1.138.1](https://github.com/HankHuang0516/EClaw/compare/v1.138.0...v1.138.1) (2026-03-22)
 
 
