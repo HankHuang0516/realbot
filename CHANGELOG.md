@@ -1,3 +1,10 @@
+# [1.144.0](https://github.com/HankHuang0516/EClaw/compare/v1.143.3...v1.144.0) (2026-03-22)
+
+
+### Features
+
+* **web:** add folder structure to Web Portal file manager ([#424](https://github.com/HankHuang0516/EClaw/issues/424)) ([1e5682e](https://github.com/HankHuang0516/EClaw/commit/1e5682e19c3282fda067d77afc5ff5c7181587ca))
+
 ## [1.143.3](https://github.com/HankHuang0516/EClaw/compare/v1.143.2...v1.143.3) (2026-03-22)
 
 
