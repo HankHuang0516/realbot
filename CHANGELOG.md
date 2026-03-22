@@ -1,3 +1,10 @@
+## [1.137.1](https://github.com/HankHuang0516/EClaw/compare/v1.137.0...v1.137.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* **i18n:** comprehensive i18n audit — add missing translations for all 8 languages ([#400](https://github.com/HankHuang0516/EClaw/issues/400)) ([671f5e2](https://github.com/HankHuang0516/EClaw/commit/671f5e2a824100b4cd14fae7ebc2b44d950822bb))
+
 # [1.137.0](https://github.com/HankHuang0516/EClaw/compare/v1.136.0...v1.137.0) (2026-03-22)
 
 
