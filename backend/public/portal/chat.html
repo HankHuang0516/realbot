@@ -1522,7 +1522,7 @@
                         if (data.success && data.entity) {
                             const e = data.entity;
                             const avatar = e.avatar || (e.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
-                            preview.textContent = `${avatar} ${e.name || e.character}`;
+                            preview.innerHTML = `${renderAvatarHtml(avatar, 18)} ${escapeHtml(e.name || e.character)}`;
                             preview.style.color = 'var(--text-primary)';
                             addBtn.disabled = false;
                             addBtn.dataset.code = code;
@@ -1565,7 +1565,7 @@
                     localStorage.setItem('chat_last_contact_targets', codes.join(','));
                     const c = data.contact;
                     const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
-                    xdeviceLabelCache[c.publicCode] = `${avatar} ${escapeHtml(c.name || c.character || c.publicCode)}`;
+                    xdeviceLabelCache[c.publicCode] = `${renderAvatarHtml(avatar, 20)} ${escapeHtml(c.name || c.character || c.publicCode)}`;
                     showToast(i18n.t('chat_contacts_added'), 'success');
                     renderTargetBar();
                 }
@@ -2129,7 +2129,7 @@
 
             // Platform command response
             if (msg.source === 'platform') {
-                return '\uD83E\uDD9E E-Claw Platform';
+                return '\uD83E\uDD9E EClawbot Platform';
             }
 
             // Fallback for other sources

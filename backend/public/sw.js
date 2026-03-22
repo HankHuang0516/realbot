@@ -22,7 +22,7 @@ self.addEventListener('push', (event) => {
     };
 
     event.waitUntil(
-        self.registration.showNotification(title || 'E-Claw', {
+        self.registration.showNotification(title || 'EClawbot', {
             body: body || '',
             icon: '/portal/icon-192.png',
             badge: '/portal/icon-192.png',

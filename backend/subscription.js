@@ -109,7 +109,7 @@ module.exports = function (devices, authMiddleware, _unused, serverLog) {
             // Determine amount based on type
             const isBorrow = type === 'borrow';
             const amount = isBorrow ? BORROW_AMOUNT : SUBSCRIPTION_AMOUNT;
-            const details = isBorrow ? 'E-Claw Official Bot Rental' : 'E-Claw Premium Subscription';
+            const details = isBorrow ? 'EClawbot Official Bot Rental' : 'EClawbot Premium Subscription';
 
             // Get user info
             const userResult = await pool.query(
@@ -387,7 +387,7 @@ module.exports = function (devices, authMiddleware, _unused, serverLog) {
                             merchant_id: TAPPAY_MERCHANT_ID,
                             amount: SUBSCRIPTION_AMOUNT,
                             currency: SUBSCRIPTION_CURRENCY,
-                            details: 'E-Claw Premium Renewal'
+                            details: 'EClawbot Premium Renewal'
                         })
                     });
 

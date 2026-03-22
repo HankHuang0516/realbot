@@ -40,7 +40,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const JWT_EXPIRY = '7d';
 const BCRYPT_ROUNDS = 12;
 const BASE_URL = process.env.BASE_URL || 'https://eclawbot.com';
-const EMAIL_FROM = 'E-Claw <noreply@twopiggyhavefun.uk>';
+const EMAIL_FROM = 'EClawbot <noreply@twopiggyhavefun.uk>';
 
 // Password validation: min 6 chars, must contain letters AND numbers
 function isValidPassword(password) {
@@ -124,7 +124,7 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
 
     function verifyToken(token) {
         try {
-            return jwt.verify(token, JWT_SECRET);
+            return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
         } catch {
             return null;
         }
@@ -163,10 +163,35 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
             });
     }
 
+    // ── Auth rate limiter (in-memory, per IP) ──
+    const authRateLimits = {};
+    const AUTH_RATE_WINDOW = 15 * 60 * 1000; // 15 minutes
+    const AUTH_RATE_MAX = 10; // max attempts per window
+    function authRateLimit(req, res, next) {
+        const ip = req.ip || req.connection.remoteAddress || 'unknown';
+        const now = Date.now();
+        if (!authRateLimits[ip] || now - authRateLimits[ip].start > AUTH_RATE_WINDOW) {
+            authRateLimits[ip] = { start: now, count: 1 };
+        } else {
+            authRateLimits[ip].count++;
+        }
+        if (authRateLimits[ip].count > AUTH_RATE_MAX) {
+            return res.status(429).json({ success: false, error: 'Too many attempts, please try again later' });
+        }
+        next();
+    }
+    // Clean up stale entries every 30 minutes
+    setInterval(() => {
+        const now = Date.now();
+        for (const ip in authRateLimits) {
+            if (now - authRateLimits[ip].start > AUTH_RATE_WINDOW) delete authRateLimits[ip];
+        }
+    }, 30 * 60 * 1000).unref();
+
     // ============================================
     // POST /register
     // ============================================
-    router.post('/register', async (req, res) => {
+    router.post('/register', authRateLimit, async (req, res) => {
         try {
             const { email, password } = req.body;
 
@@ -294,7 +319,7 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
     // ============================================
     // POST /login
     // ============================================
-    router.post('/login', async (req, res) => {
+    router.post('/login', authRateLimit, async (req, res) => {
         try {
             const { email, password } = req.body;
 
@@ -518,7 +543,7 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
     // ============================================
     // POST /forgot-password
     // ============================================
-    router.post('/forgot-password', async (req, res) => {
+    router.post('/forgot-password', authRateLimit, async (req, res) => {
         try {
             const { email } = req.body;
             if (!email) {
@@ -777,7 +802,7 @@ module.exports = function(devices, getOrCreateDevice, serverLog) {
                 try {
                     const token = req.cookies?.eclaw_session;
                     if (token) {
-                        const decoded = jwt.verify(token, JWT_SECRET);
+                        const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
                         userId = decoded.userId;
                     }
                 } catch (_) { /* ignore */ }

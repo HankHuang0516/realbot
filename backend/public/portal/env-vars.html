@@ -480,7 +480,7 @@
                 });
                 // Sync back merged vars (includes keys from APP)
                 if (result && result.mergedVars) {
-                    localStorage.setItem(VARS_STORAGE_KEY(), JSON.stringify(result.mergedVars));
+                    localStorage.setItem(varsKey(), JSON.stringify(result.mergedVars));
                     renderAll();
                 }
             } catch (e) {

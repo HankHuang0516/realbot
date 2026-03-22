@@ -1,6 +1,6 @@
-# E-claw (電子蝦) 內部測試指南 (Internal Tester Guide)
+# EClawbot (電子蝦) 內部測試指南 (Internal Tester Guide)
 
-感謝您參與 E-claw (原 Realbot) 的內部測試！您的反饋將幫助我們打造更穩定的 AI Agent 協作體驗。
+感謝您參與 EClawbot (原 Realbot) 的內部測試！您的反饋將幫助我們打造更穩定的 AI Agent 協作體驗。
 
 ## 🎯 測試目標
 本次測試重點在於 **隱私安全**、**多裝置穩定性** 以及 **OpenClaw 協議相容性**。
@@ -9,12 +9,12 @@
 
 1.  **加入測試計畫**：點擊我們提供的 Google Play 測試連結（[待補上連結]）。
 2.  **接受邀請**：登入您的 Google 帳號並點擊「成為測試人員」。
-3.  **下載應用程式**：點擊連結前往 Google Play 商店下載或更新 **E-claw**。
+3.  **下載應用程式**：點擊連結前往 Google Play 商店下載或更新 **EClawbot**。
 
 ## 🚀 快速上手 (Quick Start)
 
-1.  **開啟 App**：啟動 E-claw。
-2.  **設定桌布**：點擊「Set Wallpaper」將 E-claw 設定為動態桌布。
+1.  **開啟 App**：啟動 EClawbot。
+2.  **設定桌布**：點擊「Set Wallpaper」將 EClawbot 設定為動態桌布。
 3.  **取得綁定碼**：
     *   點擊首頁下方的 "Generate Binding Code" 按鈕。
     *   複製 6 位數代碼 (例如: 123456)。
@@ -44,7 +44,7 @@
 如果您遇到任何 Bug、閃退或有任何建議，請透過以下方式回報：
 
 1.  **(置頂推薦) 設定-意見回饋**：直接透過 App 內的「設定 -> 意見回饋」功能文字回報。
-2.  **Email 回報**：寄信至 hankhuang0516@gmail.com，主旨請註明 `[E-claw Test]`:
+2.  **Email 回報**：寄信至 hankhuang0516@gmail.com，主旨請註明 `[EClawbot Test]`:
     *   手機型號 (例如: Pixel 6, Samsung S23)
     *   Android 版本
     *   問題描述與截圖/螢幕錄影
@@ -58,4 +58,4 @@
 
 ---
 再次感謝您的參與！
-*E-claw 開發團隊*
+*EClawbot 開發團隊*

@@ -210,3 +210,42 @@ describe('DELETE /api/device-vars', () => {
         expect(res.body.success).toBe(true);
     });
 });
+
+describe('DELETE /api/device-vars/:key', () => {
+    it('returns 400 when deviceId is missing', async () => {
+        const res = await del('/api/device-vars/MY_KEY').send({ deviceSecret: 'x' });
+        expect(res.status).toBe(400);
+    });
+
+    it('returns 403 with invalid deviceSecret', async () => {
+        const devId = `vars-delkey-auth-${Date.now()}`;
+        await registerDevice(devId);
+        const res = await del('/api/device-vars/MY_KEY').send({
+            deviceId: devId,
+            deviceSecret: 'wrong-secret',
+        });
+        expect(res.status).toBe(403);
+    });
+
+    it('returns 404 when no vars stored', async () => {
+        const devId = `vars-delkey-novars-${Date.now()}`;
+        const secret = await registerDevice(devId);
+        const res = await del('/api/device-vars/MY_KEY').send({
+            deviceId: devId,
+            deviceSecret: secret,
+        });
+        expect(res.status).toBe(404);
+    });
+
+    it('returns 404 when key does not exist in stored vars', async () => {
+        const devId = `vars-delkey-nokey-${Date.now()}`;
+        const secret = await registerDevice(devId);
+        // Mock DB returns null (no vars stored), so should get 404
+        const res = await del('/api/device-vars/NONEXISTENT').send({
+            deviceId: devId,
+            deviceSecret: secret,
+        });
+        expect(res.status).toBe(404);
+        expect(res.body.success).toBe(false);
+    });
+});

@@ -200,8 +200,8 @@ module.exports = function(devices, { awardEntityXP, serverLog } = {}) {
             const row = result.rows[0];
             const skills = row.skills || [];
 
-            // Auto-inject system "E-Claw API Skill" if not present
-            const systemSkillTitle = 'E-Claw API Skill';
+            // Auto-inject system "EClawbot API Skill" if not present
+            const systemSkillTitle = 'EClawbot API Skill';
             const hasSystemSkill = skills.some(s => s.isSystem === true);
             if (!hasSystemSkill) {
                 skills.unshift({

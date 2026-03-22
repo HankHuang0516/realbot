@@ -3,7 +3,7 @@
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY || 'dummy');
-const EMAIL_FROM = 'E-Claw <noreply@twopiggyhavefun.uk>';
+const EMAIL_FROM = 'EClawbot <noreply@twopiggyhavefun.uk>';
 const BASE_URL = process.env.BASE_URL || 'https://eclawbot.com';
 
 const EMAIL_TRIGGER_STATUSES = ['in_progress', 'resolved', 'closed'];
