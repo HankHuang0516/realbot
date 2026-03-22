@@ -1,3 +1,10 @@
+# [1.138.0](https://github.com/HankHuang0516/EClaw/compare/v1.137.2...v1.138.0) (2026-03-22)
+
+
+### Features
+
+* **enterprise:** add Beta tag to demo section ([#403](https://github.com/HankHuang0516/EClaw/issues/403)) ([8426efe](https://github.com/HankHuang0516/EClaw/commit/8426efecc8938df3403cbfdf9f25393cc6fc84aa))
+
 ## [1.137.2](https://github.com/HankHuang0516/EClaw/compare/v1.137.1...v1.137.2) (2026-03-22)
 
 
