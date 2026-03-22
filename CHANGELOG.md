@@ -1,3 +1,10 @@
+# [1.136.0](https://github.com/HankHuang0516/EClaw/compare/v1.135.0...v1.136.0) (2026-03-22)
+
+
+### Features
+
+* **portal:** add enterprise page for business users ([#398](https://github.com/HankHuang0516/EClaw/issues/398)) ([88910c1](https://github.com/HankHuang0516/EClaw/commit/88910c112ac14c2a1a2fb868edffb3b2f79d98ae))
+
 # [1.135.0](https://github.com/HankHuang0516/EClaw/compare/v1.134.0...v1.135.0) (2026-03-22)
 
 
