@@ -1,3 +1,10 @@
+# [1.133.0](https://github.com/HankHuang0516/EClaw/compare/v1.132.0...v1.133.0) (2026-03-22)
+
+
+### Features
+
+* repo cleanup, brand alignment, SEO/security fixes, bug fixes [#363](https://github.com/HankHuang0516/EClaw/issues/363) [#388](https://github.com/HankHuang0516/EClaw/issues/388) ([#392](https://github.com/HankHuang0516/EClaw/issues/392)) ([eef64fb](https://github.com/HankHuang0516/EClaw/commit/eef64fb7993903a9630c29496d87d4eba513399c)), closes [#390](https://github.com/HankHuang0516/EClaw/issues/390) [#391](https://github.com/HankHuang0516/EClaw/issues/391)
+
 # [1.132.0](https://github.com/HankHuang0516/EClaw/compare/v1.131.0...v1.132.0) (2026-03-22)
 
 
