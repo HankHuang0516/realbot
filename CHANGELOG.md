@@ -1,3 +1,10 @@
+# [1.143.0](https://github.com/HankHuang0516/EClaw/compare/v1.142.1...v1.143.0) (2026-03-22)
+
+
+### Features
+
+* **android:** add folder structure to File Manager ([#417](https://github.com/HankHuang0516/EClaw/issues/417)) ([36ac78e](https://github.com/HankHuang0516/EClaw/commit/36ac78eb6270c5aa18e22249a18bea3ef90d93fe))
+
 ## [1.142.1](https://github.com/HankHuang0516/EClaw/compare/v1.142.0...v1.142.1) (2026-03-22)
 
 
