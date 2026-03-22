@@ -673,6 +673,7 @@
         .wv-body canvas.drawing {
             pointer-events: auto;
             cursor: crosshair;
+            touch-action: none;
         }
         .wv-color-picker {
             display: flex;
@@ -2147,6 +2148,7 @@
             function startDraw(e) {
                 if (!drawMode) return;
                 e.preventDefault();
+                canvas.setPointerCapture(e.pointerId);
                 drawing = true;
                 const pos = getPos(e);
                 currentStroke = { color: drawColor, size: drawSize, eraser: eraserMode, points: [pos] };
@@ -2166,19 +2168,22 @@
                 ctx.globalCompositeOperation = 'source-over';
             }
 
-            function endDraw() {
+            function endDraw(e) {
                 if (!drawing || !currentStroke) return;
                 drawing = false;
                 if (currentStroke.points.length > 1) {
                     drawStrokes.push(currentStroke);
                 }
                 currentStroke = null;
+                if (e && e.pointerId != null) {
+                    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+                }
             }
 
             canvas.addEventListener('pointerdown', startDraw);
             canvas.addEventListener('pointermove', moveDraw);
             canvas.addEventListener('pointerup', endDraw);
-            canvas.addEventListener('pointerleave', endDraw);
+            canvas.addEventListener('pointercancel', endDraw);
 
             // Debounced resize handler
             let resizeTimer;
