@@ -514,7 +514,7 @@ function getFreeBotTOS(lang = 'en') {
             {
                 heading: '一、服務說明',
                 items: [
-                    '免費版機器人為 E-Claw 官方提供的共享 AI 助手服務，每個裝置僅限綁定一個免費版機器人。',
+                    '免費版機器人為 EClawbot 官方提供的共享 AI 助手服務，每個裝置僅限綁定一個免費版機器人。',
                     '免費版機器人與所有免費用戶共享記憶，每日訊息上限為 15 則。'
                 ]
             },
@@ -540,7 +540,7 @@ function getFreeBotTOS(lang = 'en') {
                 heading: '四、免責聲明',
                 items: [
                     '免費版機器人為共享資源，不保證即時可用性或回覆品質。',
-                    'E-Claw 保留隨時修改本使用規範的權利，修改後繼續使用即視為同意新規範。',
+                    'EClawbot 保留隨時修改本使用規範的權利，修改後繼續使用即視為同意新規範。',
                     '如有疑問或申訴，請透過應用程式內的意見回饋管道聯繫我們。'
                 ]
             }
@@ -548,7 +548,7 @@ function getFreeBotTOS(lang = 'en') {
             {
                 heading: '1. Service Description',
                 items: [
-                    'The Free Bot is a shared AI assistant service provided by E-Claw. Each device is limited to one free bot binding.',
+                    'The Free Bot is a shared AI assistant service provided by EClawbot. Each device is limited to one free bot binding.',
                     'The Free Bot shares memory with all free users and has a daily limit of 15 messages. This limit applies only to free bots; your own bots have no message limit.'
                 ]
             },
@@ -574,7 +574,7 @@ function getFreeBotTOS(lang = 'en') {
                 heading: '4. Disclaimer',
                 items: [
                     'The Free Bot is a shared resource. Availability and response quality are not guaranteed.',
-                    'E-Claw reserves the right to modify these terms at any time. Continued use after modification constitutes acceptance.',
+                    'EClawbot reserves the right to modify these terms at any time. Continued use after modification constitutes acceptance.',
                     'For questions or appeals, please contact us through the in-app feedback channel.'
                 ]
             }

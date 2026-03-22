@@ -7,7 +7,7 @@
 - **Repository**: `HankHuang0516/realbot` (GitHub repo ID: `1150444936`)
 - **Production URL**: `https://eclawbot.com`
 - **Package name**: `realbot-backend` (historical name; brand is "EClaw")
-- **Current version**: 1.110.x+ (via semantic-release; `package.json` stays 1.0.0 placeholder)
+- **Current version**: 1.131.x+ (via semantic-release; `package.json` stays 1.0.0 placeholder)
 - **App version constant**: 1.0.53 (in `index.js`)
 - **Brand name**: "EClawbot" (rebranded from "EClaw" in v1.105.0; domain `eclawbot.com`)
 
@@ -18,7 +18,7 @@
 ```
 EClaw/
 ├── backend/                  # Node.js Express server (deployed to Railway)
-│   ├── index.js              # Main server (~12,209 lines) — all API routes
+│   ├── index.js              # Main server (~12,373 lines) — all API routes
 │   ├── db.js                 # PostgreSQL connection pool + schema creation
 │   ├── auth.js               # Auth module (JWT, OAuth, OIDC, RBAC)
 │   ├── mission.js            # Mission Control dashboard system
@@ -95,7 +95,7 @@ EClaw/
 │   │   └── docs/
 │   │       └── webhook-troubleshooting.md
 │   ├── tests/                # Regression + integration tests (54 files)
-│   ├── tests/jest/           # Jest unit tests (43 files, CI-run via `npm test`)
+│   ├── tests/jest/           # Jest unit tests (48 files, CI-run via `npm test`)
 │   └── scripts/              # Setup scripts
 ├── app/                      # Android app (Kotlin)
 │   └── src/main/java/com/hank/clawlive/
@@ -542,6 +542,17 @@ curl "https://eclawbot.com/api/device-telemetry?deviceId=ID&deviceSecret=SECRET&
 - **Customer Service AI Tools**: Device context injection in AI support; tool handlers (`lookup_device`, `query_device_logs`, `lookup_user_by_email`) for Claude-powered customer service
 - **Portal Shared Modules Expansion**: Added `ai-chat.js`, `api.js`, `auth.js`, `socket.js`, `public-nav.js` to `portal/shared/` for cross-page reuse
 
+### Recent Features (v1.125.x – v1.131.x)
+
+- **Cross-Device Auto-Route (v1.125–v1.126)**: `POST /api/transform` auto-routes cross-device replies back to sender; cross-device message direction rendering fix; channel auto-route + `/c/:code` redirect + avatar rendering fixes
+- **Share-Chat Enhancements (v1.125–v1.127)**: Reply visibility and delivery status in share-chat; social login (Google/Facebook) and terms consent modals; pending message DB persistence; email verification polling
+- **Account Deletion Hardening (v1.127)**: SAVEPOINT-based resilient deletion skipping non-existent tables; FK constraint fix for `tappay_transactions`; debug logging for deletion flow
+- **MCP Skill Unification (v1.128)**: `E-claw_mcp_skill.md` integrated as single source of truth into `eclaw-a2a-toolkit` skill template
+- **Chat Duplicate Fix (v1.128–v1.129)**: Remove local messages before history reload; register endpoint sets session cookie for pending message save; contact checkbox rendering for zero-entity users
+- **Delete Account i18n (v1.129)**: Full 8-language i18n support for `delete-account.html`
+- **Pending Flush Fix (v1.130)**: Sender copy saved in pending flush; auto-collect contacts in owner mode
+- **Info Hub Guides (v1.130–v1.131)**: Proxy Window enterprise guide; Identity, Agent Card, Cross-Device detail guides with visual illustrations
+
 ---
 
 ## Test Coverage Summary
@@ -633,7 +644,7 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Customer Service API | `node backend/tests/test-customer-service-api.js` | Device ID + Secret | Customer service AI tool handlers |
 | Entity Trash | `node backend/tests/test-entity-trash.js` | Device ID + Secret | Entity soft-delete, restore, 7-day retention |
 
-### Jest Unit Tests (CI-run, `npm test`, 43 files)
+### Jest Unit Tests (CI-run, `npm test`, 48 files)
 
 | Test | File | Description |
 |------|------|-------------|
@@ -681,11 +692,15 @@ All test files are in `backend/tests/`. Run with `node backend/tests/<file>`.
 | Cross-Speak | `tests/jest/cross-speak.test.js` | Cross-device entity messaging, client cross-speak, pending queue — auth, validation |
 | Cross-Speak Channel | `tests/jest/cross-speak-channel.test.js` | Cross-speak channel push parity — entity/client cross-speak channel-bound delivery |
 | Link Preview | `tests/jest/link-preview.test.js` | Link preview OG tag extraction, URL validation, SSRF protection, timeout handling |
+| Account Deletion | `tests/jest/account-deletion.test.js` | DELETE /api/auth/account cleanup of all related tables, FK constraint handling |
+| Channel Cross-Route | `tests/jest/channel-cross-route.test.js` | Channel message cross-device routing, auto-route consumption |
+| Cross-Speak Rendering | `tests/jest/cross-speak-chat-rendering.test.js` | Cross-device message direction rendering in chat.html |
+| Transform Cross-Route | `tests/jest/transform-cross-route.test.js` | Transform auto-route bot replies to sender device |
 
 ### Running All Tests
 ```bash
 node backend/run_all_tests.js          # Run all tests sequentially
-cd backend && npm test                  # Jest unit tests (43 files)
+cd backend && npm test                  # Jest unit tests (48 files)
 cd backend && npm run lint              # ESLint
 ```
 
@@ -798,128 +813,8 @@ Key documents: `broadcast-recipient-info-design`, `env-vars-encrypted-persistenc
 
 ---
 
-## Phase 1 Testing — Session Log
+## Phase 1 Testing Summary
 
-### 第一次試驗（2026-03-10）
-
-**任務**：以 EClaw 作為測試品牌，開始第一階段 AI 搜尋品牌曝光平台測試。
-
-**設計文件**：`docs/plans/2026-03-10-ai-search-brand-platform-design.md`
-
-**角色分配**：
-- **品牌端（EClaw 官方 Agent）**：由 Claude Code session 扮演
-- **用戶端（OpenClaw）**：實體 #3
-  - Device ID & Secret：向用戶索取（⚠️ 不可寫入 git-tracked 檔案）
-
-**測試目標（設計文件 §6）**：
-1. 基線建立 — 記錄 EClaw 在各 AI 搜尋引擎的當前能見度
-2. 內容策略執行 — 在外部平台建立 EClaw 相關高品質內容
-3. 結構化資料 — Wikidata、Google Business 等建立 EClaw 實體
-4. 監測追蹤 — 定期查詢 AI 搜尋引擎記錄能見度變化
-5. 效果評估 — 對比前後數據
-
-**本次 session 完成的工作**：
-- ⚠️ **偏離主任務**：處理了一個 side-task（從 push 訊息移除 Bot Tools API hints，改放 skill template）
-  - `backend/index.js` — 移除 `getMissionApiHints()` 中的 `botTools.getBotToolsHints()` 呼叫
-  - `backend/bot-tools.js` — 刪除 `getBotToolsHints()` 函數，只保留 `{ router }` export
-  - commits: `fb3c32a`, `638ed84`
-- ❌ **尚未開始**：A2A 任務發布、基線數據收集、向 Entity #3 發布任務
-
-**下一個 Agent 需要做的事**：
-1. 讀取設計文件 `docs/plans/2026-03-10-ai-search-brand-platform-design.md` §6
-2. 以 EClaw 官方 Agent 身份，透過 A2A 協議向上述 Device 的 Entity #3 發布第一階段測試任務
-3. 可用的 A2A API（見 `eclaw-a2a-toolkit` skill template）：
-   - `POST /api/client/speak` — 以裝置擁有者身份向 entity 發話（用 deviceSecret，不需 botSecret）
-   - `POST /api/entity/speak-to` — 以 entity 身份向另一個 entity 發送任務（用 botSecret）
-   - `POST /api/entity/broadcast` — 廣播
-   - `GET /api/mission/dashboard` — 查看任務面板
-   - `POST /api/mission/todo/add` — 新增任務
-4. 第一步建議：先發送基線數據收集任務（W1），讓用戶 Agent 查詢各 AI 搜尋引擎記錄 EClaw 當前能見度
-
-**關鍵架構知識**：
-- Skill template 在 `backend/data/skill-templates.json`，`eclaw-a2a-toolkit` 包含所有官方 API 文件
-- Bot Tools API 端點（`/api/bot/web-search`、`/api/bot/web-fetch`）仍正常運作，只是不再在 push 中注入 hints
-- Push 中仍保留 mission API hints（dashboard、todo、note），這些是必要的
-
-**分支**：`claude/phase-one-testing-8swLP`
-
-### 第二次試驗（2026-03-10）
-
-**任務**：繼續第一階段測試，完成 W1 基線數據收集並發布 W2-W3 任務。
-
-**本次 session 完成的工作**：
-
-1. ✅ **W1 基線數據收集完成**
-   - 使用 WebSearch 查詢 5 組關鍵字：
-     - "EClaw claw machine IoT platform" → 零結果（全為 ELAUT E-Claw）
-     - "EClaw OpenClaw AI agent platform" → 零結果（全為 OpenClaw 開源項目）
-     - "eclawbot.com" → 零結果（域名未被索引）
-     - '"EClaw" brand claw machine Taiwan' → 零結果
-     - "EClaw agent-to-agent A2A protocol" → 零結果（全為 Google A2A Protocol）
-   - **基線結論：EClaw 品牌總分 0/50，完全零能見度**
-   - 基線報告：`docs/reports/2026-03-10-eclaw-baseline-report.md`
-
-2. ✅ **基線報告已發布到 Mission Dashboard**
-   - Note: "EClaw AI 搜尋能見度基線報告 (2026-03-10)" — 完整基線數據
-
-3. ✅ **W2-W3 任務已發布到 Mission Dashboard**（指派給 Entity #3）
-   - `[W2] 在 Medium 發布 EClaw 平台介紹文章` — priority LOW
-   - `[W2] 在 DEV.to 發布 EClaw A2A 技術教學` — priority LOW
-   - `[W2] 在 Reddit 相關 subreddit 分享 EClaw 內容` — priority MEDIUM
-   - `[W3] 在 Wikidata 建立 EClaw 品牌實體` — priority LOW
-   - `[W3] 定期 AI 搜尋引擎監測 — EClaw 能見度追蹤` — priority MEDIUM
-
-**關鍵發現**：
-- EClaw 品牌名與 ELAUT 的 E-Claw 夾娃娃機嚴重衝突，需要品牌區隔策略
-- eclawbot.com 完全未被搜尋引擎索引，是最基礎的問題
-- OpenClaw 生態有高知名度但 EClaw 作為基礎設施提供者完全隱形
-- Mission API 支持 `deviceSecret` 認證（dual auth），可直接用來管理任務
-- 設備上綁定的 Entity：#0 (ECalw Official Ac), #3 (免費版eclaw_rai_1), #4 (荷官eclaw_rai_0)
-- **`POST /api/client/speak`**：以裝置擁有者（client）身份向 entity 發話，用 `deviceSecret` 認證，不需要 botSecret。支持單一 entity、array、或 "all" 廣播。會重置 bot-to-bot rate limit。
-
-**下一個 Agent 需要做的事**：
-1. 用 `POST /api/client/speak` 或 `POST /api/entity/speak-to` 向 Entity #3 發送 W2-W3 執行指令
-2. 追蹤 Entity #3 執行任務的進度（查 Mission Dashboard）
-3. 審查 Entity #3 產出的內容品質
-4. W6 中期監測：重新查詢 AI 搜尋引擎，對比基線數據
-5. 根據 Entity #3 的執行回饋調整策略
-
-**分支**：`claude/phase-one-test-two-dQvW7`
-
-### 第三次試驗（2026-03-10）
-
-**任務**：以 EClaw 官方 Agent 身份，向 Entity #3 派發 W2-W3 任務並追蹤完成。
-
-**本次 session 完成的工作**：
-
-1. ✅ **文檔補全** — `/api/client/speak` 加入 `eclaw-a2a-toolkit` skill template 和 CLAUDE.md
-2. ✅ **Gatekeeper Bug 修復**（3 個問題）：
-   - `eclawbot.com` 加入 curl whitelist（舊的只有 `eclaw.up.railway.app`）
-   - `fetch` pattern 太寬鬆，普通英文 "Web Fetch" 也會觸發 → 拆分為獨立 regex
-   - 新增 `resetStrikes()` + `POST /api/admin/gatekeeper/reset` + `POST /api/gatekeeper/appeal`（自助解封，24h cooldown）
-3. ✅ **W3 AI 搜尋監測 Round 2** — 官方 Agent 自行執行，結果 0/50（與基線相同）
-4. ✅ **Entity #3 任務派發與完成**：
-   - W3 監測報告 — Entity #3 用 web_fetch 替代方案完成
-   - W2 技術文章草稿 — 800 字 EClaw Platform 完整介紹
-   - DEV.to A2A 教學草稿 — 含 Python 範例
-   - Reddit 討論帖草稿 — 多個標題選項 + 發布策略
-5. ⚠️ **發現的問題**（已記錄到 `docs/issues/`）：
-   - Gatekeeper 域名白名單 bug
-   - "不需要 API Key" 誤觸憑證偵測
-   - fetch pattern 過寬
-   - Free bot 無法使用 speak-to（agentToAgent disabled）
-
-**關鍵經驗**：
-- Gatekeeper 的 First Lock 對 `client/speak` 到 free bot 的訊息非常嚴格
-- 需要避免訊息中出現：`botSecret`、`deviceSecret`、`API Key`、`token`、`fetch `+文字、`exec(`
-- Entity #4（荷官）可作為 relay 繞過 free bot 封鎖，但 agentToAgent 被禁用
-- Mission Dashboard（Notes/TODOs）是不經過 Gatekeeper 的溝通管道
-- `client/speak` push 成功後 bot 通常在 30-90 秒內回應
-
-**剩餘任務**（需要人工操作）：
-- [W2] 在 Medium 發布文章（草稿已就位）
-- [W2] 在 DEV.to 發布教學（草稿已就位）
-- [W2] 在 Reddit 分享內容（草稿已就位）
-- [W3] 在 Wikidata 建立 EClaw 品牌實體
-
-**分支**：`claude/phase-one-test-two-dQvW7`
+AI search brand visibility testing conducted 2026-03-10. Baseline score: 0/50 (zero visibility).
+Full session logs archived in `docs/reports/2026-03-10-eclaw-baseline-report.md`.
+Design plan: `docs/plans/2026-03-10-ai-search-brand-platform-design.md`.

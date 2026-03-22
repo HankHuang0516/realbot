@@ -4636,7 +4636,7 @@ app.post('/api/client/speak', async (req, res) => {
         // Notify device
         notifyDevice(deviceId, {
             type: 'chat', category: 'platform_command',
-            title: 'E-Claw',
+            title: 'EClawbot',
             body: cmdResult.text.slice(0, 100),
             link: 'chat.html',
             metadata: { command: parsedCmd.command }
@@ -11202,6 +11202,49 @@ app.get('/api/device-vars', async (req, res) => {
     } catch (err) {
         console.error(`[Vars] Decrypt failed for ${deviceId}:`, err.message);
         return res.status(500).json({ success: false, error: 'Decryption failed' });
+    }
+});
+
+// DELETE /api/device-vars/:key — client deletes a single var by key
+// Auth: deviceSecret
+app.delete('/api/device-vars/:key', async (req, res) => {
+    const { deviceId, deviceSecret } = req.body;
+    const keyName = req.params.key;
+    if (!deviceId || !deviceSecret || !keyName) {
+        return res.status(400).json({ success: false, error: 'deviceId, deviceSecret, and key required' });
+    }
+    const device = devices[deviceId];
+    if (!device || device.deviceSecret !== deviceSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid credentials' });
+    }
+    if (!SEAL_KEY_HEX) {
+        return res.status(500).json({ success: false, error: 'Encryption not configured' });
+    }
+    try {
+        const existing = await db.getDeviceVars(deviceId);
+        if (!existing) {
+            return res.status(404).json({ success: false, error: 'No variables found' });
+        }
+        let existingVars = {};
+        let existingSources = {};
+        try {
+            existingVars = decryptVars(existing.encrypted_vars, existing.iv, existing.auth_tag);
+            existingSources = existing.var_sources || {};
+        } catch (e) {
+            return res.status(500).json({ success: false, error: 'Failed to decrypt vars' });
+        }
+        if (!(keyName in existingVars)) {
+            return res.status(404).json({ success: false, error: 'Variable not found' });
+        }
+        delete existingVars[keyName];
+        delete existingSources[keyName];
+        const { encrypted, iv, authTag } = encryptVars(existingVars);
+        const varKeys = Object.keys(existingVars);
+        await db.upsertDeviceVars(deviceId, encrypted, iv, authTag, varKeys, existing.is_locked || false, existingSources);
+        res.json({ success: true, deletedKey: keyName });
+    } catch (err) {
+        console.error('[DeviceVars] Delete key error:', err);
+        res.status(500).json({ success: false, error: 'Server error' });
     }
 });
 
