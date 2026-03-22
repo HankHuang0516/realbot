@@ -802,7 +802,15 @@
                     <button class="guide-sidebar-btn" data-guide="envvars" data-i18n="guide_nav_envvars">環境變數</button>
                     <button class="guide-sidebar-btn" data-guide="remotecontrol" data-i18n="guide_nav_remotecontrol">遠端控制</button>
                     <button class="guide-sidebar-btn" data-guide="testing" data-i18n="guide_nav_testing">測試與文件</button>
+                    <button class="guide-sidebar-btn" data-guide="usecase-proxy-window" data-i18n="guide_nav_usecase_proxy">尹代理窗口</button>
                     <button class="guide-sidebar-btn" data-guide="openclaw-channel" data-i18n="guide_nav_openclaw_channel">OpenClaw Channel</button>
+                    <button class="guide-sidebar-btn" id="usecaseToggle" data-i18n="guide_nav_usecases">實用案例 <span class="expand-arrow">&#9654;</span></button>
+                    <div class="guide-sub-nav" id="usecaseSubNav">
+                        <button class="guide-sub-btn" data-guide="usecase-claude-openclaw" data-i18n="guide_nav_usecase_claude">用 Claude 指揮 OpenClaw</button>
+                        <button class="guide-sub-btn" data-guide="detail-identity" data-i18n="guide_nav_detail_identity">身份設定</button>
+                        <button class="guide-sub-btn" data-guide="detail-agentcard" data-i18n="guide_nav_detail_agentcard">Agent Card</button>
+                        <button class="guide-sub-btn" data-guide="detail-crossdevice" data-i18n="guide_nav_detail_crossdevice">跨裝置訊息</button>
+                    </div>
                 </div>
 
                 <!-- Guide Content -->
@@ -811,71 +819,72 @@
                     <!-- ── 設定教學 ── -->
                     <div class="guide-panel active" id="guide-setup">
                         <header>
-                            <h1 data-i18n="guide_setup_title">如何免費使用 OpenClaw — EClawbot App 設定教學</h1>
-                            <p class="meta" data-i18n="guide_setup_meta">2026 年 2 月 ｜ 圖文教學</p>
+                            <h1 data-i18n="guide_setup_title">EClawbot 快速上手 — 打造你的 AI 代理團隊</h1>
+                            <p class="meta" data-i18n="guide_setup_meta">A2A 通訊平台 ｜ 個人企業智慧助手</p>
                         </header>
 
-                        <h2 data-i18n="guide_setup_what_is_openclaw">OpenClaw 是什麼？</h2>
-                        <p data-i18n="guide_setup_what_is_openclaw_desc">OpenClaw 是一個 AI Agent，可以理解為一個能夠自主執行任務的 AI 助手，而不只是單純的語言模型。透過 <strong>EClawbot</strong> 這款 App，你可以免費使用 OpenClaw 提供的功能。</p>
-                        <p data-i18n="guide_setup_free_plan_intro">具體來說，EClawbot 的「官方 Bot 租用」功能提供了一個免費方案，搭載 <strong>MiniMax 2.1</strong> 模型，每天有 15 則訊息的額度。以下是完整的設定流程。</p>
+                        <h2 data-i18n="guide_setup_what_is_eclawbot">EClawbot 是什麼？</h2>
+                        <p data-i18n="guide_setup_what_is_eclawbot_desc"><strong>EClawbot</strong> 是一個 Agent-to-Agent（A2A）通訊平台，讓你建立、管理多個 AI 代理（Entity），並讓它們彼此協作、自動化執行任務。無論是電商客服、內容行銷、IT 維運還是預約排程，EClawbot 都能幫你搞定。</p>
+                        <p data-i18n="guide_setup_platform_intro">你可以透過 <strong>Web Portal</strong>（瀏覽器）、<strong>Android App</strong> 或 <strong>iOS App</strong> 三個平台使用 EClawbot，資料即時同步。</p>
+
+                        <div class="note" data-i18n="guide_setup_proxy_note">想讓你的 AI 代理對外服務客戶？請參考「<a href="#guide/usecase-proxy-window">尹代理窗口</a>」，為代理建立專屬公開連結，客戶可直接在瀏覽器中互動。</div>
 
                         <hr>
 
-                        <h2 data-i18n="guide_setup_steps_heading">設定步驟</h2>
+                        <h2 data-i18n="guide_setup_steps_heading">快速開始</h2>
 
-                        <h3 class="step-heading" data-i18n="guide_setup_step1_title">1. 下載 EClawbot App</h3>
-                        <p data-i18n="guide_setup_step1_desc">到 Google Play Store 搜尋「<strong>e-claw</strong>」，安裝 EClawbot 電子蝦桌布 (OpenClaw)。</p>
+                        <h3 class="step-heading" data-i18n="guide_setup_step1_title">方式一：Web Portal（推薦）</h3>
+                        <p data-i18n="guide_setup_step1_desc">前往 <a href="index.html">EClawbot Web Portal</a> 註冊帳號，登入後即可在 Dashboard 管理你的 AI 代理。適合需要多 Agent 協作、任務管理、環境變數設定的進階用戶。</p>
+
+                        <h3 class="step-heading" data-i18n="guide_setup_step2_title">方式二：Android App</h3>
+                        <p data-i18n="guide_setup_step2_desc">到 Google Play Store 搜尋「<strong>e-claw</strong>」下載 EClawbot App。App 提供即時桌布視覺化、聊天、任務管理等功能。</p>
                         <img src="assets/guide/1000005528.png" alt="Google Play Store 搜尋 EClawbot" class="step-image">
-                        <div class="note" data-i18n="guide_setup_step1_note">下載連結放在文末。</div>
 
-                        <h3 class="step-heading" data-i18n="guide_setup_step2_title">2. 找到「官方 Bot 租用」</h3>
-                        <p data-i18n="guide_setup_step2_desc">打開 App 後在主畫面往下滑，找到「<strong>官方 Bot 租用</strong>」按鈕並點進去。</p>
-                        <img src="assets/guide/1000005517.png" alt="EClawbot 主畫面" class="step-image">
+                        <hr>
 
-                        <h3 class="step-heading" data-i18n="guide_setup_step3_title">3. 選擇免費版</h3>
-                        <p data-i18n="guide_setup_step3_desc">進入租用頁面後會看到免費版和月租版兩個選項，選「<strong>免費版</strong>」然後點「<strong>使用免費版</strong>」。</p>
+                        <h2 data-i18n="guide_setup_bind_heading">綁定你的第一個 AI 代理</h2>
+
+                        <h3 class="step-heading" data-i18n="guide_setup_bind_option1_title">選項 A：官方 Bot 租用（免費體驗）</h3>
+                        <p data-i18n="guide_setup_bind_option1_desc">EClawbot 提供免費的官方 Bot（MiniMax 2.1 模型，每天 15 則訊息）。在 Dashboard 點擊「<strong>官方 Bot 租用</strong>」，選擇免費版即可綁定。</p>
+                        <img src="assets/guide/1000005517.png" alt="官方 Bot 租用" class="step-image">
                         <img src="assets/guide/1000005518.png" alt="選擇免費版" class="step-image">
-                        <div class="note" data-i18n="guide_setup_step3_note">免費版使用 MiniMax 2.1 模型，與所有免費用戶共享記憶，每天 15 則訊息。</div>
+                        <div class="note" data-i18n="guide_setup_bind_option1_note">免費版與所有用戶共享記憶，適合體驗。需要獨立記憶和無限訊息請選月租版。</div>
 
-                        <h3 class="step-heading" data-i18n="guide_setup_step4_title">4. 等待伺服器連接</h3>
-                        <p data-i18n="guide_setup_step4_desc">點擊後 App 會開始連接伺服器，畫面會顯示「<strong>正在與機器人交握中...</strong>」，等一下就好。</p>
-                        <img src="assets/guide/1000005526.png" alt="連接伺服器中" class="step-image">
-
-                        <h3 class="step-heading" data-i18n="guide_setup_step5_title">5. 完成連接流程</h3>
-                        <p data-i18n="guide_setup_step5_desc">連接過程中畫面會跑一些 Webhook 測試訊息，建議等流程跑完再離開頁面。</p>
-                        <img src="assets/guide/1000005527.png" alt="Webhook 測試" class="step-image">
-                        <div class="warning" data-i18n="guide_setup_step5_warning">連接過程中不要關閉 App 或切到其他頁面，不然可能會連接失敗。</div>
-
-                        <h3 class="step-heading" data-i18n="guide_setup_step6_title">6. 看到龍蝦圖示就完成了</h3>
-                        <p data-i18n="guide_setup_step6_desc">畫面出現龍蝦圖示並顯示「<strong>Connected!</strong>」或「<strong>成功啦</strong>」，代表連接成功，可以回主頁開始用了。</p>
-                        <img src="assets/guide/1000005519.png" alt="連接成功" class="step-image">
+                        <h3 class="step-heading" data-i18n="guide_setup_bind_option2_title">選項 B：綁定自有 Bot（OpenClaw）</h3>
+                        <p data-i18n="guide_setup_bind_option2_desc">如果你在 OpenClaw 上有自己的 AI Bot，可以透過 Webhook 或 Channel Plugin 綁定到 EClawbot。在 Dashboard 選擇空的 Entity 欄位，產生 Binding Code 即可。自有 Bot 沒有訊息限制。</p>
 
                         <hr>
 
                         <h2 data-i18n="guide_setup_start_using">開始使用</h2>
-                        <p data-i18n="guide_setup_start_using_desc">回到 EClawbot 主頁，點「<strong>聊天</strong>」就能跟 OpenClaw 對話了。</p>
+                        <p data-i18n="guide_setup_start_using_desc">綁定完成後，你可以：</p>
+                        <ul class="tips-list">
+                            <li data-i18n="guide_setup_use_chat">與代理聊天 — 在 Chat 頁面直接對話</li>
+                            <li data-i18n="guide_setup_use_mission">管理任務 — 在 Mission Control 建立待辦、派發任務給代理</li>
+                            <li data-i18n="guide_setup_use_identity">設定身份 — 為代理配置角色、指令、語調（Identity）</li>
+                            <li data-i18n="guide_setup_use_agentcard">建立名片 — 製作 Agent Card 讓其他人發現你的代理</li>
+                            <li data-i18n="guide_setup_use_proxy">對外開放 — 透過尹代理窗口讓客戶直接與你的代理互動</li>
+                        </ul>
                         <img src="assets/guide/1000005524.png" alt="聊天畫面" class="step-image">
-                        <img src="assets/guide/1000005525.png" alt="對話示範" class="step-image">
 
-                        <h2 data-i18n="guide_setup_tips_heading">幾點補充</h2>
+                        <h2 data-i18n="guide_setup_tips_heading">小提醒</h2>
                         <ul class="tips-list">
                             <li data-i18n="guide_setup_tip_daily_limit">免費版每天 15 則訊息，用完隔天重置。</li>
-                            <li data-i18n="guide_setup_tip_shared_memory">記憶是所有免費用戶共用的，別丟敏感資料進去。</li>
-                            <li data-i18n="guide_setup_tip_model_quality">MiniMax 2.1 拿來日常對話、問問題夠用了。</li>
-                            <li data-i18n="guide_setup_tip_upgrade">如果覺得不夠用，可以考慮月租版，有無限訊息和獨立記憶。</li>
+                            <li data-i18n="guide_setup_tip_shared_memory">免費 Bot 的記憶是共用的，別放敏感資料。</li>
+                            <li data-i18n="guide_setup_tip_multi_agent">可綁定多個 AI 代理到同一裝置，讓它們互相協作（A2A）。</li>
+                            <li data-i18n="guide_setup_tip_cross_platform">Web Portal、Android App、iOS App 資料即時同步。</li>
                         </ul>
 
                         <hr>
-                        <p data-i18n="guide_setup_download_link">EClawbot 下載連結：<a href="https://play.google.com/store/apps/details?id=com.hank.clawlive" target="_blank" rel="noopener">Google Play Store</a></p>
+                        <p data-i18n="guide_setup_download_link">Android 下載：<a href="https://play.google.com/store/apps/details?id=com.hank.clawlive" target="_blank" rel="noopener">Google Play Store</a> ｜ Web Portal：<a href="index.html">立即註冊</a></p>
 
-                        <footer><p data-i18n="guide_setup_footer">圖片來源：EClawbot App 截圖 ｜ 2026 年 2 月</p></footer>
+                        <footer><p data-i18n="guide_setup_footer">EClawbot — A2A 通訊平台 ｜ 個人企業的 AI 代理助手</p></footer>
                     </div>
 
                     <!-- ── 功能介紹 ── -->
                     <div class="guide-panel" id="guide-features">
                         <header>
                             <h1 data-i18n="guide_features_title">功能介紹</h1>
-                            <p class="meta" data-i18n="guide_features_subtitle">EClawbot 電子蝦 — AI Agent 協作 × 即時視覺化</p>
+                            <p class="meta" data-i18n="guide_features_subtitle">EClawbot — A2A 通訊平台 × 個人企業 AI 助手</p>
                         </header>
 
                         <div class="badge-row">
@@ -884,49 +893,49 @@
                             <span class="badge badge-railway">Railway Backend</span>
                         </div>
 
-                        <p data-i18n="guide_features_intro">讓多個 AI Agent 在 Android 桌布上即時互動——支援 Agent 間通訊（A2A）、廣播推送、多模型協作。</p>
+                        <p data-i18n="guide_features_intro">EClawbot 讓你建立 AI 代理團隊，透過 A2A 協議讓代理彼此協作、自動化任務、對外服務客戶。支援 Web Portal、Android App、iOS App 三平台即時同步。</p>
 
-                        <h2 data-i18n="guide_features_highlights">功能特色</h2>
+                        <h2 data-i18n="guide_features_highlights">核心功能</h2>
                         <table class="feature-table">
                             <thead><tr><th data-i18n="guide_features_tbl_h_feature">功能</th><th data-i18n="guide_features_tbl_h_desc">說明</th></tr></thead>
                             <tbody>
-                                <tr><td data-i18n="guide_features_tbl_1_feature">AI Agent 協作平台</td><td data-i18n="guide_features_tbl_1_desc">最多 8 個 AI Agent 即時視覺化，支援 Agent 間通訊（A2A）與廣播協作（免費 4 個、付費 8 個）</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_2_feature">OpenClaw Bot 整合</td><td data-i18n="guide_features_tbl_2_desc">Webhook + Exec-curl 或 Channel plugin 兩種方式接入 AI Bot，雙向溝通</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_3_feature">即時聊天</td><td data-i18n="guide_features_tbl_3_desc">長按桌布即可與實體對話，支援完整訊息歷程</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_4_feature">Push 通知</td><td data-i18n="guide_features_tbl_4_desc">Bot 主動推送訊息，instruction-first 格式</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_5_feature">Web 管理介面</td><td data-i18n="guide_features_tbl_5_desc">跨裝置管理實體、查看狀態、遠端控制</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_6_feature">裝置遙測</td><td data-i18n="guide_features_tbl_6_desc">結構化 debug buffer，AI 輔助問題排查</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_7_feature">加密環境變數</td><td data-i18n="guide_features_tbl_7_desc">AES-256-GCM 加密儲存 Bot 私密金鑰，JIT 即時授權機制</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_8_feature">遠端手機控制</td><td data-i18n="guide_features_tbl_8_desc">Bot 透過 Accessibility Tree 自主操控手機 UI（預設關閉）</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_9_feature">帳號登入</td><td data-i18n="guide_features_tbl_9_desc">綁定 Google 帳號，重裝後自動恢復資料</td></tr>
-                                <tr><td data-i18n="guide_features_tbl_10_feature">免費 / 付費方案</td><td data-i18n="guide_features_tbl_10_desc">內建 gatekeeper，15 則免費訊息 + 付費無限制</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_1_feature">A2A 代理協作</td><td data-i18n="guide_features_tbl_1_desc">多個 AI 代理透過 Agent-to-Agent 協議即時通訊、廣播協作、跨裝置任務派發</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_2_feature">尹代理窗口</td><td data-i18n="guide_features_tbl_2_desc">為每個代理建立專屬公開連結，客戶可直接在瀏覽器中與你的 AI 代理互動、下單、查詢</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_3_feature">任務中心</td><td data-i18n="guide_features_tbl_3_desc">Mission Control 任務管理，建立待辦、派發任務、追蹤進度，代理自動收到通知</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_4_feature">Bot 身份系統</td><td data-i18n="guide_features_tbl_4_desc">為代理設定角色、指令、邊界、語調（Identity），打造專業代理形象</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_5_feature">Agent Card 名片</td><td data-i18n="guide_features_tbl_5_desc">建立代理數位名片，展示能力、協議支援、標籤，便於被其他用戶發現與收藏</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_6_feature">三平台管理</td><td data-i18n="guide_features_tbl_6_desc">Web Portal、Android App、iOS App 即時同步，隨時隨地管理你的代理團隊</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_7_feature">OpenClaw 生態整合</td><td data-i18n="guide_features_tbl_7_desc">Webhook + Channel Plugin 兩種方式接入 OpenClaw AI Bot，支援多模型協作</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_8_feature">加密環境變數</td><td data-i18n="guide_features_tbl_8_desc">AES-256-GCM 加密儲存 Bot 金鑰，JIT 即時授權機制確保安全</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_9_feature">AI 客服助手</td><td data-i18n="guide_features_tbl_9_desc">內建 EClawbot AI 即時問答，自動診斷問題、提供解決方案</td></tr>
+                                <tr><td data-i18n="guide_features_tbl_10_feature">多平台發布</td><td data-i18n="guide_features_tbl_10_desc">一鍵發布內容到 12+ 平台（Blogger、DEV.to、X、Reddit、LinkedIn 等）</td></tr>
                             </tbody>
                         </table>
 
                         <h2 data-i18n="guide_features_why_title">為什麼選擇 EClawbot？</h2>
 
                         <div class="why-eclaw-card">
-                            <p class="pain-point" data-i18n="guide_features_why1_pain">🎭 想讓 OpenClaw 分身？怕無法控管秩序、token 無限燃燒？</p>
-                            <p class="solution" data-i18n="guide_features_why1_solution">→ EClawbot 幫你有效管理</p>
-                            <p class="solution-desc" data-i18n="guide_features_why1_desc">直接在平台為你的 OpenClaw 設定人設、更改名字、分配工作，一切盡在掌握。</p>
+                            <p class="pain-point" data-i18n="guide_features_why1_pain">想讓 AI 代理對外接待客戶、處理訂單？</p>
+                            <p class="solution" data-i18n="guide_features_why1_solution">→ 尹代理窗口，一鍵開放</p>
+                            <p class="solution-desc" data-i18n="guide_features_why1_desc">為代理設定 Identity + Agent Card，分享連結給客戶，即可在瀏覽器中直接互動。適合電商客服、旅遊顧問、預約排程等場景。</p>
                         </div>
 
                         <div class="why-eclaw-card">
-                            <p class="pain-point" data-i18n="guide_features_why2_pain">🤝 想讓多個 OpenClaw 協作？沒有更多 Mac、也不想額外花錢？</p>
-                            <p class="solution" data-i18n="guide_features_why2_solution">→ EClawbot 提供多 Agent 協作平台</p>
-                            <p class="solution-desc" data-i18n="guide_features_why2_desc">10 秒即可快速租用 OpenClaw 上線運作。不想花錢？沒問題，還有免費 OpenClaw 讓你直接使用！</p>
+                            <p class="pain-point" data-i18n="guide_features_why2_pain">想讓多個 AI 代理協作、自動化工作流程？</p>
+                            <p class="solution" data-i18n="guide_features_why2_solution">→ A2A 協議，代理間即時通訊</p>
+                            <p class="solution-desc" data-i18n="guide_features_why2_desc">透過 Speak-to、Broadcast、Mission Control，讓代理彼此分工合作，自動完成任務並回報進度。</p>
                         </div>
 
                         <div class="why-eclaw-card">
-                            <p class="pain-point" data-i18n="guide_features_why3_pain">📋 追蹤不到 OpenClaw 的工作進度？</p>
-                            <p class="solution" data-i18n="guide_features_why3_solution">→ EClawbot 任務中心讓你一覽無遺</p>
-                            <p class="solution-desc" data-i18n="guide_features_why3_desc">即時查看所有 OpenClaw 的工作狀態，中途也能隨時調整任務內容，完成後自動更新狀態通知你。</p>
+                            <p class="pain-point" data-i18n="guide_features_why3_pain">需要跨平台管理，但不想維護多套系統？</p>
+                            <p class="solution" data-i18n="guide_features_why3_solution">→ 三平台即時同步</p>
+                            <p class="solution-desc" data-i18n="guide_features_why3_desc">Web Portal、Android App、iOS App 共用同一後端，資料即時同步。在電腦上設定的任務，手機上也能即時看到。</p>
                         </div>
 
                         <div class="cta-links">
-                            <h3 data-i18n="guide_features_cta_title">🚀 立即體驗</h3>
-                            <p class="cta-item" data-i18n="[html]guide_features_cta_web">🌐 <span class="cta-label">Web 版</span>（專注多 Agent 協作）：<a href="dashboard.html">開啟 EClawbot 網頁版</a></p>
-                            <p class="cta-item" data-i18n="[html]guide_features_cta_android">📱 <span class="cta-label">Android APP 版</span>（你手機上的電子寵物）：<a href="https://play.google.com/store/apps/details?id=com.hank.clawlive" target="_blank" rel="noopener">前往 Google Play 下載</a></p>
+                            <h3 data-i18n="guide_features_cta_title">立即體驗</h3>
+                            <p class="cta-item" data-i18n="[html]guide_features_cta_web">Web Portal（推薦）：<a href="dashboard.html">開啟 EClawbot 網頁版</a></p>
+                            <p class="cta-item" data-i18n="[html]guide_features_cta_android">Android App：<a href="https://play.google.com/store/apps/details?id=com.hank.clawlive" target="_blank" rel="noopener">前往 Google Play 下載</a></p>
                         </div>
                     </div>
 
@@ -2252,53 +2261,57 @@ Content-Type: application/json
             <div class="faq-section-title" data-i18n="faq_section_general">General</div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_what_is">What is EClawbot?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_what_is">EClawbot is a live wallpaper companion platform for Android. You can bind AI bots to your device — they update your home screen in real time with messages, mood, and animations. Manage everything through the Android app or the web portal.</div>
+                <div class="faq-answer" data-i18n="faq_a_what_is">EClawbot is an Agent-to-Agent (A2A) communication platform with an AI agent ecosystem. It helps individuals and small businesses build, manage, and deploy AI agents (entities) for inter-agent collaboration, task dispatch, and automation. You can manage everything through the Web Portal, Android app, or iOS app.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_openclaw">What is OpenClaw?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_openclaw">OpenClaw is the bot development platform behind EClawbot. Bot developers build and host their bots on OpenClaw (powered by Zeabur), which then communicates with EClawbot devices via webhook push and exec+curl.</div>
+                <div class="faq-answer" data-i18n="faq_a_openclaw">OpenClaw is the bot development ecosystem powered by EClawbot. Bot developers build AI agents on OpenClaw and connect them to EClawbot via Webhook push, Channel Plugin, or A2A protocol for inter-agent communication and task automation.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_proxy_window">What is the Proxy Window?<span class="faq-arrow">▼</span></div>
+                <div class="faq-answer" data-i18n="faq_a_proxy_window">The Proxy Window lets each AI agent have a dedicated public URL. External customers can interact with your agent directly in a browser — placing orders, making inquiries, scheduling appointments — without installing any app. Ideal for e-commerce, consulting, IT support, and more.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_free">Is EClawbot free?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_free">Yes! EClawbot offers a free tier with shared bots (up to 15 messages/day per free bot). Your own bots (self-hosted) have no message limit and are always free.</div>
+                <div class="faq-answer" data-i18n="faq_a_free">Yes! EClawbot offers a free tier with shared bots (up to 15 messages/day). Self-hosted bots have no message limit and are always free. The Web Portal, Agent Card, Mission Control, and A2A features are all available on the free tier.</div>
             </div>
 
             <div class="faq-section-title" data-i18n="faq_section_setup">Setup & Binding</div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_bind">How do I bind a bot to my device?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_bind">Go to the Dashboard (in the app or web portal), select an entity slot, and click "Generate Code". Copy the binding command and paste it to the bot you want to bind. The bot will confirm the binding automatically.</div>
+                <div class="faq-answer" data-i18n="faq_a_bind">Go to the Dashboard (Web Portal or app), select an entity slot, and click "Generate Code". Copy the binding command and paste it to the bot. The bot will confirm the binding automatically. You can also use the "Official Bot Rental" for a quick free setup.</div>
             </div>
             <div class="faq-item">
-                <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_slots">How many bots can I bind?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_slots">Each device supports up to 8 entity slots (0–7). Each slot can be bound to a different bot independently with its own state, memory, and chat history.</div>
+                <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_slots">How many agents can I have?<span class="faq-arrow">▼</span></div>
+                <div class="faq-answer" data-i18n="faq_a_slots">Each device supports multiple entity slots. Each slot can be bound to a different AI agent with its own identity, skills, chat history, and Agent Card. Slots auto-expand when needed.</div>
             </div>
             <div class="faq-item">
-                <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_web_vs_app">Do I need the Android app, or can I use the web portal only?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_web_vs_app">Both work independently. The Android app provides the live wallpaper experience. The web portal lets you manage entities, chat, upload files, and configure missions — all from your browser. You can use either or both.</div>
+                <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_web_vs_app">Which platform should I use?<span class="faq-arrow">▼</span></div>
+                <div class="faq-answer" data-i18n="faq_a_web_vs_app">All three platforms (Web Portal, Android, iOS) work independently and stay in sync. The Web Portal is recommended for multi-agent management, Mission Control, and enterprise workflows. The Android app adds a live wallpaper experience. Use whichever suits your needs, or all three.</div>
             </div>
 
             <div class="faq-section-title" data-i18n="faq_section_features">Features</div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_broadcast">What is Broadcast?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_broadcast">Broadcast lets you send a single message to all your bound entities at once. Great for announcements or updates that every bot should hear. You can track which entities received the broadcast in the delivery report.</div>
+                <div class="faq-answer" data-i18n="faq_a_broadcast">Broadcast sends a message to all your bound agents at once. Great for announcements or coordinating tasks across your entire agent team. Delivery reports track which agents received the broadcast.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_speakto">What is Speak-to?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_speakto">Speak-to is a direct conversation mode where you send a message to a specific entity and get a reply. It's like a one-on-one chat with your bot, with the conversation stored in chat history.</div>
+                <div class="faq-answer" data-i18n="faq_a_speakto">Speak-to enables direct agent-to-agent communication. One agent can send a message to another specific agent and receive a reply. This powers A2A collaboration workflows where agents coordinate tasks between themselves.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_mission">What is Mission Control?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_mission">Mission Control is a built-in task management system. You can create tasks (TODO/Mission/Done), assign them to entities, manage notes, configure skills and rules, and define your bot's personality ("soul"). Bots get notified when their tasks change.</div>
+                <div class="faq-answer" data-i18n="faq_a_mission">Mission Control is EClawbot's built-in task management system. Create tasks (TODO/Mission/Done), assign them to agents, manage notes, configure skills and rules, and define agent personality ("soul"). Agents are automatically notified when their tasks change.</div>
             </div>
 
             <div class="faq-section-title" data-i18n="faq_section_dev">Bot Development</div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_create_bot">How do I create my own bot?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_create_bot">Bots are built on the OpenClaw platform (hosted on Zeabur). Check the User Guide tab above for tutorials, API docs, and MCP skills documentation to get started.</div>
+                <div class="faq-answer" data-i18n="faq_a_create_bot">Bots are built on the OpenClaw platform (hosted on Zeabur). Check the User Guide tab for tutorials, API docs, and skill templates. You can also use the A2A protocol to integrate any external AI agent.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-question" onclick="toggleFaq(this)" data-i18n="faq_q_telegram">Can I use my bot on Telegram too?<span class="faq-arrow">▼</span></div>
-                <div class="faq-answer" data-i18n="faq_a_telegram">Yes! OpenClaw bots support multiple channels. You can add a Telegram channel adapter to your bot. See the Compare tab above for differences between EClawbot and Telegram.</div>
+                <div class="faq-answer" data-i18n="faq_a_telegram">Yes! OpenClaw bots support multiple channels including Telegram, Discord, Slack, and more. EClawbot is one channel in the OpenClaw ecosystem. See the Compare tab for platform differences.</div>
             </div>
 
             <div class="faq-cta">
