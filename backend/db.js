@@ -1021,14 +1021,15 @@ async function addCard(deviceId, publicCode, { name, character, avatar, cardSnap
     if (!pool) return null;
     try {
         const result = await pool.query(
-            `INSERT INTO agent_card_holder (device_id, public_code, contact_name, contact_character, contact_avatar, added_at, card_snapshot, exchange_type, last_refreshed)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $6)
+            `INSERT INTO agent_card_holder (device_id, public_code, contact_name, contact_character, contact_avatar, added_at, card_snapshot, exchange_type, last_refreshed, last_interacted_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $6, $6)
              ON CONFLICT (device_id, public_code) DO UPDATE SET
                 contact_name = EXCLUDED.contact_name,
                 contact_character = EXCLUDED.contact_character,
                 contact_avatar = EXCLUDED.contact_avatar,
                 card_snapshot = COALESCE(EXCLUDED.card_snapshot, agent_card_holder.card_snapshot),
                 last_refreshed = EXCLUDED.last_refreshed,
+                last_interacted_at = EXCLUDED.last_interacted_at,
                 interaction_count = agent_card_holder.interaction_count + 1
              RETURNING id, public_code AS "publicCode", contact_name AS name, contact_character AS character,
                 contact_avatar AS avatar, added_at AS "addedAt", card_snapshot AS "cardSnapshot",

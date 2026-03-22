@@ -1608,28 +1608,29 @@
          * Used when arriving via /c/:code shareable link.
          */
         async function ensureContactAndFilter(code) {
-            // Already in contacts?
-            const existing = contacts.find(c => c.publicCode === code);
-            if (!existing) {
-                // Auto-add to contacts
-                try {
-                    const data = await apiCall('POST', '/api/contacts', {
-                        deviceId: currentUser.deviceId,
-                        deviceSecret: currentUser.deviceSecret,
-                        publicCode: code
-                    });
-                    if (data.success && data.contact) {
+            // Always call POST /api/contacts (upserts: adds new or updates last_interacted_at for existing)
+            try {
+                const data = await apiCall('POST', '/api/contacts', {
+                    deviceId: currentUser.deviceId,
+                    deviceSecret: currentUser.deviceSecret,
+                    publicCode: code
+                });
+                if (data.success && data.contact) {
+                    const idx = contacts.findIndex(c => c.publicCode === code);
+                    if (idx >= 0) {
+                        contacts[idx] = data.contact;
+                    } else {
                         contacts.push(data.contact);
-                        const c = data.contact;
-                        const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
-                        xdeviceLabelCache[c.publicCode] = `${renderAvatarHtml(avatar, 20)} ${escapeHtml(c.name || c.character || c.publicCode)}`;
                     }
-                } catch (err) {
-                    // 409 = already exists (race), 400 = own entity — both OK to continue
-                    if (err.status !== 409 && err.status !== 400) {
-                        console.warn('Failed to auto-add contact:', err.message);
-                        return;
-                    }
+                    const c = data.contact;
+                    const avatar = c.avatar || (c.character === 'PIG' ? '\u{1F437}' : '\u{1F99E}');
+                    xdeviceLabelCache[c.publicCode] = `${renderAvatarHtml(avatar, 20)} ${escapeHtml(c.name || c.character || c.publicCode)}`;
+                }
+            } catch (err) {
+                // 400 = own entity — OK to continue
+                if (err.status !== 400) {
+                    console.warn('Failed to auto-add contact:', err.message);
+                    return;
                 }
             }
 
