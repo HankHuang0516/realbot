@@ -1,3 +1,10 @@
+# [1.140.0](https://github.com/HankHuang0516/EClaw/compare/v1.139.2...v1.140.0) (2026-03-22)
+
+
+### Features
+
+* **android:** add category folder structure to Mission Control ([#412](https://github.com/HankHuang0516/EClaw/issues/412)) ([f42f394](https://github.com/HankHuang0516/EClaw/commit/f42f3945ebeab8497c6ad51fa77cad127147e1ec))
+
 ## [1.139.2](https://github.com/HankHuang0516/EClaw/compare/v1.139.1...v1.139.2) (2026-03-22)
 
 
