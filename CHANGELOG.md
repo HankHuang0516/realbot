@@ -1,3 +1,10 @@
+## [1.144.1](https://github.com/HankHuang0516/EClaw/compare/v1.144.0...v1.144.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* add missing files_btn_delete i18n key for all 8 languages ([#425](https://github.com/HankHuang0516/EClaw/issues/425)) ([d45f92f](https://github.com/HankHuang0516/EClaw/commit/d45f92f817e3e5de33d47b8c7d08f37237df8e6b))
+
 # [1.144.0](https://github.com/HankHuang0516/EClaw/compare/v1.143.3...v1.144.0) (2026-03-22)
 
 
