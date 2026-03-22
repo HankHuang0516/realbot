@@ -1,3 +1,10 @@
+## [1.138.1](https://github.com/HankHuang0516/EClaw/compare/v1.138.0...v1.138.1) (2026-03-22)
+
+
+### Bug Fixes
+
+* **mission:** make category action buttons always visible ([#405](https://github.com/HankHuang0516/EClaw/issues/405)) ([1468b97](https://github.com/HankHuang0516/EClaw/commit/1468b97140731fbe6f4f1a632e03176a4e29fe15))
+
 # [1.138.0](https://github.com/HankHuang0516/EClaw/compare/v1.137.2...v1.138.0) (2026-03-22)
 
 
