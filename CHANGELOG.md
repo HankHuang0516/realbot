@@ -1,3 +1,15 @@
+# [1.134.0](https://github.com/HankHuang0516/EClaw/compare/v1.133.1...v1.134.0) (2026-03-22)
+
+
+### Bug Fixes
+
+* **portal:** rewrite cross-device guide as message gate, reorder proxy steps ([#394](https://github.com/HankHuang0516/EClaw/issues/394)) ([c3cd118](https://github.com/HankHuang0516/EClaw/commit/c3cd1184d2782eaa56bdf45d9f11d1222d6a24c0))
+
+
+### Features
+
+* **mission:** add category folder structure for task organization ([#395](https://github.com/HankHuang0516/EClaw/issues/395)) ([596bad4](https://github.com/HankHuang0516/EClaw/commit/596bad4e34dd03d4bb854836c9dbce94f1e0901f))
+
 ## [1.133.1](https://github.com/HankHuang0516/EClaw/compare/v1.133.0...v1.133.1) (2026-03-22)
 
 
